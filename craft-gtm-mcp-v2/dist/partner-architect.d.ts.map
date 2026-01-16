@@ -1,0 +1,1 @@
+{"version":3,"file":"partner-architect.d.ts","sourceRoot":"","sources":["../src/partner-architect.ts"],"names":[],"mappings":"AAAA,wBAAgB,wBAAwB,CAAC,IAAI,EAAE;IAC7C,OAAO,EAAE,MAAM,CAAC;IAChB,OAAO,EAAE,MAAM,CAAC;IAChB,aAAa,EAAE,MAAM,CAAC;IACtB,aAAa,EAAE,MAAM,CAAC;IACtB,cAAc,EAAE,MAAM,CAAC;IACvB,wBAAwB,CAAC,EAAE,MAAM,CAAC;IAClC,iBAAiB,CAAC,EAAE,MAAM,CAAC;CAC5B,GAAG,MAAM,CAiMT"}

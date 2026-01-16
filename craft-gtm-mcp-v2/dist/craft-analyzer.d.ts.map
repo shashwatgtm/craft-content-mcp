@@ -1,0 +1,1 @@
+{"version":3,"file":"craft-analyzer.d.ts","sourceRoot":"","sources":["../src/craft-analyzer.ts"],"names":[],"mappings":"AAEA,wBAAgB,qBAAqB,CAAC,IAAI,EAAE;IAC1C,gBAAgB,EAAE,MAAM,CAAC;IACzB,aAAa,EAAE,MAAM,CAAC;IACtB,iBAAiB,CAAC,EAAE,MAAM,CAAC;IAC3B,eAAe,CAAC,EAAE,MAAM,CAAC;CAC1B,GAAG,MAAM,CAqQT"}

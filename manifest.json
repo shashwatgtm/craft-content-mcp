@@ -1,0 +1,64 @@
+{
+  "manifest_version": "0.2",
+  "name": "craft-content",
+  "display_name": "CRAFT Content",
+  "version": "1.0.0",
+  "description": "8 content creation tools: Case Studies, Newsletters, Webinar Scripts, Content Repurposer (1→10+ formats), Thought Leadership, Testimonials, Sales Enablement, and Content Improver.",
+  "long_description": "Built on the CRAFT framework (Character, Result, Artifact, Frame, Timeline), this MCP server provides comprehensive content creation tools for marketers, SDRs, and growth teams. Each tool delivers complete, ready-to-use content assets.",
+  "author": {
+    "name": "Shashwat Ghosh",
+    "email": "shashwat@hyperplays.in",
+    "url": "https://gtmexpert.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shashwatah/craft-content-mcp"
+  },
+  "homepage": "https://gtmexpert.com",
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/dist/index.js"
+      ],
+      "env": {}
+    }
+  },
+  "tools": [
+    {
+      "name": "case_study_generator",
+      "description": "Generate B2B case studies with Challenge-Solution-Results structure"
+    },
+    {
+      "name": "newsletter_builder",
+      "description": "Create complete newsletters with 10 subject line options"
+    },
+    {
+      "name": "webinar_script",
+      "description": "Generate webinar scripts with slide outlines and Q&A prep"
+    },
+    {
+      "name": "content_repurposer",
+      "description": "Transform one piece into 10+ formats across platforms"
+    },
+    {
+      "name": "thought_leadership_series",
+      "description": "Create 5-post LinkedIn series with interconnected themes"
+    },
+    {
+      "name": "testimonial_capture",
+      "description": "Generate testimonial request emails and interview guides"
+    },
+    {
+      "name": "sales_enablement_content",
+      "description": "Create pitch scripts and objection handlers"
+    },
+    {
+      "name": "craft_content_improver",
+      "description": "Analyze and improve any content using CRAFT principles"
+    }
+  ],
+  "license": "MIT"
+}

@@ -1,0 +1,49 @@
+{
+  "name": "@shashwatgtmalpha/craft-content-mcp",
+  "version": "1.0.0",
+  "description": "CRAFT Content MCP Server - 8 Content Creation Tools: Case Studies, Newsletters, Webinars, Content Repurposing, Thought Leadership, Testimonials, Sales Enablement",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "craft-content-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "craft-framework",
+    "content-creation",
+    "case-study",
+    "newsletter",
+    "webinar",
+    "thought-leadership",
+    "b2b-marketing",
+    "anthropic"
+  ],
+  "author": "Shashwat Ghosh <shashwat@hyperplays.in>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shashwatah/craft-content-mcp.git"
+  },
+  "homepage": "https://gtmexpert.com",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ]
+}

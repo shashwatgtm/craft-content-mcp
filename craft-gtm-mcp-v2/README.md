@@ -1,4 +1,4 @@
-# @shashwatgtm/craft-gtm-mcp v2.0.0
+# @shashwatgtmalpha/craft-gtm-mcp v2.0.0
 
 🚀 **CRAFT GTM Framework MCP Server** - A complete redesign with intelligent analysis, metric parsing, and context-aware outputs.
 
@@ -17,7 +17,7 @@ This is a **major redesign** addressing all critical issues from v1.x:
 ## Installation
 
 ```bash
-npm install -g @shashwatgtm/craft-gtm-mcp
+npm install -g @shashwatgtmalpha/craft-gtm-mcp
 ```
 
 Or add to your Claude Desktop config:
@@ -27,7 +27,7 @@ Or add to your Claude Desktop config:
   "mcpServers": {
     "craft-gtm": {
       "command": "npx",
-      "args": ["-y", "@shashwatgtm/craft-gtm-mcp"]
+      "args": ["-y", "@shashwatgtmalpha/craft-gtm-mcp"]
     }
   }
 }

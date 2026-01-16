@@ -1,4 +1,4 @@
-# @shashwatgtm/craft-content-mcp v2.0.0
+# @shashwatgtmalpha/craft-content-mcp v2.0.0
 
 🎯 **CRAFT Content Framework MCP Server** - Complete redesign with user-centric inputs, actual content analysis, and publish-ready outputs.
 
@@ -26,7 +26,7 @@ Every tool was redesigned using **chain of thought from the user's perspective**
 ## Installation
 
 ```bash
-npm install -g @shashwatgtm/craft-content-mcp
+npm install -g @shashwatgtmalpha/craft-content-mcp
 ```
 
 Or add to Claude Desktop config:
@@ -36,7 +36,7 @@ Or add to Claude Desktop config:
   "mcpServers": {
     "craft-content": {
       "command": "npx",
-      "args": ["-y", "@shashwatgtm/craft-content-mcp"]
+      "args": ["-y", "@shashwatgtmalpha/craft-content-mcp"]
     }
   }
 }

@@ -1,0 +1,59 @@
+# CRAFT Content MCP connector
+
+> CRAFT Content gives Claude eight content tools for B2B marketing teams: case studies, newsletters, webinar scripts, content repurposing, thought leadership drafts, testimonial requests, sales enablement content and a CRAFT review of any draft. Every tool turns the details you give it into a structured draft or plan to edit.
+
+- MCP server URL (Streamable HTTP, no sign-in, read-only tools): https://craft-content-mcp.netlify.app/mcp
+- Setup and tools: https://craft-content-mcp.netlify.app/
+- Privacy policy: https://craft-content-mcp.netlify.app/privacy.html
+- Local npm package: @shashwatgtmalpha/craft-content-mcp
+- Source code: https://github.com/shashwatgtm/craft-content-mcp
+- Built by: Shashwat Ghosh, Helix GTM Consulting (https://www.gtmexpert.com)
+
+## Tools
+
+- Case Study Generator (case_study_generator): Generate case studies with DISCOVERY MODE. If you have the full story, get a complete case study. If not, get interview questions to gather the story first.
+- Newsletter Builder (newsletter_builder): Build newsletter content. Just have a topic? We'll suggest key points. Have key points? We'll craft the content.
+- Webinar Script (webinar_script): Generate webinar scripts. Know your takeaways? Get a complete script. Still planning? We'll suggest takeaways based on topic and type.
+- Content Repurposer (content_repurposer): Transform source content into multiple formats. Just paste content - we'll generate the 5 most useful formats by default, or specify exactly what you need.
+- Thought Leadership Series (thought_leadership_series): Generate thought leadership article drafts (about 600 to 800 words each) from your topic, your take and your proof points. Without proof points, the drafts include suggested proof points to gather. Drafts contain placeholders to complete before publishing.
+- Testimonial Capture (testimonial_capture): Generate testimonial request emails, interview questions, and formatted outputs. Discovery-focused by design.
+- Sales Enablement Content (sales_enablement_content): Generate sales content. Know your objections? Get complete handlers. New product with no sales data yet? We'll suggest likely objections based on your product type.
+- CRAFT Content Improver (craft_content_improver): Analyze content for clarity, structure and engagement, score each area, and return suggestions, including a version with common jargon replaced and long sentences split.
+
+## Questions and answers
+
+### What is CRAFT Content?
+
+CRAFT Content gives Claude eight content tools for B2B marketing teams: case studies, newsletters, webinar scripts, content repurposing, thought leadership drafts, testimonial requests, sales enablement content and a CRAFT review of any draft. Every tool turns the details you give it into a structured draft or plan to edit.
+
+### How do I connect CRAFT Content to Claude?
+
+In Claude, open Customize, then Connectors, then Add custom connector. Name it CRAFT Content, paste the server URL https://craft-content-mcp.netlify.app/mcp, choose no sign-in and select Add. In Claude Code run: claude mcp add --transport http craft-content https://craft-content-mcp.netlify.app/mcp
+
+### Does CRAFT Content need an account, and what does it cost?
+
+No account or sign-in is needed, and there is no charge. The server is public and every tool is read-only.
+
+### Which tools does CRAFT Content include?
+
+8 tools: Case Study Generator, Newsletter Builder, Webinar Script, Content Repurposer, Thought Leadership Series, Testimonial Capture, Sales Enablement Content, CRAFT Content Improver.
+
+### What data does CRAFT Content keep?
+
+None. Each call is answered from the inputs you give it, and the server stores and logs nothing. Netlify, the host, keeps its own request logs. See the privacy policy.
+
+### Can I run CRAFT Content on my own computer?
+
+Yes. Run npx -y @shashwatgtmalpha/craft-content-mcp to use the same tools locally over stdio; nothing is sent to us.
+
+### Who built CRAFT Content?
+
+Shashwat Ghosh, founder of Helix GTM Consulting, a GTM Alpha consultant, AI GTM expert and fractional CMO with 24+ years in B2B and 10+ years of fractional experience.
+
+## Other connectors by Helix GTM Consulting
+
+- GTM Alpha: https://gtmalpha.netlify.app/integration
+- CRAFT GTM: https://craft-gtm-mcp.netlify.app/
+- IMPACT: https://impact-mcp.netlify.app/
+- ICP Intelligence: https://icp-intelligence-mcp.netlify.app/
+- Revenue Enablement: https://revenue-enablement-mcp.netlify.app/

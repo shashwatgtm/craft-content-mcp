@@ -1,0 +1,25 @@
+# Old address: pages redirect to the gtmhelix.com address. /mcp and /api/* are NOT listed, so they keep answering directly.
+# These rules sit at the top because Netlify applies the first match.
+https://craft-content-mcp.netlify.app/  https://craft-content.gtmhelix.com/  301!
+https://craft-content-mcp.netlify.app/tools/case-study-generator/  https://craft-content.gtmhelix.com/tools/case-study-generator/  301!
+https://craft-content-mcp.netlify.app/tools/newsletter-builder/  https://craft-content.gtmhelix.com/tools/newsletter-builder/  301!
+https://craft-content-mcp.netlify.app/tools/webinar-script/  https://craft-content.gtmhelix.com/tools/webinar-script/  301!
+https://craft-content-mcp.netlify.app/tools/content-repurposer/  https://craft-content.gtmhelix.com/tools/content-repurposer/  301!
+https://craft-content-mcp.netlify.app/tools/thought-leadership-series/  https://craft-content.gtmhelix.com/tools/thought-leadership-series/  301!
+https://craft-content-mcp.netlify.app/tools/testimonial-capture/  https://craft-content.gtmhelix.com/tools/testimonial-capture/  301!
+https://craft-content-mcp.netlify.app/tools/sales-enablement-content/  https://craft-content.gtmhelix.com/tools/sales-enablement-content/  301!
+https://craft-content-mcp.netlify.app/tools/craft-content-improver/  https://craft-content.gtmhelix.com/tools/craft-content-improver/  301!
+https://craft-content-mcp.netlify.app/connect/  https://craft-content.gtmhelix.com/connect/  301!
+https://craft-content-mcp.netlify.app/docs/  https://craft-content.gtmhelix.com/docs/  301!
+https://craft-content-mcp.netlify.app/faq/  https://craft-content.gtmhelix.com/faq/  301!
+https://craft-content-mcp.netlify.app/privacy/  https://craft-content.gtmhelix.com/privacy/  301!
+https://craft-content-mcp.netlify.app/index.html  https://craft-content.gtmhelix.com/index.html  301!
+https://craft-content-mcp.netlify.app/privacy  https://craft-content.gtmhelix.com/privacy/  301!
+https://craft-content-mcp.netlify.app/privacy.html  https://craft-content.gtmhelix.com/privacy/  301!
+https://craft-content-mcp.netlify.app/sitemap.xml  https://craft-content.gtmhelix.com/sitemap.xml  301!
+https://craft-content-mcp.netlify.app/llms.txt  https://craft-content.gtmhelix.com/llms.txt  301!
+
+# Old page address on the new site
+/privacy.html  /privacy/  301!
+/privacy  /privacy/  301!
+

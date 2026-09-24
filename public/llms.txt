@@ -1,54 +1,74 @@
-# CRAFT Content MCP connector
+# CRAFT Content
 
-> CRAFT Content gives Claude eight content tools for B2B marketing teams: case studies, newsletters, webinar scripts, content repurposing, thought leadership drafts, testimonial requests, sales enablement content and a CRAFT review of any draft. Every tool turns the details you give it into a structured draft or plan to edit.
+> Yes. CRAFT Content is a free set of eight content tools by Shashwat Ghosh of Helix GTM Consulting. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter, a webinar script, repurposed posts, a thought leadership series, testimonial requests, sales enablement content or a CRAFT review of your draft.
 
+- Web app (no sign-in): https://craft-content.gtmhelix.com/
 - MCP server URL (Streamable HTTP, no sign-in, read-only tools): https://craft-content.gtmhelix.com/mcp
-- Setup and tools: https://craft-content.gtmhelix.com/
-- Privacy policy: https://craft-content.gtmhelix.com/privacy.html
+- Connect to Claude, ChatGPT, Cursor, VS Code, Windsurf: https://craft-content.gtmhelix.com/connect/
+- Docs (MCP and REST, every field): https://craft-content.gtmhelix.com/docs/
+- FAQ: https://craft-content.gtmhelix.com/faq/
+- Privacy policy: https://craft-content.gtmhelix.com/privacy/
 - Local npm package: @shashwatgtmalpha/craft-content-mcp
 - Source code: https://github.com/shashwatgtm/craft-content-mcp
 - Built by: Shashwat Ghosh, Helix GTM Consulting (https://www.gtmexpert.com)
+- All connectors and Claude plugins: https://tools.gtmhelix.com/
 
 ## Tools
 
-- Case Study Generator (case_study_generator): Generate case studies with DISCOVERY MODE. If you have the full story, get a complete case study. If not, get interview questions to gather the story first.
-- Newsletter Builder (newsletter_builder): Build newsletter content. Just have a topic? We'll suggest key points. Have key points? We'll craft the content.
-- Webinar Script (webinar_script): Generate webinar scripts. Know your takeaways? Get a complete script. Still planning? We'll suggest takeaways based on topic and type.
-- Content Repurposer (content_repurposer): Transform source content into multiple formats. Just paste content - we'll generate the 5 most useful formats by default, or specify exactly what you need.
-- Thought Leadership Series (thought_leadership_series): Generate thought leadership article drafts (about 600 to 800 words each) from your topic, your take and your proof points. Without proof points, the drafts include suggested proof points to gather. Drafts contain placeholders to complete before publishing.
-- Testimonial Capture (testimonial_capture): Generate testimonial request emails, interview questions, and formatted outputs. Discovery-focused by design.
-- Sales Enablement Content (sales_enablement_content): Generate sales content. Know your objections? Get complete handlers. New product with no sales data yet? We'll suggest likely objections based on your product type.
-- CRAFT Content Improver (craft_content_improver): Analyze content for clarity, structure and engagement, score each area, and return suggestions, including a version with common jargon replaced and long sentences split.
+- [Case Study Generator](https://craft-content.gtmhelix.com/tools/case-study-generator/) (`case_study_generator`): Generate case studies with DISCOVERY MODE. If you have the full story, get a complete case study. If not, get interview questions to gather the story first.
+- [Newsletter Builder](https://craft-content.gtmhelix.com/tools/newsletter-builder/) (`newsletter_builder`): Build newsletter content. Just have a topic? We'll suggest key points. Have key points? We'll craft the content.
+- [Webinar Script](https://craft-content.gtmhelix.com/tools/webinar-script/) (`webinar_script`): Generate webinar scripts. Know your takeaways? Get a complete script. Still planning? We'll suggest takeaways based on topic and type.
+- [Content Repurposer](https://craft-content.gtmhelix.com/tools/content-repurposer/) (`content_repurposer`): Transform source content into multiple formats. Just paste content - we'll generate the 5 most useful formats by default, or specify exactly what you need.
+- [Thought Leadership Series](https://craft-content.gtmhelix.com/tools/thought-leadership-series/) (`thought_leadership_series`): Generate thought leadership article drafts (about 600 to 800 words each) from your topic, your take and your proof points. Without proof points, the drafts include suggested proof points to gather. Drafts contain placeholders to complete before publishing.
+- [Testimonial Capture](https://craft-content.gtmhelix.com/tools/testimonial-capture/) (`testimonial_capture`): Generate testimonial request emails, interview questions, and formatted outputs. Discovery-focused by design.
+- [Sales Enablement Content](https://craft-content.gtmhelix.com/tools/sales-enablement-content/) (`sales_enablement_content`): Generate sales content. Know your objections? Get complete handlers. New product with no sales data yet? We'll suggest likely objections based on your product type.
+- [CRAFT Content Improver](https://craft-content.gtmhelix.com/tools/craft-content-improver/) (`craft_content_improver`): Analyze content for clarity, structure and engagement, score each area, and return suggestions, including a version with common jargon replaced and long sentences split.
 
 ## Questions and answers
 
 ### What is CRAFT Content?
 
-CRAFT Content gives Claude eight content tools for B2B marketing teams: case studies, newsletters, webinar scripts, content repurposing, thought leadership drafts, testimonial requests, sales enablement content and a CRAFT review of any draft. Every tool turns the details you give it into a structured draft or plan to edit.
+Yes. CRAFT Content is a free set of eight content tools by Shashwat Ghosh of Helix GTM Consulting. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter, a webinar script, repurposed posts, a thought leadership series, testimonial requests, sales enablement content or a CRAFT review of your draft.
 
-### How do I connect CRAFT Content to Claude?
+### Is CRAFT Content free, and do I need an account?
 
-In Claude, open Customize, then Connectors, then Add custom connector. Name it CRAFT Content, paste the server URL https://craft-content.gtmhelix.com/mcp, choose no sign-in and select Add. In Claude Code run: claude mcp add --transport http craft-content https://craft-content.gtmhelix.com/mcp
+It is free, and there is no account or sign-in. Use the tools in your browser here, or connect the MCP server to your AI assistant.
 
-### Does CRAFT Content need an account, and what does it cost?
+### Does it use AI to write the answers?
 
-No account or sign-in is needed, and there is no charge. The server is public and every tool is read-only.
+No. Each tool applies fixed rules in the CRAFT Content code to the inputs you give it. It does not call an AI model and does not look anything up. When you use it from Claude or another assistant, that assistant writes around the tool's answer.
 
-### Which tools does CRAFT Content include?
+### What happens to what I type?
 
-8 tools: Case Study Generator, Newsletter Builder, Webinar Script, Content Repurposer, Thought Leadership Series, Testimonial Capture, Sales Enablement Content, CRAFT Content Improver.
+It is sent to this site's server, used once to build the answer, and dropped when the answer is sent back. Nothing is stored and nothing you type is logged. The privacy page has the details.
 
-### What data does CRAFT Content keep?
+### How do I use CRAFT Content in Claude?
 
-None. Each call is answered from the inputs you give it, and the server stores and logs nothing. Netlify, the host, keeps its own request logs. See the privacy policy.
+In Claude, open Customize, then Connectors, then Add custom connector. Name it CRAFT Content, paste https://craft-content.gtmhelix.com/mcp and choose no sign-in. The Connect page covers Claude Code, ChatGPT, Cursor, VS Code and Windsurf too.
 
-### Can I run CRAFT Content on my own computer?
+### Who built it?
 
-Yes. Run npx -y @shashwatgtmalpha/craft-content-mcp to use the same tools locally over stdio; nothing is sent to us.
+Shashwat Ghosh, founder of Helix GTM Consulting: a GTM Alpha consultant, AI GTM expert and fractional CMO with 24+ years in B2B and 10+ years of fractional experience, based in Bengaluru.
 
-### Who built CRAFT Content?
+### Why does the newsletter builder give a different preview line each time?
 
-Shashwat Ghosh, founder of Helix GTM Consulting, a GTM Alpha consultant, AI GTM expert and fractional CMO with 24+ years in B2B and 10+ years of fractional experience.
+The Newsletter Builder picks its preview text at random from a short list (newsletter-builder.ts line 219). Everything else it returns depends only on your inputs.
+
+### Why do some answers look like templates?
+
+Several tools return a structured plan with placeholders where your inputs did not give a fact. That is deliberate: the tools do not invent numbers or names. Fill the placeholders in before you use the result.
+
+### Can I call the tools from my own code?
+
+Yes. Send POST https://craft-content.gtmhelix.com/api/tools/<tool name> with a JSON body {"input": {...}}. The Docs page lists every field. Please keep to the rate limit of 30 requests per minute.
+
+### Is the source code public?
+
+Yes, at https://github.com/shashwatgtm/craft-content-mcp under the MIT licence. The npm package @shashwatgtmalpha/craft-content-mcp runs the same tools locally.
+
+### How do I report a problem?
+
+Email shashwat@gtmhelix.com or open an issue at https://github.com/shashwatgtm/craft-content-mcp/issues.
 
 ## Other connectors by Helix GTM Consulting
 

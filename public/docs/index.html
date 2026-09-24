@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRAFT Content Docs: MCP Server and REST API | Helix GTM</title>
+<meta name="description" content="How to call the 8 CRAFT Content tools over MCP or REST: addresses, limits, errors and every input field, generated from the server&#x27;s own schemas.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="author" content="Shashwat Ghosh, Helix GTM Consulting">
+<link rel="canonical" href="https://craft-content.gtmhelix.com/docs/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="CRAFT Content by Helix GTM Consulting">
+<meta property="og:title" content="CRAFT Content Docs: MCP Server and REST API | Helix GTM">
+<meta property="og:description" content="How to call the 8 CRAFT Content tools over MCP or REST: addresses, limits, errors and every input field, generated from the server&#x27;s own schemas.">
+<meta property="og:url" content="https://craft-content.gtmhelix.com/docs/">
+<meta property="og:image" content="https://craft-content.gtmhelix.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="CRAFT Content by Helix GTM Consulting">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CRAFT Content Docs: MCP Server and REST API | Helix GTM">
+<meta name="twitter:description" content="How to call the 8 CRAFT Content tools over MCP or REST: addresses, limits, errors and every input field, generated from the server&#x27;s own schemas.">
+<meta name="twitter:image" content="https://craft-content.gtmhelix.com/og.png">
+<meta name="twitter:creator" content="@Shashwat_Ghosh">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/assets/app.css">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@graph": [
+  {
+   "@type": "Organization",
+   "@id": "https://www.gtmexpert.com/#org",
+   "name": "Helix GTM Consulting",
+   "alternateName": [
+    "GTMExpert",
+    "Helix GTM"
+   ],
+   "url": "https://www.gtmexpert.com",
+   "foundingDate": "2016",
+   "founder": {
+    "@id": "https://www.gtmexpert.com/#shashwat"
+   },
+   "sameAs": [
+    "https://github.com/shashwatgtm"
+   ]
+  },
+  {
+   "@type": "Person",
+   "@id": "https://www.gtmexpert.com/#shashwat",
+   "name": "Shashwat Ghosh",
+   "jobTitle": "GTM Alpha Consultant, AI GTM Expert and Fractional CMO",
+   "description": "Founder of Helix GTM Consulting, with 24+ years in B2B and 10+ years of fractional experience. Creator of the EPIC, IMPACT and CRAFT frameworks.",
+   "worksFor": {
+    "@id": "https://www.gtmexpert.com/#org"
+   },
+   "url": "https://www.gtmexpert.com",
+   "award": [
+    "B2B Marketer of the Year 2020, Fintech (CMO Asia)",
+    "LinkedIn Top Product Marketing Voice, #10 India and #52 Worldwide (2024)"
+   ],
+   "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Bengaluru",
+    "addressRegion": "Karnataka",
+    "addressCountry": "IN"
+   },
+   "sameAs": [
+    "https://www.linkedin.com/in/shashwatghosh-ai-b2b-gtm-fractionalcmo/",
+    "https://x.com/Shashwat_Ghosh",
+    "https://github.com/shashwatgtm"
+   ]
+  },
+  {
+   "@type": "WebSite",
+   "@id": "https://craft-content.gtmhelix.com/#site",
+   "url": "https://craft-content.gtmhelix.com/",
+   "name": "CRAFT Content by Helix GTM Consulting",
+   "publisher": {
+    "@id": "https://www.gtmexpert.com/#org"
+   },
+   "inLanguage": "en"
+  },
+  {
+   "@type": "WebPage",
+   "@id": "https://craft-content.gtmhelix.com/docs/#page",
+   "url": "https://craft-content.gtmhelix.com/docs/",
+   "name": "CRAFT Content Docs: MCP Server and REST API | Helix GTM",
+   "description": "How to call the 8 CRAFT Content tools over MCP or REST: addresses, limits, errors and every input field, generated from the server's own schemas.",
+   "isPartOf": {
+    "@id": "https://craft-content.gtmhelix.com/#site"
+   },
+   "about": {
+    "@id": "https://craft-content.gtmhelix.com/#app"
+   },
+   "dateModified": "2026-09-25",
+   "inLanguage": "en",
+   "primaryImageOfPage": "https://craft-content.gtmhelix.com/og.png"
+  },
+  {
+   "@type": "BreadcrumbList",
+   "@id": "https://craft-content.gtmhelix.com/docs/#breadcrumbs",
+   "itemListElement": [
+    {
+     "@type": "ListItem",
+     "position": 1,
+     "name": "Home",
+     "item": "https://craft-content.gtmhelix.com/"
+    },
+    {
+     "@type": "ListItem",
+     "position": 2,
+     "name": "Docs",
+     "item": "https://craft-content.gtmhelix.com/docs/"
+    }
+   ]
+  }
+ ]
+}
+</script>
+</head>
+<body>
+<a class="hx-skip" href="#main">Skip to content</a>
+<header class="hx-header">
+        <div class="hx-wrap hx-header-row">
+            <a class="hx-lockup" href="https://gtmalpha.gtmhelix.com/" aria-label="GTM Alpha home"><span class="hx-alpha" aria-hidden="true">&#945;</span><span class="hx-wordmark">GTM Alpha</span></a>
+            <nav class="hx-nav" aria-label="Main">
+                <a href="https://gtmalpha.gtmhelix.com/#features">Features</a>
+                <a href="https://gtmalpha.gtmhelix.com/#epic">EPIC Framework</a>
+                <a href="https://gtmalpha.gtmhelix.com/integration">Integration</a>
+                <a href="https://gtmalpha.gtmhelix.com/pricing">Pricing</a>
+                <a href="https://gtmalpha.gtmhelix.com/api-docs">API Docs</a>
+                <a href="https://gtmalpha.gtmhelix.com/consultation">Consultation</a>
+                <a href="https://gtmalpha.gtmhelix.com/#about">About Shashwat</a>
+                <a href="https://gtmexpert.com/" class="hx-cta">GTMExpert.com</a>
+            </nav>
+        </div>
+    </header>
+<nav class="hx-subnav" aria-label="CRAFT Content"><div class="hx-wrap hx-subnav-row"><span class="hx-subnav-name">CRAFT Content</span><div class="hx-subnav-links"><a href="/">Home</a><a href="/#tools">Tools</a><a href="/connect/">Connect</a><a href="/docs/" class="is-active" aria-current="page">Docs</a><a href="/faq/">FAQ</a><a href="/privacy/">Privacy</a><a href="https://tools.gtmhelix.com/" class="hx-subnav-hub">All tools and plugins</a></div></div></nav>
+<section class="hx-hero">
+  <div class="hx-wrap"><div class="hx-hero-inner">
+    <span class="hx-eyebrow">CRAFT Content · documentation</span>
+    <h1>CRAFT Content documentation</h1>
+    <p class="hx-lead">The MCP address, the REST API behind the web forms, and every field of all 8 tools.</p>
+  </div></div>
+</section>
+<main id="main" class="hx-body">
+
+<section class="hx-section" aria-labelledby="mcp-h">
+  <h2 id="mcp-h">MCP server</h2>
+  <ul class="hx-prose">
+    <li>Address: <code>https://craft-content.gtmhelix.com/mcp</code> (Streamable HTTP, stateless, JSON responses). GET returns 405 by design.</li>
+    <li>Authentication: none. Every tool is marked read-only (<code>readOnlyHint: true</code>, <code>destructiveHint: false</code>) and has a title.</li>
+    <li>Rate limit: 300 requests per minute per IP address. Server: <code>craft-content-mcp</code> version 2.1.0.</li>
+    <li>Local use: <code>npx -y @shashwatgtmalpha/craft-content-mcp</code> runs the same tools over stdio.</li>
+  </ul>
+</section>
+
+<section class="hx-section" aria-labelledby="rest-h">
+  <h2 id="rest-h">REST API (used by the web forms)</h2>
+  <p class="hx-prose">Send <code>POST https://craft-content.gtmhelix.com/api/tools/&lt;tool name&gt;</code> with a JSON body <code>{"input": {...}}</code>. The answer is JSON: <code>{"ok": true, "tool": "...", "title": "...", "text": "..."}</code>, where <code>text</code> is the same Markdown the MCP tool returns. The endpoint calls the same server code as the MCP address.</p>
+  <pre class="hx-code-block">curl -s -X POST https://craft-content.gtmhelix.com/api/tools/case_study_generator \
+  -H "Content-Type: application/json" \
+  -d '{&quot;input&quot;: {&quot;customer_name&quot;: &quot;Northwind Clinics&quot;, &quot;your_product&quot;: &quot;ClinicFlow&quot;, &quot;customer_industry&quot;: &quot;healthcare&quot;, &quot;mode&quot;: &quot;full&quot;, &quot;challenge&quot;: &quot;Missed appointments were costing revenue&quot;, &quot;solution&quot;: &quot;Automated SMS reminders and online rescheduling&quot;, &quot;results&quot;: &quot;No-shows down 30% in 3 months&quot;}}'</pre>
+  <ul class="hx-prose">
+    <li>Errors: 400 with <code>errors</code> (missing or invalid fields), 404 for an unknown tool, 405 for methods other than POST, 413 above 32,000 bytes, 429 when the rate limit is reached, 500 if the tool fails.</li>
+    <li>Limits: 30 requests per minute per IP address; text fields up to 6,000 characters; lists up to 50 items.</li>
+    <li>Forms without JavaScript post <code>application/x-www-form-urlencoded</code> and get an HTML page back.</li>
+    <li>Nothing is stored and the input is not logged (see <a href="/privacy/">Privacy</a>).</li>
+  </ul>
+</section>
+
+<section class="hx-section" aria-labelledby="ref-h">
+  <h2 id="ref-h">Tool reference</h2>
+  <p class="hx-sub">Generated from the server's own input schemas on 25 September 2026.</p>
+</section>
+<section class="hx-section" id="case-study-generator" aria-labelledby="d-case-study-generator">
+  <h3 id="d-case-study-generator">Case Study Generator <code>case_study_generator</code></h3>
+  <p class="hx-prose">Generate case studies with DISCOVERY MODE. If you have the full story, get a complete case study. If not, get interview questions to gather the story first. <a href="/tools/case-study-generator/">Open the form</a>.</p>
+  <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>customer_name</code></td><td>string</td><td>yes</td><td></td><td>Customer/company name</td></tr>
+<tr><td><code>customer_industry</code></td><td>string</td><td>no</td><td></td><td>Customer&#x27;s industry for context</td></tr>
+<tr><td><code>mode</code></td><td>string</td><td>no</td><td>full, discovery</td><td>full = generate case study (requires challenge/solution/results), discovery = generate interview questions to gather story</td></tr>
+<tr><td><code>interview_notes</code></td><td>string</td><td>no</td><td></td><td>Optional: Raw interview notes or transcript. Parsed into a case study when mode is &#x27;full&#x27;</td></tr>
+<tr><td><code>challenge</code></td><td>string</td><td>no</td><td></td><td>The customer&#x27;s challenge/problem (required for full mode)</td></tr>
+<tr><td><code>solution</code></td><td>string</td><td>no</td><td></td><td>How your product solved it (required for full mode)</td></tr>
+<tr><td><code>results</code></td><td>string</td><td>no</td><td></td><td>Quantifiable outcomes (required for full mode)</td></tr>
+<tr><td><code>customer_quote</code></td><td>string</td><td>no</td><td></td><td>Optional: Direct quote from customer</td></tr>
+<tr><td><code>your_product</code></td><td>string</td><td>yes</td><td></td><td>Your product/service name</td></tr>
+  </tbody></table></div>
+</section>
+<section class="hx-section" id="newsletter-builder" aria-labelledby="d-newsletter-builder">
+  <h3 id="d-newsletter-builder">Newsletter Builder <code>newsletter_builder</code></h3>
+  <p class="hx-prose">Build newsletter content. Just have a topic? We&#x27;ll suggest key points. Have key points? We&#x27;ll craft the content. <a href="/tools/newsletter-builder/">Open the form</a>.</p>
+  <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>topic</code></td><td>string</td><td>yes</td><td></td><td>Main topic/theme of the newsletter</td></tr>
+<tr><td><code>key_points</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Key points to cover (comma-separated). If not provided, we&#x27;ll suggest 3-5 relevant points based on topic</td></tr>
+<tr><td><code>cta_goal</code></td><td>string</td><td>yes</td><td></td><td>What action should readers take? (e.g., &#x27;sign up for webinar&#x27;, &#x27;try feature&#x27;, &#x27;read blog&#x27;)</td></tr>
+<tr><td><code>audience_segment</code></td><td>string</td><td>no</td><td>executives, practitioners, technical, general, prospects, customers</td><td>Audience segment affects tone and depth</td></tr>
+<tr><td><code>newsletter_type</code></td><td>string</td><td>no</td><td>educational, product_update, industry_news, thought_leadership, curated_links</td><td>Type of newsletter</td></tr>
+<tr><td><code>tone</code></td><td>string</td><td>no</td><td>professional, conversational, authoritative, friendly, urgent</td><td>Writing tone</td></tr>
+<tr><td><code>previous_topics</code></td><td>string</td><td>no</td><td></td><td>Optional: Recent newsletter topics to avoid repetition and suggest connections</td></tr>
+  </tbody></table></div>
+</section>
+<section class="hx-section" id="webinar-script" aria-labelledby="d-webinar-script">
+  <h3 id="d-webinar-script">Webinar Script <code>webinar_script</code></h3>
+  <p class="hx-prose">Generate webinar scripts. Know your takeaways? Get a complete script. Still planning? We&#x27;ll suggest takeaways based on topic and type. <a href="/tools/webinar-script/">Open the form</a>.</p>
+  <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>topic</code></td><td>string</td><td>yes</td><td></td><td>Webinar topic/title</td></tr>
+<tr><td><code>target_audience</code></td><td>string</td><td>yes</td><td></td><td>Who will attend (e.g., &#x27;Marketing managers at B2B SaaS companies&#x27;)</td></tr>
+<tr><td><code>webinar_type</code></td><td>string</td><td>yes</td><td>educational, product_demo, panel_discussion, customer_story, workshop, ama</td><td>Type of webinar determines structure</td></tr>
+<tr><td><code>duration</code></td><td>string</td><td>no</td><td>30_min, 45_min, 60_min, 90_min</td><td>Webinar length</td></tr>
+<tr><td><code>key_takeaways</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: 3-5 things attendees should learn (comma-separated). If not provided, we&#x27;ll suggest based on topic</td></tr>
+<tr><td><code>speakers</code></td><td>string</td><td>no</td><td></td><td>Optional: Speaker names and titles (comma-separated)</td></tr>
+<tr><td><code>include_polls</code></td><td>boolean</td><td>no</td><td></td><td>Include interactive poll suggestions</td></tr>
+<tr><td><code>product_mention_level</code></td><td>string</td><td>no</td><td>none, subtle, moderate, heavy</td><td>Whether to add product tie-in placeholders to the script (&#x27;none&#x27; leaves them out)</td></tr>
+  </tbody></table></div>
+</section>
+<section class="hx-section" id="content-repurposer" aria-labelledby="d-content-repurposer">
+  <h3 id="d-content-repurposer">Content Repurposer <code>content_repurposer</code></h3>
+  <p class="hx-prose">Transform source content into multiple formats. Just paste content - we&#x27;ll generate the 5 most useful formats by default, or specify exactly what you need. <a href="/tools/content-repurposer/">Open the form</a>.</p>
+  <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>source_content</code></td><td>string</td><td>yes</td><td></td><td>Original content to repurpose (blog post, article, transcript, etc.)</td></tr>
+<tr><td><code>source_type</code></td><td>string</td><td>yes</td><td>blog_post, webinar_transcript, podcast_transcript, whitepaper, case_study, research_report, presentation</td><td>What type of content is the source</td></tr>
+<tr><td><code>target_formats</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Formats to generate (comma-separated). Defaults to: linkedin_post, twitter_thread, email, blog_summary, quote_cards. Other options: infographic_outline, video_script, podcast_talking_points, slide_deck_outline, newsletter_section</td></tr>
+<tr><td><code>brand_voice</code></td><td>string</td><td>no</td><td>professional, casual, authoritative, friendly, bold</td><td>Brand voice to maintain</td></tr>
+<tr><td><code>key_message</code></td><td>string</td><td>no</td><td></td><td>Optional: Core message to emphasize across all formats</td></tr>
+  </tbody></table></div>
+</section>
+<section class="hx-section" id="thought-leadership-series" aria-labelledby="d-thought-leadership-series">
+  <h3 id="d-thought-leadership-series">Thought Leadership Series <code>thought_leadership_series</code></h3>
+  <p class="hx-prose">Generate thought leadership article drafts (about 600 to 800 words each) from your topic, your take and your proof points. Without proof points, the drafts include suggested proof points to gather. Drafts contain placeholders to complete before publishing. <a href="/tools/thought-leadership-series/">Open the form</a>.</p>
+  <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>topic</code></td><td>string</td><td>yes</td><td></td><td>The topic you want to establish authority on</td></tr>
+<tr><td><code>your_take</code></td><td>string</td><td>yes</td><td></td><td>Your unique perspective or opinion on this topic. What do you believe that others don&#x27;t? What&#x27;s your contrarian view?</td></tr>
+<tr><td><code>target_reader</code></td><td>string</td><td>yes</td><td></td><td>Who should read this? Be specific (e.g., &#x27;B2B SaaS founders struggling with churn&#x27; not just &#x27;marketers&#x27;)</td></tr>
+<tr><td><code>proof_points</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Evidence supporting your take - personal stories, client examples, data/stats (comma-separated). If not provided, we&#x27;ll suggest proof points to gather</td></tr>
+<tr><td><code>author_background</code></td><td>string</td><td>no</td><td></td><td>Optional: Your role and why you&#x27;re credible (e.g., &#x27;15 years in enterprise sales&#x27;)</td></tr>
+<tr><td><code>num_articles</code></td><td>number</td><td>no</td><td></td><td>Number of articles to generate (1-5)</td></tr>
+<tr><td><code>article_type</code></td><td>string</td><td>no</td><td>contrarian, how_to, lessons_learned, prediction, framework</td><td>Style of articles</td></tr>
+  </tbody></table></div>
+</section>
+<section class="hx-section" id="testimonial-capture" aria-labelledby="d-testimonial-capture">
+  <h3 id="d-testimonial-capture">Testimonial Capture <code>testimonial_capture</code></h3>
+  <p class="hx-prose">Generate testimonial request emails, interview questions, and formatted outputs. Discovery-focused by design. <a href="/tools/testimonial-capture/">Open the form</a>.</p>
+  <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>customer_name</code></td><td>string</td><td>yes</td><td></td><td>Customer name</td></tr>
+<tr><td><code>customer_company</code></td><td>string</td><td>yes</td><td></td><td>Customer&#x27;s company</td></tr>
+<tr><td><code>customer_role</code></td><td>string</td><td>no</td><td></td><td>Customer&#x27;s job title</td></tr>
+<tr><td><code>relationship_context</code></td><td>string</td><td>no</td><td></td><td>How long they&#x27;ve been a customer, key interactions</td></tr>
+<tr><td><code>success_story</code></td><td>string</td><td>yes</td><td></td><td>Brief description of their success with your product</td></tr>
+<tr><td><code>testimonial_type</code></td><td>string</td><td>yes</td><td>written_quote, video_interview, case_study_interview, g2_review, reference_call</td><td>Type of testimonial needed</td></tr>
+<tr><td><code>use_case</code></td><td>string</td><td>no</td><td></td><td>Where will this testimonial be used? (website, sales deck, etc.)</td></tr>
+<tr><td><code>incentive</code></td><td>string</td><td>no</td><td></td><td>Optional: What you&#x27;re offering in return</td></tr>
+  </tbody></table></div>
+</section>
+<section class="hx-section" id="sales-enablement-content" aria-labelledby="d-sales-enablement-content">
+  <h3 id="d-sales-enablement-content">Sales Enablement Content <code>sales_enablement_content</code></h3>
+  <p class="hx-prose">Generate sales content. Know your objections? Get complete handlers. New product with no sales data yet? We&#x27;ll suggest likely objections based on your product type. <a href="/tools/sales-enablement-content/">Open the form</a>.</p>
+  <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>product</code></td><td>string</td><td>yes</td><td></td><td>Product name and what it does</td></tr>
+<tr><td><code>target_persona</code></td><td>string</td><td>yes</td><td></td><td>Who sales is pitching to (role, company type)</td></tr>
+<tr><td><code>proof_points</code></td><td>string</td><td>yes</td><td></td><td>Evidence for claims - case studies, metrics, quotes (comma-separated)</td></tr>
+<tr><td><code>common_objections</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Sales objections you hear (comma-separated). If not provided, we&#x27;ll suggest likely objections for your product type</td></tr>
+<tr><td><code>value_props</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Key value propositions (comma-separated). Will be DERIVED from proof points if not provided</td></tr>
+<tr><td><code>competitor_objections</code></td><td>string</td><td>no</td><td></td><td>Optional: &#x27;Why not [competitor]&#x27; objections</td></tr>
+<tr><td><code>price_context</code></td><td>string</td><td>no</td><td></td><td>Optional: Your pricing vs market (e.g., &#x27;Premium - 20% above market&#x27;, &#x27;Budget option&#x27;, &#x27;Mid-market&#x27;)</td></tr>
+<tr><td><code>sales_stage</code></td><td>string</td><td>no</td><td>prospecting, discovery, demo, negotiation, closing</td><td>What stage of sales funnel</td></tr>
+  </tbody></table></div>
+</section>
+<section class="hx-section" id="craft-content-improver" aria-labelledby="d-craft-content-improver">
+  <h3 id="d-craft-content-improver">CRAFT Content Improver <code>craft_content_improver</code></h3>
+  <p class="hx-prose">Analyze content for clarity, structure and engagement, score each area, and return suggestions, including a version with common jargon replaced and long sentences split. <a href="/tools/craft-content-improver/">Open the form</a>.</p>
+  <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>content</code></td><td>string</td><td>yes</td><td></td><td>Content to analyze</td></tr>
+<tr><td><code>content_type</code></td><td>string</td><td>yes</td><td>blog_post, email, landing_page, social_post, sales_email, product_description, press_release, case_study</td><td>Type of content affects evaluation criteria</td></tr>
+<tr><td><code>goal</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: What should this content achieve? (e.g., &#x27;drive signups&#x27;, &#x27;educate readers&#x27;). Defaults to &#x27;improve engagement and clarity&#x27;</td></tr>
+<tr><td><code>audience</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Who is this content for? Helps tailor improvements.</td></tr>
+<tr><td><code>tone_preference</code></td><td>string</td><td>no</td><td>more_formal, more_casual, more_urgent, more_friendly, more_authoritative, keep_same</td><td>Desired tone (accepted for compatibility; it does not change the analysis)</td></tr>
+  </tbody></table></div>
+</section>
+
+</main>
+<footer class="hx-footer">
+        <div class="hx-wrap">
+            <div class="hx-footer-grid">
+                <div>
+                    <a class="hx-lockup" href="https://gtmalpha.gtmhelix.com/" aria-label="GTM Alpha home"><span class="hx-alpha" aria-hidden="true">&#945;</span><span class="hx-wordmark">GTM Alpha</span></a>
+                    <p>Professional go-to-market strategy consulting powered by Shashwat Ghosh's expertise and advanced AI integration.</p>
+                    <a href="https://www.linkedin.com/in/shashwatghosh-ai-b2b-gtm-fractionalcmo/">LinkedIn</a>
+                    <a href="https://x.com/Shashwat_Ghosh">X (Twitter)</a>
+                </div>
+                <div>
+                    <h4>Platform</h4>
+                    <a href="https://gtmalpha.gtmhelix.com/#features">Features</a>
+                    <a href="https://gtmalpha.gtmhelix.com/#epic">EPIC Framework</a>
+                    <a href="https://gtmalpha.gtmhelix.com/integration">Integration</a>
+                    <a href="https://gtmalpha.gtmhelix.com/pricing">Pricing</a>
+                    <a href="https://gtmalpha.gtmhelix.com/api-docs">API Docs</a>
+                    <a href="https://gtmalpha.gtmhelix.com/faq">FAQ</a>
+                </div>
+                <div>
+                    <h4>Connectors</h4>
+                    <a href="https://gtmalpha.gtmhelix.com/integration">GTM Alpha</a>
+                    <a href="https://craft-gtm.gtmhelix.com/">CRAFT GTM</a>
+                    <a href="https://craft-content.gtmhelix.com/">CRAFT Content</a>
+                    <a href="https://impact.gtmhelix.com/">IMPACT</a>
+                    <a href="https://icp-intelligence.gtmhelix.com/">ICP Intelligence</a>
+                    <a href="https://revenue-enablement.gtmhelix.com/">Revenue Enablement</a>
+                    <a href="https://tools.gtmhelix.com/">All tools and plugins</a>
+                </div>
+                <div>
+                    <h4>Connect</h4>
+                    <a href="https://gtmalpha.gtmhelix.com/consultation">Book Consultation</a>
+                    <a href="mailto:shashwat@hyperplays.in">Email Support</a>
+                    <a href="https://gtmexpert.com/">GTMExpert.com</a>
+                    <a href="https://gtmalpha.gtmhelix.com/privacy">Privacy</a>
+                    <a href="https://gtmalpha.gtmhelix.com/terms">Terms</a>
+                </div>
+            </div>
+            <div class="hx-footer-bottom">
+                <span>&copy; 2026 Helix GTM Consulting. GTM Alpha by Shashwat Ghosh.</span>
+                <span><a href="https://gtmalpha.gtmhelix.com/privacy">Privacy</a> &middot; <a href="https://gtmalpha.gtmhelix.com/terms">Terms</a> &middot; <a href="https://gtmalpha.gtmhelix.com/faq">FAQ</a></span>
+            </div>
+        </div>
+    </footer>
+<script src="/assets/app.js" defer></script>
+</body>
+</html>

@@ -148,3 +148,26 @@ Transform source content into 10+ formats:
 ## License
 
 MIT
+
+
+## Hosted connector (Streamable HTTP)
+
+The same tools are also available as a hosted MCP server, so they work in Claude on the web, desktop and mobile without installing anything.
+
+- Server URL: `https://craft-content-mcp.netlify.app/mcp`
+- Transport: Streamable HTTP (stateless, JSON responses). Authentication: none.
+- Setup guide: https://craft-content-mcp.netlify.app/
+- In Claude: Customize, then Connectors, then Add custom connector, and paste the server URL.
+- In Claude Code: `claude mcp add --transport http craft-content https://craft-content-mcp.netlify.app/mcp`
+
+The npm package (stdio) and the hosted server run the same `createServer()` code in `src/server.ts`.
+
+## Privacy Policy
+
+Full policy: https://craft-content-mcp.netlify.app/privacy.html (also in [PRIVACY.md](PRIVACY.md)).
+
+- **Data collection:** the hosted server receives only the tool name and the inputs of each tool call. The npm package runs on your computer and sends nothing to us.
+- **Use and storage:** inputs are used only to build that call's reply. Nothing is stored: no database, no files, no cache, no logging of inputs or outputs by our code.
+- **Third-party sharing:** none by us. Netlify hosts the server and processes requests under its own policy (https://www.netlify.com/privacy/). The web pages load fonts from Google Fonts.
+- **Retention:** we keep no tool inputs or outputs. Netlify keeps its own platform logs under its policy.
+- **Contact:** shashwat@gtmhelix.com

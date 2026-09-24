@@ -3,7 +3,7 @@ import { Tool } from "@modelcontextprotocol/sdk/types.js";
 export const tools: Tool[] = [
   {
     name: "case_study_generator",
-    description: "Generate case studies with DISCOVERY MODE. If you have the full story, get a complete case study. If not, get interview questions to gather the story first. Version 2.0 - Works with incomplete info!",
+    description: "Generate case studies with DISCOVERY MODE. If you have the full story, get a complete case study. If not, get interview questions to gather the story first.",
     inputSchema: {
       type: "object",
       properties: {
@@ -16,7 +16,7 @@ export const tools: Tool[] = [
         },
         interview_notes: {
           type: "string",
-          description: "Optional: Raw interview notes or transcript - will be PARSED into structured case study"
+          description: "Optional: Raw interview notes or transcript. Parsed into a case study when mode is 'full'"
         },
         challenge: { type: "string", description: "The customer's challenge/problem (required for full mode)" },
         solution: { type: "string", description: "How your product solved it (required for full mode)" },
@@ -29,7 +29,7 @@ export const tools: Tool[] = [
   },
   {
     name: "newsletter_builder",
-    description: "Build newsletter content. Just have a topic? We'll suggest key points. Have key points? We'll craft the content. Version 2.0 - Works with topic-only or full brief!",
+    description: "Build newsletter content. Just have a topic? We'll suggest key points. Have key points? We'll craft the content.",
     inputSchema: {
       type: "object",
       properties: {
@@ -61,7 +61,7 @@ export const tools: Tool[] = [
   },
   {
     name: "webinar_script",
-    description: "Generate webinar scripts. Know your takeaways? Get a complete script. Still planning? We'll suggest takeaways based on topic and type. Version 2.0 - Works at any planning stage!",
+    description: "Generate webinar scripts. Know your takeaways? Get a complete script. Still planning? We'll suggest takeaways based on topic and type.",
     inputSchema: {
       type: "object",
       properties: {
@@ -82,7 +82,7 @@ export const tools: Tool[] = [
         include_polls: { type: "boolean", description: "Include interactive poll suggestions" },
         product_mention_level: {
           type: "string",
-          description: "How much to mention your product",
+          description: "Whether to add product tie-in placeholders to the script ('none' leaves them out)",
           enum: ["none", "subtle", "moderate", "heavy"]
         }
       },
@@ -91,7 +91,7 @@ export const tools: Tool[] = [
   },
   {
     name: "content_repurposer",
-    description: "Transform source content into multiple formats. Just paste content - we'll generate the 5 most useful formats by default, or specify exactly what you need. Version 2.0 - Smart defaults!",
+    description: "Transform source content into multiple formats. Just paste content - we'll generate the 5 most useful formats by default, or specify exactly what you need.",
     inputSchema: {
       type: "object",
       properties: {
@@ -117,7 +117,7 @@ export const tools: Tool[] = [
   },
   {
     name: "thought_leadership_series",
-    description: "Generate COMPLETE thought leadership ARTICLES (600-800 words each). Have proof points? Get publish-ready articles. Only have a hot take? Get articles PLUS suggested proof points to strengthen your argument. Version 2.0 - Works at any stage of thought development!",
+    description: "Generate thought leadership article drafts (about 600 to 800 words each) from your topic, your take and your proof points. Without proof points, the drafts include suggested proof points to gather. Drafts contain placeholders to complete before publishing.",
     inputSchema: {
       type: "object",
       properties: {
@@ -143,7 +143,7 @@ export const tools: Tool[] = [
   },
   {
     name: "testimonial_capture",
-    description: "Generate testimonial request emails, interview questions, and formatted outputs. Discovery-focused by design. Version 2.0 - Already excellent!",
+    description: "Generate testimonial request emails, interview questions, and formatted outputs. Discovery-focused by design.",
     inputSchema: {
       type: "object",
       properties: {
@@ -165,7 +165,7 @@ export const tools: Tool[] = [
   },
   {
     name: "sales_enablement_content",
-    description: "Generate sales content. Know your objections? Get complete handlers. New product with no sales data yet? We'll suggest likely objections based on your product type. Version 2.0 - Works at any sales maturity!",
+    description: "Generate sales content. Know your objections? Get complete handlers. New product with no sales data yet? We'll suggest likely objections based on your product type.",
     inputSchema: {
       type: "object",
       properties: {
@@ -187,11 +187,11 @@ export const tools: Tool[] = [
   },
   {
     name: "craft_content_improver",
-    description: "ACTUALLY ANALYZE and IMPROVE content. Just paste content - we'll score clarity, structure, engagement and generate an improved version. Version 2.0 - Real analysis!",
+    description: "Analyze content for clarity, structure and engagement, score each area, and return suggestions, including a version with common jargon replaced and long sentences split.",
     inputSchema: {
       type: "object",
       properties: {
-        content: { type: "string", description: "Content to analyze and improve - will be ACTUALLY ANALYZED" },
+        content: { type: "string", description: "Content to analyze" },
         content_type: {
           type: "string",
           description: "Type of content affects evaluation criteria",
@@ -201,7 +201,7 @@ export const tools: Tool[] = [
         audience: { type: "string", description: "OPTIONAL: Who is this content for? Helps tailor improvements." },
         tone_preference: {
           type: "string",
-          description: "Desired tone for improvements",
+          description: "Desired tone (accepted for compatibility; it does not change the analysis)",
           enum: ["more_formal", "more_casual", "more_urgent", "more_friendly", "more_authoritative", "keep_same"]
         }
       },

@@ -1,6 +1,6 @@
 # CRAFT Content
 
-> Yes. CRAFT Content is a free set of eight content tools by Shashwat Ghosh of Helix GTM Consulting. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter, a webinar script, repurposed posts, a thought leadership series, testimonial requests, sales enablement content or a CRAFT review of your draft.
+> Yes. CRAFT Content is a free MCP server and web app with eight content tools, by Shashwat Ghosh of Helix GTM Consulting. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter, a webinar script, repurposed posts, a thought leadership series, testimonial requests, sales content or a CRAFT review of your draft.
 
 - Web app (no sign-in): https://craft-content.gtmhelix.com/
 - MCP server URL (Streamable HTTP, no sign-in, read-only tools): https://craft-content.gtmhelix.com/mcp
@@ -28,7 +28,7 @@
 
 ### What is CRAFT Content?
 
-Yes. CRAFT Content is a free set of eight content tools by Shashwat Ghosh of Helix GTM Consulting. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter, a webinar script, repurposed posts, a thought leadership series, testimonial requests, sales enablement content or a CRAFT review of your draft.
+Yes. CRAFT Content is a free MCP server and web app with eight content tools, by Shashwat Ghosh of Helix GTM Consulting. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter, a webinar script, repurposed posts, a thought leadership series, testimonial requests, sales content or a CRAFT review of your draft.
 
 ### Is CRAFT Content free, and do I need an account?
 
@@ -65,6 +65,10 @@ Yes. Send POST https://craft-content.gtmhelix.com/api/tools/<tool name> with a J
 ### Is the source code public?
 
 Yes, at https://github.com/shashwatgtm/craft-content-mcp under the MIT licence. The npm package @shashwatgtmalpha/craft-content-mcp runs the same tools locally.
+
+### Who is CRAFT Content not ideal for?
+
+Teams that want finished, on-brand copy: each tool returns a structured draft to edit, with placeholders where your inputs gave no fact. Anyone who needs research or quotes gathered for them: the tools look nothing up and use only the story and facts you give. Teams that need saved drafts or approvals: nothing is stored, so keep each result where you keep your work.
 
 ### How do I report a problem?
 

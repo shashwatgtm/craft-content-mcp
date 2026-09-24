@@ -132,6 +132,7 @@
    "url": "https://craft-content.gtmhelix.com/tools/content-repurposer/",
    "applicationCategory": "BusinessApplication",
    "browserRequirements": "Any modern browser; works without JavaScript",
+   "softwareRequirements": "None: a web browser, or any MCP client such as Claude for the MCP address",
    "operatingSystem": "Any",
    "isAccessibleForFree": true,
    "offers": {
@@ -201,12 +202,13 @@
     <span class="hx-eyebrow">CRAFT Content · tool 4 of 8</span>
     <h1>Content Repurposer</h1>
     <p class="hx-lead">Transform source content into multiple formats. Just paste content - we&#x27;ll generate the 5 most useful formats by default, or specify exactly what you need.</p>
+    <p class="hx-byline">By <a href="https://www.gtmexpert.com/" rel="author">Shashwat Ghosh</a>, founder of Helix GTM Consulting · Last updated <time datetime="2026-09-25">25 September 2026</time></p>
   </div></div>
 </section>
 <main id="main" class="hx-body">
 
 <section class="hx-section" aria-labelledby="run-h">
-  <h2 id="run-h">Run Content Repurposer in your browser</h2>
+  <h2 id="run-h">How do I run Content Repurposer in my browser?</h2>
   <p class="hx-sub">Required: Source content, Source type. Fields marked optional can be left empty.</p>
   <form class="hx-form" method="post" action="/api/tools/content_repurposer" data-tool="content_repurposer" data-title="Content Repurposer">
 <div class="hx-field"><label for="f-source_content">Source content <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-source_content" name="source_content" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-source_content-help"></textarea><p class="hx-help" id="f-source_content-help">Original content to repurpose (blog post, article, transcript, etc.)</p></div>
@@ -232,14 +234,14 @@
 </section>
 
 <section class="hx-section" aria-labelledby="ai-h">
-  <h2 id="ai-h">Use it from Claude or another assistant</h2>
+  <h2 id="ai-h">How do I use Content Repurposer from Claude?</h2>
   <p class="hx-prose">Connect CRAFT Content once (see <a href="/connect/">Connect</a>), then ask in plain words. A prompt built from the tested example:</p>
   <blockquote class="hx-quote">Use CRAFT Content&#x27;s Content Repurposer tool. source content: Most onboarding fails in week one because new customers never reach their first success moment. Map that moment, remove every step before it...; source type: blog post; brand voice: professional.</blockquote>
   <p class="hx-prose">MCP tool name: <code>content_repurposer</code>. REST: <code>POST https://craft-content.gtmhelix.com/api/tools/content_repurposer</code> (see <a href="/docs/#content-repurposer">Docs</a>).</p>
 </section>
 
 <section class="hx-section" aria-labelledby="works-h">
-  <h2 id="works-h">How this tool works</h2>
+  <h2 id="works-h">How does Content Repurposer work?</h2>
   <p class="hx-prose">It applies fixed rules in the CRAFT Content code to the inputs above and returns text. It does not call an AI model, does not look anything up, and does not store what you type. The web form and the MCP server run the same function, so the same input gives the same answer in both.</p>
   <p class="hx-pn"><a href="/tools/webinar-script/">Previous: Webinar Script</a><a href="/tools/thought-leadership-series/">Next: Thought Leadership Series</a></p>
 </section>
@@ -283,8 +285,8 @@
                 </div>
             </div>
             <div class="hx-footer-bottom">
-                <span>&copy; 2026 Helix GTM Consulting. GTM Alpha by Shashwat Ghosh.</span>
-                <span><a href="https://gtmalpha.gtmhelix.com/privacy">Privacy</a> &middot; <a href="https://gtmalpha.gtmhelix.com/terms">Terms</a> &middot; <a href="https://gtmalpha.gtmhelix.com/faq">FAQ</a></span>
+                <span>&copy; 2026 Helix GTM Consulting. CRAFT Content by Shashwat Ghosh.</span>
+                <span><a href="/privacy/">Privacy</a> &middot; <a href="/faq/">FAQ</a></span>
             </div>
         </div>
     </footer>

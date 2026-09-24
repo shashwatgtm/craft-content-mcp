@@ -132,6 +132,7 @@
    "url": "https://craft-content.gtmhelix.com/tools/sales-enablement-content/",
    "applicationCategory": "BusinessApplication",
    "browserRequirements": "Any modern browser; works without JavaScript",
+   "softwareRequirements": "None: a web browser, or any MCP client such as Claude for the MCP address",
    "operatingSystem": "Any",
    "isAccessibleForFree": true,
    "offers": {
@@ -201,12 +202,13 @@
     <span class="hx-eyebrow">CRAFT Content · tool 7 of 8</span>
     <h1>Sales Enablement Content</h1>
     <p class="hx-lead">Generate sales content. Know your objections? Get complete handlers. New product with no sales data yet? We&#x27;ll suggest likely objections based on your product type.</p>
+    <p class="hx-byline">By <a href="https://www.gtmexpert.com/" rel="author">Shashwat Ghosh</a>, founder of Helix GTM Consulting · Last updated <time datetime="2026-09-25">25 September 2026</time></p>
   </div></div>
 </section>
 <main id="main" class="hx-body">
 
 <section class="hx-section" aria-labelledby="run-h">
-  <h2 id="run-h">Run Sales Enablement Content in your browser</h2>
+  <h2 id="run-h">How do I run Sales Enablement Content in my browser?</h2>
   <p class="hx-sub">Required: Product, Target persona, Proof points. Fields marked optional can be left empty.</p>
   <form class="hx-form" method="post" action="/api/tools/sales_enablement_content" data-tool="sales_enablement_content" data-title="Sales Enablement Content">
 <div class="hx-field"><label for="f-product">Product <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-product" name="product" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-product-help"></textarea><p class="hx-help" id="f-product-help">Product name and what it does</p></div>
@@ -235,14 +237,14 @@
 </section>
 
 <section class="hx-section" aria-labelledby="ai-h">
-  <h2 id="ai-h">Use it from Claude or another assistant</h2>
+  <h2 id="ai-h">How do I use Sales Enablement Content from Claude?</h2>
   <p class="hx-prose">Connect CRAFT Content once (see <a href="/connect/">Connect</a>), then ask in plain words. A prompt built from the tested example:</p>
   <blockquote class="hx-quote">Use CRAFT Content&#x27;s Sales Enablement Content tool. product: ClinicFlow, scheduling software for clinics; target persona: Clinic operations directors; proof points: No-shows down 30% at Northwind Clinics, setup in one day; sales stage: discovery.</blockquote>
   <p class="hx-prose">MCP tool name: <code>sales_enablement_content</code>. REST: <code>POST https://craft-content.gtmhelix.com/api/tools/sales_enablement_content</code> (see <a href="/docs/#sales-enablement-content">Docs</a>).</p>
 </section>
 
 <section class="hx-section" aria-labelledby="works-h">
-  <h2 id="works-h">How this tool works</h2>
+  <h2 id="works-h">How does Sales Enablement Content work?</h2>
   <p class="hx-prose">It applies fixed rules in the CRAFT Content code to the inputs above and returns text. It does not call an AI model, does not look anything up, and does not store what you type. The web form and the MCP server run the same function, so the same input gives the same answer in both.</p>
   <p class="hx-pn"><a href="/tools/testimonial-capture/">Previous: Testimonial Capture</a><a href="/tools/craft-content-improver/">Next: CRAFT Content Improver</a></p>
 </section>
@@ -286,8 +288,8 @@
                 </div>
             </div>
             <div class="hx-footer-bottom">
-                <span>&copy; 2026 Helix GTM Consulting. GTM Alpha by Shashwat Ghosh.</span>
-                <span><a href="https://gtmalpha.gtmhelix.com/privacy">Privacy</a> &middot; <a href="https://gtmalpha.gtmhelix.com/terms">Terms</a> &middot; <a href="https://gtmalpha.gtmhelix.com/faq">FAQ</a></span>
+                <span>&copy; 2026 Helix GTM Consulting. CRAFT Content by Shashwat Ghosh.</span>
+                <span><a href="/privacy/">Privacy</a> &middot; <a href="/faq/">FAQ</a></span>
             </div>
         </div>
     </footer>

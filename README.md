@@ -1,123 +1,150 @@
-# CRAFT Content MCP Server
+# @shashwatgtmalpha/craft-content-mcp v2.0.0
 
-**8 Content Creation Execution Tools** powered by the CRAFT Framework.
+🎯 **CRAFT Content Framework MCP Server** - Complete redesign with user-centric inputs, actual content analysis, and publish-ready outputs.
 
-Created by [Shashwat Ghosh](https://gtmexpert.com) | Top 30 PLG Creator Worldwide
+## Design Philosophy
 
----
+Every tool was redesigned using **chain of thought from the user's perspective**:
 
-## ✍️ What is CRAFT Content?
+1. **What does the user actually want?** (Not what looks impressive in a demo)
+2. **What do they already know?** (Keep inputs simple - don't ask for things they need to figure out)
+3. **Does the output save them work?** (Publish-ready, not templates to fill)
 
-CRAFT Content provides ready-to-execute content tools for **content marketers, SDRs, and growth teams** who need to create:
+## What's New in v2.0.0
 
-- Case Studies & Social Proof
-- Newsletters & Email Content
-- Webinar Scripts
-- Repurposed Content (10+ formats)
-- Thought Leadership Series
-- Testimonial Collection
-- Sales Enablement Content
+| Tool | Before | After |
+|------|--------|-------|
+| **thought_leadership_series** | 🔴 200-300 word posts with `[Expand]` placeholders | ✅ **600-800 word byline articles** ready for publication |
+| **craft_content_improver** | 🔴 Blank scorecard output | ✅ **Actually analyzes** content, scores dimensions, generates improved version |
+| **case_study_generator** | 🟡 Requires full story | ✅ **Discovery mode** - generates interview questions if you don't have the story |
+| **sales_enablement_content** | 🟡 Generic pitches | ✅ **Objection-mapped handlers** with specific proof points |
+| newsletter_builder | 🟢 Good | ✅ Enhanced with A/B subject lines, 4 hooks, segment targeting |
+| webinar_script | 🟢 Good | ✅ Type-specific structures (demo vs educational vs panel) |
+| content_repurposer | 🟢 Excellent | ✅ Kept - transforms to 10+ formats |
+| testimonial_capture | 🟢 Excellent | ✅ Kept - request emails, interview guides |
 
-**Typical use:** Daily/weekly content creation (15-45 minutes per asset)
+## Installation
 
----
+```bash
+npm install -g @shashwatgtmalpha/craft-content-mcp
+```
 
-## 🛠️ Tools Included
-
-| Tool | Purpose | Output |
-|------|---------|--------|
-| `case_study_generator` | Create customer stories | Full case study, one-pager, social snippets |
-| `newsletter_builder` | Write newsletters | Complete issue, 10 subject lines, sections |
-| `webinar_script` | Script webinars | Slide-by-slide script, Q&A prep, engagement prompts |
-| `content_repurposer` | Multiply content | 1 piece → 10+ formats (LinkedIn, Twitter, email, etc.) |
-| `thought_leadership_series` | Build authority | 5-post LinkedIn series with hooks |
-| `testimonial_capture` | Collect social proof | Request emails, interview guide, formatted outputs |
-| `sales_enablement_content` | Arm sales team | Pitches (30s/2min/5min), objection handlers |
-| `craft_content_improver` | Improve any content | CRAFT score, improved version, A/B tests |
-
----
-
-## 📦 Installation
-
-### Claude Desktop
-
-Add to your `claude_desktop_config.json`:
+Or add to Claude Desktop config:
 
 ```json
 {
   "mcpServers": {
     "craft-content": {
       "command": "npx",
-      "args": ["-y", "@shashwatah/craft-content-mcp"]
+      "args": ["-y", "@shashwatgtmalpha/craft-content-mcp"]
     }
   }
 }
 ```
 
-### Manual Installation
+## Tools
 
-```bash
-npm install -g @shashwatah/craft-content-mcp
-craft-content-mcp
-```
+### 1. 💡 `thought_leadership_series` - **REDESIGNED!**
+**600-800 word byline articles, not social posts!**
 
----
+**Simplified inputs (just 4 required):**
+- `topic` - What you're an expert on
+- `your_take` - Your unique/contrarian perspective
+- `proof_points` - Stories, data, experiences that support your take
+- `target_reader` - Who should read this (be specific!)
 
-## 💡 Example Usage
+**Output:** 3 complete articles (600-800 words each) with:
+- Compelling headlines
+- Hook → Problem → Evidence → Framework → Conclusion structure
+- Ready for LinkedIn Articles, Medium, industry publications
+- PLUS promotional social posts (200-300 words) to drive traffic
 
-### Case Study
-```
-"Create a case study for [Customer].
-Challenge: Manual reporting taking 20 hours/week.
-Solution: Our analytics platform automated reports.
-Results: 80% time saved, $50K cost reduction."
-```
+**Article types:** contrarian, how_to, lessons_learned, prediction, framework
 
-### Content Repurposing
-```
-"Repurpose this blog post into LinkedIn posts, Twitter thread, email section, and video script:
-[paste blog content]"
-```
+### 2. 📝 `craft_content_improver` - **FIXED!**
+**Actually analyzes your content now!**
 
-### Thought Leadership
-```
-"Create a 5-post LinkedIn series on 'Why traditional marketing metrics are broken.'
-My perspective: Attribution is a vanity exercise.
-Audience: B2B marketing leaders."
-```
+Paste any content and get:
+- Clarity score (sentence length, passive voice, jargon)
+- Structure score (headers, paragraph length, transitions)
+- Engagement score (hooks, power words, questions)
+- Goal alignment score
+- **Auto-improved version** with before/after
+- Content-type specific tips
 
-### Sales Enablement
-```
-"Create sales content for [Product].
-Value props: 50% faster implementation, 3x ROI, enterprise security.
-Target: VP Engineering at mid-market SaaS.
-Common objections: Price, integration complexity, change management."
-```
+### 3. 📊 `case_study_generator` - Discovery Mode
+**Don't have the full story? No problem!**
 
----
+- **Discovery mode:** Interview questions, email templates, note templates
+- **Full mode:** Complete case study with challenge/solution/results
+- **Parse mode:** Feed raw interview notes → structured case study
 
-## 🔗 Related
+### 4. 🎯 `sales_enablement_content` - Objection Mapping
+**Uses YOUR objections and proof points!**
 
-- **[CRAFT GTM MCP](https://github.com/anthropics/craft-gtm-mcp)** - 8 strategic GTM tools (PMF, launches, retention)
-- **[IMPACT MCP](https://github.com/shashwatgtm/impact-mcp)** - Positioning framework
-- **[EPIC MCP](https://github.com/shashwatgtm/epic-mcp)** - GTM strategy framework
+For each objection you provide, get:
+- Acknowledge statement
+- Reframe question
+- Specific proof point reference
+- Bridge to value
+- Full response script
 
----
+Plus: Stage-specific pitch scripts, discovery questions, follow-up templates.
 
-## 📚 The CRAFT Framework
+### 5. 📧 `newsletter_builder`
+- 4 subject line options (A/B test ready)
+- 4 hook styles (question, statistic, story, bold)
+- Segment-specific content (executives vs practitioners vs technical)
+- Send time recommendations
 
-**C**haracter - Who executes this?
-**R**esult - What's the desired outcome?
-**A**rtifact - What gets produced?
-**F**rame - What's the context?
-**T**imeline - What are the steps?
+### 6. 🎬 `webinar_script`
+Type-specific structures:
+- Educational webinar (teach something)
+- Product demo (show features)
+- Panel discussion (multiple speakers)
+- Customer story (case study format)
+- Workshop (hands-on)
+- AMA (Q&A focused)
 
----
+Includes: Run of show, full scripts, Q&A prep, follow-up email sequence.
 
-## 📄 License
+### 7. 🔄 `content_repurposer`
+Transform source content into 10+ formats:
+- LinkedIn post
+- Twitter thread
+- Email version
+- Blog summary
+- Infographic outline
+- Video script
+- Podcast talking points
+- Slide deck outline
+- Quote cards
+- Newsletter section
 
-MIT License - Created by Shashwat Ghosh
+### 8. 🌟 `testimonial_capture`
+- Request email templates by type (written, video, case study, G2, reference)
+- Interview questions
+- Multiple quote formats (short/medium/long)
+- Process checklists
 
----
+## Input Design Principles
 
-*Part of the GTM Alpha Toolkit | [gtmexpert.com](https://gtmexpert.com)*
+1. **Only ask for what users actually know** - Don't require "value propositions" if they're calling because they haven't articulated them yet
+2. **Make required inputs minimal** - 3-4 required, rest optional with smart defaults
+3. **Use natural language** - "your_take" not "contrarian_perspective_thesis"
+4. **Derive what you can** - If user gives topic, auto-generate related elements
+
+## Output Design Principles
+
+1. **Publish-ready** - No `[Fill in]` or `[Expand]` placeholders
+2. **Right length for the format** - Bylines = 600-800 words, Social posts = 200-300 words
+3. **Include metadata** - Word counts, posting times, headlines
+4. **Add promotional content** - Social snippets to promote longer content
+
+## Author
+
+**Shashwat Ghosh** - [Helix GTM Consulting](https://helixgtm.com)
+
+## License
+
+MIT

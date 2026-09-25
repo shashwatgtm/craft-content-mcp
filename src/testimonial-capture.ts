@@ -1,3 +1,5 @@
+import { SUGGESTION_FOOTER } from './utils.js';
+
 export function generateTestimonialCapture(args: {
   customer_name: string;
   customer_company: string;
@@ -11,7 +13,7 @@ export function generateTestimonialCapture(args: {
   const name = args.customer_name;
   const company = args.customer_company;
   const role = args.customer_role || 'Customer';
-  const context = args.relationship_context || 'valued customer';
+  const context = args.relationship_context || 'not supplied';
   const story = args.success_story;
   const type = args.testimonial_type;
   const useCase = args.use_case || 'marketing materials';
@@ -136,6 +138,9 @@ ${generateInterviewQuestions(type, story)}
 | Press release | Full paragraph | ⬜ Pending |
 | G2/Review site | Review post | ⬜ Pending |
 
+---
+
+${SUGGESTION_FOOTER}
 `;
 
   return output;
@@ -164,7 +169,7 @@ I've loved seeing ${company}'s success with [Product] — ${story.split('.')[0].
 Would you be willing to share a brief quote about your experience? Just 2-3 sentences about what [Product] has meant for your team.
 
 Here's what it involves:
-- **Time:** 5 minutes to write (or I can draft based on our conversations)
+- **Time:** 5 minutes to write (or I can draft based on our conversations) (Example figure: replace with your own)
 - **Approval:** You'll see and approve anything before it's used
 - **Usage:** ${useCase}
 ${incentive ? `- **Thank you:** ${incentive}` : ''}
@@ -210,7 +215,7 @@ I'd love to tell ${company}'s story in a detailed case study. This would include
 
 - **Interview:** 30-45 minute call about your journey
 - **Draft review:** You approve all content before publishing
-- **Exposure:** Featured on our website, shared with our newsletter of 50K+ subscribers
+- **Exposure:** Featured on our website, shared with our newsletter of 50K+ subscribers (Example figure: replace with your own)
 - **Backlinks:** Links to ${company} throughout
 ${incentive ? `- **Thank you:** ${incentive}` : ''}
 
@@ -230,7 +235,7 @@ We're building our presence on G2, and your experience with [Product] would real
 
 Would you be willing to leave a quick review? Here's the link: [G2 Review Link]
 
-Takes about 5 minutes, and you can be as detailed or brief as you'd like.
+Takes about 5 minutes, and you can be as detailed or brief as you'd like. (Example figure: replace with your own)
 ${incentive ? `\nAs a thank you: ${incentive}` : ''}
 
 Your honest feedback helps others like you find solutions that work. (And selfishly, helps us understand what we're doing right!)
@@ -249,7 +254,7 @@ We have a prospect who's evaluating [Product] and facing similar challenges to w
 
 Would you be open to a brief reference call? Here's what it involves:
 
-- **Time:** 15-20 minutes at your convenience
+- **Time:** 15-20 minutes at your convenience (Example figure: replace with your own)
 - **Topics:** Your experience implementing [Product] and results you've seen
 - **When:** We'll coordinate with your availability
 ${incentive ? `- **Thank you:** ${incentive}` : ''}
@@ -349,8 +354,8 @@ function generateTypeSpecificGuidance(
 5. End with their recommendation
 
 ### Post-Production
-- Edit down to 2-3 minute highlight
-- Create 30-second clips for social
+- Edit down to 2-3 minute highlight (Example figure: replace with your own)
+- Create 30-second clips for social (Example figure: replace with your own)
 - Transcribe for written testimonials
 - Get approval before publishing
 `,
@@ -414,7 +419,7 @@ If they ask what to write:
 
 ### Call Logistics
 - Three-way intro or direct connection
-- 15-20 minutes typical
+- 15-20 minutes typical (Example figure: replace with your own)
 - Let them drive the conversation
 - Available for follow-up questions
 

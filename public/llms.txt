@@ -56,7 +56,7 @@ The Newsletter Builder picks its preview text at random from a short list (newsl
 
 ### Why do some answers look like templates?
 
-Several tools return a structured plan with placeholders where your inputs did not give a fact. That is deliberate: the tools do not invent numbers or names. Fill the placeholders in before you use the result.
+Several tools return a structured plan with [placeholders] where your inputs did not give a fact. When an answer shows a benchmark, target, rate, weight or other figure you did not supply, it is labelled "Example figure: replace with your own". Figures calculated from your inputs are not labelled. Suggested lengths, timings and counts are marked as suggestions. Replace every example and placeholder before you use the result.
 
 ### Can I call the tools from my own code?
 

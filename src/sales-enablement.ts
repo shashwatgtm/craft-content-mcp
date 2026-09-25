@@ -1,4 +1,4 @@
-import { parseListItems } from './utils.js';
+import { parseListItems, SUGGESTION_FOOTER } from './utils.js';
 
 // Generate likely objections based on product description and price context
 function generateLikelyObjections(product: string, priceContext: string): string[] {
@@ -176,7 +176,7 @@ Based on what you've shared about your situation, here's what that could mean fo
 
 **If Price Pushback:**
 
-"I understand budget is a consideration. Let me ask: what's the cost of NOT solving this problem for another 6 months?
+"I understand budget is a consideration. Let me ask: what's the cost of NOT solving this problem for another 6 months? (Example figure: replace with your own)
 
 ${valueProps[0] || 'Our solution'} typically [specific outcome]. For a company your size, that's roughly [X in savings/revenue].
 
@@ -265,7 +265,7 @@ Before every ${stage.replace(/_/g, ' ')} call:
 
 - [ ] Research: Reviewed LinkedIn, recent news, annual report
 - [ ] Context: Know their industry challenges
-- [ ] Personalization: Have 2-3 specific observations
+- [ ] Personalization: Have 2-3 specific observations (Example figure: replace with your own)
 - [ ] Objection prep: Anticipate their top 2 concerns
 - [ ] Proof ready: Have relevant case study queued
 - [ ] Questions ready: Top 5 discovery questions
@@ -280,6 +280,8 @@ ${proofPoints.map(p => `- ${p}`).join('\n')}
 ---
 
 *Generated for ${persona} at ${stage.replace(/_/g, ' ')} stage*
+
+${SUGGESTION_FOOTER}
 `;
 
   return output;
@@ -300,7 +302,7 @@ function generateObjectionHandler(
       reframe: "Let me share what our customers found when they compared total cost of ownership...",
       proof: proofPoints[0] || "Customers typically see ROI within [X] months.",
       bridge: valueProps[0] || "The key value driver is...",
-      fullScript: `I hear you—budget is always a consideration. Here's what I've found: companies that focus only on price often end up spending more in the long run on [hidden costs/lost opportunity]. ${proofPoints[0] || 'Our customers typically see ROI within the first quarter.'} The question isn't the price—it's the value. Would it help to walk through an ROI calculation based on your specific numbers?`
+      fullScript: `I hear you—budget is always a consideration. Here's what I've found: companies that focus only on price often end up spending more in the long run on [hidden costs/lost opportunity]. ${proofPoints[0] || 'Our customers typically see ROI within [timeframe].'} The question isn't the price—it's the value. Would it help to walk through an ROI calculation based on your specific numbers?`
     };
   }
   
@@ -311,7 +313,7 @@ function generateObjectionHandler(
       reframe: "I'm curious—what would need to change for the timing to feel right?",
       proof: proofPoints[0] || "Companies that waited reported [X] in additional costs.",
       bridge: valueProps[0] || "The cost of waiting is often...",
-      fullScript: `Timing is definitely important. I'm curious—what would need to change for the timing to feel right? What I often see is that waiting adds [specific cost]. ${proofPoints[0] || 'One customer told us they wished they had started 6 months earlier.'} Even if the full rollout is later, starting discovery now means you're ready when the time is right. What would be the cost of waiting another quarter?`
+      fullScript: `Timing is definitely important. I'm curious—what would need to change for the timing to feel right? What I often see is that waiting adds [specific cost]. ${proofPoints[0] || 'Example quote (not from your input): one customer told us they wished they had started 6 months earlier (Example figure: replace with your own).'} Even if the full rollout is later, starting discovery now means you're ready when the time is right. What would be the cost of waiting another quarter?`
     };
   }
   
@@ -388,7 +390,7 @@ function generateStagePitch(
 
 ${valueProps[0] || 'We help with...'} — ${proofPoints[0] || 'with proven results.'} 
 
-Worth a 15-minute conversation?
+Worth a 15-minute conversation? (Example figure: replace with your own)
 
 [Your name]"
 `,

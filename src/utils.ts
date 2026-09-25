@@ -1,5 +1,8 @@
 // Utility functions for content analysis and generation
 
+// Last line of any output that suggests timings, lengths or counts (lengths in words, time boxes, cadences).
+export const SUGGESTION_FOOTER = 'Suggested timings, lengths and counts: adjust them to your own.';
+
 export function parseListItems(text: string): string[] {
   return text
     .split(/[,\n]/)
@@ -245,7 +248,7 @@ export function analyzeContent(content: string, contentType: string, goal: strin
     if (!hasNumbers) {
       goalScore -= 3;
       analysis.goalAlignment.issues.push('No data/proof points for credibility');
-      analysis.goalAlignment.suggestions.push('Add specific metrics: "50% faster", "10,000+ customers"');
+      analysis.goalAlignment.suggestions.push('Add specific metrics: "50% faster", "10,000+ customers" (Example figure: replace with your own)');
     }
   }
   
@@ -328,7 +331,7 @@ export function generateHook(topic: string, style: 'question' | 'statistic' | 's
     case 'question':
       return `What if everything you knew about ${topic} was wrong?`;
     case 'statistic':
-      return `78% of professionals struggle with ${topic}. Here's what the top performers do differently.`;
+      return `78% of professionals struggle with ${topic} (Example figure: replace with your own). Here's what the top performers do differently.`;
     case 'story':
       return `Last month, a ${topic} challenge nearly derailed our biggest launch. What we learned changed everything.`;
     case 'bold_statement':

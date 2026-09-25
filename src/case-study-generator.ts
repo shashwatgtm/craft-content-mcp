@@ -1,4 +1,4 @@
-import { parseListItems, extractKeyPoints } from './utils.js';
+import { parseListItems, extractKeyPoints, SUGGESTION_FOOTER } from './utils.js';
 
 export function generateCaseStudy(args: {
   customer_name: string;
@@ -30,9 +30,10 @@ export function generateCaseStudy(args: {
   return generateFullCaseStudy(
     customerName,
     industry,
-    args.challenge!,
-    args.solution!,
-    args.results!,
+    // A missing part prints "not supplied" instead of crashing (mode "full" with a part left out).
+    args.challenge || 'not supplied',
+    args.solution || 'not supplied',
+    args.results || 'not supplied',
     args.customer_quote,
     product
   );
@@ -177,7 +178,7 @@ Would you be open to a 20-minute call where I ask a few questions about your exp
 - **Approval:** You'll review the final case study before it goes live
 - **Benefit:** Increased visibility for ${customerName} + potential backlinks to your site
 
-[OPTIONAL: We'd also love to feature you in our customer spotlight and share your story with our 50,000+ newsletter subscribers.]
+[OPTIONAL: We'd also love to feature you in our customer spotlight and share your story with our 50,000+ newsletter subscribers.] (Example figure: replace with your own)
 
 Would next [Day] at [Time] work for a quick call?
 
@@ -194,6 +195,9 @@ Run this tool again with mode="full" and include:
 - **results:** Quantifiable outcomes
 - **customer_quote:** Their best testimonial quote
 
+---
+
+${SUGGESTION_FOOTER}
 `;
 }
 
@@ -290,7 +294,7 @@ ${generateChallengeContext(industry)}
 
 ## The Solution
 
-${solution}
+${solution ?? 'not supplied'}
 
 ### Why ${customerName} Chose ${product}
 
@@ -403,7 +407,7 @@ function generateResultContext(result: string): string {
     return 'This time savings allowed the team to focus on higher-value activities and strategic initiatives.';
   }
   if (result.toLowerCase().includes('revenue') || result.toLowerCase().includes('$')) {
-    return 'This financial impact went straight to the bottom line, proving ROI within the first quarter.';
+    return 'This financial impact went straight to the bottom line, proving ROI within [timeframe].';
   }
   if (result.toLowerCase().includes('customer') || result.toLowerCase().includes('satisfaction')) {
     return 'Improved customer experience translated into higher retention and increased referrals.';

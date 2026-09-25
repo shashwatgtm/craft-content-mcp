@@ -1,5 +1,4 @@
-# @shashwatgtmalpha/craft-content-mcp v2.0.0
-
+# @shashwatgtmalpha/craft-content-mcp v2.1.0
 🎯 **CRAFT Content Framework MCP Server** - Complete redesign with user-centric inputs, actual content analysis, and publish-ready outputs.
 
 ## Design Philosophy
@@ -42,90 +41,119 @@ Or add to Claude Desktop config:
 }
 ```
 
-## Tools
+## Tools and inputs
 
-### 1. 💡 `thought_leadership_series` - **REDESIGNED!**
-**600-800 word byline articles, not social posts!**
+Generated on 25 September 2026 from the server's own tool list (`tools/list` of craft-content-mcp 2.1.0, the same code as the hosted MCP address), so every tool name, title, description and input below is exactly what the server accepts. Every tool is read-only.
 
-**Simplified inputs (just 4 required):**
-- `topic` - What you're an expert on
-- `your_take` - Your unique/contrarian perspective
-- `proof_points` - Stories, data, experiences that support your take
-- `target_reader` - Who should read this (be specific!)
+| # | Tool | Title | What it does |
+|---|---|---|---|
+| 1 | `case_study_generator` | Case Study Generator | Generate case studies with DISCOVERY MODE. If you have the full story, get a complete case study. If not, get interview questions to gather the story first. |
+| 2 | `newsletter_builder` | Newsletter Builder | Build newsletter content. Just have a topic? We'll suggest key points. Have key points? We'll craft the content. |
+| 3 | `webinar_script` | Webinar Script | Generate webinar scripts. Know your takeaways? Get a complete script. Still planning? We'll suggest takeaways based on topic and type. |
+| 4 | `content_repurposer` | Content Repurposer | Transform source content into multiple formats. Just paste content - we'll generate the 5 most useful formats by default, or specify exactly what you need. |
+| 5 | `thought_leadership_series` | Thought Leadership Series | Generate thought leadership article drafts (about 600 to 800 words each) from your topic, your take and your proof points. Without proof points, the drafts include suggested proof points to gather. Drafts contain placeholders to complete before publishing. |
+| 6 | `testimonial_capture` | Testimonial Capture | Generate testimonial request emails, interview questions, and formatted outputs. Discovery-focused by design. |
+| 7 | `sales_enablement_content` | Sales Enablement Content | Generate sales content. Know your objections? Get complete handlers. New product with no sales data yet? We'll suggest likely objections based on your product type. |
+| 8 | `craft_content_improver` | CRAFT Content Improver | Analyze content for clarity, structure and engagement, score each area, and return suggestions, including a version with common jargon replaced and long sentences split. |
 
-**Output:** 3 complete articles (600-800 words each) with:
-- Compelling headlines
-- Hook → Problem → Evidence → Framework → Conclusion structure
-- Ready for LinkedIn Articles, Medium, industry publications
-- PLUS promotional social posts (200-300 words) to drive traffic
+### Inputs of each tool
 
-**Article types:** contrarian, how_to, lessons_learned, prediction, framework
+#### 1. Case Study Generator (`case_study_generator`)
 
-### 2. 📝 `craft_content_improver` - **FIXED!**
-**Actually analyzes your content now!**
+| Input | Required | Type | Description |
+|---|---|---|---|
+| `customer_name` | Yes | string | Customer/company name |
+| `your_product` | Yes | string | Your product/service name |
+| `customer_industry` | No | string | Customer's industry for context |
+| `mode` | No | one of: `full`, `discovery` | full = generate case study (requires challenge/solution/results), discovery = generate interview questions to gather story |
+| `interview_notes` | No | string | Optional: Raw interview notes or transcript. Parsed into a case study when mode is 'full' |
+| `challenge` | No | string | The customer's challenge/problem (required for full mode) |
+| `solution` | No | string | How your product solved it (required for full mode) |
+| `results` | No | string | Quantifiable outcomes (required for full mode) |
+| `customer_quote` | No | string | Optional: Direct quote from customer |
 
-Paste any content and get:
-- Clarity score (sentence length, passive voice, jargon)
-- Structure score (headers, paragraph length, transitions)
-- Engagement score (hooks, power words, questions)
-- Goal alignment score
-- **Auto-improved version** with before/after
-- Content-type specific tips
+#### 2. Newsletter Builder (`newsletter_builder`)
 
-### 3. 📊 `case_study_generator` - Discovery Mode
-**Don't have the full story? No problem!**
+| Input | Required | Type | Description |
+|---|---|---|---|
+| `topic` | Yes | string | Main topic/theme of the newsletter |
+| `cta_goal` | Yes | string | What action should readers take? (e.g., 'sign up for webinar', 'try feature', 'read blog') |
+| `key_points` | No | string | OPTIONAL: Key points to cover (comma-separated). If not provided, the tool suggests 5 points based on the topic and newsletter type |
+| `audience_segment` | No | one of: `executives`, `practitioners`, `technical`, `general`, `prospects`, `customers` | Audience segment affects tone and depth |
+| `newsletter_type` | No | one of: `educational`, `product_update`, `industry_news`, `thought_leadership`, `curated_links` | Type of newsletter |
+| `tone` | No | one of: `professional`, `conversational`, `authoritative`, `friendly`, `urgent` | Writing tone |
+| `previous_topics` | No | string | Optional: Recent newsletter topics to avoid repetition and suggest connections |
 
-- **Discovery mode:** Interview questions, email templates, note templates
-- **Full mode:** Complete case study with challenge/solution/results
-- **Parse mode:** Feed raw interview notes → structured case study
+#### 3. Webinar Script (`webinar_script`)
 
-### 4. 🎯 `sales_enablement_content` - Objection Mapping
-**Uses YOUR objections and proof points!**
+| Input | Required | Type | Description |
+|---|---|---|---|
+| `topic` | Yes | string | Webinar topic/title |
+| `target_audience` | Yes | string | Who will attend (e.g., 'Marketing managers at B2B SaaS companies') |
+| `webinar_type` | Yes | one of: `educational`, `product_demo`, `panel_discussion`, `customer_story`, `workshop`, `ama` | Type of webinar determines structure |
+| `duration` | No | one of: `30_min`, `45_min`, `60_min`, `90_min` | Webinar length |
+| `key_takeaways` | No | string | OPTIONAL: 3-5 things attendees should learn (comma-separated). If not provided, we'll suggest based on topic |
+| `speakers` | No | string | Optional: Speaker names and titles (comma-separated) |
+| `include_polls` | No | boolean | Include interactive poll suggestions |
+| `product_mention_level` | No | one of: `none`, `subtle`, `moderate`, `heavy` | Whether to add product tie-in placeholders to the script ('none' leaves them out) |
 
-For each objection you provide, get:
-- Acknowledge statement
-- Reframe question
-- Specific proof point reference
-- Bridge to value
-- Full response script
+#### 4. Content Repurposer (`content_repurposer`)
 
-Plus: Stage-specific pitch scripts, discovery questions, follow-up templates.
+| Input | Required | Type | Description |
+|---|---|---|---|
+| `source_content` | Yes | string | Original content to repurpose (blog post, article, transcript, etc.) |
+| `source_type` | Yes | one of: `blog_post`, `webinar_transcript`, `podcast_transcript`, `whitepaper`, `case_study`, `research_report`, `presentation` | What type of content is the source |
+| `target_formats` | No | string | OPTIONAL: Formats to generate (comma-separated). Defaults to: linkedin_post, twitter_thread, email, blog_summary, quote_cards. Other options: infographic_outline, video_script, podcast_talking_points, slide_deck_outline, newsletter_section |
+| `brand_voice` | No | one of: `professional`, `casual`, `authoritative`, `friendly`, `bold` | Brand voice to maintain |
+| `key_message` | No | string | Optional: Core message to emphasize across all formats |
 
-### 5. 📧 `newsletter_builder`
-- 4 subject line options (A/B test ready)
-- 4 hook styles (question, statistic, story, bold)
-- Segment-specific content (executives vs practitioners vs technical)
-- Send time recommendations
+#### 5. Thought Leadership Series (`thought_leadership_series`)
 
-### 6. 🎬 `webinar_script`
-Type-specific structures:
-- Educational webinar (teach something)
-- Product demo (show features)
-- Panel discussion (multiple speakers)
-- Customer story (case study format)
-- Workshop (hands-on)
-- AMA (Q&A focused)
+| Input | Required | Type | Description |
+|---|---|---|---|
+| `topic` | Yes | string | The topic you want to establish authority on |
+| `your_take` | Yes | string | Your unique perspective or opinion on this topic. What do you believe that others don't? What's your contrarian view? |
+| `target_reader` | Yes | string | Who should read this? Be specific (e.g., 'B2B SaaS founders struggling with churn' not just 'marketers') |
+| `proof_points` | No | string | OPTIONAL: Evidence supporting your take - personal stories, client examples, data/stats (comma-separated). If not provided, we'll suggest proof points to gather |
+| `author_background` | No | string | Optional: Your role and why you're credible (e.g., '15 years in enterprise sales') |
+| `num_articles` | No | number | Number of articles to generate (1-5) |
+| `article_type` | No | one of: `contrarian`, `how_to`, `lessons_learned`, `prediction`, `framework` | Style of articles |
 
-Includes: Run of show, full scripts, Q&A prep, follow-up email sequence.
+#### 6. Testimonial Capture (`testimonial_capture`)
 
-### 7. 🔄 `content_repurposer`
-Transform source content into 10+ formats:
-- LinkedIn post
-- Twitter thread
-- Email version
-- Blog summary
-- Infographic outline
-- Video script
-- Podcast talking points
-- Slide deck outline
-- Quote cards
-- Newsletter section
+| Input | Required | Type | Description |
+|---|---|---|---|
+| `customer_name` | Yes | string | Customer name |
+| `customer_company` | Yes | string | Customer's company |
+| `success_story` | Yes | string | Brief description of their success with your product |
+| `testimonial_type` | Yes | one of: `written_quote`, `video_interview`, `case_study_interview`, `g2_review`, `reference_call` | Type of testimonial needed |
+| `customer_role` | No | string | Customer's job title |
+| `relationship_context` | No | string | How long they've been a customer, key interactions |
+| `use_case` | No | string | Where will this testimonial be used? (website, sales deck, etc.) |
+| `incentive` | No | string | Optional: What you're offering in return |
 
-### 8. 🌟 `testimonial_capture`
-- Request email templates by type (written, video, case study, G2, reference)
-- Interview questions
-- Multiple quote formats (short/medium/long)
-- Process checklists
+#### 7. Sales Enablement Content (`sales_enablement_content`)
+
+| Input | Required | Type | Description |
+|---|---|---|---|
+| `product` | Yes | string | Product name and what it does |
+| `target_persona` | Yes | string | Who sales is pitching to (role, company type) |
+| `proof_points` | Yes | string | Evidence for claims - case studies, metrics, quotes (comma-separated) |
+| `common_objections` | No | string | OPTIONAL: Sales objections you hear (comma-separated). If not provided, we'll suggest likely objections for your product type |
+| `value_props` | No | string | OPTIONAL: Key value propositions (comma-separated). Will be DERIVED from proof points if not provided |
+| `competitor_objections` | No | string | Optional: 'Why not [competitor]' objections |
+| `price_context` | No | string | Optional: Your pricing vs market (e.g., 'Premium - 20% above market', 'Budget option', 'Mid-market') |
+| `sales_stage` | No | one of: `prospecting`, `discovery`, `demo`, `negotiation`, `closing` | What stage of sales funnel |
+
+#### 8. CRAFT Content Improver (`craft_content_improver`)
+
+| Input | Required | Type | Description |
+|---|---|---|---|
+| `content` | Yes | string | Content to analyze |
+| `content_type` | Yes | one of: `blog_post`, `email`, `landing_page`, `social_post`, `sales_email`, `product_description`, `press_release`, `case_study` | Type of content affects evaluation criteria |
+| `goal` | No | string | OPTIONAL: What should this content achieve? (e.g., 'drive signups', 'educate readers'). If not given, a goal is chosen from the content type (for example 'Get meetings booked' for a sales email) |
+| `audience` | No | string | OPTIONAL: Who is this content for? Helps tailor improvements. |
+| `tone_preference` | No | one of: `more_formal`, `more_casual`, `more_urgent`, `more_friendly`, `more_authoritative`, `keep_same` | Desired tone (accepted for compatibility; it does not change the analysis) |
 
 ## Input Design Principles
 

@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CRAFT Content Improver | CRAFT Content by Helix GTM</title>
-<meta name="description" content="Run CRAFT Content Improver free in your browser or in Claude. Analyze content for clarity, structure and engagement, score each area, and return...">
+<meta name="description" content="Run CRAFT Content Improver free in your browser or in Claude. Free, with no sign-in. By Helix GTM Consulting. Read-only MCP tools. Nothing you type is stored.">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="author" content="Shashwat Ghosh, Helix GTM Consulting">
 <link rel="canonical" href="https://craft-content.gtmhelix.com/tools/craft-content-improver/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="CRAFT Content by Helix GTM Consulting">
 <meta property="og:title" content="CRAFT Content Improver | CRAFT Content by Helix GTM">
-<meta property="og:description" content="Run CRAFT Content Improver free in your browser or in Claude. Analyze content for clarity, structure and engagement, score each area, and return...">
+<meta property="og:description" content="Run CRAFT Content Improver free in your browser or in Claude. Free, with no sign-in. By Helix GTM Consulting. Read-only MCP tools. Nothing you type is stored.">
 <meta property="og:url" content="https://craft-content.gtmhelix.com/tools/craft-content-improver/">
 <meta property="og:image" content="https://craft-content.gtmhelix.com/og.png">
 <meta property="og:image:width" content="1200">
@@ -19,7 +19,7 @@
 <meta property="og:image:alt" content="CRAFT Content by Helix GTM Consulting">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="CRAFT Content Improver | CRAFT Content by Helix GTM">
-<meta name="twitter:description" content="Run CRAFT Content Improver free in your browser or in Claude. Analyze content for clarity, structure and engagement, score each area, and return...">
+<meta name="twitter:description" content="Run CRAFT Content Improver free in your browser or in Claude. Free, with no sign-in. By Helix GTM Consulting. Read-only MCP tools. Nothing you type is stored.">
 <meta name="twitter:image" content="https://craft-content.gtmhelix.com/og.png">
 <meta name="twitter:creator" content="@Shashwat_Ghosh">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -108,7 +108,7 @@
    "@id": "https://craft-content.gtmhelix.com/tools/craft-content-improver/#page",
    "url": "https://craft-content.gtmhelix.com/tools/craft-content-improver/",
    "name": "CRAFT Content Improver | CRAFT Content by Helix GTM",
-   "description": "Run CRAFT Content Improver free in your browser or in Claude. Analyze content for clarity, structure and engagement, score each area, and return...",
+   "description": "Run CRAFT Content Improver free in your browser or in Claude. Free, with no sign-in. By Helix GTM Consulting. Read-only MCP tools. Nothing you type is stored.",
    "isPartOf": {
     "@id": "https://craft-content.gtmhelix.com/#site"
    },
@@ -230,7 +230,7 @@
   <div class="hx-table"><table><thead><tr><th>Input</th><th>Required?</th><th>What to enter</th></tr></thead><tbody>
 <tr><td>Content</td><td>Required</td><td>Content to analyze</td></tr>
 <tr><td>Content type</td><td>Required</td><td>Type of content affects evaluation criteria Allowed: blog post, email, landing page, social post, sales email, product description, press release, case study.</td></tr>
-<tr><td>Goal</td><td>Optional</td><td>OPTIONAL: What should this content achieve? (e.g., &#x27;drive signups&#x27;, &#x27;educate readers&#x27;). Defaults to &#x27;improve engagement and clarity&#x27;</td></tr>
+<tr><td>Goal</td><td>Optional</td><td>OPTIONAL: What should this content achieve? (e.g., &#x27;drive signups&#x27;, &#x27;educate readers&#x27;). If not given, a goal is chosen from the content type (for example &#x27;Get meetings booked&#x27; for a sales email)</td></tr>
 <tr><td>Audience</td><td>Optional</td><td>OPTIONAL: Who is this content for? Helps tailor improvements.</td></tr>
 <tr><td>Tone preference</td><td>Optional</td><td>Desired tone (accepted for compatibility; it does not change the analysis) Allowed: more formal, more casual, more urgent, more friendly, more authoritative, keep same.</td></tr>
   </tbody></table></div>
@@ -247,7 +247,7 @@
   <form class="hx-form" method="post" action="/api/tools/craft_content_improver" data-tool="craft_content_improver" data-title="CRAFT Content Improver">
 <div class="hx-field"><label for="f-content">Content <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-content" name="content" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-content-help"></textarea><p class="hx-help" id="f-content-help">Content to analyze</p></div>
 <div class="hx-field"><label for="f-content_type">Content type <span class="hx-req" aria-hidden="true">*</span></label><select id="f-content_type" name="content_type" data-kind="string" required aria-required="true" aria-describedby="f-content_type-help"><option value="" disabled selected>Choose one</option><option value="blog_post">blog post</option><option value="email">email</option><option value="landing_page">landing page</option><option value="social_post">social post</option><option value="sales_email">sales email</option><option value="product_description">product description</option><option value="press_release">press release</option><option value="case_study">case study</option></select><p class="hx-help" id="f-content_type-help">Type of content affects evaluation criteria</p></div>
-<div class="hx-field"><label for="f-goal">Goal <span class="hx-opt">(optional)</span></label><textarea id="f-goal" name="goal" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-goal-help"></textarea><p class="hx-help" id="f-goal-help">OPTIONAL: What should this content achieve? (e.g., &#x27;drive signups&#x27;, &#x27;educate readers&#x27;). Defaults to &#x27;improve engagement and clarity&#x27;</p></div>
+<div class="hx-field"><label for="f-goal">Goal <span class="hx-opt">(optional)</span></label><textarea id="f-goal" name="goal" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-goal-help"></textarea><p class="hx-help" id="f-goal-help">OPTIONAL: What should this content achieve? (e.g., &#x27;drive signups&#x27;, &#x27;educate readers&#x27;). If not given, a goal is chosen from the content type (for example &#x27;Get meetings booked&#x27; for a sales email)</p></div>
 <div class="hx-field"><label for="f-audience">Audience <span class="hx-opt">(optional)</span></label><textarea id="f-audience" name="audience" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-audience-help"></textarea><p class="hx-help" id="f-audience-help">OPTIONAL: Who is this content for? Helps tailor improvements.</p></div>
 <div class="hx-field"><label for="f-tone_preference">Tone preference <span class="hx-opt">(optional)</span></label><select id="f-tone_preference" name="tone_preference" data-kind="string" aria-describedby="f-tone_preference-help"><option value="">Not specified</option><option value="more_formal">more formal</option><option value="more_casual">more casual</option><option value="more_urgent">more urgent</option><option value="more_friendly">more friendly</option><option value="more_authoritative">more authoritative</option><option value="keep_same">keep same</option></select><p class="hx-help" id="f-tone_preference-help">Desired tone (accepted for compatibility; it does not change the analysis)</p></div>
     <div class="hx-hp" aria-hidden="true"><label for="hp-craft_content_improver">Leave this empty</label><input id="hp-craft_content_improver" name="leave_this_empty" type="text" tabindex="-1" autocomplete="off"></div>
@@ -330,18 +330,20 @@
 <li><strong>Headline:</strong> Clear benefit in 10 words or less</li>
 <li><strong>Subheadline:</strong> Expand on how you deliver the benefit</li>
 <li><strong>Social proof:</strong> Above the fold</li>
-<li><strong>CTA:</strong> Visible without scrolling, repeated 3x</li>
+<li><strong>CTA:</strong> Visible without scrolling, repeated 3x (Example figure: replace with your own)</li>
 <li><strong>Form fields:</strong> Minimize - each field reduces conversion</li>
 </ul>
 <hr>
 <h4>✅ Quick Checklist</h4>
-<p>✅</p>
-<p>✅</p>
+<p>✅ Clear, jargon-free language</p>
+<p>✅ Logical structure with headers</p>
 <p>⬜ Engaging opening hook</p>
-<p>✅</p>
+<p>✅ Aligns with stated goal</p>
 <p>⬜ Benefit-driven headline</p>
 <p>⬜ Social proof included</p>
 <p>⬜ CTA above the fold</p>
+<hr>
+<p>Suggested timings, lengths and counts: adjust them to your own.</p>
   </div></details>
 </section>
 
@@ -369,7 +371,7 @@
 
 <section class="hx-section" aria-labelledby="works-h">
   <h2 id="works-h">How does CRAFT Content Improver work?</h2>
-  <p class="hx-prose">It applies fixed rules in the CRAFT Content code to the inputs above and returns text. It does not call an AI model, does not look anything up, and does not store what you type. The web form and the MCP server run the same function, so the same input gives the same answer in both.</p>
+  <p class="hx-prose">It applies fixed rules in the CRAFT Content code to the inputs above and returns text. It does not call an AI model, does not look anything up, and does not store what you type. The web form and the MCP server call the same tool code, so the same input gives the same answer in both.</p>
   <p class="hx-pn"><a href="/tools/sales-enablement-content/">Previous: Sales Enablement Content</a></p>
 </section>
 

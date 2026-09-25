@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Newsletter Builder | CRAFT Content by Helix GTM</title>
-<meta name="description" content="Run Newsletter Builder free in your browser or in Claude. Build newsletter content.">
+<meta name="description" content="Run Newsletter Builder free in your browser or in Claude. Build newsletter content. Free, with no sign-in. By Helix GTM Consulting. Read-only MCP tools.">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="author" content="Shashwat Ghosh, Helix GTM Consulting">
 <link rel="canonical" href="https://craft-content.gtmhelix.com/tools/newsletter-builder/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="CRAFT Content by Helix GTM Consulting">
 <meta property="og:title" content="Newsletter Builder | CRAFT Content by Helix GTM">
-<meta property="og:description" content="Run Newsletter Builder free in your browser or in Claude. Build newsletter content.">
+<meta property="og:description" content="Run Newsletter Builder free in your browser or in Claude. Build newsletter content. Free, with no sign-in. By Helix GTM Consulting. Read-only MCP tools.">
 <meta property="og:url" content="https://craft-content.gtmhelix.com/tools/newsletter-builder/">
 <meta property="og:image" content="https://craft-content.gtmhelix.com/og.png">
 <meta property="og:image:width" content="1200">
@@ -19,7 +19,7 @@
 <meta property="og:image:alt" content="CRAFT Content by Helix GTM Consulting">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Newsletter Builder | CRAFT Content by Helix GTM">
-<meta name="twitter:description" content="Run Newsletter Builder free in your browser or in Claude. Build newsletter content.">
+<meta name="twitter:description" content="Run Newsletter Builder free in your browser or in Claude. Build newsletter content. Free, with no sign-in. By Helix GTM Consulting. Read-only MCP tools.">
 <meta name="twitter:image" content="https://craft-content.gtmhelix.com/og.png">
 <meta name="twitter:creator" content="@Shashwat_Ghosh">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -108,7 +108,7 @@
    "@id": "https://craft-content.gtmhelix.com/tools/newsletter-builder/#page",
    "url": "https://craft-content.gtmhelix.com/tools/newsletter-builder/",
    "name": "Newsletter Builder | CRAFT Content by Helix GTM",
-   "description": "Run Newsletter Builder free in your browser or in Claude. Build newsletter content.",
+   "description": "Run Newsletter Builder free in your browser or in Claude. Build newsletter content. Free, with no sign-in. By Helix GTM Consulting. Read-only MCP tools.",
    "isPartOf": {
     "@id": "https://craft-content.gtmhelix.com/#site"
    },
@@ -229,7 +229,7 @@
   <p class="hx-sub">Free, no sign-up, no account. A web browser is enough; the answer comes back in a second or two.</p>
   <div class="hx-table"><table><thead><tr><th>Input</th><th>Required?</th><th>What to enter</th></tr></thead><tbody>
 <tr><td>Topic</td><td>Required</td><td>Main topic/theme of the newsletter</td></tr>
-<tr><td>Key points</td><td>Optional</td><td>OPTIONAL: Key points to cover (comma-separated). If not provided, we&#x27;ll suggest 3-5 relevant points based on topic</td></tr>
+<tr><td>Key points</td><td>Optional</td><td>OPTIONAL: Key points to cover (comma-separated). If not provided, the tool suggests 5 points based on the topic and newsletter type</td></tr>
 <tr><td>CTA goal</td><td>Required</td><td>What action should readers take? (e.g., &#x27;sign up for webinar&#x27;, &#x27;try feature&#x27;, &#x27;read blog&#x27;)</td></tr>
 <tr><td>Audience segment</td><td>Optional</td><td>Audience segment affects tone and depth Allowed: executives, practitioners, technical, general, prospects, customers.</td></tr>
 <tr><td>Newsletter type</td><td>Optional</td><td>Type of newsletter Allowed: educational, product update, industry news, thought leadership, curated links.</td></tr>
@@ -248,7 +248,7 @@
   <p class="hx-sub">Required: Topic, CTA goal. Fields marked optional can be left empty.</p>
   <form class="hx-form" method="post" action="/api/tools/newsletter_builder" data-tool="newsletter_builder" data-title="Newsletter Builder">
 <div class="hx-field"><label for="f-topic">Topic <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-topic" name="topic" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-topic-help"></textarea><p class="hx-help" id="f-topic-help">Main topic/theme of the newsletter</p></div>
-<div class="hx-field"><label for="f-key_points">Key points <span class="hx-opt">(optional)</span></label><textarea id="f-key_points" name="key_points" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-key_points-help"></textarea><p class="hx-help" id="f-key_points-help">OPTIONAL: Key points to cover (comma-separated). If not provided, we&#x27;ll suggest 3-5 relevant points based on topic</p></div>
+<div class="hx-field"><label for="f-key_points">Key points <span class="hx-opt">(optional)</span></label><textarea id="f-key_points" name="key_points" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-key_points-help"></textarea><p class="hx-help" id="f-key_points-help">OPTIONAL: Key points to cover (comma-separated). If not provided, the tool suggests 5 points based on the topic and newsletter type</p></div>
 <div class="hx-field"><label for="f-cta_goal">CTA goal <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-cta_goal" name="cta_goal" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-cta_goal-help"></textarea><p class="hx-help" id="f-cta_goal-help">What action should readers take? (e.g., &#x27;sign up for webinar&#x27;, &#x27;try feature&#x27;, &#x27;read blog&#x27;)</p></div>
 <div class="hx-field"><label for="f-audience_segment">Audience segment <span class="hx-opt">(optional)</span></label><select id="f-audience_segment" name="audience_segment" data-kind="string" aria-describedby="f-audience_segment-help"><option value="">Not specified</option><option value="executives">executives</option><option value="practitioners">practitioners</option><option value="technical">technical</option><option value="general">general</option><option value="prospects">prospects</option><option value="customers">customers</option></select><p class="hx-help" id="f-audience_segment-help">Audience segment affects tone and depth</p></div>
 <div class="hx-field"><label for="f-newsletter_type">Newsletter type <span class="hx-opt">(optional)</span></label><select id="f-newsletter_type" name="newsletter_type" data-kind="string" aria-describedby="f-newsletter_type-help"><option value="">Not specified</option><option value="educational">educational</option><option value="product_update">product update</option><option value="industry_news">industry news</option><option value="thought_leadership">thought leadership</option><option value="curated_links">curated links</option></select><p class="hx-help" id="f-newsletter_type-help">Type of newsletter</p></div>
@@ -282,31 +282,31 @@
 <hr>
 <h4>📬 Subject Lines (A/B Test These)</h4>
 <h5>Option A: Curiosity-Driven</h5>
-<p><strong>The truth about Onboarding checklists for (nobody talks about this)</strong></p>
-<ul>
-<li>Preview text: Plus: the one thing most people get wrong...</li>
-</ul>
-<h5>Option B: Benefit-Focused  </h5>
-<p><strong>How to master Onboarding checklists for in 2025</strong></p>
+<p><strong>The truth about Onboarding checklists (nobody talks about this)</strong></p>
 <ul>
 <li>Preview text: Inside: actionable tips you can use today</li>
 </ul>
+<h5>Option B: Benefit-Focused  </h5>
+<p><strong>How to master Onboarding checklists in 2026</strong></p>
+<ul>
+<li>Preview text: Plus: the one thing most people get wrong...</li>
+</ul>
 <h5>Option C: Number/List Style</h5>
-<p><strong>5 Onboarding checklists for mistakes even experts make</strong></p>
+<p><strong>5 Onboarding checklists mistakes even experts make</strong> (Example figure: replace with your own)</p>
 <ul>
 <li>Preview text: Spoiler: it's not what you think</li>
 </ul>
 <h5>Option D: Personal/Direct</h5>
-<p><strong>Onboarding checklists for: Your complete guide</strong></p>
+<p><strong>Onboarding checklists: Your complete guide</strong></p>
 <ul>
-<li>Preview text: Inside: actionable tips you can use today</li>
+<li>Preview text: This changed how I approach Onboarding...</li>
 </ul>
 <hr>
 <h4>🎣 Opening Hooks (Pick One)</h4>
 <h5>Hook 1: Question</h5>
 <p>&gt; What if everything you knew about Onboarding checklists for SaaS teams was wrong?</p>
 <h5>Hook 2: Statistic</h5>
-<p>&gt; 78% of professionals struggle with Onboarding checklists for SaaS teams. Here's what the top performers do differently.</p>
+<p>&gt; 78% of professionals struggle with Onboarding checklists for SaaS teams (Example figure: replace with your own). Here's what the top performers do differently.</p>
 <h5>Hook 3: Story</h5>
 <p>&gt; Last month, a Onboarding checklists for SaaS teams challenge nearly derailed our biggest launch. What we learned changed everything.</p>
 <h5>Hook 4: Bold Statement</h5>
@@ -315,8 +315,8 @@
 <h4>📝 Newsletter Content</h4>
 <h5>Version: Practitioners Focus</h5>
 <hr>
-<p><strong>Subject:</strong> The truth about Onboarding checklists for (nobody talks about this)</p>
-<p><strong>Preview:</strong> Spoiler: it's not what you think</p>
+<p><strong>Subject:</strong> The truth about Onboarding checklists (nobody talks about this)</p>
+<p><strong>Preview:</strong> Plus: the one thing most people get wrong...</p>
 <hr>
 <p>What if everything you knew about Onboarding checklists for SaaS teams was wrong?</p>
 <h5>1. Why Onboarding checklists for SaaS teams matters now</h5>
@@ -391,7 +391,9 @@
 </ul>
 <hr>
 <h4>🕐 Best Send Times for practitioners</h4>
-<p><strong>Tuesday-Thursday, 10-11am</strong> (mid-morning productive time)</p>
+<p><strong>Tuesday-Thursday, 10-11am</strong> (mid-morning productive time) (Example figure: replace with your own)</p>
+<hr>
+<p>Suggested timings, lengths and counts: adjust them to your own.</p>
   </div></details>
 </section>
 
@@ -422,7 +424,7 @@
 
 <section class="hx-section" aria-labelledby="works-h">
   <h2 id="works-h">How does Newsletter Builder work?</h2>
-  <p class="hx-prose">It applies fixed rules in the CRAFT Content code to the inputs above and returns text. It does not call an AI model, does not look anything up, and does not store what you type. The web form and the MCP server run the same function, so the same input gives the same answer in both.</p>
+  <p class="hx-prose">It applies fixed rules in the CRAFT Content code to the inputs above and returns text. It does not call an AI model, does not look anything up, and does not store what you type. The web form and the MCP server call the same tool code, so the same input gives the same answer in both.</p>
   <p class="hx-pn"><a href="/tools/case-study-generator/">Previous: Case Study Generator</a><a href="/tools/webinar-script/">Next: Webinar Script</a></p>
 </section>
 

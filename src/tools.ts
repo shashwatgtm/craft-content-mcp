@@ -34,7 +34,7 @@ export const tools: Tool[] = [
       type: "object",
       properties: {
         topic: { type: "string", description: "Main topic/theme of the newsletter" },
-        key_points: { type: "string", description: "OPTIONAL: Key points to cover (comma-separated). If not provided, we'll suggest 3-5 relevant points based on topic" },
+        key_points: { type: "string", description: "OPTIONAL: Key points to cover (comma-separated). If not provided, the tool suggests 5 points based on the topic and newsletter type" },
         cta_goal: { type: "string", description: "What action should readers take? (e.g., 'sign up for webinar', 'try feature', 'read blog')" },
         audience_segment: {
           type: "string",
@@ -197,7 +197,7 @@ export const tools: Tool[] = [
           description: "Type of content affects evaluation criteria",
           enum: ["blog_post", "email", "landing_page", "social_post", "sales_email", "product_description", "press_release", "case_study"]
         },
-        goal: { type: "string", description: "OPTIONAL: What should this content achieve? (e.g., 'drive signups', 'educate readers'). Defaults to 'improve engagement and clarity'" },
+        goal: { type: "string", description: "OPTIONAL: What should this content achieve? (e.g., 'drive signups', 'educate readers'). If not given, a goal is chosen from the content type (for example 'Get meetings booked' for a sales email)" },
         audience: { type: "string", description: "OPTIONAL: Who is this content for? Helps tailor improvements." },
         tone_preference: {
           type: "string",

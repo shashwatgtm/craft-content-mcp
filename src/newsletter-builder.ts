@@ -1,4 +1,4 @@
-import { parseListItems, generateHook } from './utils.js';
+import { parseListItems, generateHook, SUGGESTION_FOOTER } from './utils.js';
 
 export function generateNewsletter(args: {
   topic: string;
@@ -66,19 +66,19 @@ export function generateNewsletter(args: {
 ## 📬 Subject Lines (A/B Test These)
 
 ### Option A: Curiosity-Driven
-**${subjectLines[0]}**
+**${subjectLines[0]}**${subjectLineLabel(type, 0)}
 - Preview text: ${generatePreviewText(subjectLines[0], topic)}
 
 ### Option B: Benefit-Focused  
-**${subjectLines[1]}**
+**${subjectLines[1]}**${subjectLineLabel(type, 1)}
 - Preview text: ${generatePreviewText(subjectLines[1], topic)}
 
 ### Option C: Number/List Style
-**${subjectLines[2]}**
+**${subjectLines[2]}**${subjectLineLabel(type, 2)}
 - Preview text: ${generatePreviewText(subjectLines[2], topic)}
 
 ### Option D: Personal/Direct
-**${subjectLines[3]}**
+**${subjectLines[3]}**${subjectLineLabel(type, 3)}
 - Preview text: ${generatePreviewText(subjectLines[3], topic)}
 
 ---
@@ -163,18 +163,50 @@ ${getSegmentTips(segment)}
 
 ${getSendTimesForSegment(segment)}
 
+---
+
+${SUGGESTION_FOOTER}
 `;
 
   return output;
 }
 
+// Words that cannot end a shortened topic: cutting "Onboarding checklists for SaaS teams"
+// to its first 3 words gave "Onboarding checklists for", which broke every subject line.
+const TRAILING_CONNECTORS = new Set(['a', 'an', 'the', 'and', 'or', 'for', 'of', 'to', 'in', 'on', 'at', 'by', 'with', 'from', 'about', 'into', 'vs', 'vs.', '&']);
+
+function shortenTopic(topic: string): string {
+  const words = topic.split(' ').slice(0, 3);
+  while (words.length > 1 && TRAILING_CONNECTORS.has(words[words.length - 1].toLowerCase())) {
+    words.pop();
+  }
+  return words.join(' ');
+}
+
+// Option indexes of the subject lines that open with an example count ("5 ... mistakes"), per newsletter type.
+// Unknown types use the educational subject lines, as generateSubjectLines does.
+const EXAMPLE_COUNT_SUBJECTS: Record<string, number[]> = {
+  educational: [2],
+  product_update: [],
+  industry_news: [],
+  thought_leadership: [],
+  curated_links: [1]
+};
+
+function subjectLineLabel(type: string, index: number): string {
+  const indexes = Object.prototype.hasOwnProperty.call(EXAMPLE_COUNT_SUBJECTS, type)
+    ? EXAMPLE_COUNT_SUBJECTS[type]
+    : EXAMPLE_COUNT_SUBJECTS.educational;
+  return indexes.includes(index) ? ' (Example figure: replace with your own)' : '';
+}
+
 function generateSubjectLines(topic: string, type: string, segment: string): string[] {
-  const topicWords = topic.split(' ').slice(0, 3).join(' ');
+  const topicWords = shortenTopic(topic);
   
   const templates = {
     educational: [
       `The truth about ${topicWords} (nobody talks about this)`,
-      `How to master ${topicWords} in 2025`,
+      `How to master ${topicWords} in ${new Date().getFullYear()}`,
       `5 ${topicWords} mistakes even experts make`,
       `${topicWords}: Your complete guide`
     ],
@@ -246,7 +278,7 @@ function generatePointContent(point: string, depth: string, tone: string): strin
 - Validation: [specific tests]`,
     'accessible': `In simple terms: ${point.toLowerCase()} can transform how you work. Most people overcomplicate this—don't.`,
     'introductory': `If you're new to this, here's what you need to know: ${point.toLowerCase()} is the foundation everything else builds on.`,
-    'advanced': `You already know the basics. The next level: apply this to [advanced use case] for 10x the impact.`
+    'advanced': `You already know the basics. The next level: apply this to [advanced use case] for 10x the impact (Example figure: replace with your own).`
   };
   
   return depthContent[depth] || depthContent.accessible;
@@ -382,12 +414,12 @@ function getSegmentTips(segment: string): string {
 
 function getSendTimesForSegment(segment: string): string {
   const times: Record<string, string> = {
-    executives: '**Tuesday or Thursday, 7-8am** (before their day gets busy)',
-    practitioners: '**Tuesday-Thursday, 10-11am** (mid-morning productive time)',
-    technical: '**Tuesday-Wednesday, 2-3pm** (afternoon coding break)',
-    general: '**Tuesday, 10am** (highest average open rates)',
-    prospects: '**Tuesday or Thursday, 9-10am** (early but not too early)',
-    customers: '**Wednesday, 10am** (mid-week, good engagement)'
+    executives: '**Tuesday or Thursday, 7-8am** (before their day gets busy) (Example figure: replace with your own)',
+    practitioners: '**Tuesday-Thursday, 10-11am** (mid-morning productive time) (Example figure: replace with your own)',
+    technical: '**Tuesday-Wednesday, 2-3pm** (afternoon coding break) (Example figure: replace with your own)',
+    general: '**Tuesday, 10am** (highest average open rates) (Example figure: replace with your own)',
+    prospects: '**Tuesday or Thursday, 9-10am** (early but not too early) (Example figure: replace with your own)',
+    customers: '**Wednesday, 10am** (mid-week, good engagement) (Example figure: replace with your own)'
   };
   
   return times[segment] || times.general;

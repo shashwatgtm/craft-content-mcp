@@ -1,4 +1,4 @@
-import { parseListItems } from './utils.js';
+import { parseListItems, SUGGESTION_FOOTER } from './utils.js';
 
 export function generateThoughtLeadership(args: {
   topic: string;
@@ -14,6 +14,8 @@ export function generateThoughtLeadership(args: {
   const targetReader = args.target_reader;
   const authorBackground = args.author_background || 'Industry practitioner';
   const numArticles = args.num_articles || 3;
+  // 3 articles is a default when num_articles was not supplied: label it as an example
+  const countLabel = args.num_articles ? '' : ' (Example figure: replace with your own)';
   const articleType = args.article_type || 'contrarian';
   
   // Handle missing proof points - suggest what to gather
@@ -43,7 +45,7 @@ ${proofPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 | **Your Take** | ${yourTake} |
 | **Target Reader** | ${targetReader} |
 | **Author Credibility** | ${authorBackground} |
-| **Articles** | ${numArticles} byline pieces (600-800 words each) |
+| **Articles** | ${numArticles} byline pieces (600-800 words each)${countLabel} |
 | **Style** | ${articleType.replace(/_/g, ' ')} |
 ${proofPointsNote}
 ---
@@ -67,7 +69,8 @@ ${proofPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
       authorBackground,
       articleAngle,
       i + 1,
-      numArticles
+      numArticles,
+      countLabel
     );
   }
 
@@ -75,7 +78,7 @@ ${proofPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
   output += `
 ---
 
-## 📱 Promotional Posts (200-300 words)
+## 📱 Promotional Posts (short drafts: expand each to 200-300 words)
 
 Use these short posts to promote your byline articles on social media:
 
@@ -124,6 +127,9 @@ ${generatePromotionalPosts(topic, yourTake, proofPoints, numArticles)}
 - [ ] Author bio establishes credibility
 - [ ] Call to engage (not sell)
 
+---
+
+${SUGGESTION_FOOTER}
 `;
 
   return output;
@@ -184,7 +190,7 @@ function getArticleAngle(index: number, total: number, articleType: string): { t
     ],
     prediction: [
       {
-        title: 'The Future of [Topic]: What\'s Coming in the Next 5 Years',
+        title: 'The Future of [Topic]: What\'s Coming in the Next 5 Years (Example figure: replace with your own)',
         structure: 'Current state → Driving forces → Predictions → How to prepare',
         hook: 'future_vision'
       },
@@ -230,7 +236,8 @@ function generateFullArticle(
   authorBackground: string,
   angle: { title: string; structure: string; hook: string },
   articleNum: number,
-  totalArticles: number
+  totalArticles: number,
+  countLabel: string
 ): string {
   const title = angle.title.replace(/\[Topic\]/g, topic);
   const proof1 = proofPoints[0] || 'my experience with this';
@@ -240,7 +247,7 @@ function generateFullArticle(
   return `
 ---
 
-## 📄 Article ${articleNum} of ${totalArticles}
+## 📄 Article ${articleNum} of ${totalArticles}${countLabel}
 
 **Headline:** ${title}
 **Structure:** ${angle.structure}
@@ -335,7 +342,7 @@ The question is whether you're ready to see ${topic} differently.
 **Publishing Notes:**
 - Backup headline: "What Most ${targetReader} Get Wrong About ${topic}"
 - Recommended image: Visual representing the contrast between conventional and alternative approach
-- Best posting time: Tuesday-Thursday, 8-10am
+- Best posting time: Tuesday-Thursday, 8-10am (Example figure: replace with your own)
 
 ---
 
@@ -414,7 +421,7 @@ ${yourTake}. Here's why that matters now more than ever.`,
 
 The old rules are breaking down. The new rules aren't fully formed yet. That means right now is when the future is being decided.
 
-If you're ${targetReader}, your choices in the next 12-18 months will determine which side of this shift you end up on.`,
+If you're ${targetReader}, your choices in the next 12-18 months will determine which side of this shift you end up on. (Example figure: replace with your own)`,
 
     new_model: `The way we think about ${topic} is fundamentally flawed.
 
@@ -468,7 +475,7 @@ What's your experience been?
 
 ---
 
-**Word count:** ~200 words
+**Target length:** ~200 words (this draft is shorter: add your own story)
 **Hashtags:** #${topic.replace(/\s+/g, '')} #ThoughtLeadership #Insights
 
 ---

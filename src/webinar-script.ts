@@ -1,4 +1,4 @@
-import { parseListItems } from './utils.js';
+import { parseListItems, SUGGESTION_FOOTER } from './utils.js';
 
 export function generateWebinarScript(args: {
   topic: string;
@@ -36,6 +36,9 @@ export function generateWebinarScript(args: {
     '90_min': 90
   };
   const minutes = durationMap[duration] || 60;
+  // 60 minutes is a default when no known duration was supplied: label it as an example
+  const durationSupplied = !!args.duration && Object.prototype.hasOwnProperty.call(durationMap, args.duration);
+  const durationLabel = durationSupplied ? '' : ' (Example figure: replace with your own)';
   
   // Generate type-specific structure
   const structure = getWebinarStructure(type, minutes);
@@ -47,7 +50,7 @@ export function generateWebinarScript(args: {
 | Setting | Value |
 |---------|-------|
 | **Topic** | ${topic} |
-| **Duration** | ${minutes} minutes |
+| **Duration** | ${minutes} minutes${durationLabel} |
 | **Type** | ${type.replace(/_/g, ' ')} |
 | **Audience** | ${audience} |
 | **Speakers** | ${speakers.join(', ')} |
@@ -166,6 +169,9 @@ It's been a week since our webinar. By now you've probably:
 - [ ] Water nearby
 - [ ] Phone on silent
 
+---
+
+${SUGGESTION_FOOTER}
 `;
 
   return output;
@@ -321,7 +327,7 @@ ${takeaways.map((t, i) => `${i + 1}. ${t}`).join('\n')}
 
 By the end of this session, you'll walk away with [specific outcome for ${audience}].
 
-Sound good? Drop a '1' in the chat if you're ready to go."
+Sound good? Drop a '1' in the chat if you're ready to go." (Example figure: replace with your own)
 
 `,
     'Context Setting': `

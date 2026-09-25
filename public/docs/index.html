@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CRAFT Content Docs: MCP Server and REST API | Helix GTM</title>
-<meta name="description" content="How to call the 8 CRAFT Content tools over MCP or REST: addresses, limits, errors and every input field, generated from the server&#x27;s own schemas.">
+<meta name="description" content="How to call the 8 CRAFT Content tools over MCP or REST: addresses, limits, errors and every input field, from the server&#x27;s own schemas. Free, with no sign-in.">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="author" content="Shashwat Ghosh, Helix GTM Consulting">
 <link rel="canonical" href="https://craft-content.gtmhelix.com/docs/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="CRAFT Content by Helix GTM Consulting">
 <meta property="og:title" content="CRAFT Content Docs: MCP Server and REST API | Helix GTM">
-<meta property="og:description" content="How to call the 8 CRAFT Content tools over MCP or REST: addresses, limits, errors and every input field, generated from the server&#x27;s own schemas.">
+<meta property="og:description" content="How to call the 8 CRAFT Content tools over MCP or REST: addresses, limits, errors and every input field, from the server&#x27;s own schemas. Free, with no sign-in.">
 <meta property="og:url" content="https://craft-content.gtmhelix.com/docs/">
 <meta property="og:image" content="https://craft-content.gtmhelix.com/og.png">
 <meta property="og:image:width" content="1200">
@@ -19,7 +19,7 @@
 <meta property="og:image:alt" content="CRAFT Content by Helix GTM Consulting">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="CRAFT Content Docs: MCP Server and REST API | Helix GTM">
-<meta name="twitter:description" content="How to call the 8 CRAFT Content tools over MCP or REST: addresses, limits, errors and every input field, generated from the server&#x27;s own schemas.">
+<meta name="twitter:description" content="How to call the 8 CRAFT Content tools over MCP or REST: addresses, limits, errors and every input field, from the server&#x27;s own schemas. Free, with no sign-in.">
 <meta name="twitter:image" content="https://craft-content.gtmhelix.com/og.png">
 <meta name="twitter:creator" content="@Shashwat_Ghosh">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -108,7 +108,7 @@
    "@id": "https://craft-content.gtmhelix.com/docs/#page",
    "url": "https://craft-content.gtmhelix.com/docs/",
    "name": "CRAFT Content Docs: MCP Server and REST API | Helix GTM",
-   "description": "How to call the 8 CRAFT Content tools over MCP or REST: addresses, limits, errors and every input field, generated from the server's own schemas.",
+   "description": "How to call the 8 CRAFT Content tools over MCP or REST: addresses, limits, errors and every input field, from the server's own schemas. Free, with no sign-in.",
    "isPartOf": {
     "@id": "https://craft-content.gtmhelix.com/#site"
    },
@@ -215,7 +215,7 @@
   <p class="hx-prose">Build newsletter content. Just have a topic? We&#x27;ll suggest key points. Have key points? We&#x27;ll craft the content. <a href="/tools/newsletter-builder/">Open the form</a>.</p>
   <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
 <tr><td><code>topic</code></td><td>string</td><td>yes</td><td></td><td>Main topic/theme of the newsletter</td></tr>
-<tr><td><code>key_points</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Key points to cover (comma-separated). If not provided, we&#x27;ll suggest 3-5 relevant points based on topic</td></tr>
+<tr><td><code>key_points</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Key points to cover (comma-separated). If not provided, the tool suggests 5 points based on the topic and newsletter type</td></tr>
 <tr><td><code>cta_goal</code></td><td>string</td><td>yes</td><td></td><td>What action should readers take? (e.g., &#x27;sign up for webinar&#x27;, &#x27;try feature&#x27;, &#x27;read blog&#x27;)</td></tr>
 <tr><td><code>audience_segment</code></td><td>string</td><td>no</td><td>executives, practitioners, technical, general, prospects, customers</td><td>Audience segment affects tone and depth</td></tr>
 <tr><td><code>newsletter_type</code></td><td>string</td><td>no</td><td>educational, product_update, industry_news, thought_leadership, curated_links</td><td>Type of newsletter</td></tr>
@@ -295,7 +295,7 @@
   <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
 <tr><td><code>content</code></td><td>string</td><td>yes</td><td></td><td>Content to analyze</td></tr>
 <tr><td><code>content_type</code></td><td>string</td><td>yes</td><td>blog_post, email, landing_page, social_post, sales_email, product_description, press_release, case_study</td><td>Type of content affects evaluation criteria</td></tr>
-<tr><td><code>goal</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: What should this content achieve? (e.g., &#x27;drive signups&#x27;, &#x27;educate readers&#x27;). Defaults to &#x27;improve engagement and clarity&#x27;</td></tr>
+<tr><td><code>goal</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: What should this content achieve? (e.g., &#x27;drive signups&#x27;, &#x27;educate readers&#x27;). If not given, a goal is chosen from the content type (for example &#x27;Get meetings booked&#x27; for a sales email)</td></tr>
 <tr><td><code>audience</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Who is this content for? Helps tailor improvements.</td></tr>
 <tr><td><code>tone_preference</code></td><td>string</td><td>no</td><td>more_formal, more_casual, more_urgent, more_friendly, more_authoritative, keep_same</td><td>Desired tone (accepted for compatibility; it does not change the analysis)</td></tr>
   </tbody></table></div>

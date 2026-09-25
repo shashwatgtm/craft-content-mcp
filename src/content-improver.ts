@@ -1,4 +1,4 @@
-import { analyzeContent, generateImprovedVersion, countWords, avgWordsPerSentence, calculateReadability, ContentAnalysis } from './utils.js';
+import { analyzeContent, generateImprovedVersion, countWords, avgWordsPerSentence, calculateReadability, ContentAnalysis, SUGGESTION_FOOTER } from './utils.js';
 
 // Default goals by content type
 const DEFAULT_GOALS: Record<string, string> = {
@@ -145,6 +145,10 @@ ${getContentTypeTips(contentType, goal)}
 ## ✅ Quick Checklist
 
 ${generateChecklist(contentType, goal, analysis)}
+
+---
+
+${SUGGESTION_FOOTER}
 `;
 
   return output;
@@ -179,7 +183,7 @@ function generateBetterHook(content: string, contentType: string, goal: string):
 function getContentTypeTips(contentType: string, goal: string): string {
   const tips: Record<string, string> = {
     blog_post: `
-- **Ideal length:** 1,500-2,500 words for SEO
+- **Ideal length:** 1,500-2,500 words for SEO (Example figure: replace with your own)
 - **Subheadings:** Every 300-400 words
 - **Include:** At least one image, list, or quote
 - **CTA placement:** Middle and end of post
@@ -188,7 +192,7 @@ function getContentTypeTips(contentType: string, goal: string): string {
     email: `
 - **Subject line:** 6-10 words, personalized if possible
 - **Preview text:** Complement (don't repeat) subject line
-- **Length:** 50-125 words for highest engagement
+- **Length:** 50-125 words for highest engagement (Example figure: replace with your own)
 - **CTA:** One clear, specific action
 - **P.S. line:** Second CTA or urgency element`,
     
@@ -196,14 +200,14 @@ function getContentTypeTips(contentType: string, goal: string): string {
 - **Headline:** Clear benefit in 10 words or less
 - **Subheadline:** Expand on how you deliver the benefit
 - **Social proof:** Above the fold
-- **CTA:** Visible without scrolling, repeated 3x
+- **CTA:** Visible without scrolling, repeated 3x (Example figure: replace with your own)
 - **Form fields:** Minimize - each field reduces conversion`,
     
     social_post: `
 - **Hook:** First line must stop the scroll
 - **Format:** Short paragraphs, line breaks, emojis sparingly
 - **Engagement:** Ask a question or opinion
-- **Hashtags:** 3-5 relevant tags
+- **Hashtags:** 3-5 relevant tags (Example figure: replace with your own)
 - **CTA:** What action do you want?`,
     
     sales_email: `
@@ -247,10 +251,11 @@ function generateChecklist(contentType: string, goal: string, analysis: ContentA
   const checks: string[] = [];
   
   // Universal checks
-  checks.push(analysis.clarity.score >= 7 ? '✅' : '⬜' + ' Clear, jargon-free language');
-  checks.push(analysis.structure.score >= 7 ? '✅' : '⬜' + ' Logical structure with headers');
-  checks.push(analysis.engagement.score >= 7 ? '✅' : '⬜' + ' Engaging opening hook');
-  checks.push(analysis.goalAlignment.score >= 7 ? '✅' : '⬜' + ' Aligns with stated goal');
+  // The mark is chosen first, then the text is added, so a passed check keeps its text.
+  checks.push((analysis.clarity.score >= 7 ? '✅' : '⬜') + ' Clear, jargon-free language');
+  checks.push((analysis.structure.score >= 7 ? '✅' : '⬜') + ' Logical structure with headers');
+  checks.push((analysis.engagement.score >= 7 ? '✅' : '⬜') + ' Engaging opening hook');
+  checks.push((analysis.goalAlignment.score >= 7 ? '✅' : '⬜') + ' Aligns with stated goal');
   
   // Content-type specific
   if (contentType === 'email' || contentType === 'sales_email') {

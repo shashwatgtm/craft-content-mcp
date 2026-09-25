@@ -1,4 +1,4 @@
-import { parseListItems, extractKeyPoints, countWords } from './utils.js';
+import { parseListItems, extractKeyPoints, countWords, SUGGESTION_FOOTER } from './utils.js';
 
 // Default formats when user doesn't specify
 const DEFAULT_FORMATS = ['linkedin_post', 'twitter_thread', 'email', 'blog_summary', 'quote_cards'];
@@ -54,6 +54,7 @@ ${keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 
 ## 📊 Content Distribution Matrix
 
+Example figures: replace with your own (the Best Time column).
 | Format | Platform | Best Time | Engagement Goal |
 |--------|----------|-----------|-----------------|
 ${targetFormats.map(f => `| ${f} | ${getPlatform(f)} | ${getBestTime(f)} | ${getEngagementGoal(f)} |`).join('\n')}
@@ -65,10 +66,13 @@ ${targetFormats.map(f => `| ${f} | ${getPlatform(f)} | ${getBestTime(f)} | ${get
 - [ ] Review each piece for brand consistency
 - [ ] Customize for platform-specific best practices
 - [ ] Update links/CTAs for each channel
-- [ ] Schedule according to optimal times
+- [ ] Schedule at the times that work for your audience
 - [ ] Prepare responses for expected engagement
 - [ ] Track performance across formats
 
+---
+
+${SUGGESTION_FOOTER}
 `;
 
   return output;
@@ -105,9 +109,9 @@ ${generateLinkedInPost(content, keyPoints, voice, keyMessage)}
 ---
 
 **Posting Notes:**
-- Best time: Tuesday-Thursday, 8-10am
+- Best time: Tuesday-Thursday, 8-10am (Example figure: replace with your own)
 - Engage with comments in first 60 min
-- Add 3-5 relevant hashtags
+- Add 3-5 relevant hashtags (Example figure: replace with your own)
 
 `,
     twitter_thread: () => `
@@ -120,7 +124,7 @@ ${generateTwitterThread(content, keyPoints, title)}
 ---
 
 **Posting Notes:**
-- Thread with 5-10 tweets performs best
+- Thread with 5-10 tweets performs best (Example figure: replace with your own)
 - First tweet is crucial for engagement
 - Add a "follow for more" at the end
 
@@ -132,7 +136,7 @@ ${generateTwitterThread(content, keyPoints, title)}
 
 **Subject Line Options:**
 1. ${title}: Key insights you need to know
-2. What we learned about ${keyPoints[0]?.split(' ').slice(0, 3).join(' ') || 'this topic'}
+2. What we learned about ${shortSubject(keyPoints[0]) || 'this topic'}
 3. [First Name], don't miss this ${sourceType.replace(/_/g, ' ')} summary
 
 **Email Body:**
@@ -143,7 +147,7 @@ ${generateEmailVersion(content, keyPoints, keyMessage)}
 
 `,
     blog_summary: () => `
-### 📝 Blog Summary (300 words)
+### 📝 Blog Summary (target: 300 words)
 
 ---
 
@@ -278,7 +282,7 @@ ${extractQuotes(content, keyPoints).map((q, i) => `
 **Design Notes:**
 - Keep text readable on mobile
 - Use brand colors
-- Square format (1080x1080) for Instagram/LinkedIn
+- Square format (1080x1080) for Instagram/LinkedIn (Example figure: replace with your own)
 - Add visual hierarchy with font sizes
 
 ---
@@ -458,4 +462,14 @@ function getEngagementGoal(format: string): string {
     newsletter_section: 'Click-through'
   };
   return goals[format.toLowerCase().replace(/\s+/g, '_')] || 'Engagement';
+}
+
+// First words of a key point for an email subject, without a trailing comma or connector word
+// ("Map that moment, remove every step" gave "Map that moment,").
+function shortSubject(point: string | undefined): string {
+  if (!point) return '';
+  const words = point.split(' ').slice(0, 3).map((w) => w.replace(/[,;:]+$/, ''));
+  const connectors = new Set(['a', 'an', 'the', 'and', 'or', 'for', 'of', 'to', 'in', 'on', 'at', 'by', 'with', 'from']);
+  while (words.length > 1 && connectors.has(words[words.length - 1].toLowerCase())) words.pop();
+  return words.join(' ');
 }

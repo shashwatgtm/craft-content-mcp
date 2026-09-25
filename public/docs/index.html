@@ -115,7 +115,7 @@
    "about": {
     "@id": "https://craft-content.gtmhelix.com/#app"
    },
-   "dateModified": "2026-09-25",
+   "dateModified": "2026-09-26",
    "inLanguage": "en",
    "primaryImageOfPage": "https://craft-content.gtmhelix.com/og.png"
   },
@@ -162,7 +162,7 @@
     <span class="hx-eyebrow">CRAFT Content · documentation</span>
     <h1>CRAFT Content documentation</h1>
     <p class="hx-lead">The MCP address, the REST API behind the web forms, and every field of all 8 tools.</p>
-    <p class="hx-byline">By <a href="https://www.gtmexpert.com/" rel="author">Shashwat Ghosh</a>, Co-Founder and Fractional CMO, Helix GTM Consulting · Last updated <time datetime="2026-09-25">25 September 2026</time></p>
+    <p class="hx-byline">By <a href="https://www.gtmexpert.com/" rel="author">Shashwat Ghosh</a>, Co-Founder and Fractional CMO, Helix GTM Consulting · Last updated <time datetime="2026-09-26">26 September 2026</time></p>
   </div></div>
 </section>
 <main id="main" class="hx-body">
@@ -182,7 +182,7 @@
   <p class="hx-prose">Send <code>POST https://craft-content.gtmhelix.com/api/tools/&lt;tool name&gt;</code> with a JSON body <code>{"input": {...}}</code>. The answer is JSON: <code>{"ok": true, "tool": "...", "title": "...", "text": "..."}</code>, where <code>text</code> is the same Markdown the MCP tool returns. The endpoint calls the same server code as the MCP address.</p>
   <pre class="hx-code-block">curl -s -X POST https://craft-content.gtmhelix.com/api/tools/case_study_generator \
   -H "Content-Type: application/json" \
-  -d '{&quot;input&quot;: {&quot;customer_name&quot;: &quot;Northwind Clinics&quot;, &quot;your_product&quot;: &quot;ClinicFlow&quot;, &quot;customer_industry&quot;: &quot;healthcare&quot;, &quot;mode&quot;: &quot;full&quot;, &quot;challenge&quot;: &quot;Missed appointments were costing revenue&quot;, &quot;solution&quot;: &quot;Automated SMS reminders and online rescheduling&quot;, &quot;results&quot;: &quot;No-shows down 30% in 3 months&quot;}}'</pre>
+  -d '{&quot;input&quot;: {&quot;customer_name&quot;: &quot;Example Clinic Group&quot;, &quot;your_product&quot;: &quot;ExampleCo Scheduler&quot;, &quot;customer_industry&quot;: &quot;healthcare&quot;, &quot;mode&quot;: &quot;full&quot;, &quot;challenge&quot;: &quot;Missed appointments were costing revenue&quot;, &quot;solution&quot;: &quot;Automated SMS reminders and online rescheduling&quot;, &quot;results&quot;: &quot;No-shows down 30% in 3 months&quot;}}'</pre>
   <ul class="hx-prose">
     <li>Errors: 400 with <code>errors</code> (missing or invalid fields), 404 for an unknown tool, 405 for methods other than POST, 413 above 32,000 bytes, 429 when the rate limit is reached, 500 if the tool fails.</li>
     <li>Limits: 30 requests per minute per IP address; text fields up to 6,000 characters; lists up to 50 items.</li>
@@ -193,7 +193,7 @@
 
 <section class="hx-section" aria-labelledby="ref-h">
   <h2 id="ref-h">Tool reference</h2>
-  <p class="hx-sub">Generated from the server's own input schemas on 25 September 2026.</p>
+  <p class="hx-sub">Generated from the server's own input schemas on 26 September 2026.</p>
 </section>
 <section class="hx-section" id="case-study-generator" aria-labelledby="d-case-study-generator">
   <h3 id="d-case-study-generator">Case Study Generator <code>case_study_generator</code></h3>

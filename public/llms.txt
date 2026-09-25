@@ -1,6 +1,6 @@
 # CRAFT Content
 
-> Yes. CRAFT Content is a free MCP server and web app with eight content tools, by Shashwat Ghosh of Helix GTM Consulting. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter, a webinar script, repurposed posts, a thought leadership series, testimonial requests, sales content or a CRAFT review of your draft.
+> CRAFT Content is a free MCP server and web app with eight content tools, by Shashwat Ghosh of Helix GTM Consulting. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter, a webinar script, repurposed posts, a thought leadership series, testimonial requests, sales content or a CRAFT review of your draft.
 
 - Web app (no sign-in): https://craft-content.gtmhelix.com/
 - MCP server URL (Streamable HTTP, no sign-in, read-only tools): https://craft-content.gtmhelix.com/mcp
@@ -28,7 +28,7 @@
 
 ### What is CRAFT Content?
 
-Yes. CRAFT Content is a free MCP server and web app with eight content tools, by Shashwat Ghosh of Helix GTM Consulting. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter, a webinar script, repurposed posts, a thought leadership series, testimonial requests, sales content or a CRAFT review of your draft.
+CRAFT Content is a free MCP server and web app with eight content tools, by Shashwat Ghosh of Helix GTM Consulting. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter, a webinar script, repurposed posts, a thought leadership series, testimonial requests, sales content or a CRAFT review of your draft.
 
 ### Is CRAFT Content free, and do I need an account?
 
@@ -48,7 +48,7 @@ In Claude, open Customize, then Connectors, then Add custom connector. Name it C
 
 ### Who built it?
 
-Shashwat Ghosh, founder of Helix GTM Consulting: a GTM Alpha consultant, AI GTM expert and fractional CMO with 24+ years in B2B and 10+ years of fractional experience, based in Bengaluru.
+Shashwat Ghosh, Co-Founder and Fractional CMO of Helix GTM Consulting, a business consulting firm founded in 2022 in Bengaluru. He has 24+ years in B2B and 10+ years of fractional experience, and created the EPIC, IMPACT and CRAFT frameworks and the Hub-Spoke Messaging Methodology.
 
 ### Why does the newsletter builder give a different preview line each time?
 

@@ -1,6 +1,6 @@
 {
   "name": "@shashwatgtmalpha/craft-content-mcp",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "mcpName": "io.github.shashwatgtm/craft-content-mcp",
   "description": "CRAFT Content Framework MCP server: case studies, newsletters, webinar scripts, repurposing, thought leadership, testimonials, sales enablement and content review. Runs locally over stdio (npm) or hosted over Streamable HTTP.",
   "main": "dist/index.js",

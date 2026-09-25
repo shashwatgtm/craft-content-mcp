@@ -172,7 +172,7 @@
   <ul class="hx-prose">
     <li>Address: <code>https://craft-content.gtmhelix.com/mcp</code> (Streamable HTTP, stateless, JSON responses). GET returns 405 by design.</li>
     <li>Authentication: none. Every tool is marked read-only (<code>readOnlyHint: true</code>, <code>destructiveHint: false</code>) and has a title.</li>
-    <li>Rate limit: 300 requests per minute per IP address. Server: <code>craft-content-mcp</code> version 2.1.0.</li>
+    <li>Rate limit: 300 requests per minute per IP address. Server: <code>craft-content-mcp</code> version 2.2.0.</li>
     <li>Local use: <code>npx -y @shashwatgtmalpha/craft-content-mcp</code> runs the same tools over stdio.</li>
   </ul>
 </section>
@@ -257,7 +257,7 @@
 <tr><td><code>target_reader</code></td><td>string</td><td>yes</td><td></td><td>Who should read this? Be specific (e.g., &#x27;B2B SaaS founders struggling with churn&#x27; not just &#x27;marketers&#x27;)</td></tr>
 <tr><td><code>proof_points</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Evidence supporting your take - personal stories, client examples, data/stats (comma-separated). If not provided, we&#x27;ll suggest proof points to gather</td></tr>
 <tr><td><code>author_background</code></td><td>string</td><td>no</td><td></td><td>Optional: Your role and why you&#x27;re credible (e.g., &#x27;15 years in enterprise sales&#x27;)</td></tr>
-<tr><td><code>num_articles</code></td><td>number</td><td>no</td><td></td><td>Number of articles to generate (1-5)</td></tr>
+<tr><td><code>num_articles</code></td><td>number (1 or more)</td><td>no</td><td></td><td>Number of articles to generate (1-5)</td></tr>
 <tr><td><code>article_type</code></td><td>string</td><td>no</td><td>contrarian, how_to, lessons_learned, prediction, framework</td><td>Style of articles</td></tr>
   </tbody></table></div>
 </section>

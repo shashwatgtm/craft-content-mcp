@@ -252,10 +252,19 @@ function getWebinarStructure(type: string, minutes: number): Array<{ name: strin
   const baseMinutes = structure.reduce((sum, s) => sum + s.duration, 0);
   const scale = minutes / baseMinutes;
   
-  return structure.map(s => ({
+  const scaled = structure.map(s => ({
     ...s,
-    duration: Math.round(s.duration * scale)
+    duration: Math.max(1, Math.round(s.duration * scale))
   }));
+  // Rounding can leave the run of show a few minutes over or under the webinar length: take the difference from
+  // (or give it to) the longest sections, one minute each, so the sections add up to exactly the length chosen.
+  let diff = minutes - scaled.reduce((sum, s) => sum + s.duration, 0);
+  const order = scaled.map((s, i) => i).sort((a, b) => scaled[b].duration - scaled[a].duration || a - b);
+  for (let k = 0; diff !== 0 && k < order.length * 10; k++) {
+    const s = scaled[order[k % order.length]];
+    if (diff > 0) { s.duration += 1; diff -= 1; } else if (s.duration > 1) { s.duration -= 1; diff += 1; }
+  }
+  return scaled;
 }
 
 function generateRunOfShow(structure: Array<{ name: string; duration: number; purpose: string }>, totalMinutes: number): string {

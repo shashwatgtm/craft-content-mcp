@@ -5,7 +5,7 @@ export const SUGGESTION_FOOTER = 'Suggested timings, lengths and counts: adjust 
 
 export function parseListItems(text: string): string[] {
   return text
-    .split(/[,\n]/)
+    .split(/\n|,(?!\d{3}(?!\d))/)
     .map(item => item.replace(/^[-•*]\s*/, '').trim())
     .filter(item => item.length > 0);
 }

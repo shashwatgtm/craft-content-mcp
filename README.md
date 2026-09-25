@@ -171,7 +171,7 @@ Generated on 26 September 2026 from the server's own tool list (`tools/list` of 
 
 ## Author
 
-**Shashwat Ghosh** - [Helix GTM Consulting](https://helixgtm.com)
+**Shashwat Ghosh** - [Helix GTM Consulting](https://tools.gtmhelix.com)
 
 ## License
 

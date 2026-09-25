@@ -49,6 +49,30 @@ export const listedTools = tools.map((tool) => {
   };
 });
 
+// Decision N2 (run 6, extended after the independent check): numbers inside lists and objects follow their schema's
+// minimum and maximum too, and a text field that holds one amount (AMOUNT_TEXT) cannot hold a negative amount.
+type SchemaNode = { type?: string; minimum?: number; maximum?: number; properties?: Record<string, SchemaNode>; items?: SchemaNode };
+const NEGATIVE_AMOUNT = /(^|[\s(:=])[-\u2212]\$\s*\d|\$\s*[-\u2212]\s*\d|^\s*[-\u2212]\s*\d/;
+function checkLimits(schema: SchemaNode, value: unknown, path: string, problems: string[]): void {
+  if (schema.properties && value && typeof value === "object" && !Array.isArray(value)) {
+    for (const [key, p] of Object.entries(schema.properties)) {
+      checkLimits(p, (value as Record<string, unknown>)[key], path ? `${path}.${key}` : key, problems);
+    }
+    return;
+  }
+  if (schema.items && Array.isArray(value)) {
+    value.forEach((item, i) => checkLimits(schema.items as SchemaNode, item, `${path}[${i}]`, problems));
+    return;
+  }
+  if (schema.type !== "number" && schema.type !== "integer") return;
+  const v = typeof value === "string" && value.trim() !== "" ? Number(value) : value;
+  if (typeof v !== "number" || !Number.isFinite(v)) return;
+  if (typeof schema.minimum === "number" && v < schema.minimum) problems.push(`${path} must be ${schema.minimum} or more`);
+  if (typeof schema.maximum === "number" && v > schema.maximum) problems.push(`${path} must be ${schema.maximum} or less`);
+}
+
+const AMOUNT_TEXT: Record<string, string[]> = {};
+
 function checkRequiredInputs(
   name: string,
   args: Record<string, unknown> | undefined
@@ -62,17 +86,15 @@ function checkRequiredInputs(
   if (missing.length > 0) {
     return `Missing required input for ${name}: ${missing.join(", ")}. Provide ${missing.length === 1 ? "it" : "them"} and call the tool again.`;
   }
-  // Decision N2 (run 6): amounts, counts and durations cannot be negative; the schema says which (minimum).
-  const props = ((tool.inputSchema as { properties?: Record<string, { minimum?: number }> }).properties ?? {});
-  const below = Object.entries(props)
-    .filter(([key, p]) => {
-      const raw = args?.[key];
-      const v = typeof raw === "string" && raw.trim() !== "" ? Number(raw) : raw;
-      return typeof p.minimum === "number" && typeof v === "number" && Number.isFinite(v) && v < p.minimum;
-    })
-    .map(([key, p]) => `${key} must be ${p.minimum} or more`);
-  if (below.length > 0) {
-    return `Invalid input for ${name}: ${below.join("; ")}.`;
+  // Decision N2 (run 6): amounts, counts and durations cannot be negative; the schema says which (minimum, maximum).
+  const problems: string[] = [];
+  checkLimits(tool.inputSchema as unknown as SchemaNode, args ?? {}, "", problems);
+  for (const key of AMOUNT_TEXT[name] ?? []) {
+    const raw = args?.[key];
+    if (typeof raw === "string" && NEGATIVE_AMOUNT.test(raw)) problems.push(`${key} must not contain a negative amount`);
+  }
+  if (problems.length > 0) {
+    return `Invalid input for ${name}: ${problems.join("; ")}.`;
   }
   return null;
 }

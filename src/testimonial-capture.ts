@@ -443,17 +443,17 @@ function getOutcome(story: string): string {
       return story.slice(start, end > start ? end : undefined).toLowerCase();
     }
   }
-  return 'achieve significant results';
+  return '[the result from the story, in their words]';
 }
 
 function getImpact(story: string): string {
   const impactIndicators = ['now', 'today', 'result', 'impact', 'because'];
   for (const indicator of impactIndicators) {
     if (story.toLowerCase().includes(indicator)) {
-      return 'It\'s made a real difference for our team.';
+      return '[the impact, in their words]';
     }
   }
-  return 'The impact has been significant.';
+  return '[the impact, in their words]';
 }
 
 function getChallenge(story: string): string {

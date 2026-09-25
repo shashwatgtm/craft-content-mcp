@@ -90,13 +90,9 @@ ${generatePromotionalPosts(topic, yourTake, proofPoints, numArticles)}
 
 | Week | Content | Platform |
 |------|---------|----------|
-| Week 1 | Article 1 | LinkedIn Article / Medium / Company Blog |
-| Week 1 | Promo post for Article 1 | LinkedIn feed, Twitter |
-| Week 2 | Article 2 | LinkedIn Article / Medium / Company Blog |
-| Week 2 | Promo post for Article 2 | LinkedIn feed, Twitter |
-| Week 3 | Article 3 | LinkedIn Article / Medium / Company Blog |
-| Week 3 | Series summary post | LinkedIn feed |
-| Week 4 | Pitch to industry publication | Forbes, Inc, industry trades |
+${Array.from({ length: numArticles }, (_, i) => i + 1).map(n => `| Week ${n} | Article ${n} | LinkedIn Article / Medium / Company Blog |
+| Week ${n} | ${n < numArticles || numArticles === 1 ? `Promo post for Article ${n}` : 'Series summary post'} | ${n < numArticles || numArticles === 1 ? 'LinkedIn feed, Twitter' : 'LinkedIn feed'} |`).join('\n')}
+| Week ${numArticles + 1} | Pitch to industry publication | Forbes, Inc, industry trades |
 
 ## 🎯 Where to Publish
 

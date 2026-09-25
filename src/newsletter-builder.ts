@@ -127,7 +127,7 @@ Your recent topics: ${previousTopics.join(', ')}
 **Thread this together:**
 - Reference: "Last week we talked about ${previousTopics[0]}. This week, let's go deeper into ${topic}..."
 - Callback: "Remember the ${previousTopics[0]} framework? Here's how it applies to ${topic}..."
-- Series: "This is Part 2 of our ${topic} series..."
+- Series (only if these issues form a series): "This continues our ${topic} series..."
 
 ---` : ''}
 

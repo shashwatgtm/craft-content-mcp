@@ -52,7 +52,7 @@ Shashwat Ghosh, Co-Founder and Fractional CMO of Helix GTM Consulting, a busines
 
 ### Why does the newsletter builder give a different preview line each time?
 
-The Newsletter Builder picks its preview text at random from a short list (newsletter-builder.ts line 219). Everything else it returns depends only on your inputs.
+The Newsletter Builder picks its preview text at random from a short list in newsletter-builder.ts. Everything else it returns depends on your inputs and the current year.
 
 ### Why do some answers look like templates?
 
@@ -64,11 +64,11 @@ Yes. Send POST https://craft-content.gtmhelix.com/api/tools/<tool name> with a J
 
 ### Is the source code public?
 
-Yes, at https://github.com/shashwatgtm/craft-content-mcp under the MIT licence. The npm package @shashwatgtmalpha/craft-content-mcp runs the same tools locally.
+Yes, at https://github.com/shashwatgtm/craft-content-mcp under the MIT licence. The npm package @shashwatgtmalpha/craft-content-mcp runs these tools locally; it can lag behind this site until a new version is published.
 
 ### Who is CRAFT Content not ideal for?
 
-Teams that want finished, on-brand copy: each tool returns a structured draft to edit, with placeholders where your inputs gave no fact. Anyone who needs research or quotes gathered for them: the tools look nothing up and use only the story and facts you give. Teams that need saved drafts or approvals: nothing is stored, so keep each result where you keep your work.
+Teams that want finished, on-brand copy: each tool returns a structured draft to edit, with placeholders where your inputs gave no fact. Anyone who needs research or quotes gathered for them: the tools look nothing up; they work from the story and facts you give, and anything they add themselves is marked as an example, a suggestion or a placeholder. Teams that need saved drafts or approvals: nothing is stored, so keep each result where you keep your work.
 
 ### How do I report a problem?
 

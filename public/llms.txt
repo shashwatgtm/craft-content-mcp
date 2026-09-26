@@ -1,6 +1,6 @@
 # CRAFT Content
 
-> CRAFT Content is a free MCP server and web app with eight content tools, by Shashwat Ghosh of Helix GTM Consulting. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter, a webinar script, repurposed posts, a thought leadership series, testimonial requests, sales content or a CRAFT review of your draft.
+> CRAFT Content is a free web app and AI connector with eight content tools, by Shashwat Ghosh of Helix GTM Consulting. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter, a webinar script, repurposed posts, a thought leadership series, testimonial requests, sales content or a CRAFT review of your draft.
 
 - Web app (no sign-in): https://craft-content.gtmhelix.com/
 - MCP server URL (Streamable HTTP, no sign-in, read-only tools): https://craft-content.gtmhelix.com/mcp
@@ -28,11 +28,11 @@
 
 ### What is CRAFT Content?
 
-CRAFT Content is a free MCP server and web app with eight content tools, by Shashwat Ghosh of Helix GTM Consulting. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter, a webinar script, repurposed posts, a thought leadership series, testimonial requests, sales content or a CRAFT review of your draft.
+CRAFT Content is a free web app and AI connector with eight content tools, by Shashwat Ghosh of Helix GTM Consulting. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter, a webinar script, repurposed posts, a thought leadership series, testimonial requests, sales content or a CRAFT review of your draft.
 
 ### Is CRAFT Content free, and do I need an account?
 
-It is free, and there is no account or sign-in. Use the tools in your browser here, or connect the MCP server to your AI assistant.
+It is free, and there is no account or sign-in. Use the tools in your browser here, or add them to Claude or ChatGPT as a connector.
 
 ### Does it use AI to write the answers?
 

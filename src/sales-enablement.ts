@@ -399,7 +399,7 @@ function generateStagePitch(
     prospecting: `
 **Cold Outreach Framework:**
 
-"Hi [Name], I'm reaching out because ${persona}s at companies like yours often struggle with [primary pain point].
+"Hi [Name], I'm reaching out because ${/s$/i.test(persona.trim()) ? persona.trim() : `${persona}s`} at companies like yours often struggle with [primary pain point].
 
 ${valueProps[0] || 'We help with...'}: ${proofPoints[0] || 'with proven results.'} 
 

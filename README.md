@@ -1,4 +1,4 @@
-# @shashwatgtmalpha/craft-content-mcp v2.2.0
+# @shashwatgtmalpha/craft-content-mcp v2.2.1
 🎯 **CRAFT Content Framework MCP Server** - Complete redesign with user-centric inputs, actual content analysis, and publish-ready outputs.
 
 ## Design Philosophy
@@ -43,7 +43,7 @@ Or add to Claude Desktop config:
 
 ## Tools and inputs
 
-Generated on 26 September 2026 from the server's own tool list (`tools/list` of craft-content-mcp 2.2.0, the same code as the hosted MCP address), so every tool name, title, description and input below is exactly what the server accepts. Every tool is read-only.
+Generated on 26 September 2026 from the server's own tool list (`tools/list` of craft-content-mcp 2.2.1, the same code as the hosted MCP address), so every tool name, title, description and input below is exactly what the server accepts. Every tool is read-only.
 
 | # | Tool | Title | What it does |
 |---|---|---|---|
@@ -171,7 +171,7 @@ Generated on 26 September 2026 from the server's own tool list (`tools/list` of 
 
 ## Author
 
-**Shashwat Ghosh** - [Helix GTM Consulting](https://tools.gtmhelix.com)
+**Shashwat Ghosh**, Co-Founder and Fractional CMO, [Helix GTM Consulting](https://tools.gtmhelix.com), with 24+ years in B2B and 10+ years of fractional experience
 
 ## License
 

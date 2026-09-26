@@ -276,7 +276,7 @@ function generatePointContent(point: string, depth: string, tone: string): strin
 - Configuration: [specific settings]
 - Integration: [specific steps]
 - Validation: [specific tests]`,
-    'accessible': `In simple terms: ${point.toLowerCase()} can transform how you work. Most people overcomplicate this—don't.`,
+    'accessible': `In simple terms: ${point.toLowerCase()} can transform how you work. Most people overcomplicate this. Don't.`,
     'introductory': `If you're new to this, here's what you need to know: ${point.toLowerCase()} is the foundation everything else builds on.`,
     'advanced': `You already know the basics. The next level: apply this to [advanced use case] for 10x the impact (Example figure: replace with your own).`
   };
@@ -312,7 +312,7 @@ Everything covered here, plus bonus frameworks.`;
 
 **What do you think?**
 
-Hit reply and let me know—I read every response.`;
+Hit reply and let me know. I read every response.`;
   }
   
   if (goalLower.includes('share')) {
@@ -384,7 +384,7 @@ function getSegmentTips(segment: string): string {
 - Be generous with details
 - They want to DO something`,
     technical: `
-- Depth is expected—don't oversimplify
+- Depth is expected: don't oversimplify
 - Include code snippets if relevant
 - Link to documentation
 - Be precise with terminology

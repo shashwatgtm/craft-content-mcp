@@ -318,7 +318,7 @@ ${quote ? `## In Their Words
 
 > "${quote}"
 >
-> — ${customerName}
+> ${customerName}
 
 ---` : ''}
 

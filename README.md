@@ -1,4 +1,4 @@
-# @shashwatgtmalpha/craft-content-mcp v2.2.1
+# @shashwatgtmalpha/craft-content-mcp v2.2.2
 🎯 **CRAFT Content Framework MCP Server** - Complete redesign with user-centric inputs, actual content analysis, and publish-ready outputs.
 
 ## Design Philosophy
@@ -43,7 +43,7 @@ Or add to Claude Desktop config:
 
 ## Tools and inputs
 
-Generated on 26 September 2026 from the server's own tool list (`tools/list` of craft-content-mcp 2.2.1, the same code as the hosted MCP address), so every tool name, title, description and input below is exactly what the server accepts. Every tool is read-only.
+Generated on 27 September 2026 from the server's own tool list (`tools/list` of craft-content-mcp 2.2.2, the same code as the hosted MCP address), so every tool name, title, description and input below is exactly what the server accepts. Every tool is read-only.
 
 | # | Tool | Title | What it does |
 |---|---|---|---|

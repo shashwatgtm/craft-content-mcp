@@ -377,7 +377,7 @@ Best,
 function generateBlogSummary(content: string, keyPoints: string[], title: string): string {
   return `## ${title}: Key Takeaways
 
-${keyPoints[0] || 'This content explores important topics'} — and that's just the beginning.
+${keyPoints[0] || 'This content explores important topics'}, and that's just the beginning.
 
 In this ${content.length > 5000 ? 'comprehensive' : 'focused'} piece, we cover:
 

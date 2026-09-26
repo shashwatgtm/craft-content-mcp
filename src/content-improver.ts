@@ -162,7 +162,7 @@ function generateBetterHook(content: string, contentType: string, goal: string):
   }
   
   if (goalLower.includes('educate') || goalLower.includes('inform')) {
-    return `Everything you need to know about [topic] — explained simply.`;
+    return `Everything you need to know about [topic], explained simply.`;
   }
   
   if (goalLower.includes('engage') || contentType === 'social_post') {

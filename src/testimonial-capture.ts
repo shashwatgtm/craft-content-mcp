@@ -68,7 +68,7 @@ ${generateInterviewQuestions(type, story)}
 
 "[Product] helped ${company} ${getOutcome(story)}. ${getImpact(story)}."
 
-— ${name}, ${role} at ${company}
+${name}, ${role} at ${company}
 
 ---
 
@@ -77,7 +77,7 @@ ${generateInterviewQuestions(type, story)}
 
 "Before [Product], we struggled with ${getChallenge(story)}. Since implementing [Product], we've ${getOutcome(story)}. ${getImpact(story)}. I'd recommend it to anyone facing similar challenges."
 
-— ${name}, ${role} at ${company}
+${name}, ${role} at ${company}
 
 ---
 
@@ -86,7 +86,7 @@ ${generateInterviewQuestions(type, story)}
 
 "When I joined ${company} as ${role}, ${getChallenge(story)} was a major obstacle. We evaluated several options but [Product] stood out because of [key differentiator]. The implementation was [experience], and within [timeframe], we saw ${getOutcome(story)}. ${getImpact(story)}. The support team has been incredible, and I'd recommend [Product] to any ${role} looking to ${getGoal(story)}."
 
-— ${name}, ${role} at ${company}
+${name}, ${role} at ${company}
 
 ---
 
@@ -164,7 +164,7 @@ Hi ${name},
 
 I hope this finds you well!
 
-I've loved seeing ${company}'s success with [Product] — ${story.split('.')[0].toLowerCase()}.
+I've loved seeing ${company}'s success with [Product]: ${story.split('.')[0].toLowerCase()}.
 
 Would you be willing to share a brief quote about your experience? Just 2-3 sentences about what [Product] has meant for your team.
 
@@ -186,7 +186,7 @@ Hi ${name},
 
 I hope you're doing well!
 
-${company}'s success with [Product] — ${story.split('.')[0].toLowerCase()} — is exactly the kind of story that helps others facing similar challenges.
+${company}'s success with [Product], ${story.split('.')[0].toLowerCase()}, is exactly the kind of story that helps others facing similar challenges.
 
 Would you be open to a brief video interview? Here's what it looks like:
 
@@ -197,7 +197,7 @@ Would you be open to a brief video interview? Here's what it looks like:
 - **Your review:** You'll approve the final edit before anything goes live
 ${incentive ? `- **Thank you:** ${incentive}` : ''}
 
-We handle all production — you just show up and share your story.
+We handle all production. You just show up and share your story.
 
 Would [next week] work for you?
 
@@ -209,7 +209,7 @@ Best,
 
 Hi ${name},
 
-Your team's results with [Product] have been impressive — ${story.split('.')[0].toLowerCase()}.
+Your team's results with [Product] have been impressive: ${story.split('.')[0].toLowerCase()}.
 
 I'd love to tell ${company}'s story in a detailed case study. This would include:
 

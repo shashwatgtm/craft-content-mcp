@@ -1,5 +1,18 @@
 import { parseListItems, SUGGESTION_FOOTER } from './utils.js';
 
+// Text only (run 8): an input phrase used as a whole sentence inside a script ends with a full stop.
+function asSentence(text: string | undefined): string {
+  if (!text) return '';
+  const t = text.trim();
+  return /[.!?]$/.test(t) ? t : `${t}.`;
+}
+// Text only (run 8): an input phrase placed mid-sentence starts in lower case unless it starts with an acronym or a name.
+function midSentence(text: string): string {
+  const t = text.trim();
+  const first = t.split(/\s+/)[0] || '';
+  return /^[A-Z][a-z'-]*$/.test(first) ? t.charAt(0).toLowerCase() + t.slice(1) : t;
+}
+
 // Generate likely objections based on product description and price context
 function generateLikelyObjections(product: string, priceContext: string): string[] {
   const objections: string[] = [];
@@ -180,7 +193,7 @@ Based on what you've shared about your situation, here's what that could mean fo
 
 ${valueProps[0] || 'Our solution'} typically [specific outcome]. For a company your size, that's roughly [X in savings/revenue].
 
-The question isn't whether you can afford ${product}—it's whether you can afford not to."
+The question isn't whether you can afford ${product}. It's whether you can afford not to."
 
 ---
 
@@ -298,11 +311,11 @@ function generateObjectionHandler(
   // Price objections
   if (objLower.includes('price') || objLower.includes('expensive') || objLower.includes('cost') || objLower.includes('budget')) {
     return {
-      acknowledge: "I hear you—budget is always a consideration.",
+      acknowledge: "I hear you, budget is always a consideration.",
       reframe: "Let me share what our customers found when they compared total cost of ownership...",
       proof: proofPoints[0] || "Customers typically see ROI within [X] months.",
       bridge: valueProps[0] || "The key value driver is...",
-      fullScript: `I hear you—budget is always a consideration. Here's what I've found: companies that focus only on price often end up spending more in the long run on [hidden costs/lost opportunity]. ${proofPoints[0] || 'Our customers typically see ROI within [timeframe].'} The question isn't the price—it's the value. Would it help to walk through an ROI calculation based on your specific numbers?`
+      fullScript: `I hear you, budget is always a consideration. Here's what I've found: companies that focus only on price often end up spending more in the long run on [hidden costs/lost opportunity]. ${asSentence(proofPoints[0]) || 'Our customers typically see ROI within [timeframe].'} The question isn't the price. It's the value. Would it help to walk through an ROI calculation based on your specific numbers?`
     };
   }
   
@@ -310,32 +323,32 @@ function generateObjectionHandler(
   if (objLower.includes('time') || objLower.includes('now') || objLower.includes('later') || objLower.includes('busy') || objLower.includes('next quarter')) {
     return {
       acknowledge: "Timing is definitely important to get right.",
-      reframe: "I'm curious—what would need to change for the timing to feel right?",
+      reframe: "I'm curious: what would need to change for the timing to feel right?",
       proof: proofPoints[0] || "Companies that waited reported [X] in additional costs.",
       bridge: valueProps[0] || "The cost of waiting is often...",
-      fullScript: `Timing is definitely important. I'm curious—what would need to change for the timing to feel right? What I often see is that waiting adds [specific cost]. ${proofPoints[0] || 'Example quote (not from your input): one customer told us they wished they had started 6 months earlier (Example figure: replace with your own).'} Even if the full rollout is later, starting discovery now means you're ready when the time is right. What would be the cost of waiting another quarter?`
+      fullScript: `Timing is definitely important. I'm curious: what would need to change for the timing to feel right? What I often see is that waiting adds [specific cost]. ${asSentence(proofPoints[0]) || 'Example quote (not from your input): one customer told us they wished they had started 6 months earlier (Example figure: replace with your own).'} Even if the full rollout is later, starting discovery now means you're ready when the time is right. What would be the cost of waiting another quarter?`
     };
   }
   
   // Feature/capability objections
   if (objLower.includes('feature') || objLower.includes('can\'t') || objLower.includes('doesn\'t') || objLower.includes('missing') || objLower.includes('need')) {
     return {
-      acknowledge: "That's a fair point—let me understand what you're trying to accomplish.",
+      acknowledge: "That's a fair point. Let me understand what you're trying to accomplish.",
       reframe: "What problem are you solving with that specific feature?",
       proof: proofPoints[0] || "Here's how other customers handle that use case...",
       bridge: valueProps[0] || "What we've found is that [core capability] addresses the underlying need.",
-      fullScript: `That's a fair point. Help me understand—what's the underlying problem you're solving with that feature? [Listen] What I often find is that [alternative approach] actually achieves the same outcome. ${proofPoints[0] || 'Customers using our approach report...'} Plus, ${valueProps[0] || 'our core strength'} often makes that specific feature less critical. Would it help to see how others handle this?`
+      fullScript: `That's a fair point. Help me understand: what's the underlying problem you're solving with that feature? [Listen] What I often find is that [alternative approach] actually achieves the same outcome. ${asSentence(proofPoints[0]) || 'Customers using our approach report...'} Plus, ${valueProps[0] ? midSentence(valueProps[0]) : 'our core strength'} often makes that specific feature less critical. Would it help to see how others handle this?`
     };
   }
   
   // Trust/risk objections
   if (objLower.includes('risk') || objLower.includes('trust') || objLower.includes('proven') || objLower.includes('new') || objLower.includes('reference')) {
     return {
-      acknowledge: "De-risking a decision like this is smart—you should validate before committing.",
+      acknowledge: "De-risking a decision like this is smart: you should validate before committing.",
       reframe: "What would make you feel confident in moving forward?",
       proof: proofPoints[0] || "We work with [similar companies] in your space.",
       bridge: "Let me connect you with a customer who had similar concerns.",
-      fullScript: `De-risking this decision is smart—I'd want to validate too. What would make you feel confident? We work with ${proofPoints[0] || 'companies like yours'}, and I'd be happy to arrange a reference call. We also offer [pilot program/guarantee/sandbox] so you can validate before fully committing. What would be most helpful for you?`
+      fullScript: `De-risking this decision is smart. I'd want to validate too. What would make you feel confident? We work with ${proofPoints[0] || 'companies like yours'}, and I'd be happy to arrange a reference call. We also offer [pilot program/guarantee/sandbox] so you can validate before fully committing. What would be most helpful for you?`
     };
   }
   
@@ -346,7 +359,7 @@ function generateObjectionHandler(
       reframe: "What's most important to you in making this decision?",
       proof: proofPoints[0] || "Here's what customers who've compared us found...",
       bridge: valueProps[0] || "What sets us apart is...",
-      fullScript: `Makes sense to evaluate options thoroughly. What's most important to you in making this decision? [Listen] That's exactly where we differentiate. ${valueProps[0] || 'Our unique approach'} means [specific advantage]. ${proofPoints[0] || 'Customers who\'ve compared us found...'} What if I share a side-by-side comparison focused on what matters most to you?`
+      fullScript: `Makes sense to evaluate options thoroughly. What's most important to you in making this decision? [Listen] That's exactly where we differentiate. ${valueProps[0] || 'Our unique approach'} means [specific advantage]. ${asSentence(proofPoints[0]) || 'Customers who\'ve compared us found...'} What if I share a side-by-side comparison focused on what matters most to you?`
     };
   }
   
@@ -356,7 +369,7 @@ function generateObjectionHandler(
     reframe: "Help me understand what's driving that concern...",
     proof: proofPoints[0] || "Here's how we address that...",
     bridge: valueProps[0] || "The key benefit is...",
-    fullScript: `I understand your concern. Help me understand what's driving that? [Listen] Here's how we address it: ${valueProps[0] || 'Our approach'}. ${proofPoints[0] || 'Customers find that...'} Does that address your concern?`
+    fullScript: `I understand your concern. Help me understand what's driving that? [Listen] Here's how we address it: ${valueProps[0] || 'Our approach'}. ${asSentence(proofPoints[0]) || 'Customers find that...'} Does that address your concern?`
   };
 }
 
@@ -369,7 +382,7 @@ function generateCompetitorHandler(
   
   return {
     whenHeard: `Usually when prospects are comparing options or have existing relationship with ${competitor}`,
-    response: `Great question about ${competitor}. Here's what customers tell us after evaluating both: ${valueProps[0] || 'Our differentiation'} is where we really shine. ${proofPoints[0] || 'One customer who switched from ' + competitor + ' saw...'} What's most important to you in this decision?`,
+    response: `Great question about ${competitor}. Here's what customers tell us after evaluating both: ${valueProps[0] || 'Our differentiation'} is where we really shine. ${asSentence(proofPoints[0]) || 'One customer who switched from ' + competitor + ' saw...'} What's most important to you in this decision?`,
     trapQuestion: `When you evaluated ${competitor}, did they address [your key differentiator]? How did they handle [their known weakness]?`,
     proof: proofPoints[0] || `Customers who switched from ${competitor} report...`
   };
@@ -388,7 +401,7 @@ function generateStagePitch(
 
 "Hi [Name], I'm reaching out because ${persona}s at companies like yours often struggle with [primary pain point].
 
-${valueProps[0] || 'We help with...'} — ${proofPoints[0] || 'with proven results.'} 
+${valueProps[0] || 'We help with...'}: ${proofPoints[0] || 'with proven results.'} 
 
 Worth a 15-minute conversation? (Example figure: replace with your own)
 

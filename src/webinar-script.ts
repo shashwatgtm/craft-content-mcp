@@ -95,7 +95,7 @@ ${generateAnticipatedQuestions(topic, takeaways, type)}
 
 For questions outside scope:
 - "Great question! That deserves its own session. Let me note it and follow up via email."
-- "We have a resource on that—I'll share the link in the follow-up email."
+- "We have a resource on that. I'll share the link in the follow-up email."
 - "That's a deep topic. Let's connect after the webinar to discuss your specific situation."
 
 ---
@@ -307,8 +307,8 @@ function generateScriptSection(
 Before we dive in, a few quick housekeeping items:
 - We're recording today's session and will send you the link within 24 hours
 - Your audio is muted, but we want this to be interactive
-- Use the chat for questions anytime—we'll address them throughout and have dedicated Q&A time
-- [If polls enabled] You'll see some polls pop up—please participate, it makes this better for everyone
+- Use the chat for questions anytime: we'll address them throughout and have dedicated Q&A time
+- [If polls enabled] You'll see some polls pop up: please participate, it makes this better for everyone
 
 Let's get started!"
 
@@ -319,7 +319,7 @@ Let's get started!"
 **[ON SCREEN: Speaker bio slide]**
 
 **SPEAKER:**
-"Quick introduction—I'm ${speakers[0]}. [2-3 sentences of relevant background establishing credibility for this topic].
+"Quick introduction: I'm ${speakers[0]}. [2-3 sentences of relevant background establishing credibility for this topic].
 
 I'm excited to share what we've learned about ${topic} and give you actionable takeaways you can use immediately."
 
@@ -362,7 +362,7 @@ Let's see what you're dealing with..."
 **[ON SCREEN: Key concept slide]**
 
 **SPEAKER:**
-"Let's start with ${takeaways[0] || 'the foundation'}.
+"Let's start with ${takeaways[0] ? `the first takeaway: ${takeaways[0]}` : 'the foundation'}.
 
 [Core teaching point with specific examples]
 

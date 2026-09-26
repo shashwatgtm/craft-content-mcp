@@ -269,7 +269,7 @@ You're ${targetReader}. You've read the books, attended the webinars, maybe even
 
 And yet something's not clicking.
 
-The results aren't matching the effort. The advice that worked for others seems to fall flat for you. You're left wondering if you're doing something wrong—or if the advice itself is the problem.
+The results aren't matching the effort. The advice that worked for others seems to fall flat for you. You're left wondering if you're doing something wrong, or if the advice itself is the problem.
 
 Here's what I've learned: **it's usually the advice.**
 
@@ -283,11 +283,11 @@ ${yourTake}. And that changes everything about how you should approach this.
 
 Let me tell you about ${proof1}.
 
-[**CUSTOMIZE:** Insert your specific story here. Be concrete—names, numbers, timeline, outcomes. The more specific, the more credible. This should be 2-3 paragraphs showing the reality of this proof point.]
+[**CUSTOMIZE:** Insert your specific story here. Be concrete: names, numbers, timeline, outcomes. The more specific, the more credible. This should be 2-3 paragraphs showing the reality of this proof point.]
 
 This wasn't an isolated incident. When I look at ${proof2}, the same pattern emerges.
 
-[**CUSTOMIZE:** Second story or data point here. Different context, same underlying truth. This builds the case that your take isn't a fluke—it's a pattern. Another 2-3 paragraphs.]
+[**CUSTOMIZE:** Second story or data point here. Different context, same underlying truth. This builds the case that your take isn't a fluke. It's a pattern. Another 2-3 paragraphs.]
 
 What these examples reveal is something that contradicts the conventional wisdom about ${topic}. We've been told that the standard approach works. But the evidence suggests otherwise.
 
@@ -301,9 +301,9 @@ Once you accept that ${yourTake.toLowerCase()}, a different path forward becomes
 
 **First**, you have to unlearn the habits that are working against you. This is harder than learning new ones. It means questioning assumptions you didn't even know you had.
 
-**Second**, you need a new framework for thinking about ${topic}. Not a rigid system—those fail the moment reality deviates from the plan. But a set of principles that guide decision-making when the playbook doesn't apply.
+**Second**, you need a new framework for thinking about ${topic}. Not a rigid system, because those fail the moment reality deviates from the plan. But a set of principles that guide decision-making when the playbook doesn't apply.
 
-**Third**, you have to be willing to look foolish in the short term. ${proof3} taught me that the right approach often looks wrong to outside observers—until the results speak for themselves.
+**Third**, you have to be willing to look foolish in the short term. ${proof3} taught me that the right approach often looks wrong to outside observers, until the results speak for themselves.
 
 Here's what this looks like in practice:
 
@@ -319,7 +319,7 @@ The specifics will vary based on your situation. But the underlying principle re
 
 If you're ${targetReader}, you have a choice to make.
 
-You can keep following the standard advice about ${topic}—the playbooks, the best practices, the "proven" approaches that somehow never quite work as advertised.
+You can keep following the standard advice about ${topic}: the playbooks, the best practices, the "proven" approaches that somehow never quite work as advertised.
 
 Or you can accept an uncomfortable truth: ${yourTake.toLowerCase()}.
 
@@ -327,7 +327,7 @@ I know which path I'd choose. I know which path has produced results for me and 
 
 The question is whether you're ready to see ${topic} differently.
 
-**What's your experience been? I'd love to hear whether this resonates—or where you disagree. The best insights come from the conversation.**
+**What's your experience been? I'd love to hear whether this resonates, or where you disagree. The best insights come from the conversation.**
 
 ---
 
@@ -349,13 +349,13 @@ function generateHook(hookType: string, topic: string, yourTake: string, targetR
   const hooks: Record<string, string> = {
     controversy: `Here's something that might make you uncomfortable: ${yourTake.toLowerCase()}.
 
-I know that goes against everything you've been told about ${topic}. I used to believe the conventional wisdom too. Then I spent years in the trenches, and I discovered that almost everything the experts teach about ${topic} is not just incomplete—it's actively harmful.
+I know that goes against everything you've been told about ${topic}. I used to believe the conventional wisdom too. Then I spent years in the trenches, and I discovered that almost everything the experts teach about ${topic} is not just incomplete. It's actively harmful.
 
 If you're ${targetReader}, this matters more than you think. Here's why.`,
 
     revelation: `There's a conversation happening behind closed doors that most ${targetReader} never hear.
 
-It's about ${topic}—specifically, about ${yourTake.toLowerCase()}.
+It's about ${topic}, specifically about ${yourTake.toLowerCase()}.
 
 The people who've figured this out aren't talking about it publicly. Not because it's a secret, but because admitting it means acknowledging that the standard playbook is broken. After seeing this pattern play out dozens of times, I can't stay quiet anymore.`,
 
@@ -367,13 +367,13 @@ ${yourTake}. I didn't want to believe it either. But after working with ${target
 
     promise_of_value: `What if I told you that ${topic} is simpler than everyone makes it out to be?
 
-Not easy—simple. There's a difference.
+Not easy. Simple. There's a difference.
 
 After years of watching ${targetReader} struggle with ${topic}, I've distilled what actually works into something you can start using today. Not theory. Not frameworks that look good in slideshows. Real approaches that produce real results.`,
 
     proof_of_results: `Here's something I wasn't supposed to share.
 
-When I first discovered that ${yourTake.toLowerCase()}, I didn't believe it either. Now, having seen the results—in my own work and with dozens of ${targetReader}—I can't ignore it anymore.
+When I first discovered that ${yourTake.toLowerCase()}, I didn't believe it either. Now, having seen the results, in my own work and with dozens of ${targetReader}, I can't ignore it anymore.
 
 This isn't about incremental improvement. This is about fundamentally rethinking ${topic}.`,
 
@@ -397,13 +397,13 @@ Here's what happened, and what it might mean for you.`,
 
     numbered_wisdom: `After years in this space, I've learned that success with ${topic} comes down to a handful of non-obvious insights.
 
-Not tactics. Not hacks. Insights—the kind that change how you think about the problem entirely.
+Not tactics. Not hacks. Insights: the kind that change how you think about the problem entirely.
 
 ${yourTake} was the first one. Here are the others.`,
 
     future_vision: `The ${topic} landscape is about to shift dramatically.
 
-If you're ${targetReader}, the changes coming in the next few years will create massive opportunities—for those who see them coming. Everyone else will be left wondering what happened.
+If you're ${targetReader}, the changes coming in the next few years will create massive opportunities for those who see them coming. Everyone else will be left wondering what happened.
 
 Here's what I'm seeing, and what you should do about it.`,
 
@@ -433,7 +433,7 @@ What they do looks nothing like the standard advice. Here's the pattern I've ext
 
     simplification: `${topic} is overcomplicated.
 
-Not because it's inherently complex, but because complexity serves people selling solutions. The truth is simpler—and more actionable—than you've been led to believe.
+Not because it's inherently complex, but because complexity serves people selling solutions. The truth is simpler, and more actionable, than you've been led to believe.
 
 Here's the model I now use for everything.`
   };
@@ -463,7 +463,7 @@ Here's what I learned:
 → What actually works looks nothing like the playbook
 → The people getting results are doing something different
 
-I just published a deep dive on this—sharing the evidence, what it means, and what to do about it.
+I just published a deep dive on this, sharing the evidence, what it means, and what to do about it.
 
 Link in comments 👇
 

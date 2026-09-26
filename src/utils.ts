@@ -277,7 +277,8 @@ export function generateImprovedVersion(content: string, analysis: ContentAnalys
   const improvedSentences = sentences.map(s => {
     if (countWords(s) > 30) {
       // Try to split at conjunctions
-      const split = s.replace(/,\s*(and|but|so|or)\s+/gi, '.\n$1 ');
+      // Text only (run 8): the joining word that starts the new sentence gets a capital ("And", not "and").
+      const split = s.replace(/,\s*(and|but|so|or)\s+/gi, (_m: string, c: string) => `.\n${c.charAt(0).toUpperCase()}${c.slice(1)} `);
       return split.charAt(0).toUpperCase() + split.slice(1);
     }
     return s;

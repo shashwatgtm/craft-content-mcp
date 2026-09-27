@@ -196,7 +196,7 @@ The question isn't whether you can afford ${product}. It's whether you can affor
 
 ---
 
-## 🎣 Discovery Questions for ${persona}
+## 🎣 Discovery Questions for ${midSentence(persona)}
 
 ### Opening Questions
 1. "Tell me about your current approach to [problem area]."

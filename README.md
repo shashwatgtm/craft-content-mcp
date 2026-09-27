@@ -1,9 +1,9 @@
-# @shashwatgtmalpha/craft-content-mcp v2.2.4
+# @shashwatgtmalpha/craft-content-mcp v2.2.5
 🎯 **CRAFT Content Framework MCP Server** - Complete redesign with user-centric inputs, actual content analysis, and publish-ready outputs.
 
 ## Use it hosted (no install)
 
-Add `https://craft-content.gtmhelix.com/mcp` to Claude or ChatGPT as a custom connector. It needs no sign-in and always runs the newest version (2.2.4). The same tools run as a free web app with a form per tool at https://craft-content.gtmhelix.com/, and the setup steps are at https://craft-content.gtmhelix.com/connect/.
+Add `https://craft-content.gtmhelix.com/mcp` to Claude or ChatGPT as a custom connector. It needs no sign-in and always runs the newest version (2.2.5). The same tools run as a free web app with a form per tool at https://craft-content.gtmhelix.com/, and the setup steps are at https://craft-content.gtmhelix.com/connect/.
 
 The npm package below is an older version (2.0.1 on npm on 27 September 2026) until the next npm release. Use it only if you need a local stdio server.
 
@@ -50,7 +50,7 @@ Or add to Claude Desktop config:
 
 ## Tools and inputs
 
-Generated on 27 September 2026 from the server's own tool list (`tools/list` of craft-content-mcp 2.2.4, the same code as the hosted MCP address), so every tool name, title, description and input below is exactly what the server accepts. Every tool is read-only.
+Generated on 27 September 2026 from the server's own tool list (`tools/list` of craft-content-mcp 2.2.5, the same code as the hosted MCP address), so every tool name, title, description and input below is exactly what the server accepts. Every tool is read-only.
 
 | # | Tool | Title | What it does |
 |---|---|---|---|

@@ -1,4 +1,4 @@
-import { parseListItems, SUGGESTION_FOOTER } from './utils.js';
+import { parseListItems, lowerFirstIfCommon, SUGGESTION_FOOTER } from './utils.js';
 
 export function generateWebinarScript(args: {
   topic: string;
@@ -134,7 +134,7 @@ Here's the quick answer: [brief response]
 
 ### Email 3: Day 7
 
-**Subject:** Next steps on ${topic}
+**Subject:** Next steps on ${lowerFirstIfCommon(topic)}
 
 It's been a week since our webinar. By now you've probably:
 - ✅ Watched the recording (or at least meant to)
@@ -321,7 +321,7 @@ Let's get started!"
 **SPEAKER:**
 "Quick introduction: I'm ${speakers[0]}. [2-3 sentences of relevant background establishing credibility for this topic].
 
-I'm excited to share what we've learned about ${topic} and give you actionable takeaways you can use immediately."
+I'm excited to share what we've learned about ${lowerFirstIfCommon(topic)} and give you actionable takeaways you can use immediately."
 
 `,
     'Agenda & Learning Objectives': `
@@ -345,7 +345,7 @@ Sound good? Drop a '1' in the chat if you're ready to go." (Example figure: repl
 **[ON SCREEN: Context/problem slide]**
 
 **SPEAKER:**
-"Before we get tactical, let's talk about why ${topic} matters right now.
+"Before we get tactical, let's talk about why ${lowerFirstIfCommon(topic)} matters right now.
 
 [Audience-specific pain point for ${audience}]
 
@@ -423,7 +423,7 @@ Have a great rest of your [day/week]!"
 **SPEAKER:**
 "[Content for ${section.purpose}]
 
-[Teaching points related to ${topic}]
+[Teaching points related to ${lowerFirstIfCommon(topic)}]
 
 [Transition to next section]"
 
@@ -432,7 +432,7 @@ Have a great rest of your [day/week]!"
 
 function generateAnticipatedQuestions(topic: string, takeaways: string[], type: string): string {
   return `
-1. **"How do I get started with ${topic}?"**
+1. **"How do I get started with ${lowerFirstIfCommon(topic)}?"**
    - Response: Start with [first step]. Focus on [key principle].
 
 2. **"What if [common objection/concern]?"**
@@ -453,7 +453,7 @@ function generateAnticipatedQuestions(topic: string, takeaways: string[], type: 
 function generateTakeawaysFromTopic(topic: string, type: string, audience: string): string[] {
   const typeSpecificTakeaways: Record<string, string[]> = {
     educational: [
-      `Understand the fundamentals of ${topic}`,
+      `Understand the fundamentals of ${lowerFirstIfCommon(topic)}`,
       `Learn the most common mistakes to avoid`,
       `Get a practical framework you can apply immediately`,
       `Know what metrics/outcomes to track`,
@@ -467,7 +467,7 @@ function generateTakeawaysFromTopic(topic: string, type: string, audience: strin
       `Get answers to common questions`
     ],
     panel_discussion: [
-      `Hear diverse perspectives on ${topic}`,
+      `Hear diverse perspectives on ${lowerFirstIfCommon(topic)}`,
       `Learn from practitioners who've been there`,
       `Understand different approaches that work`,
       `Get insights you won't find in books/blogs`,
@@ -489,7 +489,7 @@ function generateTakeawaysFromTopic(topic: string, type: string, audience: strin
     ],
     ama: [
       `Get direct answers to your specific questions`,
-      `Hear what others are asking about ${topic}`,
+      `Hear what others are asking about ${lowerFirstIfCommon(topic)}`,
       `Gain insider perspective and honest opinions`,
       `Learn from rapid-fire exchanges`,
       `Know what to focus on next`

@@ -1,4 +1,4 @@
-import { parseListItems, extractKeyPoints, lowerCommonWords, SUGGESTION_FOOTER } from './utils.js';
+import { parseListItems, extractKeyPoints, lowerCommonWords, lowerFirstIfCommon, SUGGESTION_FOOTER } from './utils.js';
 
 export function generateCaseStudy(args: {
   customer_name: string;
@@ -387,7 +387,7 @@ function generateChallengeContext(industry: string): string {
 
 function generateWhyChose(product: string, industry: string): string {
   return `After evaluating several options, ${product} stood out for its:
-- Proven track record in the ${industry} industry
+- Proven track record in the ${lowerFirstIfCommon(industry)} industry
 - Ease of implementation and time to value
 - Comprehensive feature set that addressed their specific needs
 - Responsive customer support team`;

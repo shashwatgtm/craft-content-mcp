@@ -136,6 +136,14 @@ export function lowerCommonWords(phrase: string): string {
 }
 // Text only (run 9): a phrase that starts a sentence, a heading or a table cell starts with a capital. A first word
 // written with a small letter and an inner capital (iPhone, eBay) is a name and is kept as typed.
+// Text only (run 10, R10-28, copied from impact-mcp): "a" or "an" before a phrase, by its first sound (an onboarding
+// challenge, a CRM, an SMS tool, an AI adoption challenge).
+export function aOrAn(phrase: string): string {
+  const w = (phrase.trim().split(/\s+/)[0] || '').replace(/^[^A-Za-z0-9]+/, '');
+  if (/^[A-Z0-9]{2,}$/.test(bareWord(w))) return /^[AEFHILMNORSX8]/.test(w) ? 'an' : 'a';
+  if (/^(hour|honest|heir)/i.test(w)) return 'an';
+  return /^[aeiou]/i.test(w) && !/^(uni|use|usu|uti|eu|one|once)/i.test(w) ? 'an' : 'a';
+}
 export function cap(phrase: string): string {
   const t = phrase.trim();
   if (/^[a-z]+[A-Z]/.test(t.split(/\s+/)[0] || '')) return t;
@@ -469,14 +477,14 @@ export function extractKeyPoints(text: string): string[] {
 export function generateHook(topic: string, style: 'question' | 'statistic' | 'story' | 'bold_statement'): string {
   switch (style) {
     case 'question':
-      return `What if everything you knew about ${topic} was wrong?`;
+      return `What if everything you knew about ${lowerFirstIfCommon(topic)} was wrong?`;
     case 'statistic':
-      return `78% of professionals struggle with ${topic} (Example figure: replace with your own). Here's what the top performers do differently.`;
+      return `78% of professionals struggle with ${lowerFirstIfCommon(topic)} (Example figure: replace with your own). Here's what the top performers do differently.`;
     case 'story':
-      return `Last month, a ${topic} challenge nearly derailed our biggest launch. What we learned changed everything.`;
+      return `Last month, ${aOrAn(topic)} ${lowerFirstIfCommon(topic)} challenge nearly derailed our biggest launch. What we learned changed everything.`;
     case 'bold_statement':
       return `${topic.charAt(0).toUpperCase() + topic.slice(1)} is broken. Here's how to fix it.`;
     default:
-      return `Let's talk about ${topic}.`;
+      return `Let's talk about ${lowerFirstIfCommon(topic)}.`;
   }
 }

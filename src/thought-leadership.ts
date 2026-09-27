@@ -1,4 +1,4 @@
-import { parseListItems, lowerCommonWords, SUGGESTION_FOOTER } from './utils.js';
+import { parseListItems, lowerCommonWords, lowerFirstIfCommon, SUGGESTION_FOOTER } from './utils.js';
 
 export function generateThoughtLeadership(args: {
   topic: string;
@@ -265,7 +265,7 @@ ${generateHook(angle.hook, topic, yourTake, targetReader)}
 
 Let me paint a picture you'll probably recognize.
 
-You're ${targetReader}. You've read the books, attended the webinars, maybe even hired consultants. When it comes to ${topic}, you've done your homework.
+You're ${targetReader}. You've read the books, attended the webinars, maybe even hired consultants. When it comes to ${lowerFirstIfCommon(topic)}, you've done your homework.
 
 And yet something's not clicking.
 
@@ -273,7 +273,7 @@ The results aren't matching the effort. The advice that worked for others seems 
 
 Here's what I've learned: **it's usually the advice.**
 
-Not because the people giving it are wrong or dishonest. But because most advice about ${topic} is based on a flawed assumption: that what worked in one context will work in yours. That best practices are universal. That following the playbook is the path to success.
+Not because the people giving it are wrong or dishonest. But because most advice about ${lowerFirstIfCommon(topic)} is based on a flawed assumption: that what worked in one context will work in yours. That best practices are universal. That following the playbook is the path to success.
 
 ${yourTake}. And that changes everything about how you should approach this.
 
@@ -289,7 +289,7 @@ This wasn't an isolated incident. When I look at ${proof2}, the same pattern eme
 
 [**CUSTOMIZE:** Second story or data point here. Different context, same underlying truth. This builds the case that your take isn't a fluke. It's a pattern. Another 2-3 paragraphs.]
 
-What these examples reveal is something that contradicts the conventional wisdom about ${topic}. We've been told that the standard approach works. But the evidence suggests otherwise.
+What these examples reveal is something that contradicts the conventional wisdom about ${lowerFirstIfCommon(topic)}. We've been told that the standard approach works. But the evidence suggests otherwise.
 
 This isn't about being contrarian for its own sake. It's about following the truth where it leads, even when it conflicts with what we've been taught.
 
@@ -301,7 +301,7 @@ Once you accept that ${lowerCommonWords(yourTake)}, a different path forward bec
 
 **First**, you have to unlearn the habits that are working against you. This is harder than learning new ones. It means questioning assumptions you didn't even know you had.
 
-**Second**, you need a new framework for thinking about ${topic}. Not a rigid system, because those fail the moment reality deviates from the plan. But a set of principles that guide decision-making when the playbook doesn't apply.
+**Second**, you need a new framework for thinking about ${lowerFirstIfCommon(topic)}. Not a rigid system, because those fail the moment reality deviates from the plan. But a set of principles that guide decision-making when the playbook doesn't apply.
 
 **Third**, you have to be willing to look foolish in the short term. ${proof3} taught me that the right approach often looks wrong to outside observers, until the results speak for themselves.
 
@@ -319,13 +319,13 @@ The specifics will vary based on your situation. But the underlying principle re
 
 If you're ${targetReader}, you have a choice to make.
 
-You can keep following the standard advice about ${topic}: the playbooks, the best practices, the "proven" approaches that somehow never quite work as advertised.
+You can keep following the standard advice about ${lowerFirstIfCommon(topic)}: the playbooks, the best practices, the "proven" approaches that somehow never quite work as advertised.
 
 Or you can accept an uncomfortable truth: ${lowerCommonWords(yourTake)}.
 
 I know which path I'd choose. I know which path has produced results for me and for others who've made this shift.
 
-The question is whether you're ready to see ${topic} differently.
+The question is whether you're ready to see ${lowerFirstIfCommon(topic)} differently.
 
 **What's your experience been? I'd love to hear whether this resonates, or where you disagree. The best insights come from the conversation.**
 
@@ -349,83 +349,83 @@ function generateHook(hookType: string, topic: string, yourTake: string, targetR
   const hooks: Record<string, string> = {
     controversy: `Here's something that might make you uncomfortable: ${lowerCommonWords(yourTake)}.
 
-I know that goes against everything you've been told about ${topic}. I used to believe the conventional wisdom too. Then I spent years in the trenches, and I discovered that almost everything the experts teach about ${topic} is not just incomplete. It's actively harmful.
+I know that goes against everything you've been told about ${lowerFirstIfCommon(topic)}. I used to believe the conventional wisdom too. Then I spent years in the trenches, and I discovered that almost everything the experts teach about ${lowerFirstIfCommon(topic)} is not just incomplete. It's actively harmful.
 
 If you're ${targetReader}, this matters more than you think. Here's why.`,
 
     revelation: `There's a conversation happening behind closed doors that most ${targetReader} never hear.
 
-It's about ${topic}, specifically about ${lowerCommonWords(yourTake)}.
+It's about ${lowerFirstIfCommon(topic)}, specifically about ${lowerCommonWords(yourTake)}.
 
 The people who've figured this out aren't talking about it publicly. Not because it's a secret, but because admitting it means acknowledging that the standard playbook is broken. After seeing this pattern play out dozens of times, I can't stay quiet anymore.`,
 
-    direct_challenge: `Stop. Before you read another article about ${topic}, I need to tell you something.
+    direct_challenge: `Stop. Before you read another article about ${lowerFirstIfCommon(topic)}, I need to tell you something.
 
 That advice you've been following? The "best practices" everyone swears by? They're probably making things worse.
 
 ${yourTake}. I didn't want to believe it either. But after working with ${targetReader} for years, the evidence is overwhelming.`,
 
-    promise_of_value: `What if I told you that ${topic} is simpler than everyone makes it out to be?
+    promise_of_value: `What if I told you that ${lowerFirstIfCommon(topic)} is simpler than everyone makes it out to be?
 
 Not easy. Simple. There's a difference.
 
-After years of watching ${targetReader} struggle with ${topic}, I've distilled what actually works into something you can start using today. Not theory. Not frameworks that look good in slideshows. Real approaches that produce real results.`,
+After years of watching ${targetReader} struggle with ${lowerFirstIfCommon(topic)}, I've distilled what actually works into something you can start using today. Not theory. Not frameworks that look good in slideshows. Real approaches that produce real results.`,
 
     proof_of_results: `Here's something I wasn't supposed to share.
 
 When I first discovered that ${lowerCommonWords(yourTake)}, I didn't believe it either. Now, having seen the results, in my own work and with dozens of ${targetReader}, I can't ignore it anymore.
 
-This isn't about incremental improvement. This is about fundamentally rethinking ${topic}.`,
+This isn't about incremental improvement. This is about fundamentally rethinking ${lowerFirstIfCommon(topic)}.`,
 
-    transformation: `Two years ago, I was where you probably are now with ${topic}.
+    transformation: `Two years ago, I was where you probably are now with ${lowerFirstIfCommon(topic)}.
 
 Frustrated. Trying everything the experts recommended. Getting mediocre results despite putting in maximum effort.
 
 Then something shifted. I realized that ${lowerCommonWords(yourTake)}. What happened next changed everything.`,
 
-    experience_credibility: `In my years of working on ${topic}, I've made every mistake possible.
+    experience_credibility: `In my years of working on ${lowerFirstIfCommon(topic)}, I've made every mistake possible.
 
 I've followed the playbooks. I've ignored the playbooks. I've invented my own playbooks only to throw them out. Through all of it, one truth has emerged that I wish someone had told me from the start:
 
 ${yourTake}`,
 
-    vulnerability: `I need to tell you about a mistake I made with ${topic}.
+    vulnerability: `I need to tell you about a mistake I made with ${lowerFirstIfCommon(topic)}.
 
-It cost me time, money, and credibility. But more importantly, it taught me something that changed how I approach ${topic} entirely.
+It cost me time, money, and credibility. But more importantly, it taught me something that changed how I approach ${lowerFirstIfCommon(topic)} entirely.
 
 Here's what happened, and what it might mean for you.`,
 
-    numbered_wisdom: `After years in this space, I've learned that success with ${topic} comes down to a handful of non-obvious insights.
+    numbered_wisdom: `After years in this space, I've learned that success with ${lowerFirstIfCommon(topic)} comes down to a handful of non-obvious insights.
 
 Not tactics. Not hacks. Insights: the kind that change how you think about the problem entirely.
 
 ${yourTake} was the first one. Here are the others.`,
 
-    future_vision: `The ${topic} landscape is about to shift dramatically.
+    future_vision: `The ${lowerFirstIfCommon(topic)} landscape is about to shift dramatically.
 
 If you're ${targetReader}, the changes coming in the next few years will create massive opportunities for those who see them coming. Everyone else will be left wondering what happened.
 
 Here's what I'm seeing, and what you should do about it.`,
 
-    change_warning: `Something is happening in ${topic} that most ${targetReader} haven't noticed yet.
+    change_warning: `Something is happening in ${lowerFirstIfCommon(topic)} that most ${targetReader} haven't noticed yet.
 
 The signals are subtle, but they're everywhere if you know where to look. And if you're not paying attention, you risk being blindsided by changes that will reshape the entire landscape.
 
 ${yourTake}. Here's why that matters now more than ever.`,
 
-    urgency: `We're at an inflection point with ${topic}.
+    urgency: `We're at an inflection point with ${lowerFirstIfCommon(topic)}.
 
 The old rules are breaking down. The new rules aren't fully formed yet. That means right now is when the future is being decided.
 
 If you're ${targetReader}, your choices in the next 12-18 months will determine which side of this shift you end up on. (Example figure: replace with your own)`,
 
-    new_model: `The way we think about ${topic} is fundamentally flawed.
+    new_model: `The way we think about ${lowerFirstIfCommon(topic)} is fundamentally flawed.
 
 I'm not talking about small errors or missing nuances. I'm talking about a mental model that's actively preventing ${targetReader} from achieving what they're capable of.
 
 Here's a different way to think about it.`,
 
-    best_practice: `I've studied how the best in the world approach ${topic}.
+    best_practice: `I've studied how the best in the world approach ${lowerFirstIfCommon(topic)}.
 
 Not the famous names who talk about it on podcasts. The quiet operators who consistently produce results that seem almost unfair.
 
@@ -459,7 +459,7 @@ Then I experienced ${proof}.
 
 Here's what I learned:
 
-→ The conventional wisdom about ${topic} is backwards
+→ The conventional wisdom about ${lowerFirstIfCommon(topic)} is backwards
 → What actually works looks nothing like the playbook
 → The people getting results are doing something different
 
@@ -485,7 +485,7 @@ What's your experience been?
 // Generate suggested proof points when user doesn't provide them
 function generateSuggestedProofPoints(topic: string, yourTake: string, articleType: string): string[] {
   const baseProofs = [
-    `A personal story where you learned this lesson about ${topic} the hard way`,
+    `A personal story where you learned this lesson about ${lowerFirstIfCommon(topic)} the hard way`,
     `A client/colleague example that demonstrates ${yourTake.substring(0, 50)}...`,
     `An industry statistic or data point that supports your position`,
     `A contrast example: someone who did it the "wrong" way and what happened`,

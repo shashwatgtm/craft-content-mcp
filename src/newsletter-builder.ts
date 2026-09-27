@@ -1,4 +1,4 @@
-import { parseListItems, generateHook, lowerCommonWords, SUGGESTION_FOOTER } from './utils.js';
+import { parseListItems, generateHook, lowerCommonWords, lowerFirstIfCommon, SUGGESTION_FOOTER } from './utils.js';
 
 export function generateNewsletter(args: {
   topic: string;
@@ -125,9 +125,9 @@ ${previousTopics.length > 0 ? `
 Your recent topics: ${previousTopics.join(', ')}
 
 **Thread this together:**
-- Reference: "Last week we talked about ${previousTopics[0]}. This week, let's go deeper into ${topic}..."
-- Callback: "Remember the ${previousTopics[0]} framework? Here's how it applies to ${topic}..."
-- Series (only if these issues form a series): "This continues our ${topic} series..."
+- Reference: "Last week we talked about ${lowerFirstIfCommon(previousTopics[0])}. This week, let's go deeper into ${lowerFirstIfCommon(topic)}..."
+- Callback: "Remember the ${lowerFirstIfCommon(previousTopics[0])} framework? Here's how it applies to ${lowerFirstIfCommon(topic)}..."
+- Series (only if these issues form a series): "This continues our ${lowerFirstIfCommon(topic)} series..."
 
 ---` : ''}
 
@@ -202,12 +202,15 @@ function subjectLineLabel(type: string, index: number): string {
 
 function generateSubjectLines(topic: string, type: string, segment: string): string[] {
   const topicWords = shortenTopic(topic);
+  // Text only (run 10, R10-28): the topic placed after leading words follows the first-word rule
+  // ("5 faster contract review mistakes"; names and acronyms keep their capitals). Product updates keep it as typed.
+  const topicMid = lowerFirstIfCommon(topicWords);
   
   const templates = {
     educational: [
-      `The truth about ${topicWords} (nobody talks about this)`,
-      `How to master ${topicWords} in ${new Date().getFullYear()}`,
-      `5 ${topicWords} mistakes even experts make`,
+      `The truth about ${topicMid} (nobody talks about this)`,
+      `How to master ${topicMid} in ${new Date().getFullYear()}`,
+      `5 ${topicMid} mistakes even experts make`,
       `${topicWords}: Your complete guide`
     ],
     product_update: [
@@ -217,22 +220,22 @@ function generateSubjectLines(topic: string, type: string, segment: string): str
       `[Product Update] ${topicWords} is here`
     ],
     industry_news: [
-      `This week in ${topicWords}: What you need to know`,
+      `This week in ${topicMid}: What you need to know`,
       `Breaking: ${topicWords} is changing (here's how)`,
       `${topicWords} news: 3 stories that matter`,
-      `The ${topicWords} update everyone's talking about`
+      `The ${topicMid} update everyone's talking about`
     ],
     thought_leadership: [
-      `Why ${topicWords} is broken (and how to fix it)`,
+      `Why ${topicMid} is broken (and how to fix it)`,
       `Unpopular opinion: ${topicWords}`,
-      `The future of ${topicWords} (my prediction)`,
-      `What I learned about ${topicWords} the hard way`
+      `The future of ${topicMid} (my prediction)`,
+      `What I learned about ${topicMid} the hard way`
     ],
     curated_links: [
       `${topicWords}: Best reads this week`,
-      `5 must-read ${topicWords} articles`,
-      `Your ${topicWords} reading list`,
-      `This week's best ${topicWords} content`
+      `5 must-read ${topicMid} articles`,
+      `Your ${topicMid} reading list`,
+      `This week's best ${topicMid} content`
     ]
   };
   
@@ -245,7 +248,7 @@ function generatePreviewText(subject: string, topic: string): string {
     `Plus: the one thing most people get wrong...`,
     `Inside: actionable tips you can use today`,
     `Spoiler: it's not what you think`,
-    `This changed how I approach ${topic.split(' ')[0]}...`,
+    `This changed how I approach ${lowerFirstIfCommon(topic).split(' ')[0]}...`,
     `Read time: 4 minutes`
   ];
   return previews[Math.floor(Math.random() * previews.length)];
@@ -427,13 +430,15 @@ function getSendTimesForSegment(segment: string): string {
 
 // Generate key points from topic when not provided
 function generateKeyPointsFromTopic(topic: string, type: string, segment: string): string[] {
+  // Text only (run 10, R10-28): "Why faster contract review matters now", not "Why Faster contract review ...".
+  const t = lowerFirstIfCommon(topic);
   // Base points that apply to most topics
   const basePoints: Record<string, string[]> = {
     educational: [
-      `Why ${topic} matters now`,
-      `Common mistakes with ${topic}`,
-      `Step-by-step approach to ${topic}`,
-      `Real examples of ${topic} in action`,
+      `Why ${t} matters now`,
+      `Common mistakes with ${t}`,
+      `Step-by-step approach to ${t}`,
+      `Real examples of ${t} in action`,
       `Key takeaway and next steps`
     ],
     product_update: [
@@ -444,23 +449,23 @@ function generateKeyPointsFromTopic(topic: string, type: string, segment: string
       `What's coming next`
     ],
     industry_news: [
-      `Latest developments in ${topic}`,
+      `Latest developments in ${t}`,
       `Why this matters to you`,
       `Expert perspectives`,
       `What to watch for`,
       `How to prepare`
     ],
     thought_leadership: [
-      `The contrarian view on ${topic}`,
+      `The contrarian view on ${t}`,
       `Evidence that challenges conventional wisdom`,
       `What top performers do differently`,
-      `Framework for thinking about ${topic}`,
+      `Framework for thinking about ${t}`,
       `Actions to take this week`
     ],
     curated_links: [
-      `Best read on ${topic} this week`,
-      `Must-watch video on ${topic}`,
-      `Tool/resource for ${topic}`,
+      `Best read on ${t} this week`,
+      `Must-watch video on ${t}`,
+      `Tool/resource for ${t}`,
       `Hot take worth considering`,
       `What we're thinking about`
     ]

@@ -1,4 +1,4 @@
-import { parseListItems, SUGGESTION_FOOTER } from './utils.js';
+import { parseListItems, lowerFirstIfCommon, SUGGESTION_FOOTER } from './utils.js';
 
 // Text only (run 8): an input phrase used as a whole sentence inside a script ends with a full stop.
 function asSentence(text: string | undefined): string {
@@ -6,11 +6,10 @@ function asSentence(text: string | undefined): string {
   const t = text.trim();
   return /[.!?]$/.test(t) ? t : `${t}.`;
 }
-// Text only (run 8): an input phrase placed mid-sentence starts in lower case unless it starts with an acronym or a name.
+// Text only (run 8, run 9): an input phrase placed mid-sentence starts in lower case only when its first word is a
+// common word; names and acronyms keep their capitals ("Salesforce data you can trust" stays as typed).
 function midSentence(text: string): string {
-  const t = text.trim();
-  const first = t.split(/\s+/)[0] || '';
-  return /^[A-Z][a-z'-]*$/.test(first) ? t.charAt(0).toLowerCase() + t.slice(1) : t;
+  return lowerFirstIfCommon(text);
 }
 
 // Generate likely objections based on product description and price context
@@ -108,7 +107,7 @@ ${!args.common_objections ? `| **Note** | Objections auto-generated - update wit
 
 ${valueProps.map((vp, i) => `
 **${i + 1}. ${vp}**
-- *Why it matters to ${persona}:* [Connect to their specific pain]
+- *Why it matters to ${midSentence(persona)}:* [Connect to their specific pain]
 - *Proof:* ${proofPoints[i % proofPoints.length] || 'Customer evidence available'}
 `).join('\n')}
 
@@ -235,7 +234,7 @@ Based on what you described, here's what stands out:
 - [Challenge 1] is costing you [impact]
 - [Challenge 2] is blocking [goal]
 
-${product} addresses this by ${valueProps[0]?.toLowerCase() || 'solving your core problem'}.
+${product} addresses this${valueProps[0] ? `: ${midSentence(valueProps[0])}` : ' by solving your core problem'}.
 
 ${proofPoints[0] ? `Relevant proof: ${proofPoints[0]}` : ''}
 
@@ -292,7 +291,7 @@ ${proofPoints.map(p => `- ${p}`).join('\n')}
 
 ---
 
-*Generated for ${persona} at ${stage.replace(/_/g, ' ')} stage*
+*Generated for ${midSentence(persona)} at ${stage.replace(/_/g, ' ')} stage*
 
 ${SUGGESTION_FOOTER}
 `;
@@ -421,7 +420,7 @@ Focus on understanding their:
 - Decision process
 
 **Bridge (3 min):**
-"Based on what you've shared, here's how ${product} could help: ${valueProps.slice(0, 2).join(' and ')}."
+"Based on what you've shared, here's how ${product} could help: ${valueProps.slice(0, 2).map(midSentence).join(' and ')}."
 
 **Next Step:**
 "Would it be helpful to see a demo focused on [specific pain mentioned]?"

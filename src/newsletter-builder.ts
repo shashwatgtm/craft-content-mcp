@@ -1,4 +1,4 @@
-import { parseListItems, generateHook, SUGGESTION_FOOTER } from './utils.js';
+import { parseListItems, generateHook, lowerCommonWords, SUGGESTION_FOOTER } from './utils.js';
 
 export function generateNewsletter(args: {
   topic: string;
@@ -276,8 +276,8 @@ function generatePointContent(point: string, depth: string, tone: string): strin
 - Configuration: [specific settings]
 - Integration: [specific steps]
 - Validation: [specific tests]`,
-    'accessible': `In simple terms: ${point.toLowerCase()} can transform how you work. Most people overcomplicate this. Don't.`,
-    'introductory': `If you're new to this, here's what you need to know: ${point.toLowerCase()} is the foundation everything else builds on.`,
+    'accessible': `In simple terms: ${lowerCommonWords(point)} can transform how you work. Most people overcomplicate this. Don't.`,
+    'introductory': `If you're new to this, here's what you need to know: ${lowerCommonWords(point)} is the foundation everything else builds on.`,
     'advanced': `You already know the basics. The next level: apply this to [advanced use case] for 10x the impact (Example figure: replace with your own).`
   };
   

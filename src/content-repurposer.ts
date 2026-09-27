@@ -1,4 +1,4 @@
-import { parseListItems, extractKeyPoints, countWords, SUGGESTION_FOOTER } from './utils.js';
+import { parseListItems, extractKeyPoints, countWords, lowerCommonWords, SUGGESTION_FOOTER } from './utils.js';
 
 // Default formats when user doesn't specify
 const DEFAULT_FORMATS = ['linkedin_post', 'twitter_thread', 'email', 'blog_summary', 'quote_cards'];
@@ -136,7 +136,7 @@ ${generateTwitterThread(content, keyPoints, title)}
 
 **Subject Line Options:**
 1. ${title}: Key insights you need to know
-2. What we learned about ${shortSubject(keyPoints[0]) || 'this topic'}
+2. ${shortSubject(keyPoints[0]) ? `What we learned: ${shortSubject(keyPoints[0])}` : 'What we learned about this topic'}
 3. [First Name], don't miss this ${sourceType.replace(/_/g, ' ')} summary
 
 **Email Body:**
@@ -188,7 +188,7 @@ ${keyPoints.slice(0, 5).map((p, i) => `
 ---
 
 **[HOOK - 5 seconds]**
-"${keyPoints[0] ? `Did you know that ${keyPoints[0].toLowerCase()}?` : `Here's something important about ${title}...`}"
+"${keyPoints[0] ? `Did you know that ${lowerCommonWords(keyPoints[0])}?` : `Here's something important about ${title}...`}"
 
 **[INTRO - 10 seconds]**
 "I just shared ${sourceType.replace(/_/g, ' ')} about ${title}. Here are the key takeaways you need to know."

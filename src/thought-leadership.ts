@@ -1,4 +1,4 @@
-import { parseListItems, SUGGESTION_FOOTER } from './utils.js';
+import { parseListItems, lowerCommonWords, SUGGESTION_FOOTER } from './utils.js';
 
 export function generateThoughtLeadership(args: {
   topic: string;
@@ -297,7 +297,7 @@ This isn't about being contrarian for its own sake. It's about following the tru
 
 ## A Different Approach
 
-Once you accept that ${yourTake.toLowerCase()}, a different path forward becomes clear.
+Once you accept that ${lowerCommonWords(yourTake)}, a different path forward becomes clear.
 
 **First**, you have to unlearn the habits that are working against you. This is harder than learning new ones. It means questioning assumptions you didn't even know you had.
 
@@ -311,7 +311,7 @@ Here's what this looks like in practice:
 - Instead of optimizing for vanity metrics, optimize for real outcomes
 - Stop asking "what's everyone else doing?" and start asking "what actually works?"
 
-The specifics will vary based on your situation. But the underlying principle remains: ${yourTake.toLowerCase()}.
+The specifics will vary based on your situation. But the underlying principle remains: ${lowerCommonWords(yourTake)}.
 
 ---
 
@@ -321,7 +321,7 @@ If you're ${targetReader}, you have a choice to make.
 
 You can keep following the standard advice about ${topic}: the playbooks, the best practices, the "proven" approaches that somehow never quite work as advertised.
 
-Or you can accept an uncomfortable truth: ${yourTake.toLowerCase()}.
+Or you can accept an uncomfortable truth: ${lowerCommonWords(yourTake)}.
 
 I know which path I'd choose. I know which path has produced results for me and for others who've made this shift.
 
@@ -347,7 +347,7 @@ The question is whether you're ready to see ${topic} differently.
 
 function generateHook(hookType: string, topic: string, yourTake: string, targetReader: string): string {
   const hooks: Record<string, string> = {
-    controversy: `Here's something that might make you uncomfortable: ${yourTake.toLowerCase()}.
+    controversy: `Here's something that might make you uncomfortable: ${lowerCommonWords(yourTake)}.
 
 I know that goes against everything you've been told about ${topic}. I used to believe the conventional wisdom too. Then I spent years in the trenches, and I discovered that almost everything the experts teach about ${topic} is not just incomplete. It's actively harmful.
 
@@ -355,7 +355,7 @@ If you're ${targetReader}, this matters more than you think. Here's why.`,
 
     revelation: `There's a conversation happening behind closed doors that most ${targetReader} never hear.
 
-It's about ${topic}, specifically about ${yourTake.toLowerCase()}.
+It's about ${topic}, specifically about ${lowerCommonWords(yourTake)}.
 
 The people who've figured this out aren't talking about it publicly. Not because it's a secret, but because admitting it means acknowledging that the standard playbook is broken. After seeing this pattern play out dozens of times, I can't stay quiet anymore.`,
 
@@ -373,7 +373,7 @@ After years of watching ${targetReader} struggle with ${topic}, I've distilled w
 
     proof_of_results: `Here's something I wasn't supposed to share.
 
-When I first discovered that ${yourTake.toLowerCase()}, I didn't believe it either. Now, having seen the results, in my own work and with dozens of ${targetReader}, I can't ignore it anymore.
+When I first discovered that ${lowerCommonWords(yourTake)}, I didn't believe it either. Now, having seen the results, in my own work and with dozens of ${targetReader}, I can't ignore it anymore.
 
 This isn't about incremental improvement. This is about fundamentally rethinking ${topic}.`,
 
@@ -381,7 +381,7 @@ This isn't about incremental improvement. This is about fundamentally rethinking
 
 Frustrated. Trying everything the experts recommended. Getting mediocre results despite putting in maximum effort.
 
-Then something shifted. I realized that ${yourTake.toLowerCase()}. What happened next changed everything.`,
+Then something shifted. I realized that ${lowerCommonWords(yourTake)}. What happened next changed everything.`,
 
     experience_credibility: `In my years of working on ${topic}, I've made every mistake possible.
 

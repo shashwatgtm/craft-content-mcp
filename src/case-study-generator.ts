@@ -1,4 +1,4 @@
-import { parseListItems, extractKeyPoints, SUGGESTION_FOOTER } from './utils.js';
+import { parseListItems, extractKeyPoints, lowerCommonWords, SUGGESTION_FOOTER } from './utils.js';
 
 export function generateCaseStudy(args: {
   customer_name: string;
@@ -342,7 +342,7 @@ ${quote ? `## In Their Words
 "${customerName} achieved ${headlineNumber} ${getResultVerb(headlineNumber).toLowerCase()} after implementing ${product}."
 
 ### Social Media Version:
-🎯 ${customerName} was struggling with ${getSummaryChallenge(challenge).toLowerCase()}.
+🎯 ${customerName} was struggling with ${lowerCommonWords(getSummaryChallenge(challenge))}.
 
 Then they implemented ${product}.
 
@@ -354,7 +354,7 @@ ${quote ? `"${quote.substring(0, 100)}..."` : ''}
 Want similar results? Link in bio.
 
 ### Email Snippet:
-Quick success story: ${customerName} (${industry}) faced ${getSummaryChallenge(challenge).toLowerCase()}. After implementing ${product}, they saw ${resultPoints[0]?.toLowerCase() || 'significant improvements'}. [Read the full story →]
+Quick success story: ${customerName} (${industry}) faced ${lowerCommonWords(getSummaryChallenge(challenge))}. After implementing ${product}, they saw ${resultPoints[0] ? lowerCommonWords(resultPoints[0]) : 'significant improvements'}. [Read the full story →]
 
 `;
 }

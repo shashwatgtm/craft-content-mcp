@@ -136,7 +136,7 @@ ${improvedContent}
 
 ---
 
-## 💡 ${contentType.replace(/_/g, ' ').toUpperCase()}-Specific Tips
+## 💡 Tips for this ${contentType.replace(/_/g, ' ')}
 
 ${getContentTypeTips(contentType, goal)}
 

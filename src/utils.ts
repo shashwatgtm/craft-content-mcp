@@ -3,6 +3,109 @@
 // Last line of any output that suggests timings, lengths or counts (lengths in words, time boxes, cadences).
 export const SUGGESTION_FOOTER = 'Suggested timings, lengths and counts: adjust them to your own.';
 
+// Text only (run 9): common words that may open an input phrase. Mid-sentence, only these are lowered
+// ("Fewer no-shows" becomes "fewer no-shows"). Any other capitalised word is kept as typed, because it may be a
+// name or an acronym ("Salesforce data you can trust", "Microsoft Teams approvals", "AI deal scoring", "CRM hygiene").
+const COMMON_WORDS = new Set((
+  'a an the this that these those our your their my its his her we you they it me us them all any each every ' +
+  'both either neither no not none some many much more most less least fewer few several other another such ' +
+  'same own only just even also still very too so as than then there here what which who whom whose when where ' +
+  'why how whether if because while until unless though although since once after before during about above ' +
+  'across against along among around at by for from in into inside near of off on onto out outside over past ' +
+  'per through throughout to toward towards under underneath up upon via with within without is are was were be ' +
+  'been being am do does did done doing have has had having can could will would shall should may might must ' +
+  'need needs needed get gets got getting give gives gave make makes made let lets keep keeps put puts take ' +
+  'takes took see sees show shows find finds know knows think go goes going come comes one two three four five ' +
+  'six seven eight nine ten first second third last next new old big small large tiny long short high low full ' +
+  'half whole top bottom early late fast faster fastest quick quicker quickest slow slower easy easier easiest ' +
+  'simple simpler hard harder better best good great strong stronger weak weaker clear clearer real true right ' +
+  'wrong free open closed live smart smarter lean cheaper cheap safe safer secure accurate reliable consistent ' +
+  'predictable visible instant instantly automatic automatically manual custom modern legacy digital online ' +
+  'offline mobile remote local global central single multiple multi daily weekly monthly quarterly yearly ' +
+  'annual real-time realtime end self self-serve self-service one-tap one-click two-way no-code low-code always ' +
+  'never often sometimes usually now today tomorrow soon yet again ever already almost nearly exactly directly ' +
+  'fully truly entirely highly deeply readily cut cuts reduce reduces reduction lower lowers raise raises boost ' +
+  'boosts grow grows growth increase increases improve improves save saves saving savings win wins earn earns ' +
+  'drive drives drove speed speeds scale scales help helps support supports enable enables deliver delivers ' +
+  'offer offers provide provides build builds create creates launch launches ship ships track tracks measure ' +
+  'measures manage manages plan plans run runs start starts stop stops ends avoid avoids prevent prevents ' +
+  'remove removes replace replaces fix fixes solve solves close closes book books send sends share shares sync ' +
+  'syncs connect connects integrate integrates automate automates simplify simplifies streamline streamlines ' +
+  'centralise centralize unify unifies align aligns turn turns spend spends lose loses miss misses waste wastes ' +
+  'struggle struggles fail fails hit hits meet meets reach reaches use uses sell sells buy buys pay pays charge ' +
+  'charges hire hires onboard onboards train trains coach coaches forecast forecasts prioritise prioritize ' +
+  'qualify qualifies convert converts retain retains renew renews expand expands upsell engage engages nurture ' +
+  'nurtures personalise personalize target targets segment segments score scores rank ranks route routes assign ' +
+  'assigns approve approves review reviews report reports alert alerts notify notifies remind reminds schedule ' +
+  'schedules reschedule reschedules capture captures collect collects clean cleans enrich enriches verify ' +
+  'verifies protect protects comply complies audit audits monitor monitors test tests learn learns understand ' +
+  'understands explain explains answer answers ask asks call calls email emails text texts chat message ' +
+  'messages post posts publish publishes write writes read reads edit edits search searches data insights ' +
+  'insight analytics reporting dashboards dashboard pipeline pipelines revenue revenues sales marketing success ' +
+  'service services product products platform platforms software tool tools app apps system systems process ' +
+  'processes workflow workflows team teams people customers customer clients client users user buyers buyer ' +
+  'prospects prospect leads lead accounts account deals deal opportunities opportunity contracts contract ' +
+  'renewals renewal churn retention onboarding adoption activation engagement conversion conversions demand ' +
+  'cost costs price prices pricing budget budgets value roi time times hours days weeks months minutes setup ' +
+  'set-up implementation integration integrations security compliance privacy risk risks errors error mistakes ' +
+  'issues issue problems problem pain pains gaps gap delays delay bottlenecks friction complexity visibility ' +
+  'control access approvals approval handoffs handoff meetings meeting appointments appointment bookings ' +
+  'booking reminders reminder no-shows cancellations patients patient staff employees employee managers manager ' +
+  'leaders leader executives reps rep agents agent partners partner vendors vendor suppliers supplier companies ' +
+  'company businesses business organisations organizations enterprises enterprise startups startup founders ' +
+  'founder owners owner operations operators finance hr legal procurement engineering developers developer ' +
+  'admins admin inbound outbound content campaigns campaign ads events event webinars webinar messaging ' +
+  'positioning brand trust quality accuracy efficiency productivity performance results outcomes outcome impact ' +
+  'coverage capacity forecasting planning scheduling tracking billing invoicing payments payment payroll hiring ' +
+  'recruiting training coaching selling buying spending waiting missing losing paper spreadsheets spreadsheet ' +
+  'phone inboxes inbox documents document files file forms form tasks task projects project orders order ' +
+  'inventory shipping delivery deliveries returns tickets ticket cases case questions question requests request ' +
+  'feedback surveys survey notes note records record lists list numbers number figures figure metrics metric ' +
+  'goals goal quotas quota territory territories regions region markets market industry industries verticals ' +
+  'vertical category categories competitors competitor alternatives alternative options option features feature ' +
+  'modules module add-ons tiers tier seats seat licenses license usage traffic visits visitors signups signup ' +
+  'trials trial demos demo proposals proposal quotes quote invoices invoice common key main core major minor ' +
+  'basic advanced practical proven essential critical important urgent hidden obvious step steps step-by-step ' +
+  'approach approaches guide guides framework frameworks strategy strategies playbook playbooks checklist ' +
+  'checklists practice practices trend trends future state lesson lessons tip tips way ways idea ideas reason ' +
+  'reasons sign signs rule rules example examples mistake myth myths truth truths secret secrets habit habits ' +
+  'principle principles pattern patterns everything nothing something anything everyone nobody someone work ' +
+  'world life thing things part parts point points story stories change changes shift shifts move moves loss ' +
+  'losses level levels stage stages phase phases week month year day higher bigger smaller larger shorter ' +
+  'longer greater happier healthier cleaner smooth smoother seamless effortless painless hassle-free ' +
+  'frictionless repeatable scalable flexible affordable transparent unified zero unlimited endless entire ' +
+  'complete total actionable measurable shorten shortens stay stays handle handles prove proves focus focuses ' +
+  'switch switches eliminate eliminates minimise minimize maximise maximize accelerate accelerates ensure ' +
+  'ensures empower empowers unlock unlocks discover discovers spot spots catch catches detect detects predict ' +
+  'predicts recover recovers resolve resolves respond responds reply replies follow follows hear hears worst ' +
+  'lost won '
+).split(/\s+/).filter(Boolean));
+// A word counts as common when it is in the list, or ends in -ing or -ed ("Automated", "Missing"). A hyphenated
+// word counts by its first part ("Two-way", "No-shows").
+function isCommonWord(word: string): boolean {
+  const head = word.split('-')[0].replace(/[^A-Za-z']+$/, '');
+  if (!/^[A-Z][a-z']*$/.test(head) || head === 'I' || /[A-Z]/.test(word.slice(1))) return false;
+  const w = head.toLowerCase();
+  return COMMON_WORDS.has(w) || (w.length > 4 && /(?:ing|ed)$/.test(w));
+}
+// An input phrase placed mid-sentence: its first word is lowered only when it is a common word.
+export function lowerFirstIfCommon(phrase: string): string {
+  const t = phrase.trim();
+  const first = t.split(/\s+/)[0] || '';
+  return isCommonWord(first) ? t.charAt(0).toLowerCase() + t.slice(1) : t;
+}
+// The same for every word of a phrase (this replaces a plain toLowerCase(), which also lowered names and acronyms).
+export function lowerCommonWords(phrase: string): string {
+  return phrase.trim().split(/(\s+)/).map(w => (isCommonWord(w) ? w.charAt(0).toLowerCase() + w.slice(1) : w)).join('');
+}
+// Text only (run 9): a phrase that starts a sentence, a heading or a table cell starts with a capital. A first word
+// written with a small letter and an inner capital (iPhone, eBay) is a name and is kept as typed.
+export function cap(phrase: string): string {
+  const t = phrase.trim();
+  if (/^[a-z]+[A-Z]/.test(t.split(/\s+/)[0] || '')) return t;
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
 export function parseListItems(text: string): string[] {
   return text
     .split(/\n|,(?!\d{3}(?!\d))/)

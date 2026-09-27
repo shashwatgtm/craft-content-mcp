@@ -1,4 +1,4 @@
-import { SUGGESTION_FOOTER } from './utils.js';
+import { lowerCommonWords, SUGGESTION_FOOTER } from './utils.js';
 
 export function generateTestimonialCapture(args: {
   customer_name: string;
@@ -164,7 +164,7 @@ Hi ${name},
 
 I hope this finds you well!
 
-I've loved seeing ${company}'s success with [Product]: ${story.split('.')[0].toLowerCase()}.
+I've loved seeing ${company}'s success with [Product]: ${lowerCommonWords(story.split('.')[0])}.
 
 Would you be willing to share a brief quote about your experience? Just 2-3 sentences about what [Product] has meant for your team.
 
@@ -186,7 +186,7 @@ Hi ${name},
 
 I hope you're doing well!
 
-${company}'s success with [Product], ${story.split('.')[0].toLowerCase()}, is exactly the kind of story that helps others facing similar challenges.
+${company}'s success with [Product], ${lowerCommonWords(story.split('.')[0])}, is exactly the kind of story that helps others facing similar challenges.
 
 Would you be open to a brief video interview? Here's what it looks like:
 
@@ -209,7 +209,7 @@ Best,
 
 Hi ${name},
 
-Your team's results with [Product] have been impressive: ${story.split('.')[0].toLowerCase()}.
+Your team's results with [Product] have been impressive: ${lowerCommonWords(story.split('.')[0])}.
 
 I'd love to tell ${company}'s story in a detailed case study. This would include:
 

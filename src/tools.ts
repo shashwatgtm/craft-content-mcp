@@ -91,7 +91,7 @@ export const tools: Tool[] = [
   },
   {
     name: "content_repurposer",
-    description: "Transform source content into multiple formats. Just paste content - we'll generate the 5 most useful formats by default, or specify exactly what you need.",
+    description: "Transform source content into multiple formats. Just paste content: we'll generate the 5 most useful formats by default, or specify exactly what you need.",
     inputSchema: {
       type: "object",
       properties: {
@@ -124,7 +124,7 @@ export const tools: Tool[] = [
         topic: { type: "string", description: "The topic you want to establish authority on" },
         your_take: { type: "string", description: "Your unique perspective or opinion on this topic. What do you believe that others don't? What's your contrarian view?" },
         target_reader: { type: "string", description: "Who should read this? Be specific (e.g., 'B2B SaaS founders struggling with churn' not just 'marketers')" },
-        proof_points: { type: "string", description: "OPTIONAL: Evidence supporting your take - personal stories, client examples, data/stats (comma-separated). If not provided, we'll suggest proof points to gather" },
+        proof_points: { type: "string", description: "OPTIONAL: Evidence supporting your take: personal stories, client examples, data/stats (comma-separated). If not provided, we'll suggest proof points to gather" },
         author_background: { type: "string", description: "Optional: Your role and why you're credible (e.g., '15 years in enterprise sales')" },
         num_articles: {
           type: "number",
@@ -171,11 +171,11 @@ export const tools: Tool[] = [
       properties: {
         product: { type: "string", description: "Product name and what it does" },
         target_persona: { type: "string", description: "Who sales is pitching to (role, company type)" },
-        proof_points: { type: "string", description: "Evidence for claims - case studies, metrics, quotes (comma-separated)" },
+        proof_points: { type: "string", description: "Evidence for claims: case studies, metrics, quotes (comma-separated)" },
         common_objections: { type: "string", description: "OPTIONAL: Sales objections you hear (comma-separated). If not provided, we'll suggest likely objections for your product type" },
         value_props: { type: "string", description: "OPTIONAL: Key value propositions (comma-separated). Will be DERIVED from proof points if not provided" },
         competitor_objections: { type: "string", description: "Optional: 'Why not [competitor]' objections" },
-        price_context: { type: "string", description: "Optional: Your pricing vs market (e.g., 'Premium - 20% above market', 'Budget option', 'Mid-market')" },
+        price_context: { type: "string", description: "Optional: Your pricing vs market (e.g., 'Premium, 20% above market', 'Budget option', 'Mid-market')" },
         sales_stage: {
           type: "string",
           description: "What stage of sales funnel",

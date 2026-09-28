@@ -265,7 +265,7 @@ ${generateHook(angle.hook, topic, yourTake, targetReader)}
 
 Let me paint a picture you'll probably recognize.
 
-You're ${targetReader}. You've read the books, attended the webinars, maybe even hired consultants. When it comes to ${lowerFirstIfCommon(topic)}, you've done your homework.
+This is for ${lowerFirstIfCommon(targetReader)}. You've read the books, attended the webinars, maybe even hired consultants. When it comes to ${lowerFirstIfCommon(topic)}, you've done your homework.
 
 And yet something's not clicking.
 
@@ -317,7 +317,7 @@ The specifics will vary based on your situation. But the underlying principle re
 
 ## The Path Forward
 
-If you're ${targetReader}, you have a choice to make.
+If you're among ${lowerFirstIfCommon(targetReader)}, you have a choice to make.
 
 You can keep following the standard advice about ${lowerFirstIfCommon(topic)}: the playbooks, the best practices, the "proven" approaches that somehow never quite work as advertised.
 
@@ -336,7 +336,7 @@ The question is whether you're ready to see ${lowerFirstIfCommon(topic)} differe
 ---
 
 **Publishing Notes:**
-- Backup headline: "What Most ${targetReader} Get Wrong About ${topic}"
+- Backup headline: "What most ${lowerFirstIfCommon(targetReader)} get wrong about ${lowerFirstIfCommon(topic)}"
 - Recommended image: Visual representing the contrast between conventional and alternative approach
 - Best posting time: Tuesday-Thursday, 8-10am (Example figure: replace with your own)
 
@@ -351,7 +351,7 @@ function generateHook(hookType: string, topic: string, yourTake: string, targetR
 
 I know that goes against everything you've been told about ${lowerFirstIfCommon(topic)}. I used to believe the conventional wisdom too. Then I spent years in the trenches, and I discovered that almost everything the experts teach about ${lowerFirstIfCommon(topic)} is not just incomplete. It's actively harmful.
 
-If you're ${targetReader}, this matters more than you think. Here's why.`,
+If you're among ${lowerFirstIfCommon(targetReader)}, this matters more than you think. Here's why.`,
 
     revelation: `There's a conversation happening behind closed doors that most ${targetReader} never hear.
 
@@ -403,7 +403,7 @@ ${yourTake} was the first one. Here are the others.`,
 
     future_vision: `The ${lowerFirstIfCommon(topic)} landscape is about to shift dramatically.
 
-If you're ${targetReader}, the changes coming in the next few years will create massive opportunities for those who see them coming. Everyone else will be left wondering what happened.
+If you're among ${lowerFirstIfCommon(targetReader)}, the changes coming in the next few years will create massive opportunities for those who see them coming. Everyone else will be left wondering what happened.
 
 Here's what I'm seeing, and what you should do about it.`,
 
@@ -417,7 +417,7 @@ ${yourTake}. Here's why that matters now more than ever.`,
 
 The old rules are breaking down. The new rules aren't fully formed yet. That means right now is when the future is being decided.
 
-If you're ${targetReader}, your choices in the next 12-18 months will determine which side of this shift you end up on. (Example figure: replace with your own)`,
+If you're among ${lowerFirstIfCommon(targetReader)}, your choices in the next 12-18 months will determine which side of this shift you end up on. (Example figure: replace with your own)`,
 
     new_model: `The way we think about ${lowerFirstIfCommon(topic)} is fundamentally flawed.
 

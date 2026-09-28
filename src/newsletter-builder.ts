@@ -1,4 +1,4 @@
-import { parseListItems, generateHook, lowerCommonWords, lowerFirstIfCommon, SUGGESTION_FOOTER } from './utils.js';
+import { parseListItems, generateHook, lowerCommonWords, lowerFirstIfCommon, cap, SUGGESTION_FOOTER } from './utils.js';
 
 export function generateNewsletter(args: {
   topic: string;
@@ -211,7 +211,7 @@ function generateSubjectLines(topic: string, type: string, segment: string): str
       `The truth about ${topicMid} (nobody talks about this)`,
       `How to master ${topicMid} in ${new Date().getFullYear()}`,
       `5 ${topicMid} mistakes even experts make`,
-      `${topicWords}: Your complete guide`
+      `${cap(topicWords)}: Your complete guide`
     ],
     product_update: [
       `New: The ${topicWords} feature you asked for`,
@@ -248,7 +248,7 @@ function generatePreviewText(subject: string, topic: string): string {
     `Plus: the one thing most people get wrong...`,
     `Inside: actionable tips you can use today`,
     `Spoiler: it's not what you think`,
-    `This changed how I approach ${lowerFirstIfCommon(topic).split(' ')[0]}...`,
+    `This changed how I approach ${lowerFirstIfCommon(topic)}...`,
     `Read time: 4 minutes`
   ];
   return previews[Math.floor(Math.random() * previews.length)];
@@ -279,8 +279,8 @@ function generatePointContent(point: string, depth: string, tone: string): strin
 - Configuration: [specific settings]
 - Integration: [specific steps]
 - Validation: [specific tests]`,
-    'accessible': `In simple terms: ${lowerCommonWords(point)} can transform how you work. Most people overcomplicate this. Don't.`,
-    'introductory': `If you're new to this, here's what you need to know: ${lowerCommonWords(point)} is the foundation everything else builds on.`,
+    'accessible': `In simple terms, getting this right can transform how you work. Most people overcomplicate this. Don't.`,
+    'introductory': `If you're new to this, here's what you need to know: this is the foundation everything else builds on.`,
     'advanced': `You already know the basics. The next level: apply this to [advanced use case] for 10x the impact (Example figure: replace with your own).`
   };
   

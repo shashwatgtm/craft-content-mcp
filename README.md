@@ -1,9 +1,9 @@
-# @shashwatgtmalpha/craft-content-mcp v2.2.5
+# @shashwatgtmalpha/craft-content-mcp v2.2.6
 🎯 **CRAFT Content Framework MCP Server** - Complete redesign with user-centric inputs, actual content analysis, and publish-ready outputs.
 
 ## Use it hosted (no install)
 
-Add `https://craft-content.gtmhelix.com/mcp` to Claude or ChatGPT as a custom connector. It needs no sign-in and always runs the newest version (2.2.5). The same tools run as a free web app with a form per tool at https://craft-content.gtmhelix.com/, and the setup steps are at https://craft-content.gtmhelix.com/connect/.
+Add `https://craft-content.gtmhelix.com/mcp` to Claude or ChatGPT as a custom connector. It needs no sign-in and always runs the newest version (2.2.6). The same tools run as a free web app with a form per tool at https://craft-content.gtmhelix.com/, and the setup steps are at https://craft-content.gtmhelix.com/connect/.
 
 The npm package below is an older version (2.0.1 on npm on 27 September 2026) until the next npm release. Use it only if you need a local stdio server.
 
@@ -50,14 +50,14 @@ Or add to Claude Desktop config:
 
 ## Tools and inputs
 
-Generated on 27 September 2026 from the server's own tool list (`tools/list` of craft-content-mcp 2.2.5, the same code as the hosted MCP address), so every tool name, title, description and input below is exactly what the server accepts. Every tool is read-only.
+Generated on 27 September 2026 from the server's own tool list (`tools/list` of craft-content-mcp 2.2.6, the same code as the hosted MCP address), so every tool name, title, description and input below is exactly what the server accepts. Every tool is read-only.
 
 | # | Tool | Title | What it does |
 |---|---|---|---|
 | 1 | `case_study_generator` | Case Study Generator | Generate case studies with DISCOVERY MODE. If you have the full story, get a complete case study. If not, get interview questions to gather the story first. |
 | 2 | `newsletter_builder` | Newsletter Builder | Build newsletter content. Just have a topic? We'll suggest key points. Have key points? We'll craft the content. |
 | 3 | `webinar_script` | Webinar Script | Generate webinar scripts. Know your takeaways? Get a complete script. Still planning? We'll suggest takeaways based on topic and type. |
-| 4 | `content_repurposer` | Content Repurposer | Transform source content into multiple formats. Just paste content - we'll generate the 5 most useful formats by default, or specify exactly what you need. |
+| 4 | `content_repurposer` | Content Repurposer | Transform source content into multiple formats. Just paste content: we'll generate the 5 most useful formats by default, or specify exactly what you need. |
 | 5 | `thought_leadership_series` | Thought Leadership Series | Generate thought leadership article drafts (about 600 to 800 words each) from your topic, your take and your proof points. Without proof points, the drafts include suggested proof points to gather. Drafts contain placeholders to complete before publishing. |
 | 6 | `testimonial_capture` | Testimonial Capture | Generate testimonial request emails, interview questions, and formatted outputs. Discovery-focused by design. |
 | 7 | `sales_enablement_content` | Sales Enablement Content | Generate sales content. Know your objections? Get complete handlers. New product with no sales data yet? We'll suggest likely objections based on your product type. |
@@ -121,7 +121,7 @@ Generated on 27 September 2026 from the server's own tool list (`tools/list` of 
 | `topic` | Yes | string | The topic you want to establish authority on |
 | `your_take` | Yes | string | Your unique perspective or opinion on this topic. What do you believe that others don't? What's your contrarian view? |
 | `target_reader` | Yes | string | Who should read this? Be specific (e.g., 'B2B SaaS founders struggling with churn' not just 'marketers') |
-| `proof_points` | No | string | OPTIONAL: Evidence supporting your take - personal stories, client examples, data/stats (comma-separated). If not provided, we'll suggest proof points to gather |
+| `proof_points` | No | string | OPTIONAL: Evidence supporting your take: personal stories, client examples, data/stats (comma-separated). If not provided, we'll suggest proof points to gather |
 | `author_background` | No | string | Optional: Your role and why you're credible (e.g., '15 years in enterprise sales') |
 | `num_articles` | No | number (1 or more) | Number of articles to generate (1-5) |
 | `article_type` | No | one of: `contrarian`, `how_to`, `lessons_learned`, `prediction`, `framework` | Style of articles |
@@ -145,11 +145,11 @@ Generated on 27 September 2026 from the server's own tool list (`tools/list` of 
 |---|---|---|---|
 | `product` | Yes | string | Product name and what it does |
 | `target_persona` | Yes | string | Who sales is pitching to (role, company type) |
-| `proof_points` | Yes | string | Evidence for claims - case studies, metrics, quotes (comma-separated) |
+| `proof_points` | Yes | string | Evidence for claims: case studies, metrics, quotes (comma-separated) |
 | `common_objections` | No | string | OPTIONAL: Sales objections you hear (comma-separated). If not provided, we'll suggest likely objections for your product type |
 | `value_props` | No | string | OPTIONAL: Key value propositions (comma-separated). Will be DERIVED from proof points if not provided |
 | `competitor_objections` | No | string | Optional: 'Why not [competitor]' objections |
-| `price_context` | No | string | Optional: Your pricing vs market (e.g., 'Premium - 20% above market', 'Budget option', 'Mid-market') |
+| `price_context` | No | string | Optional: Your pricing vs market (e.g., 'Premium, 20% above market', 'Budget option', 'Mid-market') |
 | `sales_stage` | No | one of: `prospecting`, `discovery`, `demo`, `negotiation`, `closing` | What stage of sales funnel |
 
 #### 8. CRAFT Content Improver (`craft_content_improver`)

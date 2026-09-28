@@ -27,7 +27,7 @@
 <link rel="stylesheet" href="/assets/fonts.css?v=e2a0388866">
 <link rel="stylesheet" href="/assets/brand.css?v=58a48228fa">
 <link rel="stylesheet" href="/assets/app.css?v=6cc27b2b2b">
-<link rel="stylesheet" href="/assets/helix.css?v=1995adbb08">
+<link rel="stylesheet" href="/assets/helix.css?v=81a07c2df7">
 <script type="application/ld+json">
 {
  "@context": "https://schema.org",
@@ -149,7 +149,7 @@
    "about": {
     "@id": "https://craft-content.gtmhelix.com/#app"
    },
-   "dateModified": "2026-09-27",
+   "dateModified": "2026-09-28",
    "inLanguage": "en",
    "primaryImageOfPage": "https://craft-content.gtmhelix.com/og.png"
   },
@@ -195,7 +195,7 @@
     <span class="hx-eyebrow">For developers</span>
     <h1>CRAFT Content documentation</h1>
     <p class="hx-lead">The MCP address, the REST API behind the web forms, and every field of all 8 tools.</p>
-    <p class="hx-byline">By <a href="https://gtmhelix.com/about/" rel="author">Shashwat Ghosh</a>, Co-Founder and Fractional CMO, Helix&nbsp;GTM&nbsp;Consulting · Last updated <time datetime="2026-09-27">27 September 2026</time></p>
+    <p class="hx-byline">By <a href="https://gtmhelix.com/about/" rel="author">Shashwat Ghosh</a>, Co-Founder and Fractional CMO, Helix&nbsp;GTM&nbsp;Consulting · Last updated <time datetime="2026-09-28">28 September 2026</time></p>
   </div></div>
 </section>
 
@@ -206,7 +206,7 @@
   <ul class="hx-prose">
     <li>Address: <code>https://craft-content.gtmhelix.com/mcp</code> (Streamable HTTP, stateless, JSON responses). GET returns 405 by design.</li>
     <li>Authentication: none. Every tool is marked read-only (<code>readOnlyHint: true</code>, <code>destructiveHint: false</code>) and has a title.</li>
-    <li>Rate limit: 300 requests per minute per IP address. Server: <code>craft-content-mcp</code> version 2.2.5.</li>
+    <li>Rate limit: 300 requests per minute per IP address. Server: <code>craft-content-mcp</code> version 2.2.6.</li>
     <li>Local use: <code>npx -y @shashwatgtmalpha/craft-content-mcp</code> runs these tools over stdio (npm can lag behind this site until a new version is published).</li>
   </ul>
 </section>
@@ -239,13 +239,14 @@
 <tr><td>2.2.2</td><td>27 September 2026</td><td>GitHub, commit 5d9aec5</td></tr>
 <tr><td>2.2.3</td><td>27 September 2026</td><td>GitHub, commit 7de2eb0</td></tr>
 <tr><td>2.2.4</td><td>27 September 2026</td><td>GitHub, commit 3b8da5b</td></tr>
-<tr><td>2.2.5 (this site)</td><td>27 September 2026</td><td>GitHub, commit c65f99d</td></tr>
+<tr><td>2.2.5</td><td>27 September 2026</td><td>GitHub, commit c65f99d</td></tr>
+<tr><td>2.2.6 (this site)</td><td>28 September 2026</td><td>GitHub, commit dae40d7</td></tr>
   </tbody></table></div>
 </section>
 
 <section class="hx-section" aria-labelledby="ref-h">
   <h2 id="ref-h">Tool reference</h2>
-  <p class="hx-sub">Generated from the server's own input schemas, version 2.2.5.</p>
+  <p class="hx-sub">Generated from the server's own input schemas, version 2.2.6.</p>
 </section>
 <section class="hx-section" id="case-study-generator" aria-labelledby="d-case-study-generator">
   <h3 id="d-case-study-generator">Case Study Generator <code>case_study_generator</code></h3>
@@ -291,7 +292,7 @@
 </section>
 <section class="hx-section" id="content-repurposer" aria-labelledby="d-content-repurposer">
   <h3 id="d-content-repurposer">Content Repurposer <code>content_repurposer</code></h3>
-  <p class="hx-prose">Transform source content into multiple formats. Just paste content - we&#x27;ll generate the 5 most useful formats by default, or specify exactly what you need. <a href="/tools/content-repurposer/">Open the form</a>.</p>
+  <p class="hx-prose">Transform source content into multiple formats. Just paste content: we&#x27;ll generate the 5 most useful formats by default, or specify exactly what you need. <a href="/tools/content-repurposer/">Open the form</a>.</p>
   <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
 <tr><td><code>source_content</code></td><td>string</td><td>yes</td><td></td><td>Original content to repurpose (blog post, article, transcript, etc.)</td></tr>
 <tr><td><code>source_type</code></td><td>string</td><td>yes</td><td>blog_post, webinar_transcript, podcast_transcript, whitepaper, case_study, research_report, presentation</td><td>What type of content is the source</td></tr>
@@ -307,7 +308,7 @@
 <tr><td><code>topic</code></td><td>string</td><td>yes</td><td></td><td>The topic you want to establish authority on</td></tr>
 <tr><td><code>your_take</code></td><td>string</td><td>yes</td><td></td><td>Your unique perspective or opinion on this topic. What do you believe that others don&#x27;t? What&#x27;s your contrarian view?</td></tr>
 <tr><td><code>target_reader</code></td><td>string</td><td>yes</td><td></td><td>Who should read this? Be specific (e.g., &#x27;B2B SaaS founders struggling with churn&#x27; not just &#x27;marketers&#x27;)</td></tr>
-<tr><td><code>proof_points</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Evidence supporting your take - personal stories, client examples, data/stats (comma-separated). If not provided, we&#x27;ll suggest proof points to gather</td></tr>
+<tr><td><code>proof_points</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Evidence supporting your take: personal stories, client examples, data/stats (comma-separated). If not provided, we&#x27;ll suggest proof points to gather</td></tr>
 <tr><td><code>author_background</code></td><td>string</td><td>no</td><td></td><td>Optional: Your role and why you&#x27;re credible (e.g., &#x27;15 years in enterprise sales&#x27;)</td></tr>
 <tr><td><code>num_articles</code></td><td>number (1 or more)</td><td>no</td><td></td><td>Number of articles to generate (1-5)</td></tr>
 <tr><td><code>article_type</code></td><td>string</td><td>no</td><td>contrarian, how_to, lessons_learned, prediction, framework</td><td>Style of articles</td></tr>
@@ -333,11 +334,11 @@
   <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
 <tr><td><code>product</code></td><td>string</td><td>yes</td><td></td><td>Product name and what it does</td></tr>
 <tr><td><code>target_persona</code></td><td>string</td><td>yes</td><td></td><td>Who sales is pitching to (role, company type)</td></tr>
-<tr><td><code>proof_points</code></td><td>string</td><td>yes</td><td></td><td>Evidence for claims - case studies, metrics, quotes (comma-separated)</td></tr>
+<tr><td><code>proof_points</code></td><td>string</td><td>yes</td><td></td><td>Evidence for claims: case studies, metrics, quotes (comma-separated)</td></tr>
 <tr><td><code>common_objections</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Sales objections you hear (comma-separated). If not provided, we&#x27;ll suggest likely objections for your product type</td></tr>
 <tr><td><code>value_props</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Key value propositions (comma-separated). Will be DERIVED from proof points if not provided</td></tr>
 <tr><td><code>competitor_objections</code></td><td>string</td><td>no</td><td></td><td>Optional: &#x27;Why not [competitor]&#x27; objections</td></tr>
-<tr><td><code>price_context</code></td><td>string</td><td>no</td><td></td><td>Optional: Your pricing vs market (e.g., &#x27;Premium - 20% above market&#x27;, &#x27;Budget option&#x27;, &#x27;Mid-market&#x27;)</td></tr>
+<tr><td><code>price_context</code></td><td>string</td><td>no</td><td></td><td>Optional: Your pricing vs market (e.g., &#x27;Premium, 20% above market&#x27;, &#x27;Budget option&#x27;, &#x27;Mid-market&#x27;)</td></tr>
 <tr><td><code>sales_stage</code></td><td>string</td><td>no</td><td>prospecting, discovery, demo, negotiation, closing</td><td>What stage of sales funnel</td></tr>
   </tbody></table></div>
 </section>

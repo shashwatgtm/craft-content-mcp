@@ -104,7 +104,7 @@ For questions outside scope:
 
 ### Email 1: Same Day (Within 2 hours)
 
-**Subject:** Recording + resources from today's ${topic} webinar
+**Subject:** Recording + resources from today's ${lowerFirstIfCommon(topic)} webinar
 
 Thanks for joining us for ${topic}!
 
@@ -122,7 +122,7 @@ Questions? Hit reply.
 
 ### Email 2: Day 3
 
-**Subject:** Did you catch this from our ${topic} webinar?
+**Subject:** Did you catch this from our ${lowerFirstIfCommon(topic)} webinar?
 
 One thing attendees keep asking about: [most asked question]
 
@@ -460,7 +460,7 @@ function generateTakeawaysFromTopic(topic: string, type: string, audience: strin
       `Have clear next steps to implement`
     ],
     product_demo: [
-      `See how ${topic} works in practice`,
+      `See how ${lowerFirstIfCommon(topic)} works in practice`,
       `Understand key features and benefits`,
       `Learn how to get started quickly`,
       `Know which use cases are best fits`,

@@ -1,4 +1,4 @@
-import { parseListItems, lowerCommonWords, lowerFirstIfCommon, SUGGESTION_FOOTER } from './utils.js';
+import { parseListItems, lowerCommonWords, lowerFirstIfCommon, cap, titleWords, SUGGESTION_FOOTER } from './utils.js';
 
 export function generateThoughtLeadership(args: {
   topic: string;
@@ -235,7 +235,7 @@ function generateFullArticle(
   totalArticles: number,
   countLabel: string
 ): string {
-  const title = angle.title.replace(/\[Topic\]/g, topic);
+  const title = angle.title.replace(/\[Topic\]/g, titleWords(topic));
   const proof1 = proofPoints[0] || 'my experience with this';
   const proof2 = proofPoints[1] || 'what I\'ve observed across the industry';
   const proof3 = proofPoints[2] || 'the patterns that keep emerging';
@@ -431,7 +431,7 @@ Not the famous names who talk about it on podcasts. The quiet operators who cons
 
 What they do looks nothing like the standard advice. Here's the pattern I've extracted.`,
 
-    simplification: `${topic} is overcomplicated.
+    simplification: `${cap(lowerFirstIfCommon(topic))} is overcomplicated.
 
 Not because it's inherently complex, but because complexity serves people selling solutions. The truth is simpler, and more actionable, than you've been led to believe.
 

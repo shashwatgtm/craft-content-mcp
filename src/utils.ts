@@ -182,6 +182,17 @@ export function cap(phrase: string): string {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
+// Run 11 addendum 1 (R11-A1-1): a phrase inside a headline written in title case ("Why Everything You Know About [Topic]
+// Is Wrong"): each word starts with a capital, except short joining words after the first; names, acronyms and words with
+// an inner capital stay as typed ("head of Marketing" becomes "Head of Marketing").
+const TITLE_SMALL = /^(a|an|the|and|or|but|nor|of|for|to|in|on|at|by|with|from|as|vs\.?)$/i;
+export function titleWords(phrase: string): string {
+  return fixNames(phrase.trim()).split(/(\s+)/).map((w, i) => {
+    if (!w.trim() || /[A-Z0-9]/.test(w.slice(1)) || /^[^A-Za-z]/.test(w)) return w;
+    if (i > 0 && TITLE_SMALL.test(w)) return w.toLowerCase();
+    return w.charAt(0).toUpperCase() + w.slice(1);
+  }).join('');
+}
 export function parseListItems(text: string): string[] {
   return text
     .split(/\n|,(?!\d{3}(?!\d))/)
@@ -515,7 +526,7 @@ export function generateHook(topic: string, style: 'question' | 'statistic' | 's
     case 'story':
       return `Last month, ${aOrAn(topic)} ${lowerFirstIfCommon(topic)} challenge nearly derailed our biggest launch. What we learned changed everything.`;
     case 'bold_statement':
-      return `${topic.charAt(0).toUpperCase() + topic.slice(1)} is broken. Here's how to fix it.`;
+      return `${cap(lowerFirstIfCommon(topic))} is broken. Here's how to fix it.`;
     default:
       return `Let's talk about ${lowerFirstIfCommon(topic)}.`;
   }

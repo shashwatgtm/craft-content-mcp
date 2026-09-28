@@ -211,7 +211,7 @@ function generateSubjectLines(topic: string, type: string, segment: string): str
       `The truth about ${topicMid} (nobody talks about this)`,
       `How to master ${topicMid} in ${new Date().getFullYear()}`,
       `5 ${topicMid} mistakes even experts make`,
-      `${cap(topicWords)}: Your complete guide`
+      `${cap(topicMid)}: Your complete guide`
     ],
     product_update: [
       `New: The ${topicWords} feature you asked for`,
@@ -442,7 +442,7 @@ function generateKeyPointsFromTopic(topic: string, type: string, segment: string
       `Key takeaway and next steps`
     ],
     product_update: [
-      `What's new with ${topic}`,
+      `What's new with ${lowerFirstIfCommon(topic)}`,
       `How this helps you`,
       `How to get started`,
       `Tips for best results`,

@@ -88,6 +88,22 @@ function isCommonWord(word: string): boolean {
   const w = head.toLowerCase();
   return COMMON_WORDS.has(w) || (w.length > 4 && /(?:ing|ed)$/.test(w));
 }
+// Run 12 (R12-20): the longest words of a sentence that are not joining words (letters only, 5 to 30 letters), in
+// order of length, for hashtags ("Most onboarding fails ... first success moment" gives onboarding, customers, success).
+const HASHTAG_SKIP = new Set(('about above after again against among around because before being below between both ' +
+  'could during either every first their there these those through under until where which while would should never ' +
+  'always other another reach still really thing things something everything nothing within without whether across').split(' '));
+export function topicWords(text: string, n: number): string[] {
+  const seen = new Set<string>();
+  const words = text.split(/\s+/).map((w) => w.replace(/[^A-Za-z]/g, '')).filter((w) => {
+    const l = w.toLowerCase();
+    if (w.length < 5 || w.length > 30 || HASHTAG_SKIP.has(l) || seen.has(l)) return false;
+    seen.add(l);
+    return true;
+  });
+  return words.map((w, i) => ({ w: w.toLowerCase(), i })).sort((a, b) => b.w.length - a.w.length || a.i - b.i).slice(0, n).map((x) => x.w);
+}
+
 // Text only (run 10): names that keep their capital when they open an input phrase placed mid-sentence. The list holds
 // common product and company names and the names found in the test inputs; other names are kept by the rules below.
 const KNOWN_NAMES = new Set((

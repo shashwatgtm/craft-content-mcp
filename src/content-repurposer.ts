@@ -1,4 +1,4 @@
-import { parseListItems, extractKeyPoints, countWords, lowerCommonWords, SUGGESTION_FOOTER, clipEcho } from './utils.js';
+import { parseListItems, extractKeyPoints, countWords, lowerCommonWords, SUGGESTION_FOOTER, clipEcho, topicWords } from './utils.js';
 
 // Default formats when user doesn't specify
 const DEFAULT_FORMATS = ['linkedin_post', 'twitter_thread', 'email', 'blog_summary', 'quote_cards'];
@@ -19,7 +19,7 @@ export function generateContentRepurposer(args: {
   // Extract key information from source
   const keyPoints = extractKeyPoints(content);
   const wordCount = countWords(content);
-  const title = extractTitle(content);
+  const title = extractTitle(content, keyMessage);
   
   let output = `# 🔄 Content Repurposing Kit
 
@@ -57,7 +57,7 @@ ${keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 Example figures: replace with your own (the Best Time column).
 | Format | Platform | Best Time | Engagement Goal |
 |--------|----------|-----------|-----------------|
-${targetFormats.map(f => `| ${f} | ${getPlatform(f)} | ${getBestTime(f)} | ${getEngagementGoal(f)} |`).join('\n')}
+${targetFormats.map(f => `| ${formatName(f)} | ${getPlatform(f)} | ${getBestTime(f)} | ${getEngagementGoal(f)} |`).join('\n')}
 
 ---
 
@@ -78,15 +78,36 @@ ${SUGGESTION_FOOTER}
   return output;
 }
 
-function extractTitle(content: string): string {
+function extractTitle(content: string, keyMessage: string): string {
   // Try to extract title from headers or first line
   const headerMatch = content.match(/^#\s+(.+)$/m);
   if (headerMatch) return clipEcho(headerMatch[1]);
-  
+
   const firstLine = content.split('\n')[0];
-  if (firstLine.length < 100) return firstLine;
-  
-  return 'Content';
+  if (firstLine.length < 100) return firstLine.replace(/[.!?]+\s*$/, '');
+
+  // Run 12 (R12-20): never the word "Content" as a title: the key message, or else the source's first sentence.
+  if (keyMessage) return clipEcho(keyMessage.trim().replace(/[.!?]+$/, ''), 100);
+  const firstSentence = content.trim().split(/(?<=[.!?])\s+/)[0] || '';
+  return clipEcho(firstSentence.replace(/[.!?]+$/, ''), 100);
+}
+
+// Run 12 (R12-20): channel names written out in the distribution table.
+function formatName(format: string): string {
+  const names: Record<string, string> = {
+    linkedin_post: 'LinkedIn post',
+    twitter_thread: 'X thread',
+    email: 'Email',
+    blog_summary: 'Blog summary',
+    quote_cards: 'Quote cards',
+    infographic_outline: 'Infographic outline',
+    video_script: 'Video script',
+    podcast_talking_points: 'Podcast talking points',
+    slide_deck_outline: 'Slide deck outline',
+    newsletter_section: 'Newsletter section'
+  };
+  const key = format.toLowerCase().replace(/\s+/g, '_');
+  return names[key] || format.replace(/_/g, ' ');
 }
 
 function generateFormat(
@@ -136,7 +157,7 @@ ${generateTwitterThread(content, keyPoints, title)}
 
 **Subject Line Options:**
 1. ${title}: Key insights you need to know
-2. ${shortSubject(keyPoints[0]) ? `What we learned: ${shortSubject(keyPoints[0])}` : 'What we learned about this topic'}
+2. ${subjectPoint(keyPoints[0]) ? `What we learned: ${subjectPoint(keyPoints[0])}` : 'What we learned about this topic'}
 3. [First Name], don't miss this ${sourceType.replace(/_/g, ' ')} summary
 
 **Email Body:**
@@ -200,7 +221,7 @@ ${keyPoints.slice(0, 3).map((p, i) => `
 `).join('\n')}
 
 **[CTA - 10 seconds]**
-"${keyMessage || 'Link in bio for the full version. Follow for more insights like this.'}"
+"${keyMessage || 'Full version: [link]. Follow for more insights like this.'}"
 
 ---
 
@@ -323,20 +344,20 @@ function generateLinkedInPost(content: string, keyPoints: string[], voice: strin
   
   return `${hook}
 
-${keyPoints.length > 1 ? `After diving deep into this topic, here's what stands out:
+${keyPoints.length > 1 ? `Here's what stands out:
 
 ${keyPoints.slice(0, 4).map((p, i) => `${i + 1}. ${p}`).join('\n')}` : ''}
 
-${keyMessage || 'The bottom line: this changes how we should think about the problem.'}
+${keyMessage || '[Your one-line takeaway]'}
 
 What's your take? 👇
 
-#${content.split(' ').slice(0, 3).join('').replace(/[^a-zA-Z]/g, '')} #Insights #${voice}`;
+${hashtags(content)}`;
 }
 
 function generateTwitterThread(content: string, keyPoints: string[], title: string): string {
   let thread = `**Tweet 1 (Hook):**
-${title} - A thread 🧵
+${title}: a thread 🧵
 
 Here's what you need to know:\n\n`;
 
@@ -348,9 +369,9 @@ ${i + 1}/ ${p}
   });
 
   thread += `**Final Tweet:**
-${keyPoints.length + 2}/ That's the TL;DR.
+${Math.min(keyPoints.length, 6) + 1}/ That's the TL;DR.
 
-Full breakdown linked in bio.
+Full post: [link]
 
 Follow for more threads like this 👋`;
 
@@ -472,4 +493,18 @@ function shortSubject(point: string | undefined): string {
   const connectors = new Set(['a', 'an', 'the', 'and', 'or', 'for', 'of', 'to', 'in', 'on', 'at', 'by', 'with', 'from']);
   while (words.length > 1 && connectors.has(words[words.length - 1].toLowerCase())) words.pop();
   return words.join(' ');
+}
+
+// Run 12 (R12-20): a whole key point as the email subject when it is short, never one cut mid-phrase.
+function subjectPoint(point: string | undefined): string {
+  if (!point) return '';
+  const p = point.trim().replace(/[.!?]+$/, '');
+  return p.length <= 60 ? p : '';
+}
+
+// Run 12 (R12-20): hashtags from the topic words of the source's first sentence only (never the brand voice).
+function hashtags(content: string): string {
+  const firstSentence = content.trim().split(/(?<=[.!?])\s+/)[0] || '';
+  const words = topicWords(firstSentence, 3);
+  return words.length ? words.map((w) => `#${w.charAt(0).toUpperCase()}${w.slice(1)}`).join(' ') : '[#YourTopic]';
 }

@@ -12,9 +12,9 @@ export function generateTestimonialCapture(args: {
 }): string {
   const name = args.customer_name;
   const company = args.customer_company;
-  const role = args.customer_role || 'Customer';
+  const role = args.customer_role || '[their role]';
   // Run 12 (R12-20): defaults are marked as assumed in the profile table.
-  const roleShown = args.customer_role || 'Customer (assumed, not supplied)';
+  const roleShown = args.customer_role || '[not supplied]';
   const context = args.relationship_context || 'not supplied';
   const story = args.success_story;
   const type = args.testimonial_type;

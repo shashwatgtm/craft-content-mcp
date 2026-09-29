@@ -14,7 +14,9 @@ export function generateWebinarScript(args: {
   const duration = args.duration || '60_min';
   const type = args.webinar_type;
   const audience = args.target_audience;
-  const speakers = args.speakers ? parseListItems(args.speakers) : ['[Speaker Name]'];
+  // Run 12 (R12-20): a panel without named speakers lists a moderator and two panelists to fill in.
+  const speakers = args.speakers ? parseListItems(args.speakers)
+    : args.webinar_type === 'panel_discussion' ? ['[Moderator]', '[Panelist 1]', '[Panelist 2]'] : ['[Speaker Name]'];
   const includePolls = args.include_polls ?? true;
   const productLevel = args.product_mention_level || 'subtle';
   
@@ -25,7 +27,7 @@ export function generateWebinarScript(args: {
     takeaways = parseListItems(args.key_takeaways);
   } else {
     takeaways = generateTakeawaysFromTopic(topic, type, audience);
-    takeawaysNote = '*(Auto-generated based on topic and type - customize as needed)*';
+    takeawaysNote = '*(Suggested from the topic and type: replace with your own)*';
   }
   
   // Duration in minutes
@@ -54,7 +56,7 @@ export function generateWebinarScript(args: {
 | **Type** | ${type.replace(/_/g, ' ')} |
 | **Audience** | ${audience} |
 | **Speakers** | ${speakers.join(', ')} |
-| **Product Mentions** | ${productLevel} |
+| **Product Mentions** | ${productLevel}${args.product_mention_level ? '' : ' (default)'} |
 ${takeawaysNote ? `| **Note** | Key takeaways auto-suggested |` : ''}
 
 ---
@@ -128,7 +130,7 @@ One thing attendees keep asking about: [most asked question]
 
 Here's the quick answer: [brief response]
 
-[CTA based on product level]
+[Your call to action]
 
 ---
 
@@ -136,10 +138,7 @@ Here's the quick answer: [brief response]
 
 **Subject:** Next steps on ${lowerFirstIfCommon(topic)}
 
-It's been a week since our webinar. By now you've probably:
-- ✅ Watched the recording (or at least meant to)
-- 🤔 Thought about implementing what we discussed
-- ❓ Have a few questions
+It's been a week since our webinar. By now you've probably watched the recording (or at least meant to) and thought about what we discussed, and you probably have a few questions.
 
 [Specific next step CTA]
 
@@ -336,7 +335,7 @@ ${takeaways.map((t, i) => `${i + 1}. ${t}`).join('\n')}
 
 By the end of this session, you'll walk away with [specific outcome for ${audience}].
 
-Sound good? Drop a '1' in the chat if you're ready to go." (Example figure: replace with your own)
+Sound good? Drop a '1' in the chat if you're ready to go."
 
 `,
     'Context Setting': `
@@ -351,7 +350,7 @@ Sound good? Drop a '1' in the chat if you're ready to go." (Example figure: repl
 
 The good news? There's a better way. That's what we're here to explore.
 
-${includePolls ? '**[LAUNCH POLL: "What\'s your biggest challenge with [topic]?"]**' : ''}
+${includePolls ? `**[LAUNCH POLL: "What's your biggest challenge with ${lowerFirstIfCommon(topic)}?"]**` : ''}
 
 Let's see what you're dealing with..."
 
@@ -371,7 +370,7 @@ Here's what this looks like in practice:
 - [Specific example 2]
 - [Specific example 3]
 
-${productLevel !== 'none' ? `**[Product tie-in based on ${productLevel} level]**` : ''}
+${productLevel !== 'none' ? `**[Mention your product here: one sentence]**` : ''}
 
 Any questions on this before we move on? Drop them in chat."
 
@@ -403,7 +402,7 @@ ${takeaways.slice(0, 3).map((t, i) => `${i + 1}. ${t}`).join('\n')}
 
 **What's your next step?**
 
-[CTA based on ${productLevel} product mention level]
+[Your one next step for the audience]
 
 Thanks so much for joining. You'll get the recording, slides, and resources within 24 hours.
 
@@ -414,18 +413,15 @@ Have a great rest of your [day/week]!"
 `
   };
   
-  // Return specific script if available, otherwise generate generic
-  return scripts[section.name] || `
+  // Run 12 (R12-20): every other section gets a short speaker prompt written for its type, never an internal label
+  // such as "[Content for Set stage]".
+  if (scripts[section.name]) return scripts[section.name];
+  return `
 ### 🎬 ${section.name} (${section.duration} min)
 
 **[ON SCREEN: Relevant slide]**
 
-**SPEAKER:**
-"[Content for ${section.purpose}]
-
-[Teaching points related to ${lowerFirstIfCommon(topic)}]
-
-[Transition to next section]"
+**SPEAKER PROMPT:** ${speakerPrompt(section.name, topic, audience, takeaways, speakers)}
 
 `;
 }
@@ -508,4 +504,56 @@ function generateTakeawaysFromTopic(topic: string, type: string, audience: strin
   }
   
   return takeaways;
+}
+
+// Run 12 (R12-20): what the speaker does in each section that has no written script.
+function speakerPrompt(name: string, topic: string, audience: string, takeaways: string[], speakers: string[]): string {
+  const t = lowerFirstIfCommon(topic);
+  const nth = (i: number, word: string) => takeaways[i] ? `Teach the ${word} takeaway: ${takeaways[i]}.` : `Teach the ${word} point of the session: [your point].`;
+  const ask = (i: number) => `Ask the panel [your question ${i + 1} on ${t}${takeaways[i] ? `, linked to "${takeaways[i]}"` : ''}]. Give each panelist about two minutes, then ask one follow-up.`;
+  const aud = lowerFirstIfCommon(audience);
+  const prompts: Record<string, string> = {
+    'Main Content Block 2': `${nth(1, 'second')} Give one example from your own work, then check the chat for questions.`,
+    'Main Content Block 3': `${nth(2, 'third')} Give one example from your own work, then check the chat for questions.`,
+    'Summary & Key Takeaways': 'Recap each takeaway in one sentence, then name the one step to take first.',
+    'Welcome & Agenda': `Welcome everyone to '${topic}', say that the session is recorded, and show the agenda.`,
+    'Problem Context': `Describe the problem ${aud} face with ${t}: [one example you have seen].`,
+    'Product Overview': `Show the product on one screen and say what it does for ${aud} in one sentence: [your sentence].`,
+    'Feature Demo 1': 'Demo the core feature: start from the problem it solves, show it working end to end, then pause for questions.',
+    'Feature Demo 2': 'Demo the feature that sets you apart: [feature]. Show the result, not the settings.',
+    'Feature Demo 3': 'Demo one advanced use: [feature]. Keep it short and say who it is for.',
+    'Use Case Examples': 'Walk through [one or two customer examples you can name, with their permission].',
+    'Pricing & Getting Started': 'Explain how to start: [your plans or trial] and the first step after the session.',
+    'Special Offer & Close': '[Only if you have one: the offer and when it ends]. Thank everyone and give the one next step.',
+    'Welcome & Introductions': `Welcome everyone to '${topic}', then ask ${speakers.length > 1 ? speakers.slice(1).join(' and ') : 'each panelist'} to introduce themselves in two sentences.`,
+    'Topic Introduction': `Frame the discussion: why ${t} matters to ${aud} now, in two or three sentences.`,
+    'Discussion Question 1': ask(0),
+    'Discussion Question 2': ask(1),
+    'Discussion Question 3': ask(2),
+    'Rapid Fire Round': 'Ask every panelist the same short question and ask for a one-sentence answer: [your question].',
+    'Audience Q&A': 'Take questions from chat. Read each one aloud and hand it to the panelist best placed to answer.',
+    'Closing Thoughts': 'Ask each panelist for one thing the audience should do next.',
+    'Close': 'Thank the speakers and the audience, say when the recording will arrive, and give the one next step.',
+    'Welcome': `Welcome everyone to '${topic}' and introduce the customer guest: [name, role, company].`,
+    'Customer Introduction': 'Ask the customer to introduce their company and their role in two or three sentences.',
+    'The Challenge': 'Ask: "What was happening before?" Let the customer describe the problem in their own words.',
+    'Solution Discovery': 'Ask: "How did you find us, and why did you choose us?"',
+    'Implementation Journey': 'Ask: "What was the rollout like?" Ask for one thing that went well and one that was hard.',
+    'Results & Impact': 'Ask: "What changed, and how do you measure it?" Use only the numbers the customer agrees to share.',
+    'Live Demo/Walkthrough': 'Ask the customer to show how their team uses it day to day.',
+    'Lessons Learned': 'Ask: "What would you tell a team starting today?"',
+    'Welcome & Setup': `Welcome everyone to '${topic}' and check that everyone has [the tools or files needed].`,
+    'Learning Objectives': 'Say what everyone will build by the end: [the deliverable].',
+    'Concept Introduction': 'Explain the idea behind the first exercise in plain words, with one example.',
+    'Exercise 1': 'Give the instructions for the first exercise: [the task, the time box and what done looks like]. Stay in chat to help.',
+    'Debrief 1': 'Ask two or three people to share what they made. Point out one thing that worked.',
+    'Exercise 2': 'Give the instructions for the second exercise, which builds on the first: [the task and the time box].',
+    'Debrief 2': 'Ask two or three people to share what they made. Point out one thing that worked.',
+    'Wrap-up & Resources': 'Recap what everyone built and share [the templates or resources to keep].',
+    'Welcome & Speaker Intro': `Welcome everyone to '${topic}', introduce ${speakers[0]} in two sentences, and explain how to ask questions.`,
+    'Brief Topic Context': `Frame the session: why ${t} matters to ${aud} now, in two or three sentences.`,
+    'Q&A Session': 'Take the first question from chat. Repeat it aloud, answer in under two minutes, invite a follow-up.',
+    'Rapid Fire': 'Answer short questions from chat in one or two sentences each.'
+  };
+  return prompts[name] || `[What to say in this section about ${t}]`;
 }

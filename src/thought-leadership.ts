@@ -12,7 +12,8 @@ export function generateThoughtLeadership(args: {
   const topic = args.topic;
   const yourTake = args.your_take;
   const targetReader = args.target_reader;
-  const authorBackground = args.author_background || 'Industry practitioner';
+  // Run 12 (R12-20, B5): a role the user did not give is a bracket prompt, never invented.
+  const authorBackground = args.author_background || '[your role]';
   const numArticles = args.num_articles || 3;
   // 3 articles is a default when num_articles was not supplied: label it as an example
   const countLabel = args.num_articles ? '' : ' (Example figure: replace with your own)';
@@ -28,9 +29,8 @@ export function generateThoughtLeadership(args: {
     proofPoints = generateSuggestedProofPoints(topic, yourTake, articleType);
     proofPointsNote = `
 
-⚠️ **NOTE:** You didn't provide proof points. We've generated articles using suggested evidence below.
-**To strengthen these articles, gather real proof for:**
-${proofPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
+⚠️ **NOTE:** You didn't provide proof points. The articles show a bracket prompt where each piece of proof goes.
+**To strengthen these articles, gather real proof for the suggested proof points below.**
 
 `;
   }
@@ -45,7 +45,7 @@ ${proofPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 | **Your Take** | ${yourTake} |
 | **Target Reader** | ${targetReader} |
 | **Author Credibility** | ${authorBackground} |
-| **Articles** | ${numArticles} byline pieces (600-800 words each)${countLabel} |
+| **Articles** | ${numArticles} byline ${numArticles === 1 ? 'piece' : 'pieces'} (600-800 words each)${countLabel} |
 | **Style** | ${articleType.replace(/_/g, ' ')} |
 ${proofPointsNote}
 ---
@@ -70,7 +70,8 @@ ${proofPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
       articleAngle,
       i + 1,
       numArticles,
-      countLabel
+      countLabel,
+      !args.proof_points
     );
   }
 
@@ -82,7 +83,7 @@ ${proofPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 
 Use these short posts to promote your byline articles on social media:
 
-${generatePromotionalPosts(topic, yourTake, proofPoints, numArticles)}
+${generatePromotionalPosts(topic, yourTake, proofPoints, numArticles, !args.proof_points)}
 
 ---
 
@@ -96,16 +97,16 @@ ${Array.from({ length: numArticles }, (_, i) => i + 1).map(n => `| Week ${n} | A
 
 ## 🎯 Where to Publish
 
-**Tier 1 - Your owned channels:**
+**Tier 1: your owned channels**
 - LinkedIn Articles (best for B2B thought leadership)
 - Medium (broader reach, good SEO)
 - Company blog (owned asset)
 
-**Tier 2 - Industry publications:**
+**Tier 2: industry publications**
 - Industry-specific publications in your space
 - Trade magazines and websites
 
-**Tier 3 - Major outlets (pitch required):**
+**Tier 3: major outlets (pitch required)**
 - Forbes Councils (paid membership)
 - Entrepreneur, Inc (contributor programs)
 - Harvard Business Review (highly competitive)
@@ -233,12 +234,14 @@ function generateFullArticle(
   angle: { title: string; structure: string; hook: string },
   articleNum: number,
   totalArticles: number,
-  countLabel: string
+  countLabel: string,
+  suggested: boolean
 ): string {
   const title = angle.title.replace(/\[Topic\]/g, titleWords(topic));
-  const proof1 = proofPoints[0] || 'my experience with this';
-  const proof2 = proofPoints[1] || 'what I\'ve observed across the industry';
-  const proof3 = proofPoints[2] || 'the patterns that keep emerging';
+  // Run 12 (R12-20, B5): suggested proof and missing proof are printed as bracket prompts, never as the author's story.
+  const proof1 = proofSlot(proofPoints[0], suggested, '[Your first example]');
+  const proof2 = proofSlot(proofPoints[1], suggested, '[Your second example]');
+  const proof3 = proofSlot(proofPoints[2], suggested, '[Your third example]');
   
   return `
 ---
@@ -323,7 +326,7 @@ You can keep following the standard advice about ${lowerFirstIfCommon(topic)}: t
 
 Or you can accept an uncomfortable truth: ${lowerCommonWords(yourTake)}.
 
-I know which path I'd choose. I know which path has produced results for me and for others who've made this shift.
+I know which path I'd choose. [Your proof: the results this path has produced for you or for others]
 
 The question is whether you're ready to see ${lowerFirstIfCommon(topic)} differently.
 
@@ -349,7 +352,7 @@ function generateHook(hookType: string, topic: string, yourTake: string, targetR
   const hooks: Record<string, string> = {
     controversy: `Here's something that might make you uncomfortable: ${lowerCommonWords(yourTake)}.
 
-I know that goes against everything you've been told about ${lowerFirstIfCommon(topic)}. I used to believe the conventional wisdom too. Then I spent years in the trenches, and I discovered that almost everything the experts teach about ${lowerFirstIfCommon(topic)} is not just incomplete. It's actively harmful.
+I know that goes against everything you've been told about ${lowerFirstIfCommon(topic)}. [Your experience: how long you have worked on this, and what changed your mind]
 
 If you're among ${lowerFirstIfCommon(targetReader)}, this matters more than you think. Here's why.`,
 
@@ -357,45 +360,43 @@ If you're among ${lowerFirstIfCommon(targetReader)}, this matters more than you 
 
 It's about ${lowerFirstIfCommon(topic)}, specifically about ${lowerCommonWords(yourTake)}.
 
-The people who've figured this out aren't talking about it publicly. Not because it's a secret, but because admitting it means acknowledging that the standard playbook is broken. After seeing this pattern play out dozens of times, I can't stay quiet anymore.`,
+The people who've figured this out aren't talking about it publicly. Not because it's a secret, but because admitting it means acknowledging that the standard playbook is broken. [Your experience: how often you have seen this pattern]`,
 
     direct_challenge: `Stop. Before you read another article about ${lowerFirstIfCommon(topic)}, I need to tell you something.
 
 That advice you've been following? The "best practices" everyone swears by? They're probably making things worse.
 
-${yourTake}. I didn't want to believe it either. But after working with ${targetReader} for years, the evidence is overwhelming.`,
+${yourTake}. [Your experience: how long you have worked with ${targetReader}, and what you saw]`,
 
     promise_of_value: `What if I told you that ${lowerFirstIfCommon(topic)} is simpler than everyone makes it out to be?
 
 Not easy. Simple. There's a difference.
 
-After years of watching ${targetReader} struggle with ${lowerFirstIfCommon(topic)}, I've distilled what actually works into something you can start using today. Not theory. Not frameworks that look good in slideshows. Real approaches that produce real results.`,
+[Your experience: how you learned what works with ${lowerFirstIfCommon(topic)}]. Here it is, in a form you can start using today. Not theory. Not frameworks that look good in slideshows.`,
 
     proof_of_results: `Here's something I wasn't supposed to share.
 
-When I first discovered that ${lowerCommonWords(yourTake)}, I didn't believe it either. Now, having seen the results, in my own work and with dozens of ${targetReader}, I can't ignore it anymore.
+[Your story: when you first saw that ${lowerCommonWords(yourTake)}]. [Your proof: the results you have seen since, in your own work or with ${targetReader}]
 
 This isn't about incremental improvement. This is about fundamentally rethinking ${lowerFirstIfCommon(topic)}.`,
 
-    transformation: `Two years ago, I was where you probably are now with ${lowerFirstIfCommon(topic)}.
+    transformation: `[Your story: where you were with ${lowerFirstIfCommon(topic)} before, and what it was like]
 
-Frustrated. Trying everything the experts recommended. Getting mediocre results despite putting in maximum effort.
+Then something shifted. I realized that ${lowerCommonWords(yourTake)}. [What happened next, in one or two sentences]`,
 
-Then something shifted. I realized that ${lowerCommonWords(yourTake)}. What happened next changed everything.`,
+    experience_credibility: `[Your experience: how long you have worked on ${lowerFirstIfCommon(topic)}, and the mistakes you made along the way]
 
-    experience_credibility: `In my years of working on ${lowerFirstIfCommon(topic)}, I've made every mistake possible.
-
-I've followed the playbooks. I've ignored the playbooks. I've invented my own playbooks only to throw them out. Through all of it, one truth has emerged that I wish someone had told me from the start:
+One truth has emerged that I wish someone had told me from the start:
 
 ${yourTake}`,
 
-    vulnerability: `I need to tell you about a mistake I made with ${lowerFirstIfCommon(topic)}.
+    vulnerability: `[Your story: a mistake you made with ${lowerFirstIfCommon(topic)}, and what it cost you]
 
-It cost me time, money, and credibility. But more importantly, it taught me something that changed how I approach ${lowerFirstIfCommon(topic)} entirely.
+It taught me something that changed how I approach ${lowerFirstIfCommon(topic)} entirely.
 
 Here's what happened, and what it might mean for you.`,
 
-    numbered_wisdom: `After years in this space, I've learned that success with ${lowerFirstIfCommon(topic)} comes down to a handful of non-obvious insights.
+    numbered_wisdom: `[Your experience: how long you have worked in this space]. Success with ${lowerFirstIfCommon(topic)} comes down to a handful of non-obvious insights.
 
 Not tactics. Not hacks. Insights: the kind that change how you think about the problem entirely.
 
@@ -425,7 +426,7 @@ I'm not talking about small errors or missing nuances. I'm talking about a menta
 
 Here's a different way to think about it.`,
 
-    best_practice: `I've studied how the best in the world approach ${lowerFirstIfCommon(topic)}.
+    best_practice: `[Your research: whose approach to ${lowerFirstIfCommon(topic)} you have studied, and how]
 
 Not the famous names who talk about it on podcasts. The quiet operators who consistently produce results that seem almost unfair.
 
@@ -435,17 +436,17 @@ What they do looks nothing like the standard advice. Here's the pattern I've ext
 
 Not because it's inherently complex, but because complexity serves people selling solutions. The truth is simpler, and more actionable, than you've been led to believe.
 
-Here's the model I now use for everything.`
+Here's the model.`
   };
 
   return hooks[hookType] || hooks.controversy;
 }
 
-function generatePromotionalPosts(topic: string, yourTake: string, proofPoints: string[], numArticles: number): string {
+function generatePromotionalPosts(topic: string, yourTake: string, proofPoints: string[], numArticles: number, suggested: boolean): string {
   let posts = '';
   
   for (let i = 0; i < numArticles; i++) {
-    const proof = proofPoints[i % proofPoints.length] || 'my experience';
+    const proof = proofSlot(proofPoints[i % proofPoints.length], suggested, '[Your story]');
     posts += `
 ### Promo Post ${i + 1} (for Article ${i + 1})
 
@@ -453,9 +454,9 @@ function generatePromotionalPosts(topic: string, yourTake: string, proofPoints: 
 
 ${yourTake}
 
-I know that's not what the experts say. I used to follow their advice too.
+I know that's not what the experts say.
 
-Then I experienced ${proof}.
+What convinced me: ${proof}.
 
 Here's what I learned:
 
@@ -532,4 +533,11 @@ function generateSuggestedProofPoints(topic: string, yourTake: string, articleTy
   };
   
   return typeSpecificProofs[articleType] || baseProofs;
+}
+
+// Run 12 (R12-20, B5): a proof point the user gave is printed as given; a suggested one becomes a bracket prompt
+// ("[Your story: evidence that the conventional wisdom fails (study, example, data)]"); a missing one gets the fallback prompt.
+function proofSlot(point: string | undefined, suggested: boolean, fallback: string): string {
+  if (!point) return fallback;
+  return suggested ? `[Your story: ${point.charAt(0).toLowerCase()}${point.slice(1)}]` : point;
 }

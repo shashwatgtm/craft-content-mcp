@@ -1,6 +1,6 @@
 # CRAFT Content
 
-> CRAFT Content is a free web app and AI connector with eight content tools, by Shashwat Ghosh of Helix GTM Consulting. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter, a webinar script, repurposed posts, a thought leadership series, testimonial requests, sales content or a CRAFT review of your draft.
+> CRAFT Content is a free web app and AI connector with eight content tools, by Shashwat Ghosh of Helix GTM Consulting, for demand generation heads and marketing teams. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter or a webinar script. Add https://craft-content.gtmhelix.com/mcp in Claude or ChatGPT, no sign-in.
 
 - Web app (no sign-in): https://craft-content.gtmhelix.com/
 - MCP server URL (Streamable HTTP, no sign-in, read-only tools): https://craft-content.gtmhelix.com/mcp
@@ -28,7 +28,7 @@
 
 ### What is CRAFT Content?
 
-CRAFT Content is a free web app and AI connector with eight content tools, by Shashwat Ghosh of Helix GTM Consulting. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter, a webinar script, repurposed posts, a thought leadership series, testimonial requests, sales content or a CRAFT review of your draft.
+CRAFT Content is a free web app and AI connector with eight content tools, by Shashwat Ghosh of Helix GTM Consulting, for demand generation heads and marketing teams. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter or a webinar script. Add https://craft-content.gtmhelix.com/mcp in Claude or ChatGPT, no sign-in.
 
 ### Is CRAFT Content free, and do I need an account?
 
@@ -48,7 +48,7 @@ In Claude, open Customize, then Connectors, select + and then Add custom connect
 
 ### Who built it?
 
-Shashwat Ghosh, Co-Founder and Fractional CMO of Helix GTM Consulting, a business consulting firm founded in 2022 in Bengaluru. He has 24+ years in B2B and 10+ years of fractional experience, and created the EPIC, IMPACT and CRAFT frameworks and the Hub-Spoke Messaging Methodology.
+Shashwat Ghosh, Co-Founder and Fractional CMO of Helix GTM Consulting, founded in 2022 in Bengaluru. He has 24+ years in B2B and 10+ years of fractional experience, and created the EPIC, IMPACT and CRAFT frameworks and the Hub-Spoke Messaging Methodology.
 
 ### Why does the newsletter builder give a different preview line each time?
 

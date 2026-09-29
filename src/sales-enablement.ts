@@ -57,6 +57,8 @@ export function generateSalesEnablement(args: {
   const persona = args.target_persona;
   const proofPoints = parseListItems(args.proof_points);
   const priceContext = args.price_context || 'Market rate';
+  // Run 12 (R12-20): a default is shown as assumed.
+  const priceShown = args.price_context || 'Market rate (assumed, not supplied)';
   const stage = args.sales_stage || 'demo';
   
   // HANDLE optional objections - generate if not provided
@@ -94,10 +96,10 @@ ${objectionsNote}
 |---------|--------|
 | **Product** | ${product} |
 | **Persona** | ${persona} |
-| **Price Position** | ${priceContext} |
-| **Sales Stage** | ${stage.replace(/_/g, ' ')} |
-${!args.value_props ? `| **Note** | Value props derived from proof points |` : ''}
-${!args.common_objections ? `| **Note** | Objections auto-generated - update with real ones |` : ''}
+| **Price Position** | ${priceShown} |
+| **Sales Stage** | ${stage.replace(/_/g, ' ')} |${!args.value_props ? `
+| **Note** | Value props taken from your proof points |` : ''}${!args.common_objections ? `
+| **Note** | Objections suggested: replace them with the ones you hear |` : ''}
 
 ---
 
@@ -107,8 +109,8 @@ ${!args.common_objections ? `| **Note** | Objections auto-generated - update wit
 
 ${valueProps.map((vp, i) => `
 **${i + 1}. ${vp}**
-- *Why it matters to ${midSentence(persona)}:* [Connect to their specific pain]
-- *Proof:* ${proofPoints[i % proofPoints.length] || 'Customer evidence available'}
+- *Why it matters to ${midSentence(persona)}:* [Connect to their specific pain]${(proofPoints[i % proofPoints.length] || '') === vp ? '' : `
+- *Proof:* ${proofPoints[i % proofPoints.length] || 'Customer evidence available'}`}
 `).join('\n')}
 
 ---
@@ -134,10 +136,10 @@ ${objectionHandlers.map((handler, i) => `
 
 **Proof Point:**
 > ${handler.proof}
-
+${handler.bridge === handler.proof ? '' : `
 **Bridge to Value:**
 > ${handler.bridge}
-
+`}
 **Full Response Script:**
 > "${handler.fullScript}"
 
@@ -147,7 +149,7 @@ ${objectionHandlers.map((handler, i) => `
 ## ⚔️ Competitive Responses
 
 ${competitorHandlers.length > 0 ? competitorHandlers.map((handler, i) => `
-### "Why not ${competitorObjections[i]}?"
+### Objection: "${competitorObjections[i]}"
 
 **When You'll Hear This:**
 ${handler.whenHeard}
@@ -168,15 +170,13 @@ ${handler.whenHeard}
 
 ## 💰 Price Justification
 
-### Position: ${priceContext}
+### Position: ${priceShown}
 
 **Value Framework:**
 
 | Investment | Return |
 |------------|--------|
-| ${product} pricing | ${valueProps[0] || 'Key benefit 1'} |
-| | ${valueProps[1] || 'Key benefit 2'} |
-| | ${proofPoints[0] || 'Proven results'} |
+${[valueProps[0] || 'Key benefit 1', valueProps[1], proofPoints[0]].filter((v, i, a) => v && a.indexOf(v) === i).map((v, i) => `| ${i === 0 ? `${product} pricing` : ''} | ${v} |`).join('\n')}
 
 **ROI Conversation:**
 
@@ -196,7 +196,7 @@ The question isn't whether you can afford ${product}. It's whether you can affor
 
 ---
 
-## 🎣 Discovery Questions for ${midSentence(persona)}
+## 🎣 Discovery questions for ${persona}
 
 ### Opening Questions
 1. "Tell me about your current approach to [problem area]."
@@ -236,7 +236,7 @@ Based on what you described, here's what stands out:
 
 ${product} addresses this${valueProps[0] ? `: ${midSentence(valueProps[0])}` : ' by solving your core problem'}.
 
-${proofPoints[0] ? `Relevant proof: ${proofPoints[0]}` : ''}
+${proofPoints[0] && proofPoints[0] !== valueProps[0] ? `Relevant proof: ${proofPoints[0]}` : ''}
 
 Next step: [Specific action]
 
@@ -329,6 +329,17 @@ function generateObjectionHandler(
     };
   }
   
+  // Run 12 (R12-20): an objection asking for proof gets a proof question, not the feature reframe.
+  if (objLower.includes('proof') || objLower.includes('case stud')) {
+    return {
+      acknowledge: "Wanting proof before deciding is fair.",
+      reframe: "Which proof would settle it for you: a reference call, a case study or a pilot?",
+      proof: proofPoints[0] || "[Your strongest proof point]",
+      bridge: "Let me set up the proof that matters most to you.",
+      fullScript: `Wanting proof before deciding is fair. Which proof would settle it for you: a reference call, a case study or a pilot? ${asSentence(proofPoints[0]) || '[Your strongest proof point]'} I can set up whichever one helps most.`
+    };
+  }
+
   // Feature/capability objections
   if (objLower.includes('feature') || objLower.includes('can\'t') || objLower.includes('doesn\'t') || objLower.includes('missing') || objLower.includes('need')) {
     return {
@@ -336,7 +347,7 @@ function generateObjectionHandler(
       reframe: "What problem are you solving with that specific feature?",
       proof: proofPoints[0] || "Here's how other customers handle that use case...",
       bridge: valueProps[0] || "What we've found is that [core capability] addresses the underlying need.",
-      fullScript: `That's a fair point. Help me understand: what's the underlying problem you're solving with that feature? [Listen] What I often find is that [alternative approach] actually achieves the same outcome. ${asSentence(proofPoints[0]) || 'Customers using our approach report...'} Plus, ${valueProps[0] ? midSentence(valueProps[0]) : 'our core strength'} often makes that specific feature less critical. Would it help to see how others handle this?`
+      fullScript: `That's a fair point. Help me understand: what's the underlying problem you're solving with that feature? [Listen] What I often find is that [alternative approach] actually achieves the same outcome. ${asSentence(proofPoints[0]) || 'Customers using our approach report...'}${valueProps[0] === proofPoints[0] ? '' : ` Plus, ${valueProps[0] ? midSentence(valueProps[0]) : 'our core strength'} often makes that specific feature less critical.`} Would it help to see how others handle this?`
     };
   }
   
@@ -347,7 +358,7 @@ function generateObjectionHandler(
       reframe: "What would make you feel confident in moving forward?",
       proof: proofPoints[0] || "We work with [similar companies] in your space.",
       bridge: "Let me connect you with a customer who had similar concerns.",
-      fullScript: `De-risking this decision is smart. I'd want to validate too. What would make you feel confident? We work with ${proofPoints[0] || 'companies like yours'}, and I'd be happy to arrange a reference call. We also offer [pilot program/guarantee/sandbox] so you can validate before fully committing. What would be most helpful for you?`
+      fullScript: `De-risking this decision is smart. I'd want to validate too. What would make you feel confident? ${asSentence(proofPoints[0]) || '[A customer like them you can name]'} I'd be happy to arrange a reference call. We also offer [pilot program/guarantee/sandbox] so you can validate before fully committing. What would be most helpful for you?`
     };
   }
   
@@ -358,17 +369,17 @@ function generateObjectionHandler(
       reframe: "What's most important to you in making this decision?",
       proof: proofPoints[0] || "Here's what customers who've compared us found...",
       bridge: valueProps[0] || "What sets us apart is...",
-      fullScript: `Makes sense to evaluate options thoroughly. What's most important to you in making this decision? [Listen] That's exactly where we differentiate. ${valueProps[0] || 'Our unique approach'} means [specific advantage]. ${asSentence(proofPoints[0]) || 'Customers who\'ve compared us found...'} What if I share a side-by-side comparison focused on what matters most to you?`
+      fullScript: `Makes sense to evaluate options thoroughly. What's most important to you in making this decision? [Listen] That's exactly where we differentiate. ${valueProps[0] || 'Our unique approach'} means [specific advantage].${valueProps[0] === proofPoints[0] ? '' : ` ${asSentence(proofPoints[0]) || 'Customers who\'ve compared us found...'}`} What if I share a side-by-side comparison focused on what matters most to you?`
     };
   }
   
   // Generic handler
   return {
-    acknowledge: `I understand your concern about "${objection}".`,
+    acknowledge: `I understand the concern.`,
     reframe: "Help me understand what's driving that concern...",
     proof: proofPoints[0] || "Here's how we address that...",
     bridge: valueProps[0] || "The key benefit is...",
-    fullScript: `I understand your concern. Help me understand what's driving that? [Listen] Here's how we address it: ${valueProps[0] || 'Our approach'}. ${asSentence(proofPoints[0]) || 'Customers find that...'} Does that address your concern?`
+    fullScript: `I understand your concern. Help me understand what's driving that? [Listen] Here's how we address it: ${valueProps[0] || 'Our approach'}.${valueProps[0] === proofPoints[0] ? '' : ` ${asSentence(proofPoints[0]) || 'Customers find that...'}`} Does that address your concern?`
   };
 }
 
@@ -377,13 +388,13 @@ function generateCompetitorHandler(
   valueProps: string[],
   proofPoints: string[]
 ): { whenHeard: string; response: string; trapQuestion: string; proof: string } {
-  const competitor = objection.replace(/^why not\s*/i, '').replace(/\?$/, '').trim();
-  
+  // Run 12 (R12-20): the objection is quoted as said in the heading; it is never placed in a name slot
+  // ("Why not Salesforce already does this?" was printed before).
   return {
-    whenHeard: `Usually when prospects are comparing options or have existing relationship with ${competitor}`,
-    response: `Great question about ${competitor}. Here's what customers tell us after evaluating both: ${valueProps[0] || 'Our differentiation'} is where we really shine. ${asSentence(proofPoints[0]) || 'One customer who switched from ' + competitor + ' saw...'} What's most important to you in this decision?`,
-    trapQuestion: `When you evaluated ${competitor}, did they address [your key differentiator]? How did they handle [their known weakness]?`,
-    proof: proofPoints[0] || `Customers who switched from ${competitor} report...`
+    whenHeard: `Usually when prospects are comparing options or already use another tool`,
+    response: `Here's what customers tell us after evaluating both: ${asSentence(proofPoints[0]) || '[proof from a customer who compared both]'} What's most important to you in this decision?`,
+    trapQuestion: `Did the other option address [your key differentiator]? How did it handle [its known weakness]?`,
+    proof: proofPoints[0] || `[Proof from a customer who compared both]`
   };
 }
 
@@ -479,43 +490,8 @@ If asked for discount: "Instead of reducing price, let me add value. What if we 
   return pitches[stage] || pitches.demo;
 }
 
-// Derive a value proposition from a proof point
+// Run 12 (R12-20, B5): without value_props, each value proposition is the proof point as given. The earlier wording
+// ("Trusted by leading companies", "Proven ROI within months") stated claims the input did not give.
 function deriveValuePropFromProof(proof: string): string {
-  const proofLower = proof.toLowerCase();
-  
-  // Look for percentage/number patterns
-  if (proofLower.includes('%')) {
-    const match = proof.match(/(\d+)%\s*(faster|reduction|increase|improvement|less|more|growth|savings)/i);
-    if (match) {
-      return `${match[1]}% ${match[2]} in key metrics`;
-    }
-  }
-  
-  // Time savings
-  if (proofLower.includes('hour') || proofLower.includes('time') || proofLower.includes('day')) {
-    return 'Saves significant time for your team';
-  }
-  
-  // Cost/money
-  if (proofLower.includes('$') || proofLower.includes('cost') || proofLower.includes('sav')) {
-    return 'Delivers measurable cost savings';
-  }
-  
-  // ROI
-  if (proofLower.includes('roi') || proofLower.includes('return')) {
-    return 'Proven ROI within months';
-  }
-  
-  // Customer success
-  if (proofLower.includes('customer') || proofLower.includes('company') || proofLower.includes('team')) {
-    return 'Trusted by leading companies';
-  }
-  
-  // Growth
-  if (proofLower.includes('grow') || proofLower.includes('revenue') || proofLower.includes('pipeline')) {
-    return 'Accelerates growth and revenue';
-  }
-  
-  // If can't derive, use the proof point itself as value prop
-  return proof.length > 50 ? proof.substring(0, 47) + '...' : proof;
+  return proof;
 }

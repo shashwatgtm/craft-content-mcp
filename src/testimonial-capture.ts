@@ -86,7 +86,7 @@ ${name}, ${role} at ${company}
 ### Long Format (Full paragraph)
 *For: Case studies, press releases, testimonial pages*
 
-"When I joined ${company} as ${role}, ${getChallenge(story)} was a major obstacle. We chose [Product] because of [key differentiator]. The implementation was [experience], and within [timeframe], we saw ${getOutcome(story)}. ${cap(getImpact(story))}. [What they valued, in their words]."
+"At ${company}, ${getChallenge(story)} was a major obstacle. We chose [Product] because of [key differentiator]. The implementation was [experience], and within [timeframe], we saw ${getOutcome(story)}. ${cap(getImpact(story))}. [What they valued, in their words]."
 
 ${name}, ${role} at ${company}
 
@@ -171,7 +171,7 @@ I've loved seeing ${company}'s success with [Product]: ${lowerCommonWords(story.
 Would you be willing to share a brief quote about your experience? Just 2-3 sentences about what [Product] has meant for your team.
 
 Here's what it involves:
-- **Time:** 5 minutes to write (or I can draft based on our conversations) (Example figure: replace with your own)
+- **Time:** 5 minutes to write (or I can draft it for you) (Example figure: replace with your own)
 - **Approval:** You'll see and approve anything before it's used
 - **Usage:** ${useCase}
 ${incentive ? `- **Thank you:** ${incentive}` : ''}
@@ -199,7 +199,7 @@ Would you be open to a brief video interview? Here's what it looks like:
 - **Your review:** You'll approve the final edit before anything goes live
 ${incentive ? `- **Thank you:** ${incentive}` : ''}
 
-We handle all production. You just show up and share your story.
+[Only if true: We handle all production. You just show up and share your story.]
 
 Would [next week] work for you?
 
@@ -217,11 +217,11 @@ I'd love to tell ${company}'s story in a detailed case study. This would include
 
 - **Interview:** 30-45 minute call about your journey
 - **Draft review:** You approve all content before publishing
-- **Exposure:** Featured on our website, shared with our newsletter of 50K+ subscribers (Example figure: replace with your own)
-- **Backlinks:** Links to ${company} throughout
+- **Exposure:** Featured on our website [Only if true and provable: and shared with our newsletter of 50K+ subscribers] (Example figure: replace with your own)
+- **Backlinks:** [Only if you offer them: links to ${company} throughout]
 ${incentive ? `- **Thank you:** ${incentive}` : ''}
 
-Would you be open to a quick call to discuss? I can share examples of past case studies we've done.
+Would you be open to a quick call to discuss? [Only if you have them: I can share examples of past case studies we've done.]
 
 Best,
 [Your name]
@@ -233,7 +233,7 @@ Hi [First name],
 
 I hope you're well!
 
-We're building our presence on G2, and your experience with [Product] would really help others make informed decisions.
+[Only if true: We're building our presence on G2, and] your experience with [Product] would really help others make informed decisions.
 
 Would you be willing to leave a quick review? Here's the link: [G2 Review Link]
 
@@ -252,7 +252,7 @@ Hi [First name],
 
 I hope you're doing well!
 
-We have a prospect who's evaluating [Product] and facing similar challenges to what ${company} had. They'd love to hear directly from someone who's been through the journey.
+A prospect, [their company], is evaluating [Product] and facing [their challenge, only if it is similar to what ${company} had]. They'd love to hear directly from someone who's been through the journey.
 
 Would you be open to a brief reference call? Here's what it involves:
 

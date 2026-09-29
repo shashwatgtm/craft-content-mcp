@@ -97,7 +97,7 @@ ${generateAnticipatedQuestions(topic, takeaways, type)}
 
 For questions outside scope:
 - "Great question! That deserves its own session. Let me note it and follow up via email."
-- "We have a resource on that. I'll share the link in the follow-up email."
+- [Only if you have one: "We have a resource on that. I'll share the link in the follow-up email."]
 - "That's a deep topic. Let's connect after the webinar to discuss your specific situation."
 
 ---
@@ -126,7 +126,7 @@ Questions? Hit reply.
 
 **Subject:** Did you catch this from our ${lowerFirstIfCommon(topic)} webinar?
 
-One thing attendees keep asking about: [most asked question]
+A question from the session: [most asked question]
 
 Here's the quick answer: [brief response]
 
@@ -320,7 +320,7 @@ Let's get started!"
 **SPEAKER:**
 "Quick introduction: I'm ${speakers[0]}. [2-3 sentences of relevant background establishing credibility for this topic].
 
-I'm excited to share what we've learned about ${lowerFirstIfCommon(topic)} and give you actionable takeaways you can use immediately."
+I'm excited to talk about ${lowerFirstIfCommon(topic)} and give you actionable takeaways you can use immediately. [Only if true: what you have learned about it, in one sentence]"
 
 `,
     'Agenda & Learning Objectives': `

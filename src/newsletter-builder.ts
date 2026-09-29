@@ -214,8 +214,8 @@ function generateSubjectLines(topic: string, type: string, segment: string): str
       `${cap(topicMid)}: Your complete guide`
     ],
     product_update: [
-      `New: The ${topicWords} feature you asked for`,
-      `You asked, we built: ${topicWords}`,
+      `New: The ${topicWords} feature you asked for [only if customers asked for it]`,
+      `You asked, we built: ${topicWords} [only if customers asked for it]`,
       `Just shipped: ${topicWords} (+ what's next)`,
       `[Product Update] ${topicWords} is here`
     ],
@@ -223,13 +223,13 @@ function generateSubjectLines(topic: string, type: string, segment: string): str
       `This week in ${topicMid}: What you need to know`,
       `Breaking: ${topicWords} is changing (here's how)`,
       `${topicWords} news: 3 stories that matter`,
-      `The ${topicMid} update everyone's talking about`
+      `The ${topicMid} update everyone's talking about [only if true]`
     ],
     thought_leadership: [
       `Why ${topicMid} is broken (and how to fix it)`,
       `Unpopular opinion: ${topicWords}`,
       `The future of ${topicMid} (my prediction)`,
-      `What I learned about ${topicMid} the hard way`
+      `What I learned about ${topicMid} the hard way [only if true]`
     ],
     curated_links: [
       `${topicWords}: Best reads this week`,
@@ -245,11 +245,11 @@ function generateSubjectLines(topic: string, type: string, segment: string): str
 function generatePreviewText(subject: string, topic: string): string {
   // Preview should complement, not repeat subject
   const previews = [
-    `Plus: the one thing most people get wrong...`,
-    `Inside: actionable tips you can use today`,
-    `Spoiler: it's not what you think`,
+    `Plus: [the one thing most people get wrong about ${lowerFirstIfCommon(topic)}]`,
+    `Inside: [the tips readers can use today]`,
+    `Spoiler: [the answer, only if it is not what readers expect]`,
     `Plus: [one thing you learned about ${lowerFirstIfCommon(topic)}]`,
-    `Read time: 4 minutes`
+    `Read time: 4 minutes (Example figure: replace with your own)`
   ];
   return previews[Math.floor(Math.random() * previews.length)];
 }

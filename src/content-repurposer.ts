@@ -157,7 +157,7 @@ ${generateTwitterThread(content, keyPoints, title)}
 
 **Subject Line Options:**
 1. ${title}: Key insights you need to know
-2. ${subjectPoint(keyPoints[0]) ? `What we learned: ${subjectPoint(keyPoints[0])}` : 'What we learned about this topic'}
+2. ${subjectPoint(keyPoints[0]) ? `What we learned: ${subjectPoint(keyPoints[0])}` : 'What we learned: [the lesson, in a few words]'}
 3. [First Name], don't miss this ${sourceType.replace(/_/g, ' ')} summary
 
 **Email Body:**
@@ -340,7 +340,7 @@ ${keyPoints.map(p => `• ${p}`).join('\n')}
 }
 
 function generateLinkedInPost(content: string, keyPoints: string[], voice: string, keyMessage: string): string {
-  const hook = keyPoints[0] ? `${keyPoints[0].charAt(0).toUpperCase() + keyPoints[0].slice(1)}` : 'Here\'s what I learned';
+  const hook = keyPoints[0] ? `${keyPoints[0].charAt(0).toUpperCase() + keyPoints[0].slice(1)}` : '[Your hook]';
   
   return `${hook}
 

@@ -274,7 +274,7 @@ And yet something's not clicking.
 
 The results aren't matching the effort. The advice that worked for others seems to fall flat for you. You're left wondering if you're doing something wrong, or if the advice itself is the problem.
 
-Here's what I've learned: **it's usually the advice.**
+[Your lesson, only if true: for example, "Here's what I've learned: it's usually the advice."]
 
 Not because the people giving it are wrong or dishonest. But because most advice about ${lowerFirstIfCommon(topic)} is based on a flawed assumption: that what worked in one context will work in yours. That best practices are universal. That following the playbook is the path to success.
 
@@ -288,11 +288,11 @@ Let me tell you about ${proof1}.
 
 [**CUSTOMIZE:** Insert your specific story here. Be concrete: names, numbers, timeline, outcomes. The more specific, the more credible. This should be 2-3 paragraphs showing the reality of this proof point.]
 
-This wasn't an isolated incident. When I look at ${proof2}, the same pattern emerges.
+Then there is ${proof2}. [Only if true and provable: why it shows the same pattern, so the first example was not an isolated incident]
 
 [**CUSTOMIZE:** Second story or data point here. Different context, same underlying truth. This builds the case that your take isn't a fluke. It's a pattern. Another 2-3 paragraphs.]
 
-What these examples reveal is something that contradicts the conventional wisdom about ${lowerFirstIfCommon(topic)}. We've been told that the standard approach works. But the evidence suggests otherwise.
+[Only if true and provable: what these examples reveal that contradicts the conventional wisdom about ${lowerFirstIfCommon(topic)}.]
 
 This isn't about being contrarian for its own sake. It's about following the truth where it leads, even when it conflicts with what we've been taught.
 
@@ -306,7 +306,7 @@ Once you accept that ${lowerCommonWords(yourTake)}, a different path forward bec
 
 **Second**, you need a new framework for thinking about ${lowerFirstIfCommon(topic)}. Not a rigid system, because those fail the moment reality deviates from the plan. But a set of principles that guide decision-making when the playbook doesn't apply.
 
-**Third**, you have to be willing to look foolish in the short term. ${proof3} taught me that the right approach often looks wrong to outside observers, until the results speak for themselves.
+**Third**, you have to be willing to look foolish in the short term: the right approach can look wrong to outside observers until the results come in. Your example: ${proof3}. [What it taught you, in one sentence]
 
 Here's what this looks like in practice:
 
@@ -356,11 +356,9 @@ I know that goes against everything you've been told about ${lowerFirstIfCommon(
 
 If you're among ${lowerFirstIfCommon(targetReader)}, this matters more than you think. Here's why.`,
 
-    revelation: `There's a conversation happening behind closed doors that most ${targetReader} never hear.
+    revelation: `Here's a view on ${lowerFirstIfCommon(topic)} for ${lowerFirstIfCommon(targetReader)}: ${lowerCommonWords(yourTake)}.
 
-It's about ${lowerFirstIfCommon(topic)}, specifically about ${lowerCommonWords(yourTake)}.
-
-The people who've figured this out aren't talking about it publicly. Not because it's a secret, but because admitting it means acknowledging that the standard playbook is broken. [Your experience: how often you have seen this pattern]`,
+[Only if true: why the people who have figured this out do not talk about it publicly] [Your experience: how often you have seen this pattern]`,
 
     direct_challenge: `Stop. Before you read another article about ${lowerFirstIfCommon(topic)}, I need to tell you something.
 
@@ -374,7 +372,7 @@ Not easy. Simple. There's a difference.
 
 [Your experience: how you learned what works with ${lowerFirstIfCommon(topic)}]. Here it is, in a form you can start using today. Not theory. Not frameworks that look good in slideshows.`,
 
-    proof_of_results: `Here's something I wasn't supposed to share.
+    proof_of_results: `Here's something worth sharing.
 
 [Your story: when you first saw that ${lowerCommonWords(yourTake)}]. [Your proof: the results you have seen since, in your own work or with ${targetReader}]
 
@@ -392,7 +390,7 @@ ${yourTake}`,
 
     vulnerability: `[Your story: a mistake you made with ${lowerFirstIfCommon(topic)}, and what it cost you]
 
-It taught me something that changed how I approach ${lowerFirstIfCommon(topic)} entirely.
+[What it taught you, and how it changed your approach to ${lowerFirstIfCommon(topic)}]
 
 Here's what happened, and what it might mean for you.`,
 
@@ -402,21 +400,19 @@ Not tactics. Not hacks. Insights: the kind that change how you think about the p
 
 ${yourTake} was the first one. Here are the others.`,
 
-    future_vision: `The ${lowerFirstIfCommon(topic)} landscape is about to shift dramatically.
+    future_vision: `[Your prediction: how the ${lowerFirstIfCommon(topic)} landscape will shift, and your evidence]
 
-If you're among ${lowerFirstIfCommon(targetReader)}, the changes coming in the next few years will create massive opportunities for those who see them coming. Everyone else will be left wondering what happened.
+If you're among ${lowerFirstIfCommon(targetReader)}, [Only if true: the opportunity this shift creates for those who see it coming].
 
 Here's what I'm seeing, and what you should do about it.`,
 
-    change_warning: `Something is happening in ${lowerFirstIfCommon(topic)} that most ${targetReader} haven't noticed yet.
+    change_warning: `[Only if true: what is changing in ${lowerFirstIfCommon(topic)} that most ${targetReader} haven't noticed yet]
 
-The signals are subtle, but they're everywhere if you know where to look. And if you're not paying attention, you risk being blindsided by changes that will reshape the entire landscape.
+[Your evidence: the signals you see, and where]
 
 ${yourTake}. Here's why that matters now more than ever.`,
 
-    urgency: `We're at an inflection point with ${lowerFirstIfCommon(topic)}.
-
-The old rules are breaking down. The new rules aren't fully formed yet. That means right now is when the future is being decided.
+    urgency: `[Only if true and provable: why ${lowerFirstIfCommon(topic)} is at an inflection point now, and your evidence]
 
 If you're among ${lowerFirstIfCommon(targetReader)}, your choices in the next 12-18 months will determine which side of this shift you end up on. (Example figure: replace with your own)`,
 
@@ -428,9 +424,9 @@ Here's a different way to think about it.`,
 
     best_practice: `[Your research: whose approach to ${lowerFirstIfCommon(topic)} you have studied, and how]
 
-Not the famous names who talk about it on podcasts. The quiet operators who consistently produce results that seem almost unfair.
+[Only if your research shows it: what they do that differs from the standard advice]
 
-What they do looks nothing like the standard advice. Here's the pattern I've extracted.`,
+Here's the pattern.`,
 
     simplification: `${cap(lowerFirstIfCommon(topic))} is overcomplicated.
 
@@ -460,9 +456,9 @@ What convinced me: ${proof}.
 
 Here's what I learned:
 
-→ The conventional wisdom about ${lowerFirstIfCommon(topic)} is backwards
-→ What actually works looks nothing like the playbook
-→ The people getting results are doing something different
+→ [Your first lesson, for example: the conventional wisdom about ${lowerFirstIfCommon(topic)} is backwards]
+→ [Your second lesson, for example: what actually works looks nothing like the playbook]
+→ [Your third lesson, for example: the people getting results are doing something different]
 
 I just published a deep dive on this, sharing the evidence, what it means, and what to do about it.
 

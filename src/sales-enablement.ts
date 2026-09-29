@@ -110,7 +110,7 @@ ${objectionsNote}
 ${valueProps.map((vp, i) => `
 **${i + 1}. ${vp}**
 - *Why it matters to ${midSentence(persona)}:* [Connect to their specific pain]${(proofPoints[i % proofPoints.length] || '') === vp ? '' : `
-- *Proof:* ${proofPoints[i % proofPoints.length] || 'Customer evidence available'}`}
+- *Proof:* ${proofPoints[i % proofPoints.length] || '[Your proof point]'}`}
 `).join('\n')}
 
 ---
@@ -180,7 +180,7 @@ ${[valueProps[0] || 'Key benefit 1', valueProps[1], proofPoints[0]].filter((v, i
 
 **ROI Conversation:**
 
-"Let me share what customers typically see:
+"Let me share what customers have seen:
 
 ${proofPoints.slice(0, 3).map(p => `- ${p}`).join('\n')}
 
@@ -190,7 +190,7 @@ Based on what you've shared about your situation, here's what that could mean fo
 
 "I understand budget is a consideration. Let me ask: what's the cost of NOT solving this problem for another 6 months? (Example figure: replace with your own)
 
-${valueProps[0] || 'Our solution'} typically [specific outcome]. For a company your size, that's roughly [X in savings/revenue].
+${valueProps[0] || '[Your key value]'}: [the outcome you can prove]. For a company your size, that's roughly [X in savings/revenue].
 
 The question isn't whether you can afford ${product}. It's whether you can afford not to."
 
@@ -311,10 +311,10 @@ function generateObjectionHandler(
   if (objLower.includes('price') || objLower.includes('expensive') || objLower.includes('cost') || objLower.includes('budget')) {
     return {
       acknowledge: "I hear you, budget is always a consideration.",
-      reframe: "Let me share what our customers found when they compared total cost of ownership...",
-      proof: proofPoints[0] || "Customers typically see ROI within [X] months.",
+      reframe: "[Only if true and provable: Let me share what our customers found when they compared total cost of ownership.]",
+      proof: proofPoints[0] || "[Only if true and provable: customers see ROI within X months.]",
       bridge: valueProps[0] || "The key value driver is...",
-      fullScript: `I hear you, budget is always a consideration. Here's what I've found: companies that focus only on price often end up spending more in the long run on [hidden costs/lost opportunity]. ${asSentence(proofPoints[0]) || 'Our customers typically see ROI within [timeframe].'} The question isn't the price. It's the value. Would it help to walk through an ROI calculation based on your specific numbers?`
+      fullScript: `I hear you, budget is always a consideration. [Only if true and provable: companies that focus only on price end up spending more in the long run on hidden costs or lost opportunity.] ${asSentence(proofPoints[0]) || '[Only if true and provable: our customers see ROI within a timeframe you can name.]'} The question isn't the price. It's the value. Would it help to walk through an ROI calculation based on your specific numbers?`
     };
   }
   
@@ -323,9 +323,9 @@ function generateObjectionHandler(
     return {
       acknowledge: "Timing is definitely important to get right.",
       reframe: "I'm curious: what would need to change for the timing to feel right?",
-      proof: proofPoints[0] || "Companies that waited reported [X] in additional costs.",
+      proof: proofPoints[0] || "[Only if true and provable: companies that waited reported X in additional costs.]",
       bridge: valueProps[0] || "The cost of waiting is often...",
-      fullScript: `Timing is definitely important. I'm curious: what would need to change for the timing to feel right? What I often see is that waiting adds [specific cost]. ${asSentence(proofPoints[0]) || 'Example quote (not from your input): one customer told us they wished they had started 6 months earlier (Example figure: replace with your own).'} Even if the full rollout is later, starting discovery now means you're ready when the time is right. What would be the cost of waiting another quarter?`
+      fullScript: `Timing is definitely important. I'm curious: what would need to change for the timing to feel right? [Only if true and provable: the cost that waiting adds, in numbers you can show.] ${asSentence(proofPoints[0]) || 'Example quote (not from your input): one customer told us they wished they had started 6 months earlier (Example figure: replace with your own).'} Even if the full rollout is later, starting discovery now means you're ready when the time is right. What would be the cost of waiting another quarter?`
     };
   }
   
@@ -336,7 +336,7 @@ function generateObjectionHandler(
       reframe: "Which proof would settle it for you: a reference call, a case study or a pilot?",
       proof: proofPoints[0] || "[Your strongest proof point]",
       bridge: "Let me set up the proof that matters most to you.",
-      fullScript: `Wanting proof before deciding is fair. Which proof would settle it for you: a reference call, a case study or a pilot? ${asSentence(proofPoints[0]) || '[Your strongest proof point]'} I can set up whichever one helps most.`
+      fullScript: `Wanting proof before deciding is fair. Which proof would settle it for you: a reference call, a case study or a pilot? ${asSentence(proofPoints[0]) || '[Your strongest proof point]'} I can set up whichever of these we can offer.`
     };
   }
 
@@ -345,9 +345,9 @@ function generateObjectionHandler(
     return {
       acknowledge: "That's a fair point. Let me understand what you're trying to accomplish.",
       reframe: "What problem are you solving with that specific feature?",
-      proof: proofPoints[0] || "Here's how other customers handle that use case...",
-      bridge: valueProps[0] || "What we've found is that [core capability] addresses the underlying need.",
-      fullScript: `That's a fair point. Help me understand: what's the underlying problem you're solving with that feature? [Listen] What I often find is that [alternative approach] actually achieves the same outcome. ${asSentence(proofPoints[0]) || 'Customers using our approach report...'}${valueProps[0] === proofPoints[0] ? '' : ` Plus, ${valueProps[0] ? midSentence(valueProps[0]) : 'our core strength'} often makes that specific feature less critical.`} Would it help to see how others handle this?`
+      proof: proofPoints[0] || "[How other customers handle that use case]",
+      bridge: valueProps[0] || "[Only if true: how your core capability addresses the underlying need]",
+      fullScript: `That's a fair point. Help me understand: what's the underlying problem you're solving with that feature? [Listen] [Only if true: how your alternative approach achieves the same outcome.] ${asSentence(proofPoints[0]) || '[What customers using your approach report]'}${valueProps[0] === proofPoints[0] ? '' : ` [Only if true: how ${valueProps[0] ? midSentence(valueProps[0]) : 'your core strength'} makes that specific feature less critical.]`} Would it help to see how others handle this?`
     };
   }
   
@@ -356,9 +356,9 @@ function generateObjectionHandler(
     return {
       acknowledge: "De-risking a decision like this is smart: you should validate before committing.",
       reframe: "What would make you feel confident in moving forward?",
-      proof: proofPoints[0] || "We work with [similar companies] in your space.",
-      bridge: "Let me connect you with a customer who had similar concerns.",
-      fullScript: `De-risking this decision is smart. I'd want to validate too. What would make you feel confident? ${asSentence(proofPoints[0]) || '[A customer like them you can name]'} I'd be happy to arrange a reference call. We also offer [pilot program/guarantee/sandbox] so you can validate before fully committing. What would be most helpful for you?`
+      proof: proofPoints[0] || "[Similar companies you work with in their space]",
+      bridge: "[Only if you have one: Let me connect you with a customer who had similar concerns.]",
+      fullScript: `De-risking this decision is smart. I'd want to validate too. What would make you feel confident? ${asSentence(proofPoints[0]) || '[A customer like them you can name]'} [Only if you have a reference customer: I'd be happy to arrange a reference call.] [Only if you offer one: a pilot, guarantee or sandbox so you can validate before fully committing.] What would be most helpful for you?`
     };
   }
   
@@ -367,9 +367,9 @@ function generateObjectionHandler(
     return {
       acknowledge: "Makes sense to evaluate options thoroughly.",
       reframe: "What's most important to you in making this decision?",
-      proof: proofPoints[0] || "Here's what customers who've compared us found...",
-      bridge: valueProps[0] || "What sets us apart is...",
-      fullScript: `Makes sense to evaluate options thoroughly. What's most important to you in making this decision? [Listen] That's exactly where we differentiate. ${valueProps[0] || 'Our unique approach'} means [specific advantage].${valueProps[0] === proofPoints[0] ? '' : ` ${asSentence(proofPoints[0]) || 'Customers who\'ve compared us found...'}`} What if I share a side-by-side comparison focused on what matters most to you?`
+      proof: proofPoints[0] || "[What customers who compared you found]",
+      bridge: valueProps[0] || "[What sets you apart]",
+      fullScript: `Makes sense to evaluate options thoroughly. What's most important to you in making this decision? [Listen] [Only if true: that's exactly where we differentiate]. ${valueProps[0] || '[Your difference]'} means [specific advantage].${valueProps[0] === proofPoints[0] ? '' : ` ${asSentence(proofPoints[0]) || '[What customers who compared you found]'}`} What if I share a side-by-side comparison focused on what matters most to you?`
     };
   }
   
@@ -377,9 +377,9 @@ function generateObjectionHandler(
   return {
     acknowledge: `I understand the concern.`,
     reframe: "Help me understand what's driving that concern...",
-    proof: proofPoints[0] || "Here's how we address that...",
-    bridge: valueProps[0] || "The key benefit is...",
-    fullScript: `I understand your concern. Help me understand what's driving that? [Listen] Here's how we address it: ${valueProps[0] || 'Our approach'}.${valueProps[0] === proofPoints[0] ? '' : ` ${asSentence(proofPoints[0]) || 'Customers find that...'}`} Does that address your concern?`
+    proof: proofPoints[0] || "[How you address that]",
+    bridge: valueProps[0] || "[The key benefit]",
+    fullScript: `I understand your concern. Help me understand what's driving that? [Listen] Here's how we address it: ${valueProps[0] || '[your approach]'}.${valueProps[0] === proofPoints[0] ? '' : ` ${asSentence(proofPoints[0]) || '[What customers find]'}`} Does that address your concern?`
   };
 }
 
@@ -392,7 +392,7 @@ function generateCompetitorHandler(
   // ("Why not Salesforce already does this?" was printed before).
   return {
     whenHeard: `Usually when prospects are comparing options or already use another tool`,
-    response: `Here's what customers tell us after evaluating both: ${asSentence(proofPoints[0]) || '[proof from a customer who compared both]'} What's most important to you in this decision?`,
+    response: `Here's what we can show: ${asSentence(proofPoints[0]) || '[proof from a customer who compared both]'} What's most important to you in this decision?`,
     trapQuestion: `Did the other option address [your key differentiator]? How did it handle [its known weakness]?`,
     proof: proofPoints[0] || `[Proof from a customer who compared both]`
   };
@@ -409,9 +409,9 @@ function generateStagePitch(
     prospecting: `
 **Cold Outreach Framework:**
 
-"Hi [Name], I'm reaching out because ${/s$/i.test(persona.trim()) ? persona.trim() : `${persona}s`} at companies like yours often struggle with [primary pain point].
+"Hi [Name], I'm reaching out because [the pain point you have seen ${/s$/i.test(persona.trim()) ? midSentence(persona) : `${midSentence(persona)}s`} at companies like theirs struggle with].
 
-${valueProps[0] || 'We help with...'}: ${proofPoints[0] || 'with proven results.'} 
+${valueProps[0] || '[What you help with]'}: ${proofPoints[0] || '[Your proof]'} 
 
 Worth a 15-minute conversation? (Example figure: replace with your own)
 
@@ -447,7 +447,7 @@ For each feature, frame as:
 "You mentioned [their pain]. Here's how we solve that..."
 
 **Social Proof (3 min):**
-"${proofPoints[0] || 'Customers like you have seen...'}"
+"${proofPoints[0] || '[What customers like them have seen]'}"
 
 **Questions & Objections (10 min):**
 Address using handlers above.
@@ -474,7 +474,7 @@ If asked for discount: "Instead of reducing price, let me add value. What if we 
 **Closing Framework:**
 
 **Summary of Value:**
-"Let me recap: you needed [problem 1, 2, 3]. ${product} delivers ${valueProps.slice(0, 3).join(', ')}. ${proofPoints[0] || 'Similar customers see ROI in X months.'}"
+"Let me recap: you needed [problem 1, 2, 3]. ${product} delivers ${valueProps.slice(0, 3).join(', ')}. ${proofPoints[0] || '[Only if true and provable: similar customers see ROI in X months.]'}"
 
 **The Ask:**
 "Based on everything we've discussed, are you ready to move forward?"

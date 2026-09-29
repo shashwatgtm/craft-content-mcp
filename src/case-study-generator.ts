@@ -181,9 +181,9 @@ Would you be open to a 20-minute call where I ask a few questions about your exp
 - **Time:** 20-minute video call at your convenience
 - **Topics:** Your challenges before, how you use ${product}, results you've seen
 - **Approval:** You'll review the final case study before it goes live
-- **Benefit:** Increased visibility for ${customerName} + potential backlinks to your site
+- **Benefit:** Increased visibility for ${customerName} [Only if you offer them: + backlinks to your site]
 
-[OPTIONAL: We'd also love to feature you in our customer spotlight and share your story with our 50,000+ newsletter subscribers.] (Example figure: replace with your own)
+[Only if true and provable: We'd also love to feature you in our customer spotlight and share your story with our 50,000+ newsletter subscribers.] (Example figure: replace with your own)
 
 Would next [Day] at [Time] work for a quick call?
 

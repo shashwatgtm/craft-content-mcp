@@ -12,13 +12,14 @@ export function generateCaseStudy(args: {
   your_product: string;
 }): string {
   const customerName = args.customer_name;
-  const industry = args.customer_industry || 'technology';
+  // Run 12 (R12-20, B5): an industry the user did not give is printed as "[not supplied]", never guessed.
+  const industry = args.customer_industry || '';
   const mode = args.mode || (args.challenge && args.solution && args.results ? 'full' : 'discovery');
   const product = args.your_product;
   
   // DISCOVERY MODE - Generate interview questions
   if (mode === 'discovery' || (!args.challenge && !args.solution && !args.results && !args.interview_notes)) {
-    return generateDiscoveryKit(customerName, industry, product);
+    return generateDiscoveryKit(customerName, industry, product, args.results);
   }
   
   // If interview notes provided, parse them
@@ -39,12 +40,16 @@ export function generateCaseStudy(args: {
   );
 }
 
-function generateDiscoveryKit(customerName: string, industry: string, product: string): string {
+function generateDiscoveryKit(customerName: string, industry: string, product: string, knownResults?: string): string {
   return `# 🔍 Case Study Discovery Kit
 ## For: ${customerName}
 
 ---
+${knownResults ? `
+You already have one result: ${lowerCommonWords(knownResults)}. Confirm the baseline and the timeframe.
 
+---
+` : ''}
 ## 📋 Information Needed
 
 Before we can create a compelling case study, we need to gather the customer story. Here's your interview guide.
@@ -126,7 +131,7 @@ Use this structure to capture responses:
 
 \`\`\`
 CUSTOMER: ${customerName}
-INDUSTRY: ${industry}
+INDUSTRY: ${industry || '[not supplied]'}
 DATE: [Interview date]
 INTERVIEWER: [Your name]
 
@@ -161,7 +166,7 @@ STORY ANGLE:
 
 ## 📧 Interview Request Email Template
 
-Subject: Quick favor - share your ${product} success story?
+Subject: Quick favor: share your ${product} success story?
 
 ---
 
@@ -169,7 +174,7 @@ Hi [First Name],
 
 I hope this finds you well!
 
-I'm reaching out because your team has achieved some impressive results with ${product}, and I'd love to share your story with others who might benefit.
+I'm reaching out because I'd love to share how your team uses ${product} with others who might benefit.
 
 Would you be open to a 20-minute call where I ask a few questions about your experience? Here's what it would involve:
 
@@ -208,17 +213,17 @@ function generateFromNotes(notes: string, customerName: string, industry: string
   // Look for challenge indicators
   const challengePatterns = /(?:problem|struggle|challenge|issue|pain|before|difficult|hard|couldn't|wasn't|weren't)[^.]*[.!?]/gi;
   const challengeMatches = notes.match(challengePatterns) || [];
-  const challenge = challengeMatches.slice(0, 2).join(' ') || 'Customer faced operational challenges';
+  const challenge = challengeMatches.slice(0, 2).join(' ') || '[Challenge: not found in the notes]';
   
   // Look for solution indicators
   const solutionPatterns = /(?:implemented|started using|switched to|chose|selected|adopted|began|onboard)[^.]*[.!?]/gi;
   const solutionMatches = notes.match(solutionPatterns) || [];
-  const solution = solutionMatches.slice(0, 2).join(' ') || `Implemented ${product}`;
+  const solution = solutionMatches.slice(0, 2).join(' ') || '[Solution: not found in the notes]';
   
   // Look for results indicators
   const resultsPatterns = /(?:\d+%|\$\d+|\d+x|reduced|increased|improved|saved|grew|achieved)[^.]*[.!?]/gi;
   const resultsMatches = notes.match(resultsPatterns) || [];
-  const results = resultsMatches.slice(0, 3).join(' ') || 'Significant improvements achieved';
+  const results = resultsMatches.slice(0, 3).join(' ') || '[Results: not found in the notes]';
   
   // Look for quotes
   const quotePatterns = /"[^"]+"/g;
@@ -265,19 +270,18 @@ function generateFullCaseStudy(
   // Parse results into bullet points
   const resultPoints = parseListItems(results);
   
-  // Extract any numbers from results for headline
-  const numbers = results.match(/\d+%|\$[\d,]+|\d+x|\d+\+/g) || [];
-  const headlineNumber = numbers[0] || 'significant';
+  // Run 12 (R12-20): the title is the result the user gave ("No-shows down 30% in 3 months with ExampleCo Scheduler").
+  const headlineResult = resultPoints[0] || results;
   
   return `# 📊 Case Study: ${customerName}
 
-## ${headlineNumber} ${getResultVerb(headlineNumber)} with ${product}
+## ${headlineResult} with ${product}
 
 ---
 
 ### About ${customerName}
 
-**Industry:** ${industry}
+**Industry:** ${industry || '[not supplied]'}
 **Challenge:** ${getSummaryChallenge(challenge)}
 **Solution:** ${product}
 **Key Result:** ${resultPoints[0] || results}
@@ -288,7 +292,7 @@ function generateFullCaseStudy(
 
 ${challenge}
 
-${generateChallengeContext(industry)}
+[What the problem cost them, in their words]
 
 ---
 
@@ -298,11 +302,11 @@ ${solution ?? 'not supplied'}
 
 ### Why ${customerName} Chose ${product}
 
-${generateWhyChose(product, industry)}
+[Why they chose you, in their words]
 
 ### Implementation
 
-${generateImplementationSection(product)}
+[How the rollout went, in their words]
 
 ---
 
@@ -310,7 +314,7 @@ ${generateImplementationSection(product)}
 
 ${resultPoints.map((r, i) => `### ${i + 1}. ${r}
 
-${generateResultContext(r)}`).join('\n\n')}
+[What this result changed for them, in their words]`).join('\n\n')}
 
 ---
 
@@ -325,8 +329,8 @@ ${quote ? `## In Their Words
 ## Key Takeaways
 
 1. **Challenge:** ${getSummaryChallenge(challenge)}
-2. **Solution:** ${product} provided the tools needed to transform their approach
-3. **Impact:** ${resultPoints[0] || 'Measurable business improvements'}
+2. **Solution:** ${solution}
+3. **Impact:** ${resultPoints[0] || results}
 
 ---
 
@@ -339,7 +343,7 @@ ${quote ? `## In Their Words
 ## 📋 Distribution Formats
 
 ### One-Line Version (for testimonial pages):
-"${customerName} achieved ${headlineNumber} ${getResultVerb(headlineNumber).toLowerCase()} after implementing ${product}."
+"${customerName}: ${lowerCommonWords(headlineResult)} after implementing ${product}."
 
 ### Social Media Version:
 🎯 ${customerName} was struggling with ${lowerCommonWords(getSummaryChallenge(challenge))}.
@@ -351,69 +355,15 @@ ${resultPoints.slice(0, 3).map(r => `✅ ${r}`).join('\n')}
 
 ${quote ? `"${quote.substring(0, 100)}..."` : ''}
 
-Want similar results? Link in bio.
+Read the full story: [link]
 
 ### Email Snippet:
-Quick success story: ${customerName} (${industry}) faced ${lowerCommonWords(getSummaryChallenge(challenge))}. After implementing ${product}, they saw ${resultPoints[0] ? lowerCommonWords(resultPoints[0]) : 'significant improvements'}. [Read the full story →]
+Quick success story: ${customerName}${industry ? ` (${industry})` : ''} faced ${lowerCommonWords(getSummaryChallenge(challenge))}. After implementing ${product}, they saw ${resultPoints[0] ? lowerCommonWords(resultPoints[0]) : 'significant improvements'}. [Read the full story →]
 
 `;
-}
-
-function getResultVerb(result: string): string {
-  if (result.includes('%')) {
-    if (result.includes('-') || result.toLowerCase().includes('reduc')) return 'reduction';
-    return 'improvement';
-  }
-  if (result.includes('$')) return 'in savings';
-  if (result.includes('x')) return 'growth';
-  return 'results';
 }
 
 function getSummaryChallenge(challenge: string): string {
   const words = challenge.split(/\s+/).slice(0, 10);
   return words.join(' ') + (challenge.split(/\s+/).length > 10 ? '...' : '');
-}
-
-function generateChallengeContext(industry: string): string {
-  const contexts: Record<string, string> = {
-    technology: 'In the fast-paced tech industry, this challenge was costing them competitive advantage.',
-    healthcare: 'In healthcare, where efficiency directly impacts patient outcomes, this challenge demanded immediate attention.',
-    finance: 'In the highly regulated financial services sector, this challenge posed both operational and compliance risks.',
-    retail: 'In retail, where margins are thin and customer experience is everything, this challenge was unsustainable.',
-    manufacturing: 'In manufacturing, where downtime equals lost revenue, this challenge was impacting the bottom line daily.'
-  };
-  return contexts[industry.toLowerCase()] || 'This challenge was impacting multiple areas of their business.';
-}
-
-function generateWhyChose(product: string, industry: string): string {
-  return `After evaluating several options, ${product} stood out for its:
-- Proven track record in the ${lowerFirstIfCommon(industry)} industry
-- Ease of implementation and time to value
-- Comprehensive feature set that addressed their specific needs
-- Responsive customer support team`;
-}
-
-function generateImplementationSection(product: string): string {
-  return `The ${product} team worked closely with the customer to ensure a smooth rollout:
-
-1. **Discovery:** Understanding specific workflows and requirements
-2. **Configuration:** Customizing ${product} to their needs  
-3. **Training:** Ensuring team adoption and proficiency
-4. **Launch:** Going live with ongoing support`;
-}
-
-function generateResultContext(result: string): string {
-  if (result.toLowerCase().includes('time') || result.toLowerCase().includes('hour')) {
-    return 'This time savings allowed the team to focus on higher-value activities and strategic initiatives.';
-  }
-  if (result.toLowerCase().includes('revenue') || result.toLowerCase().includes('$')) {
-    return 'This financial impact went straight to the bottom line, proving ROI within [timeframe].';
-  }
-  if (result.toLowerCase().includes('customer') || result.toLowerCase().includes('satisfaction')) {
-    return 'Improved customer experience translated into higher retention and increased referrals.';
-  }
-  if (result.toLowerCase().includes('efficiency') || result.toLowerCase().includes('%')) {
-    return 'This efficiency gain compounded across the organization, multiplying the impact.';
-  }
-  return 'This result exceeded initial expectations and validated the decision to partner with us.';
 }

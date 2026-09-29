@@ -1,4 +1,4 @@
-import { lowerCommonWords, SUGGESTION_FOOTER } from './utils.js';
+import { lowerCommonWords, cap, SUGGESTION_FOOTER } from './utils.js';
 
 export function generateTestimonialCapture(args: {
   customer_name: string;
@@ -13,10 +13,12 @@ export function generateTestimonialCapture(args: {
   const name = args.customer_name;
   const company = args.customer_company;
   const role = args.customer_role || 'Customer';
+  // Run 12 (R12-20): defaults are marked as assumed in the profile table.
+  const roleShown = args.customer_role || 'Customer (assumed, not supplied)';
   const context = args.relationship_context || 'not supplied';
   const story = args.success_story;
   const type = args.testimonial_type;
-  const useCase = args.use_case || 'marketing materials';
+  const useCase = args.use_case || 'marketing materials (assumed, not supplied)';
   const incentive = args.incentive || '';
 
   let output = `# 🌟 Testimonial Capture Kit
@@ -30,7 +32,7 @@ export function generateTestimonialCapture(args: {
 |--------|-------------|
 | **Name** | ${name} |
 | **Company** | ${company} |
-| **Role** | ${role} |
+| **Role** | ${roleShown} |
 | **Relationship** | ${context} |
 | **Testimonial Type** | ${type.replace(/_/g, ' ')} |
 | **Use Case** | ${useCase} |
@@ -75,7 +77,7 @@ ${name}, ${role} at ${company}
 ### Medium Format (3-4 sentences)
 *For: Case study pull quotes, sales deck*
 
-"Before [Product], we struggled with ${getChallenge(story)}. Since implementing [Product], we've ${getOutcome(story)}. ${getImpact(story)}. I'd recommend it to anyone facing similar challenges."
+"Before [Product], ${getChallenge(story)}. With [Product]: ${cap(story.split('.')[0].trim())}. ${cap(getImpact(story))}. [What they valued, in their words]."
 
 ${name}, ${role} at ${company}
 
@@ -84,7 +86,7 @@ ${name}, ${role} at ${company}
 ### Long Format (Full paragraph)
 *For: Case studies, press releases, testimonial pages*
 
-"When I joined ${company} as ${role}, ${getChallenge(story)} was a major obstacle. We evaluated several options but [Product] stood out because of [key differentiator]. The implementation was [experience], and within [timeframe], we saw ${getOutcome(story)}. ${getImpact(story)}. The support team has been incredible, and I'd recommend [Product] to any ${role} looking to ${getGoal(story)}."
+"When I joined ${company} as ${role}, ${getChallenge(story)} was a major obstacle. We chose [Product] because of [key differentiator]. The implementation was [experience], and within [timeframe], we saw ${getOutcome(story)}. ${cap(getImpact(story))}. [What they valued, in their words]."
 
 ${name}, ${role} at ${company}
 
@@ -158,9 +160,9 @@ function generateRequestEmail(
 ): string {
   const templates: Record<string, string> = {
     written_quote: `
-**Subject:** Quick favor - share your success story?
+**Subject:** Quick favor: share your success story?
 
-Hi ${name},
+Hi [First name],
 
 I hope this finds you well!
 
@@ -182,7 +184,7 @@ Thanks for considering,
     video_interview: `
 **Subject:** Invite: Share ${company}'s story in a quick video
 
-Hi ${name},
+Hi [First name],
 
 I hope you're doing well!
 
@@ -207,7 +209,7 @@ Best,
     case_study_interview: `
 **Subject:** Feature ${company} in our next case study?
 
-Hi ${name},
+Hi [First name],
 
 Your team's results with [Product] have been impressive: ${lowerCommonWords(story.split('.')[0])}.
 
@@ -225,9 +227,9 @@ Best,
 [Your name]
 `,
     g2_review: `
-**Subject:** Quick favor - 5-minute G2 review?
+**Subject:** Quick favor: 5-minute G2 review?
 
-Hi ${name},
+Hi [First name],
 
 I hope you're well!
 
@@ -246,7 +248,7 @@ Thanks for considering,
     reference_call: `
 **Subject:** Would you be a reference for [Product]?
 
-Hi ${name},
+Hi [First name],
 
 I hope you're doing well!
 
@@ -457,15 +459,6 @@ function getImpact(story: string): string {
 }
 
 function getChallenge(story: string): string {
-  const challengeIndicators = ['struggled', 'challenge', 'problem', 'issue', 'difficult'];
-  for (const indicator of challengeIndicators) {
-    if (story.toLowerCase().includes(indicator)) {
-      return 'significant operational challenges';
-    }
-  }
-  return 'finding the right solution';
-}
-
-function getGoal(story: string): string {
-  return 'improve their operations and achieve better results';
+  // Run 12 (R12-20, B5): the problem is the customer's to state; it is never invented.
+  return '[the problem, in their words]';
 }

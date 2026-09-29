@@ -23,7 +23,7 @@ export function generateNewsletter(args: {
     keyPoints = parseListItems(args.key_points);
   } else {
     keyPoints = generateKeyPointsFromTopic(topic, type, segment);
-    keyPointsNote = '*(Auto-generated - customize as needed)*';
+    keyPointsNote = '*(Suggested from the topic: replace with your own)*';
   }
 
   // Generate multiple subject line options
@@ -113,7 +113,7 @@ export function generateNewsletter(args: {
 
 ${hooks[0]}
 
-${generateBodyContent(keyPoints, config, tone, type)}
+${generateBodyContent(keyPoints, config, tone, args.key_points ? '' : type)}
 
 ${generateCtaSection(ctaGoal, segment)}
 
@@ -153,13 +153,13 @@ ${getStructureRecommendation(type, segment)}
 
 ---
 
-## 📈 Optimization Tips for ${segment}
+## 📈 Optimization Tips for ${segmentPhrase(segment)}
 
 ${getSegmentTips(segment)}
 
 ---
 
-## 🕐 Best Send Times for ${segment}
+## 🕐 Best Send Times for ${segmentPhrase(segment)}
 
 ${getSendTimesForSegment(segment)}
 
@@ -248,43 +248,77 @@ function generatePreviewText(subject: string, topic: string): string {
     `Plus: the one thing most people get wrong...`,
     `Inside: actionable tips you can use today`,
     `Spoiler: it's not what you think`,
-    `This changed how I approach ${lowerFirstIfCommon(topic)}...`,
+    `Plus: [one thing you learned about ${lowerFirstIfCommon(topic)}]`,
     `Read time: 4 minutes`
   ];
   return previews[Math.floor(Math.random() * previews.length)];
 }
 
+// Run 12 (R12-20): one writing prompt per section instead of the same body under every heading. The prompts follow the
+// suggested key points of each newsletter type, in order; key points the user gave get one general prompt each.
+const SECTION_PROMPTS: Record<string, string[]> = {
+  educational: [
+    '[One fact from your market that shows why this matters now]',
+    '[The two or three mistakes you see most]',
+    '[Your steps, in order]',
+    '[A real example: a customer or your own]',
+    '[One line to remember, and the next step]'
+  ],
+  product_update: [
+    '[What changed, in one or two sentences]',
+    '[The benefit for the reader]',
+    '[The first steps to try it]',
+    '[Two or three tips from your team]',
+    '[Only if you can share it: what comes next]'
+  ],
+  industry_news: [
+    '[The news, with its source]',
+    '[What it means for the reader]',
+    '[A view from someone you can name, with their permission]',
+    '[The signals to watch]',
+    '[One or two actions to take]'
+  ],
+  thought_leadership: [
+    '[Your view, in one or two sentences]',
+    '[Your evidence: a story, a number or a source]',
+    '[What you have seen them do differently]',
+    '[Your framework, in a few lines]',
+    '[One to three actions for this week]'
+  ],
+  curated_links: [
+    '[Title, link and one line on why it is worth reading]',
+    '[Title, link and one line on why it is worth watching]',
+    '[Name, link and what it does]',
+    '[The take, its source and your view]',
+    '[Your note]'
+  ]
+};
+
+// How deep to write for the chosen audience: printed once above the sections.
+const DEPTH_NOTE: Record<string, string> = {
+  'high-level': 'Keep each section to its business impact: outcomes over activities.',
+  'tactical': 'Give each section one step the reader can take this week.',
+  'deep': 'Give each section the mechanism and the details: [specific settings], [specific steps], [specific tests].',
+  'accessible': 'Keep each section simple: one idea, in plain words.',
+  'introductory': 'Assume the reader is new to this: start from the basics.',
+  'advanced': 'Assume the reader knows the basics: go straight to [advanced use case].'
+};
+
 function generateBodyContent(keyPoints: string[], config: { depth: string; length: string; focus: string }, tone: string, type: string): string {
-  let content = '';
-  
+  const prompts = type ? (SECTION_PROMPTS[type] || SECTION_PROMPTS.educational) : [];
+  let content = `*Writing note: ${DEPTH_NOTE[config.depth] || DEPTH_NOTE.accessible}*
+
+`;
+
   keyPoints.forEach((point, index) => {
     content += `### ${index + 1}. ${point}
 
-${generatePointContent(point, config.depth, tone)}
+${prompts[index] || '[Your two or three sentences on this point]'}
 
 `;
   });
-  
-  return content;
-}
 
-function generatePointContent(point: string, depth: string, tone: string): string {
-  const depthContent: Record<string, string> = {
-    'high-level': `This matters because it directly impacts your bottom line. The key insight: focus on outcomes over activities.`,
-    'tactical': `Here's how to apply this:
-1. Start by auditing your current approach
-2. Identify the biggest gap
-3. Implement one change this week`,
-    'deep': `Let me break this down technically. The underlying principle involves [specific mechanism]. For implementation:
-- Configuration: [specific settings]
-- Integration: [specific steps]
-- Validation: [specific tests]`,
-    'accessible': `In simple terms, getting this right can transform how you work. Most people overcomplicate this. Don't.`,
-    'introductory': `If you're new to this, here's what you need to know: this is the foundation everything else builds on.`,
-    'advanced': `You already know the basics. The next level: apply this to [advanced use case] for 10x the impact (Example figure: replace with your own).`
-  };
-  
-  return depthContent[depth] || depthContent.accessible;
+  return content;
 }
 
 function generateCtaSection(ctaGoal: string, segment: string): string {
@@ -307,7 +341,7 @@ No pressure, just answers.`;
 
 [Download the free guide →]
 
-Everything covered here, plus bonus frameworks.`;
+[What the guide adds to this issue]`;
   }
   
   if (goalLower.includes('reply') || goalLower.includes('feedback')) {
@@ -315,7 +349,7 @@ Everything covered here, plus bonus frameworks.`;
 
 **What do you think?**
 
-Hit reply and let me know. I read every response.`;
+Hit reply and let me know.`;
   }
   
   if (goalLower.includes('share')) {
@@ -330,7 +364,7 @@ Forward to a colleague who needs to see this.
   
   return `---
 
-**${ctaGoal}**
+**${cap(ctaGoal)}**
 
 [Take action now →]`;
 }
@@ -485,4 +519,9 @@ function generateKeyPointsFromTopic(topic: string, type: string, segment: string
   }
   
   return points;
+}
+
+// Run 12 (R12-20): "Tips for a general audience", not "Tips for general".
+function segmentPhrase(segment: string): string {
+  return segment === 'general' ? 'a general audience' : segment;
 }

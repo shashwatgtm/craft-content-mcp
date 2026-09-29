@@ -532,7 +532,8 @@ export function generateHook(topic: string, style: 'question' | 'statistic' | 's
     case 'statistic':
       return `78% of professionals struggle with ${lowerFirstIfCommon(topic)} (Example figure: replace with your own). Here's what the top performers do differently.`;
     case 'story':
-      return `Last month, ${aOrAn(topic)} ${lowerFirstIfCommon(topic)} challenge nearly derailed our biggest launch. What we learned changed everything.`;
+      // Run 12 (R12-20, B5): a story is the user's to tell; it is a bracket prompt, never an invented first-person event.
+      return `[Story: a time ${lowerFirstIfCommon(topic)} went wrong for you or a customer]`;
     case 'bold_statement':
       return `${cap(lowerFirstIfCommon(topic))} is broken. Here's how to fix it.`;
     default:

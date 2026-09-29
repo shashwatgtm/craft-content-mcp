@@ -21,7 +21,7 @@ export function generateTestimonialCapture(args: {
   const useCase = args.use_case || 'marketing materials (assumed, not supplied)';
   const incentive = args.incentive || '';
 
-  let output = `# 🌟 Testimonial Capture Kit
+  let output = `# Testimonial Capture Kit
 ## ${name} at ${company}
 
 ---
@@ -45,7 +45,7 @@ ${story}
 
 ---
 
-## 📧 Request Email
+## Request Email
 
 `;
 
@@ -57,13 +57,13 @@ ${story}
 
 ---
 
-## 🎙️ Interview Questions
+## Interview Questions
 
 ${generateInterviewQuestions(type, story)}
 
 ---
 
-## 📝 Testimonial Templates
+## Testimonial Templates
 
 ### Short Format (1-2 sentences)
 *For: Website hero section, social proof snippets*
@@ -100,7 +100,7 @@ ${name}, ${role} at ${company}
   output += `
 ---
 
-## ✅ Process Checklist
+## Process Checklist
 
 ### Before Request
 - [ ] Confirm customer satisfaction (NPS/CSAT check)
@@ -129,16 +129,16 @@ ${name}, ${role} at ${company}
 
 ---
 
-## 📊 Testimonial Usage Matrix
+## Testimonial Usage Matrix
 
 | Channel | Format | Status |
 |---------|--------|--------|
-| Website homepage | Short quote | ⬜ Pending |
-| Case study page | Full story | ⬜ Pending |
-| Sales deck | Medium quote | ⬜ Pending |
-| Social media | Short + photo | ⬜ Pending |
-| Press release | Full paragraph | ⬜ Pending |
-| G2/Review site | Review post | ⬜ Pending |
+| Website homepage | Short quote | Pending |
+| Case study page | Full story | Pending |
+| Sales deck | Medium quote | Pending |
+| Social media | Short + photo | Pending |
+| Press release | Full paragraph | Pending |
+| G2/Review site | Review post | Pending |
 
 ---
 
@@ -339,7 +339,7 @@ function generateTypeSpecificGuidance(
 ): string {
   const guidance: Record<string, string> = {
     video_interview: `
-## 🎬 Video Interview Tips
+## Video Interview Tips
 
 ### Production Checklist
 - [ ] Good lighting (natural or ring light)
@@ -362,7 +362,7 @@ function generateTypeSpecificGuidance(
 - Get approval before publishing
 `,
     case_study_interview: `
-## 📄 Case Study Interview Tips
+## Case Study Interview Tips
 
 ### Information to Gather
 - Company background and context
@@ -388,7 +388,7 @@ function generateTypeSpecificGuidance(
 - Any data visualizations
 `,
     g2_review: `
-## ⭐ G2 Review Tips
+## G2 Review Tips
 
 ### What Makes a Great Review
 - Specific use case and role
@@ -411,7 +411,7 @@ If they ask what to write:
 - Recognize them internally
 `,
     reference_call: `
-## 📞 Reference Call Tips
+## Reference Call Tips
 
 ### Before the Call
 - Brief ${name} on the prospect's situation

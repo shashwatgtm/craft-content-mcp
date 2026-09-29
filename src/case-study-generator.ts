@@ -41,7 +41,7 @@ export function generateCaseStudy(args: {
 }
 
 function generateDiscoveryKit(customerName: string, industry: string, product: string, knownResults?: string): string {
-  return `# 🔍 Case Study Discovery Kit
+  return `# Case Study Discovery Kit
 ## For: ${customerName}
 
 ---
@@ -50,13 +50,13 @@ You already have one result: ${lowerCommonWords(knownResults)}. Confirm the base
 
 ---
 ` : ''}
-## 📋 Information Needed
+## Information Needed
 
 Before we can create a compelling case study, we need to gather the customer story. Here's your interview guide.
 
 ---
 
-## 🎙️ Customer Interview Questions
+## Customer Interview Questions
 
 ### Part 1: The Challenge (5-7 minutes)
 
@@ -125,7 +125,7 @@ Ask these questions to capture outcomes:
 
 ---
 
-## 📝 Interview Notes Template
+## Interview Notes Template
 
 Use this structure to capture responses:
 
@@ -164,7 +164,7 @@ STORY ANGLE:
 
 ---
 
-## 📧 Interview Request Email Template
+## Interview Request Email Template
 
 Subject: Quick favor: share your ${product} success story?
 
@@ -192,7 +192,7 @@ Thanks,
 
 ---
 
-## 🔄 Once You Have the Story
+## Once You Have the Story
 
 Run this tool again with mode="full" and include:
 - **challenge:** What they were struggling with
@@ -230,10 +230,10 @@ function generateFromNotes(notes: string, customerName: string, industry: string
   const foundQuotes = notes.match(quotePatterns) || [];
   const bestQuote = quote || foundQuotes[0]?.replace(/"/g, '') || '';
   
-  return `# 📝 Case Study Draft (Parsed from Notes)
+  return `# Case Study Draft (Parsed from Notes)
 ## ${customerName} + ${product}
 
-⚠️ **Note:** This case study was auto-generated from interview notes. Please review and enhance with specific details.
+**Note:** This case study was auto-generated from interview notes. Please review and enhance with specific details.
 
 ---
 
@@ -241,13 +241,13 @@ ${generateFullCaseStudy(customerName, industry, challenge, solution, results, be
 
 ---
 
-## 🔍 Key Points Extracted from Notes
+## Key Points Extracted from Notes
 
 ${keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 
 ---
 
-## ⚠️ Items to Verify/Enhance
+## Items to Verify/Enhance
 
 1. **Challenge section:** Add specific metrics (time wasted, money lost, etc.)
 2. **Solution section:** Verify implementation timeline and process
@@ -273,7 +273,7 @@ function generateFullCaseStudy(
   // Run 12 (R12-20): the title is the result the user gave ("No-shows down 30% in 3 months with ExampleCo Scheduler").
   const headlineResult = resultPoints[0] || results;
   
-  return `# 📊 Case Study: ${customerName}
+  return `# Case Study: ${customerName}
 
 ## ${headlineResult} with ${product}
 
@@ -340,18 +340,18 @@ ${quote ? `## In Their Words
 
 ---
 
-## 📋 Distribution Formats
+## Distribution Formats
 
 ### One-Line Version (for testimonial pages):
 "${customerName}: ${lowerCommonWords(headlineResult)} after implementing ${product}."
 
 ### Social Media Version:
-🎯 ${customerName} was struggling with ${lowerCommonWords(getSummaryChallenge(challenge))}.
+${customerName} was struggling with ${lowerCommonWords(getSummaryChallenge(challenge))}.
 
 Then they implemented ${product}.
 
 The results?
-${resultPoints.slice(0, 3).map(r => `✅ ${r}`).join('\n')}
+${resultPoints.slice(0, 3).map(r => `- ${r}`).join('\n')}
 
 ${quote ? `"${quote.substring(0, 100)}..."` : ''}
 

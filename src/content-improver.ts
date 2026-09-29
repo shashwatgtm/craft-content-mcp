@@ -54,7 +54,7 @@ export function generateContentImprover(args: {
     }
   }
 
-  let output = `# 📝 Content Analysis & Improvement Report
+  let output = `# Content Analysis & Improvement Report
 
 ## Content Overview
 - **Type:** ${contentType.replace(/_/g, ' ')}
@@ -65,18 +65,18 @@ export function generateContentImprover(args: {
 
 ---
 
-## 📊 Overall Score: ${analysis.overall.score}/10 (${analysis.overall.rating})
+## Overall Score: ${analysis.overall.score}/10 (${analysis.overall.rating})
 
 | Dimension | Score | Status |
 |-----------|-------|--------|
-| Clarity | ${analysis.clarity.score}/10 | ${analysis.clarity.score >= 7 ? '✅' : analysis.clarity.score >= 5 ? '⚠️' : '❌'} |
-| Structure | ${analysis.structure.score}/10 | ${analysis.structure.score >= 7 ? '✅' : analysis.structure.score >= 5 ? '⚠️' : '❌'} |
-| Engagement | ${analysis.engagement.score}/10 | ${analysis.engagement.score >= 7 ? '✅' : analysis.engagement.score >= 5 ? '⚠️' : '❌'} |
-| Goal Alignment | ${analysis.goalAlignment.score}/10 | ${analysis.goalAlignment.score >= 7 ? '✅' : analysis.goalAlignment.score >= 5 ? '⚠️' : '❌'} |
+| Clarity | ${analysis.clarity.score}/10 | ${analysis.clarity.score >= 7 ? 'Yes' : analysis.clarity.score >= 5 ? 'Note' : 'No'} |
+| Structure | ${analysis.structure.score}/10 | ${analysis.structure.score >= 7 ? 'Yes' : analysis.structure.score >= 5 ? 'Note' : 'No'} |
+| Engagement | ${analysis.engagement.score}/10 | ${analysis.engagement.score >= 7 ? 'Yes' : analysis.engagement.score >= 5 ? 'Note' : 'No'} |
+| Goal Alignment | ${analysis.goalAlignment.score}/10 | ${analysis.goalAlignment.score >= 7 ? 'Yes' : analysis.goalAlignment.score >= 5 ? 'Note' : 'No'} |
 
 ---
 
-## 📖 Readability Analysis
+## Readability Analysis
 
 **Flesch Score:** ${readability.score}/100 (${readability.grade})
 
@@ -84,39 +84,39 @@ ${readability.analysis}
 
 ---
 
-## 🔍 Detailed Analysis
+## Detailed Analysis
 
 ### Clarity Issues Found
 ${analysis.clarity.issues.length > 0 
-  ? analysis.clarity.issues.map(i => `- ⚠️ ${i}`).join('\n')
-  : '- ✅ No major clarity issues'}
+  ? analysis.clarity.issues.map(i => `- ${i}`).join('\n')
+  : '- No major clarity issues'}
 
 ### Structure Issues Found
 ${analysis.structure.issues.length > 0 
-  ? analysis.structure.issues.map(i => `- ⚠️ ${i}`).join('\n')
-  : '- ✅ Well-structured content'}
+  ? analysis.structure.issues.map(i => `- ${i}`).join('\n')
+  : '- Well-structured content'}
 
 ### Engagement Issues Found
 ${analysis.engagement.issues.length > 0 
-  ? analysis.engagement.issues.map(i => `- ⚠️ ${i}`).join('\n')
-  : '- ✅ Engaging content'}
+  ? analysis.engagement.issues.map(i => `- ${i}`).join('\n')
+  : '- Engaging content'}
 
 ### Goal Alignment Issues Found
 ${analysis.goalAlignment.issues.length > 0 
-  ? analysis.goalAlignment.issues.map(i => `- ⚠️ ${i}`).join('\n')
-  : '- ✅ Well-aligned with goals'}
+  ? analysis.goalAlignment.issues.map(i => `- ${i}`).join('\n')
+  : '- Well-aligned with goals'}
 
 ---
 
-## 🎯 Priority Fixes (Do These First)
+## Priority Fixes (Do These First)
 
 ${priorityFixes.length > 0 
   ? priorityFixes.map((fix, i) => `${i + 1}. ${fix}`).join('\n\n')
-  : '✅ No critical fixes needed - your content is in good shape!'}
+  : 'No critical fixes needed: your content is in good shape!'}
 
 ---
 
-## ✨ Improved Version
+## Improved Version
 
 Below is an auto-improved version addressing common issues:
 
@@ -126,7 +126,7 @@ ${improvedContent}
 
 ---
 
-## 📋 Before/After Comparison
+## Before/After Comparison
 
 ### Original First Sentence:
 > ${clipEcho(content.split(/[.!?]/)[0]?.trim() || 'N/A')}
@@ -136,13 +136,13 @@ ${improvedContent}
 
 ---
 
-## 💡 Tips for this ${contentType.replace(/_/g, ' ')}
+## Tips for this ${contentType.replace(/_/g, ' ')}
 
 ${getContentTypeTips(contentType, goal)}
 
 ---
 
-## ✅ Quick Checklist
+## Quick Checklist
 
 ${generateChecklist(contentType, goal, analysis)}
 
@@ -252,29 +252,30 @@ function generateChecklist(contentType: string, goal: string, analysis: ContentA
   
   // Universal checks
   // The mark is chosen first, then the text is added, so a passed check keeps its text.
-  checks.push((analysis.clarity.score >= 7 ? '✅' : '⬜') + ' Clear, jargon-free language');
-  checks.push((analysis.structure.score >= 7 ? '✅' : '⬜') + ' Logical structure with headers');
-  checks.push((analysis.engagement.score >= 7 ? '✅' : '⬜') + ' Engaging opening hook');
-  checks.push((analysis.goalAlignment.score >= 7 ? '✅' : '⬜') + ' Aligns with stated goal');
+  checks.push((analysis.clarity.score >= 7 ? 'Yes:' : '[ ]') + ' Clear, jargon-free language');
+  checks.push((analysis.structure.score >= 7 ? 'Yes:' : '[ ]') + ' Logical structure with headers');
+  checks.push((analysis.engagement.score >= 7 ? 'Yes:' : '[ ]') + ' Engaging opening hook');
+  checks.push((analysis.goalAlignment.score >= 7 ? 'Yes:' : '[ ]') + ' Aligns with stated goal');
   
   // Content-type specific
   if (contentType === 'email' || contentType === 'sales_email') {
-    checks.push('⬜ Subject line optimized');
-    checks.push('⬜ Single clear CTA');
-    checks.push('⬜ Mobile-friendly format');
+    checks.push('[ ] Subject line optimized');
+    checks.push('[ ] Single clear CTA');
+    checks.push('[ ] Mobile-friendly format');
   }
   
   if (contentType === 'landing_page') {
-    checks.push('⬜ Benefit-driven headline');
-    checks.push('⬜ Social proof included');
-    checks.push('⬜ CTA above the fold');
+    checks.push('[ ] Benefit-driven headline');
+    checks.push('[ ] Social proof included');
+    checks.push('[ ] CTA above the fold');
   }
   
   if (contentType === 'blog_post') {
-    checks.push('⬜ SEO-optimized title');
-    checks.push('⬜ Meta description written');
-    checks.push('⬜ Internal/external links added');
+    checks.push('[ ] SEO-optimized title');
+    checks.push('[ ] Meta description written');
+    checks.push('[ ] Internal/external links added');
   }
   
-  return checks.join('\n');
+  // Run 12 (R12-20b): one list item per check, now that no symbol starts the line.
+  return checks.map((c) => `- ${c}`).join('\n');
 }

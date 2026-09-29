@@ -49,7 +49,7 @@ export function generateNewsletter(args: {
   
   const config = segmentConfig[segment as keyof typeof segmentConfig] || segmentConfig.general;
 
-  let output = `# 📧 Newsletter Builder: ${topic}
+  let output = `# Newsletter Builder: ${topic}
 
 ## Newsletter Configuration
 
@@ -63,7 +63,7 @@ export function generateNewsletter(args: {
 
 ---
 
-## 📬 Subject Lines (A/B Test These)
+## Subject Lines (A/B Test These)
 
 ### Option A: Curiosity-Driven
 **${subjectLines[0]}**${subjectLineLabel(type, 0)}
@@ -83,7 +83,7 @@ export function generateNewsletter(args: {
 
 ---
 
-## 🎣 Opening Hooks (Pick One)
+## Opening Hooks (Pick One)
 
 ### Hook 1: Question
 > ${hooks[0]}
@@ -99,7 +99,7 @@ export function generateNewsletter(args: {
 
 ---
 
-## 📝 Newsletter Content
+## Newsletter Content
 
 ### Version: ${segment.charAt(0).toUpperCase() + segment.slice(1)} Focus
 
@@ -120,7 +120,7 @@ ${generateCtaSection(ctaGoal, segment)}
 ---
 
 ${previousTopics.length > 0 ? `
-## 🔗 Connection to Previous Content
+## Connection to Previous Content
 
 Your recent topics: ${previousTopics.join(', ')}
 
@@ -131,7 +131,7 @@ Your recent topics: ${previousTopics.join(', ')}
 
 ---` : ''}
 
-## 📊 Content Structure Recommendation
+## Content Structure Recommendation
 
 Based on ${type.replace(/_/g, ' ')} type and ${segment} audience:
 
@@ -139,7 +139,7 @@ ${getStructureRecommendation(type, segment)}
 
 ---
 
-## ✅ Pre-Send Checklist
+## Pre-Send Checklist
 
 - [ ] Subject line A/B test set up
 - [ ] Preview text complements (not repeats) subject
@@ -153,13 +153,13 @@ ${getStructureRecommendation(type, segment)}
 
 ---
 
-## 📈 Optimization Tips for ${segmentPhrase(segment)}
+## Optimization Tips for ${segmentPhrase(segment)}
 
 ${getSegmentTips(segment)}
 
 ---
 
-## 🕐 Best Send Times for ${segmentPhrase(segment)}
+## Best Send Times for ${segmentPhrase(segment)}
 
 ${getSendTimesForSegment(segment)}
 

@@ -45,7 +45,7 @@ export function generateWebinarScript(args: {
   // Generate type-specific structure
   const structure = getWebinarStructure(type, minutes);
   
-  let output = `# 🎬 Webinar Script: ${topic}
+  let output = `# Webinar Script: ${topic}
 
 ## Webinar Details
 
@@ -61,20 +61,20 @@ ${takeawaysNote ? `| **Note** | Key takeaways auto-suggested |` : ''}
 
 ---
 
-## 🎯 Key Takeaways for Audience
+## Key Takeaways for Audience
 ${takeawaysNote}
 
 ${takeaways.map((t, i) => `${i + 1}. ${t}`).join('\n')}
 
 ---
 
-## 📋 Run of Show
+## Run of Show
 
 ${generateRunOfShow(structure, minutes)}
 
 ---
 
-## 📝 Full Script
+## Full Script
 
 `;
 
@@ -87,7 +87,7 @@ ${generateRunOfShow(structure, minutes)}
   output += `
 ---
 
-## ❓ Q&A Preparation
+## Q&A Preparation
 
 ### Anticipated Questions
 
@@ -102,7 +102,7 @@ For questions outside scope:
 
 ---
 
-## 📧 Follow-Up Sequence
+## Follow-Up Sequence
 
 ### Email 1: Same Day (Within 2 hours)
 
@@ -111,9 +111,9 @@ For questions outside scope:
 Thanks for joining us for ${topic}!
 
 Here's what you requested:
-- 🎥 [Recording link]
-- 📊 [Slides]
-- 📄 [Any resources mentioned]
+- [Recording link]
+- [Slides]
+- [Any resources mentioned]
 
 ${takeaways.length > 0 ? `**Quick recap:**
 ${takeaways.slice(0, 3).map((t, i) => `${i + 1}. ${t}`).join('\n')}` : ''}
@@ -144,7 +144,7 @@ It's been a week since our webinar. By now you've probably watched the recording
 
 ---
 
-## ✅ Pre-Webinar Checklist
+## Pre-Webinar Checklist
 
 ### Tech Setup (30 min before)
 - [ ] Test audio/video quality
@@ -296,7 +296,7 @@ function generateScriptSection(
 ): string {
   const scripts: Record<string, string> = {
     'Welcome & Housekeeping': `
-### 🎬 ${section.name} (${section.duration} min)
+### ${section.name} (${section.duration} min)
 
 **[ON SCREEN: Title slide with webinar name]**
 
@@ -313,7 +313,7 @@ Let's get started!"
 
 `,
     'Speaker Introduction': `
-### 🎬 ${section.name} (${section.duration} min)
+### ${section.name} (${section.duration} min)
 
 **[ON SCREEN: Speaker bio slide]**
 
@@ -324,7 +324,7 @@ I'm excited to share what we've learned about ${lowerFirstIfCommon(topic)} and g
 
 `,
     'Agenda & Learning Objectives': `
-### 🎬 ${section.name} (${section.duration} min)
+### ${section.name} (${section.duration} min)
 
 **[ON SCREEN: Agenda slide]**
 
@@ -339,7 +339,7 @@ Sound good? Drop a '1' in the chat if you're ready to go."
 
 `,
     'Context Setting': `
-### 🎬 ${section.name} (${section.duration} min)
+### ${section.name} (${section.duration} min)
 
 **[ON SCREEN: Context/problem slide]**
 
@@ -356,7 +356,7 @@ Let's see what you're dealing with..."
 
 `,
     'Main Content Block 1': `
-### 🎬 ${section.name} (${section.duration} min)
+### ${section.name} (${section.duration} min)
 
 **[ON SCREEN: Key concept slide]**
 
@@ -376,7 +376,7 @@ Any questions on this before we move on? Drop them in chat."
 
 `,
     'Q&A': `
-### 🎬 ${section.name} (${section.duration} min)
+### ${section.name} (${section.duration} min)
 
 **[ON SCREEN: Q&A slide]**
 
@@ -391,7 +391,7 @@ Keep them coming while I address these..."
 
 `,
     'Close & CTA': `
-### 🎬 ${section.name} (${section.duration} min)
+### ${section.name} (${section.duration} min)
 
 **[ON SCREEN: CTA slide]**
 
@@ -417,7 +417,7 @@ Have a great rest of your [day/week]!"
   // such as "[Content for Set stage]".
   if (scripts[section.name]) return scripts[section.name];
   return `
-### 🎬 ${section.name} (${section.duration} min)
+### ${section.name} (${section.duration} min)
 
 **[ON SCREEN: Relevant slide]**
 

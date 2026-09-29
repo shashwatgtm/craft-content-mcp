@@ -29,13 +29,13 @@ export function generateThoughtLeadership(args: {
     proofPoints = generateSuggestedProofPoints(topic, yourTake, articleType);
     proofPointsNote = `
 
-⚠️ **NOTE:** You didn't provide proof points. The articles show a bracket prompt where each piece of proof goes.
+**NOTE:** You didn't provide proof points. The articles show a bracket prompt where each piece of proof goes.
 **To strengthen these articles, gather real proof for the suggested proof points below.**
 
 `;
   }
   
-  let output = `# 💡 Thought Leadership Series: ${topic}
+  let output = `# Thought Leadership Series: ${topic}
 
 ## Series Overview
 
@@ -79,7 +79,7 @@ ${proofPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
   output += `
 ---
 
-## 📱 Promotional Posts (short drafts: expand each to 200-300 words)
+## Promotional Posts (short drafts: expand each to 200-300 words)
 
 Use these short posts to promote your byline articles on social media:
 
@@ -87,7 +87,7 @@ ${generatePromotionalPosts(topic, yourTake, proofPoints, numArticles, !args.proo
 
 ---
 
-## 📅 Publishing Strategy
+## Publishing Strategy
 
 | Week | Content | Platform |
 |------|---------|----------|
@@ -95,7 +95,7 @@ ${Array.from({ length: numArticles }, (_, i) => i + 1).map(n => `| Week ${n} | A
 | Week ${n} | ${n < numArticles || numArticles === 1 ? `Promo post for Article ${n}` : 'Series summary post'} | ${n < numArticles || numArticles === 1 ? 'LinkedIn feed, Twitter' : 'LinkedIn feed'} |`).join('\n')}
 | Week ${numArticles + 1} | Pitch to industry publication | Forbes, Inc, industry trades |
 
-## 🎯 Where to Publish
+## Where to Publish
 
 **Tier 1: your owned channels**
 - LinkedIn Articles (best for B2B thought leadership)
@@ -113,7 +113,7 @@ ${Array.from({ length: numArticles }, (_, i) => i + 1).map(n => `| Week ${n} | A
 
 ---
 
-## ✅ Pre-Publish Checklist
+## Pre-Publish Checklist
 
 - [ ] Headline is compelling (not clickbait)
 - [ ] First paragraph hooks immediately
@@ -246,7 +246,7 @@ function generateFullArticle(
   return `
 ---
 
-## 📄 Article ${articleNum} of ${totalArticles}${countLabel}
+## Article ${articleNum} of ${totalArticles}${countLabel}
 
 **Headline:** ${title}
 **Structure:** ${angle.structure}
@@ -466,7 +466,7 @@ Here's what I learned:
 
 I just published a deep dive on this, sharing the evidence, what it means, and what to do about it.
 
-Link in comments 👇
+Link in comments
 
 What's your experience been?
 

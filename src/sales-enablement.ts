@@ -68,7 +68,7 @@ export function generateSalesEnablement(args: {
     objections = parseListItems(args.common_objections);
   } else {
     objections = generateLikelyObjections(product, priceContext);
-    objectionsNote = `\n⚠️ **NOTE:** You didn't provide objections. We've generated handlers for the most common objections. Update these with real objections you hear from prospects.\n`;
+    objectionsNote = `\n**NOTE:** You didn't provide objections. We've generated handlers for the most common objections. Update these with real objections you hear from prospects.\n`;
   }
   
   // DERIVE value props from proof points if not provided
@@ -85,7 +85,7 @@ export function generateSalesEnablement(args: {
   const objectionHandlers = objections.map(obj => generateObjectionHandler(obj, valueProps, proofPoints, priceContext));
   const competitorHandlers = competitorObjections.map(obj => generateCompetitorHandler(obj, valueProps, proofPoints));
 
-  let output = `# 🎯 Sales Enablement Kit
+  let output = `# Sales Enablement Kit
 ## ${product} | ${persona}
 ${objectionsNote}
 ---
@@ -103,7 +103,7 @@ ${objectionsNote}
 
 ---
 
-## 💎 Value Propositions
+## Value Propositions
 
 ### Pitch Order (Lead with Strongest)
 
@@ -115,7 +115,7 @@ ${valueProps.map((vp, i) => `
 
 ---
 
-## 📝 Pitch Script by Stage
+## Pitch Script by Stage
 
 ### ${stage.charAt(0).toUpperCase() + stage.slice(1).replace(/_/g, ' ')} Stage
 
@@ -123,7 +123,7 @@ ${generateStagePitch(stage, product, valueProps, persona, proofPoints)}
 
 ---
 
-## 🛡️ Objection Handlers
+## Objection Handlers
 
 ${objectionHandlers.map((handler, i) => `
 ### Objection ${i + 1}: "${objections[i]}"
@@ -146,7 +146,7 @@ ${handler.bridge === handler.proof ? '' : `
 ---
 `).join('\n')}
 
-## ⚔️ Competitive Responses
+## Competitive Responses
 
 ${competitorHandlers.length > 0 ? competitorHandlers.map((handler, i) => `
 ### Objection: "${competitorObjections[i]}"
@@ -168,7 +168,7 @@ ${handler.whenHeard}
 *No competitor-specific objections provided. Add competitor_objections parameter for battle cards.*
 `}
 
-## 💰 Price Justification
+## Price Justification
 
 ### Position: ${priceShown}
 
@@ -196,7 +196,7 @@ The question isn't whether you can afford ${product}. It's whether you can affor
 
 ---
 
-## 🎣 Discovery questions for ${persona}
+## Discovery questions for ${persona}
 
 ### Opening Questions
 1. "Tell me about your current approach to [problem area]."
@@ -220,7 +220,7 @@ The question isn't whether you can afford ${product}. It's whether you can affor
 
 ---
 
-## 📧 Follow-Up Templates
+## Follow-Up Templates
 
 ### After Discovery Call
 
@@ -271,7 +271,7 @@ Talk soon,
 
 ---
 
-## ✅ Call Prep Checklist
+## Call Prep Checklist
 
 Before every ${stage.replace(/_/g, ' ')} call:
 
@@ -285,7 +285,7 @@ Before every ${stage.replace(/_/g, ' ')} call:
 
 ---
 
-## 📊 Quick Stats to Quote
+## Quick Stats to Quote
 
 ${proofPoints.map(p => `- ${p}`).join('\n')}
 

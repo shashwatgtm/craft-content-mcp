@@ -21,7 +21,7 @@ export function generateContentRepurposer(args: {
   const wordCount = countWords(content);
   const title = extractTitle(content, keyMessage);
   
-  let output = `# 🔄 Content Repurposing Kit
+  let output = `# Content Repurposing Kit
 
 ## Source Content Analysis
 
@@ -39,7 +39,7 @@ ${keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 
 ---
 
-## 📦 Repurposed Content
+## Repurposed Content
 
 `;
 
@@ -52,7 +52,7 @@ ${keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
   output += `
 ---
 
-## 📊 Content Distribution Matrix
+## Content Distribution Matrix
 
 Example figures: replace with your own (the Best Time column).
 | Format | Platform | Best Time | Engagement Goal |
@@ -61,7 +61,7 @@ ${targetFormats.map(f => `| ${formatName(f)} | ${getPlatform(f)} | ${getBestTime
 
 ---
 
-## ✅ Repurposing Checklist
+## Repurposing Checklist
 
 - [ ] Review each piece for brand consistency
 - [ ] Customize for platform-specific best practices
@@ -121,7 +121,7 @@ function generateFormat(
 ): string {
   const generators: Record<string, () => string> = {
     linkedin_post: () => `
-### 📱 LinkedIn Post
+### LinkedIn Post
 
 ---
 
@@ -136,7 +136,7 @@ ${generateLinkedInPost(content, keyPoints, voice, keyMessage)}
 
 `,
     twitter_thread: () => `
-### 🐦 Twitter/X Thread
+### Twitter/X Thread
 
 ---
 
@@ -151,7 +151,7 @@ ${generateTwitterThread(content, keyPoints, title)}
 
 `,
     email: () => `
-### 📧 Email Version
+### Email Version
 
 ---
 
@@ -168,7 +168,7 @@ ${generateEmailVersion(content, keyPoints, keyMessage)}
 
 `,
     blog_summary: () => `
-### 📝 Blog Summary (target: 300 words)
+### Blog Summary (target: 300 words)
 
 ---
 
@@ -178,7 +178,7 @@ ${generateBlogSummary(content, keyPoints, title)}
 
 `,
     infographic_outline: () => `
-### 📊 Infographic Outline
+### Infographic Outline
 
 ---
 
@@ -204,7 +204,7 @@ ${keyPoints.slice(0, 5).map((p, i) => `
 
 `,
     video_script: () => `
-### 🎥 Video Script (60-90 seconds)
+### Video Script (60-90 seconds)
 
 ---
 
@@ -227,7 +227,7 @@ ${keyPoints.slice(0, 3).map((p, i) => `
 
 `,
     podcast_talking_points: () => `
-### 🎙️ Podcast Talking Points
+### Podcast Talking Points
 
 ---
 
@@ -255,7 +255,7 @@ ${keyPoints.map((p, i) => `
 
 `,
     slide_deck_outline: () => `
-### 📊 Slide Deck Outline
+### Slide Deck Outline
 
 ---
 
@@ -286,7 +286,7 @@ ${keyPoints.map((p, i) => `
 
 `,
     quote_cards: () => `
-### 💬 Quote Cards (Social Graphics)
+### Quote Cards (Social Graphics)
 
 ---
 
@@ -310,7 +310,7 @@ ${extractQuotes(content, keyPoints).map((q, i) => `
 
 `,
     newsletter_section: () => `
-### 📰 Newsletter Section
+### Newsletter Section
 
 ---
 
@@ -350,14 +350,14 @@ ${keyPoints.slice(0, 4).map((p, i) => `${i + 1}. ${p}`).join('\n')}` : ''}
 
 ${keyMessage || '[Your one-line takeaway]'}
 
-What's your take? 👇
+What's your take?
 
 ${hashtags(content)}`;
 }
 
 function generateTwitterThread(content: string, keyPoints: string[], title: string): string {
   let thread = `**Tweet 1 (Hook):**
-${title}: a thread 🧵
+${title}: a thread
 
 Here's what you need to know:\n\n`;
 
@@ -373,7 +373,7 @@ ${Math.min(keyPoints.length, 6) + 1}/ That's the TL;DR.
 
 Full post: [link]
 
-Follow for more threads like this 👋`;
+Follow for more threads like this`;
 
   return thread;
 }

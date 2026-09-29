@@ -268,15 +268,13 @@ ${generateHook(angle.hook, topic, yourTake, targetReader)}
 
 Let me paint a picture you'll probably recognize.
 
-This is for ${lowerFirstIfCommon(targetReader)}. You've read the books, attended the webinars, maybe even hired consultants. When it comes to ${lowerFirstIfCommon(topic)}, you've done your homework.
+This is for ${lowerFirstIfCommon(targetReader)}. [Only if true of your readers: what they have already tried on ${lowerFirstIfCommon(topic)}, for example books, webinars or consultants]
 
-And yet something's not clicking.
-
-The results aren't matching the effort. The advice that worked for others seems to fall flat for you. You're left wondering if you're doing something wrong, or if the advice itself is the problem.
+[Only if true of your readers: the gap they feel, for example "the results aren't matching the effort"]
 
 [Your lesson, only if true: for example, "Here's what I've learned: it's usually the advice."]
 
-Not because the people giving it are wrong or dishonest. But because most advice about ${lowerFirstIfCommon(topic)} is based on a flawed assumption: that what worked in one context will work in yours. That best practices are universal. That following the playbook is the path to success.
+[Only if true and provable: why the usual advice about ${lowerFirstIfCommon(topic)} falls short, for example "it assumes that what worked in one context will work in yours"]
 
 ${yourTake}. And that changes everything about how you should approach this.
 
@@ -294,7 +292,7 @@ Then there is ${proof2}. [Only if true and provable: why it shows the same patte
 
 [Only if true and provable: what these examples reveal that contradicts the conventional wisdom about ${lowerFirstIfCommon(topic)}.]
 
-This isn't about being contrarian for its own sake. It's about following the truth where it leads, even when it conflicts with what we've been taught.
+[Your reason for holding this view, in your own words]
 
 ---
 
@@ -322,7 +320,7 @@ The specifics will vary based on your situation. But the underlying principle re
 
 If you're among ${lowerFirstIfCommon(targetReader)}, you have a choice to make.
 
-You can keep following the standard advice about ${lowerFirstIfCommon(topic)}: the playbooks, the best practices, the "proven" approaches that somehow never quite work as advertised.
+You can keep following the standard advice about ${lowerFirstIfCommon(topic)}. [Only if true: where that advice has fallen short for your readers]
 
 Or you can accept an uncomfortable truth: ${lowerCommonWords(yourTake)}.
 
@@ -362,7 +360,7 @@ If you're among ${lowerFirstIfCommon(targetReader)}, this matters more than you 
 
     direct_challenge: `Stop. Before you read another article about ${lowerFirstIfCommon(topic)}, I need to tell you something.
 
-That advice you've been following? The "best practices" everyone swears by? They're probably making things worse.
+[Only if true and provable: the common advice your readers follow, and how it makes things worse]
 
 ${yourTake}. [Your experience: how long you have worked with ${targetReader}, and what you saw]`,
 
@@ -418,7 +416,7 @@ If you're among ${lowerFirstIfCommon(targetReader)}, your choices in the next 12
 
     new_model: `The way we think about ${lowerFirstIfCommon(topic)} is fundamentally flawed.
 
-I'm not talking about small errors or missing nuances. I'm talking about a mental model that's actively preventing ${targetReader} from achieving what they're capable of.
+[Only if true and provable: the mental model that holds ${targetReader} back, and your evidence]
 
 Here's a different way to think about it.`,
 
@@ -430,7 +428,7 @@ Here's the pattern.`,
 
     simplification: `${cap(lowerFirstIfCommon(topic))} is overcomplicated.
 
-Not because it's inherently complex, but because complexity serves people selling solutions. The truth is simpler, and more actionable, than you've been led to believe.
+[Only if true: why it is made to look complex, in your own words]
 
 Here's the model.`
   };

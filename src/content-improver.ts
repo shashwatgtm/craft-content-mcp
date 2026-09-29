@@ -201,7 +201,7 @@ function getContentTypeTips(contentType: string, goal: string): string {
 - **Subheadline:** Expand on how you deliver the benefit
 - **Social proof:** Above the fold
 - **CTA:** Visible without scrolling, repeated 3x (Example figure: replace with your own)
-- **Form fields:** Minimize - each field reduces conversion`,
+- **Form fields:** Minimize: each field reduces conversion`,
     
     social_post: `
 - **Hook:** First line must stop the scroll
@@ -253,7 +253,7 @@ function generateChecklist(contentType: string, goal: string, analysis: ContentA
   // Universal checks
   // The mark is chosen first, then the text is added, so a passed check keeps its text.
   checks.push((analysis.clarity.score >= 7 ? 'Yes:' : '[ ]') + ' Clear, jargon-free language');
-  checks.push((analysis.structure.score >= 7 ? 'Yes:' : '[ ]') + ' Logical structure with headers');
+  checks.push((analysis.structure.score >= 7 ? 'Yes:' : '[ ]') + ' Logical structure');
   checks.push((analysis.engagement.score >= 7 ? 'Yes:' : '[ ]') + ' Engaging opening hook');
   checks.push((analysis.goalAlignment.score >= 7 ? 'Yes:' : '[ ]') + ' Aligns with stated goal');
   

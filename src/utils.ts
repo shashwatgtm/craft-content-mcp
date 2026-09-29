@@ -371,7 +371,7 @@ export function analyzeContent(content: string, contentType: string, goal: strin
   const foundTransitions = transitionWords.filter(t => content.toLowerCase().includes(t));
   if (foundTransitions.length < 2 && paragraphs.length > 3) {
     structureScore -= 2;
-    analysis.structure.issues.push('Few transition words - may feel disjointed');
+    analysis.structure.issues.push('Few transition words: may feel disjointed');
     analysis.structure.suggestions.push('Add transitions: "However...", "As a result...", "First... Second..."');
   }
   
@@ -392,7 +392,7 @@ export function analyzeContent(content: string, contentType: string, goal: strin
   const youCount = (content.match(/\byou\b|\byour\b/gi) || []).length;
   if (youCount < 3 && contentType !== 'press_release') {
     engagementScore -= 2;
-    analysis.engagement.issues.push('Limited "you" language - feels impersonal');
+    analysis.engagement.issues.push('Limited "you" language: feels impersonal');
     analysis.engagement.suggestions.push('Reframe benefits in terms of "you": "You\'ll save time" vs "It saves time"');
   }
   
@@ -409,7 +409,7 @@ export function analyzeContent(content: string, contentType: string, goal: strin
   const firstSentence = content.split(/[.!?]/)[0] || '';
   if (countWords(firstSentence) > 20) {
     engagementScore -= 2;
-    analysis.engagement.issues.push('Opening sentence too long - may lose readers');
+    analysis.engagement.issues.push('Opening sentence too long: may lose readers');
     analysis.engagement.suggestions.push('Start with a punchy hook under 15 words');
   }
   
@@ -479,17 +479,20 @@ export function generateImprovedVersion(content: string, analysis: ContentAnalys
   // Apply common improvements
   
   // Shorten very long sentences
-  const sentences = improved.split(/(?<=[.!?])\s+/);
-  const improvedSentences = sentences.map(s => {
-    if (countWords(s) > 30) {
-      // Try to split at conjunctions
-      // Text only (run 8): the joining word that starts the new sentence gets a capital ("And", not "and").
-      const split = s.replace(/,\s*(and|but|so|or)\s+/gi, (_m: string, c: string) => `.\n${c.charAt(0).toUpperCase()}${c.slice(1)} `);
-      return split.charAt(0).toUpperCase() + split.slice(1);
-    }
-    return s;
-  });
-  improved = improvedSentences.join(' ');
+  // Run 12 (R21-26): each paragraph is handled on its own, so the paragraph breaks of the input are kept.
+  improved = improved.split(/\n[ \t]*\n/).map((paragraph) => {
+    const sentences = paragraph.split(/(?<=[.!?])\s+/);
+    const improvedSentences = sentences.map(s => {
+      if (countWords(s) > 30) {
+        // Try to split at conjunctions
+        // Text only (run 8): the joining word that starts the new sentence gets a capital ("And", not "and").
+        const split = s.replace(/,\s*(and|but|so|or)\s+/gi, (_m: string, c: string) => `.\n${c.charAt(0).toUpperCase()}${c.slice(1)} `);
+        return split.charAt(0).toUpperCase() + split.slice(1);
+      }
+      return s;
+    });
+    return improvedSentences.join(' ');
+  }).join('\n\n');
   
   // Replace common jargon
   const jargonReplacements: Record<string, string> = {

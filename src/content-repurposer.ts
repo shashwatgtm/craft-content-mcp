@@ -208,19 +208,19 @@ ${keyPoints.slice(0, 5).map((p, i) => `
 
 ---
 
-**[HOOK - 5 seconds]**
+**[HOOK: 5 seconds]**
 "${keyPoints[0] ? `Did you know that ${lowerCommonWords(keyPoints[0])}?` : `Here's something important about ${title}...`}"
 
-**[INTRO - 10 seconds]**
+**[INTRO: 10 seconds]**
 "I just shared ${sourceType.replace(/_/g, ' ')} about ${title}. Here are the key takeaways you need to know."
 
-**[BODY - 45-60 seconds]**
+**[BODY: 45-60 seconds]**
 ${keyPoints.slice(0, 3).map((p, i) => `
 "Point ${i + 1}: ${p}"
 [VISUAL: Supporting image/graphic]
 `).join('\n')}
 
-**[CTA - 10 seconds]**
+**[CTA: 10 seconds]**
 "${keyMessage || 'Full version: [link]. Follow for more insights like this.'}"
 
 ---

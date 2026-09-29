@@ -72,7 +72,9 @@ function checkValue(schema: SchemaNode, holder: Record<string, unknown> | unknow
     return;
   }
   if (Array.isArray(schema.enum) && typeof value === "string" && !schema.enum.includes(value)) {
-    problems.push(`${path} must be one of: ${schema.enum.join(", ")}`);
+    // Run 12 (R12-21 item 26 and the testimonial_capture fix): a plain hint for the two values people type most.
+    const hint = ENUM_HINTS[`${path}=${value.trim().toLowerCase()}`];
+    problems.push(`${path} must be one of: ${schema.enum.join(", ")}${hint ? `. ${hint}` : ""}`);
     return;
   }
   if (schema.type !== "number" && schema.type !== "integer") return;
@@ -90,6 +92,12 @@ function checkValue(schema: SchemaNode, holder: Record<string, unknown> | unknow
 }
 
 const MONEY_TEXT: Record<string, string[]> = { sales_enablement_content: ["price_context"] };
+// A value that is not in the list but has an obvious match gets a hint after the list of choices.
+const ENUM_HINTS: Record<string, string> = {
+  "content_type=linkedin_post": "For a LinkedIn post, use social_post",
+  "content_type=linkedin": "For a LinkedIn post, use social_post",
+  "testimonial_type=quote": "For a written quote, use written_quote",
+};
 const METRIC_TEXT: Record<string, string[]> = {};
 const ONE_AMOUNT: Record<string, string[]> = {};
 

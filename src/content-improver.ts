@@ -1,4 +1,4 @@
-import { analyzeContent, generateImprovedVersion, countWords, avgWordsPerSentence, calculateReadability, ContentAnalysis, SUGGESTION_FOOTER } from './utils.js';
+import { analyzeContent, generateImprovedVersion, countWords, avgWordsPerSentence, calculateReadability, ContentAnalysis, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 
 // Default goals by content type
 const DEFAULT_GOALS: Record<string, string> = {
@@ -129,7 +129,7 @@ ${improvedContent}
 ## 📋 Before/After Comparison
 
 ### Original First Sentence:
-> ${content.split(/[.!?]/)[0]?.trim() || 'N/A'}
+> ${clipEcho(content.split(/[.!?]/)[0]?.trim() || 'N/A')}
 
 ### Suggested Opening:
 > ${generateBetterHook(content, contentType, goal)}

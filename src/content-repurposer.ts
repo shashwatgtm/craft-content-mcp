@@ -1,4 +1,4 @@
-import { parseListItems, extractKeyPoints, countWords, lowerCommonWords, SUGGESTION_FOOTER } from './utils.js';
+import { parseListItems, extractKeyPoints, countWords, lowerCommonWords, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 
 // Default formats when user doesn't specify
 const DEFAULT_FORMATS = ['linkedin_post', 'twitter_thread', 'email', 'blog_summary', 'quote_cards'];
@@ -81,7 +81,7 @@ ${SUGGESTION_FOOTER}
 function extractTitle(content: string): string {
   // Try to extract title from headers or first line
   const headerMatch = content.match(/^#\s+(.+)$/m);
-  if (headerMatch) return headerMatch[1];
+  if (headerMatch) return clipEcho(headerMatch[1]);
   
   const firstLine = content.split('\n')[0];
   if (firstLine.length < 100) return firstLine;

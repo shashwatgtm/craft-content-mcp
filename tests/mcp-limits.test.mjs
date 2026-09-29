@@ -157,6 +157,26 @@ for (const [tool, fields] of Object.entries(LONG_TEXT)) {
   }
 }
 
+// Run 12 (R12-11b, A5-3): the answer to a 100,000-character document is at most 2 times the input, also for a
+// document with no full stop, no space, or one very long heading (each extracted point and echo is clipped to 280 characters).
+test("output bound: 100,000-character documents into content_repurposer and craft_content_improver answer at most 2 times the input", async () => {
+  const fill = (unit) => unit.repeat(Math.ceil(100000 / unit.length)).slice(0, 100000);
+  const docs = [doc(100000), fill("the key result and the main benefit and the critical value "), fill("keyresultvalue"), ("# " + fill("key result title words ")).slice(0, 100000)];
+  const allFormats = "linkedin_post, twitter_thread, email, blog_summary, quote_cards, infographic_outline, video_script, podcast_talking_points, slide_deck_outline, newsletter_section";
+  for (const d of docs) {
+    for (const [tool, args] of [
+      ["content_repurposer", { source_content: d, source_type: "blog_post" }],
+      ["content_repurposer", { source_content: d, source_type: "blog_post", target_formats: allFormats }],
+      ["craft_content_improver", { content: d, content_type: "blog_post" }],
+    ]) {
+      const { j } = await call(tool, args);
+      assert.notEqual(j.result.isError, true, text(j).slice(0, 200));
+      const outBytes = Buffer.byteLength(text(j));
+      assert.ok(outBytes <= 2 * Buffer.byteLength(d), `${tool}: ${outBytes} bytes for ${Buffer.byteLength(d)}`);
+    }
+  }
+});
+
 test("wrong JSON types are refused before the tool runs, for every input of every tool", async () => {
   for (const t of tools) {
     for (const [k, p] of Object.entries(t.inputSchema.properties || {})) {

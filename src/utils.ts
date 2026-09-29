@@ -495,6 +495,14 @@ export function generateImprovedVersion(content: string, analysis: ContentAnalys
   return improved;
 }
 
+// Run 12 (R12-11b, A5-3): output bound. A point, title or quoted sentence taken from a pasted document is
+// clipped to 280 characters, ending in "...", so a long document cannot make the answer many times its size.
+// Normal inputs have no sentence this long, so their answers do not change.
+export const MAX_ECHO = 280;
+export function clipEcho(text: string, max: number = MAX_ECHO): string {
+  return text.length > max ? text.slice(0, max - 3).trimEnd() + '...' : text;
+}
+
 export function extractKeyPoints(text: string): string[] {
   const points: string[] = [];
   const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
@@ -514,7 +522,7 @@ export function extractKeyPoints(text: string): string[] {
     points.push(...sentences.slice(0, 3).map(s => s.trim()));
   }
   
-  return points.slice(0, 5);
+  return points.slice(0, 5).map((p) => clipEcho(p));
 }
 
 export function generateHook(topic: string, style: 'question' | 'statistic' | 'story' | 'bold_statement'): string {

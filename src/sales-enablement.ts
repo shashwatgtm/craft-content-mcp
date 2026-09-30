@@ -97,7 +97,7 @@ ${objectionsNote}
 | **Product** | ${product} |
 | **Persona** | ${persona} |
 | **Price Position** | ${priceShown} |
-| **Sales Stage** | ${stage.replace(/_/g, ' ')} |${!args.value_props ? `
+| **Sales Stage** | ${stage.replace(/_/g, ' ')}${args.sales_stage ? '' : ' (default)'} |${!args.value_props ? `
 | **Note** | Value props taken from your proof points |` : ''}${!args.common_objections ? `
 | **Note** | Objections suggested: replace them with the ones you hear |` : ''}
 
@@ -450,7 +450,7 @@ For each feature, frame as:
 "${proofPoints[0] || '[What customers like them have seen]'}"
 
 **Questions & Objections (10 min):**
-Address using handlers above.
+Address them with the objection handlers in this kit.
 
 **Next Step (1 min):**
 "Based on what you've seen, what would it take to move forward?"

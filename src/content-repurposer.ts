@@ -396,17 +396,17 @@ Best,
 }
 
 function generateBlogSummary(content: string, keyPoints: string[], title: string): string {
+  // Run 15 R15-32 (edge-case matrix): each key point is listed once, without a label cut from its first words (the first point
+  // used to print three times: the opening line, a bullet and the bottom line).
   return `## ${title}: Key Takeaways
-
-${keyPoints[0] || 'This content explores important topics'}, and that's just the beginning.
 
 In this ${content.length > 5000 ? 'comprehensive' : 'focused'} piece, we cover:
 
-${keyPoints.map(p => `- **${p.split(' ').slice(0, 4).join(' ')}:** ${p}`).join('\n')}
+${keyPoints.length ? keyPoints.map(p => `- ${p}`).join('\n') : '- [the main points of your piece]'}
 
 Whether you're [audience segment 1] or [audience segment 2], these insights apply to your work.
 
-**The bottom line:** ${keyPoints[0] || 'There\'s actionable value here.'}
+**The bottom line:** [one sentence your readers should remember, in your words]
 
 [Read the full version for examples, data, and implementation details →]`;
 }

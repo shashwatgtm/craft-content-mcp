@@ -362,7 +362,7 @@ export function analyzeContent(content: string, contentType: string, goal: strin
   const longParagraphs = paragraphs.filter(p => countWords(p) > 100);
   if (longParagraphs.length > 0) {
     structureScore -= 2;
-    analysis.structure.issues.push(`${longParagraphs.length} paragraphs over 100 words`);
+    analysis.structure.issues.push(`${longParagraphs.length} paragraph${longParagraphs.length === 1 ? '' : 's'} over 100 words`);
     analysis.structure.suggestions.push('Break long paragraphs at topic shifts. Aim for 50-75 words per paragraph.');
   }
   

@@ -17,6 +17,20 @@ export function generateCaseStudy(args: {
   const mode = args.mode || (args.challenge && args.solution && args.results ? 'full' : 'discovery');
   const product = args.your_product;
   
+  // Run 15 (R15-11, D35): mode "full", no interview notes, and a fact left out: the discovery interview kit,
+  // with a first line that names what is missing. A part that is only spaces counts as missing.
+  if (mode === 'full' && !args.interview_notes) {
+    const missing: string[] = [];
+    if (!args.challenge?.trim()) missing.push('the challenge');
+    if (!args.solution?.trim()) missing.push('the solution');
+    if (!args.results?.trim()) missing.push('the results');
+    if (missing.length > 0) {
+      const names = missing.length === 1 ? missing[0] : missing.slice(0, -1).join(', ') + ' and ' + missing[missing.length - 1];
+      return `Full mode needs the challenge, the solution and the results. Missing: ${names}. Use the interview questions below to collect them.` + '\n\n' +
+        generateDiscoveryKit(customerName, industry, product, args.results?.trim() ? args.results : undefined);
+    }
+  }
+
   // DISCOVERY MODE - Generate interview questions
   if (mode === 'discovery' || (!args.challenge && !args.solution && !args.results && !args.interview_notes)) {
     return generateDiscoveryKit(customerName, industry, product, args.results);

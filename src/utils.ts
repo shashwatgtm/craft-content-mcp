@@ -337,7 +337,8 @@ export function analyzeContent(content: string, contentType: string, goal: strin
   
   // Check for jargon/complexity
   const jargonWords = ['utilize', 'leverage', 'synergy', 'paradigm', 'optimize', 'facilitate', 'implement', 'methodology'];
-  const foundJargon = jargonWords.filter(j => content.toLowerCase().includes(j));
+  // Run 16 R16-13 (D46): whole words only, so "implementation" does not count as "implement".
+  const foundJargon = jargonWords.filter(j => new RegExp('\\b' + j + '\\b', 'i').test(content));
   if (foundJargon.length > 2) {
     clarityScore -= 1;
     analysis.clarity.issues.push(`Business jargon detected: ${foundJargon.join(', ')}`);

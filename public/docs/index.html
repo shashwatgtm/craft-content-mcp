@@ -141,7 +141,7 @@
    "about": {
     "@id": "https://craft-content.gtmhelix.com/#app"
    },
-   "dateModified": "2026-09-29",
+   "dateModified": "2026-09-30",
    "inLanguage": "en",
    "primaryImageOfPage": "https://craft-content.gtmhelix.com/og.png"
   },
@@ -189,7 +189,7 @@
     <div class="crop"><span class="cm tl" aria-hidden="true"></span><span class="cm tr" aria-hidden="true"></span><span class="cm bl" aria-hidden="true"></span><span class="cm br" aria-hidden="true"></span><h1 id="h1">CRAFT Content docs</h1></div>
     <div class="hx-hero-text"><div class="hx10-split-text">
       <p class="sub">The MCP address, the REST API behind the web forms, and every field of all 8 tools.</p>
-      <p class="hx-byline">By <a href="https://gtmhelix.com/about/" rel="author">Shashwat Ghosh</a>, Co-Founder and Fractional CMO, Helix&nbsp;GTM&nbsp;Consulting · Last updated <time datetime="2026-09-29">29 September 2026</time></p>
+      <p class="hx-byline">By <a href="https://gtmhelix.com/about/" rel="author">Shashwat Ghosh</a>, Co-Founder and Fractional CMO, Helix&nbsp;GTM&nbsp;Consulting · Last updated <time datetime="2026-09-30">30 September 2026</time></p>
     </div></div>
   </div>
 </section>
@@ -201,7 +201,7 @@
   <ul class="hx-prose">
     <li>Address: <code>https://craft-content.gtmhelix.com/mcp</code> (Streamable HTTP, stateless, JSON responses). GET returns 405 by design.</li>
     <li>Authentication: none. Every tool is marked read-only (<code>readOnlyHint: true</code>, <code>destructiveHint: false</code>) and has a title.</li>
-    <li>Rate limit: 300 requests per minute per IP address. Server: <code>craft-content-mcp</code> version 2.2.12.</li>
+    <li>Rate limit: 300 requests per minute per IP address. Server: <code>craft-content-mcp</code> version 2.2.13.</li>
     <li>Limits: 262,144 bytes per call; text fields up to 4,000 characters, except the document fields <code>interview_notes</code> (Case Study Generator), <code>source_content</code> (Content Repurposer) and <code>content</code> (CRAFT Content Improver), which take up to 100,000; one call per request (no batches). A call over a limit is refused before the tool runs.</li>
     <li>Local use: <code>npx -y @shashwatgtmalpha/craft-content-mcp</code> runs these tools over stdio (npm can lag behind this site until a new version is published).</li>
   </ul>
@@ -242,13 +242,14 @@
 <tr><td>2.2.9</td><td>29 September 2026</td><td>GitHub, commit bf536f6</td></tr>
 <tr><td>2.2.10</td><td>29 September 2026</td><td>GitHub, commit 616bcac</td></tr>
 <tr><td>2.2.11</td><td>29 September 2026</td><td>GitHub, commit 24507f0</td></tr>
-<tr><td>2.2.12 (this site)</td><td>29 September 2026</td><td>GitHub, commit d6dc562</td></tr>
+<tr><td>2.2.12</td><td>29 September 2026</td><td>GitHub, commit d6dc562</td></tr>
+<tr><td>2.2.13 (this site)</td><td>30 September 2026</td><td>GitHub, commit 7ed2cde</td></tr>
   </tbody></table></div>
 </section>
 
 <section class="hx-section" aria-labelledby="ref-h">
   <h2 id="ref-h">Tool reference</h2>
-  <p class="hx-sub">Generated from the server's own input schemas, version 2.2.12.</p>
+  <p class="hx-sub">Generated from the server's own input schemas, version 2.2.13.</p>
 </section>
 <section class="hx-section" id="case-study-generator" aria-labelledby="d-case-study-generator">
   <h3 id="d-case-study-generator">Case Study Generator</h3>

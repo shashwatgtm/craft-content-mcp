@@ -232,7 +232,7 @@
   <ul class="hx-prose">
     <li>Address: <code>https://craft-content.gtmhelix.com/mcp</code> (Streamable HTTP, stateless, JSON responses). GET returns 405 by design.</li>
     <li>Authentication: none. Every tool is marked read-only (<code>readOnlyHint: true</code>, <code>destructiveHint: false</code>) and has a title.</li>
-    <li>Rate limit: 300 requests per minute per IP address. Server: <code>craft-content-mcp</code> version 2.2.15.</li>
+    <li>Rate limit: 300 requests per minute per IP address. Server: <code>craft-content-mcp</code> version 2.2.16.</li>
     <li>Limits: 262,144 bytes per call; text fields up to 4,000 characters, except the document fields <code>interview_notes</code> (Case Study Generator), <code>source_content</code> (Content Repurposer) and <code>content</code> (CRAFT Content Improver), which take up to 100,000; one call per request (no batches). A call over a limit is refused before the tool runs.</li>
     <li>Local use: <code>npx -y @shashwatgtmalpha/craft-content-mcp</code> runs these tools over stdio (npm can lag behind this site until a new version is published).</li>
   </ul>
@@ -276,13 +276,14 @@
 <tr><td>2.2.12</td><td>29 September 2026</td><td>GitHub, commit d6dc562</td></tr>
 <tr><td>2.2.13</td><td>30 September 2026</td><td>GitHub, commit 7ed2cde</td></tr>
 <tr><td>2.2.14</td><td>30 September 2026</td><td>GitHub, commit e097efe</td></tr>
-<tr><td>2.2.15 (this site)</td><td>30 September 2026</td><td>GitHub, commit 62838d4</td></tr>
+<tr><td>2.2.15</td><td>30 September 2026</td><td>GitHub, commit 62838d4</td></tr>
+<tr><td>2.2.16 (this site)</td><td>2 October 2026</td><td>GitHub, commit pending</td></tr>
   </tbody></table></div>
 </section>
 
 <section class="hx-section" aria-labelledby="ref-h">
   <h2 id="ref-h">Tool reference</h2>
-  <p class="hx-sub">Generated from the server's own input schemas, version 2.2.15.</p>
+  <p class="hx-sub">Generated from the server's own input schemas, version 2.2.16.</p>
 </section>
 <section class="hx-section" id="case-study-generator" aria-labelledby="d-case-study-generator">
   <h3 id="d-case-study-generator">Case Study Generator</h3>

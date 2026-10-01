@@ -9,12 +9,14 @@ export function generateNewsletter(args: {
   tone?: string;
   previous_topics?: string;
 }): string {
-  const topic = args.topic;
+  // Run 18 (R18-26, P05-WS-01): topic and cta_goal are trimmed at the boundary, so the heading, the Topic and CTA Goal table rows
+  // and the subject lines never carry stray spaces or line breaks. Interior whitespace is kept exactly.
+  const topic = args.topic.trim();
   const segment = args.audience_segment || 'general';
   const type = args.newsletter_type || 'educational';
   const tone = args.tone || 'professional';
   const previousTopics = args.previous_topics ? parseListItems(args.previous_topics) : [];
-  const ctaGoal = args.cta_goal;
+  const ctaGoal = args.cta_goal.trim();
   
   // DERIVE key points from topic if not provided
   let keyPoints: string[];
@@ -176,7 +178,8 @@ ${SUGGESTION_FOOTER}
 const TRAILING_CONNECTORS = new Set(['a', 'an', 'the', 'and', 'or', 'for', 'of', 'to', 'in', 'on', 'at', 'by', 'with', 'from', 'about', 'into', 'vs', 'vs.', '&']);
 
 function shortenTopic(topic: string): string {
-  const words = topic.split(' ').slice(0, 3);
+  // Split on runs of spaces after a trim, so a stray or doubled space never makes an empty word (and a double space in the subject lines).
+  const words = topic.trim().split(/ +/).slice(0, 3);
   while (words.length > 1 && TRAILING_CONNECTORS.has(words[words.length - 1].toLowerCase())) {
     words.pop();
   }

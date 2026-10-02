@@ -1,5 +1,5 @@
-import { cap, lowerFirstIfCommon, titleWords, topicWords, SUGGESTION_FOOTER } from './utils.js';
-import { splitItems, q, readContext, isClause, type Vertical } from './sector.ts';
+import { cap, lowerFirstIfCommon, titleWords, topicWords, SUGGESTION_FOOTER, clipEcho } from './utils.js';
+import { splitItems, q, readContext, isClause, clipWords, type Vertical } from './sector.ts';
 
 export function generateThoughtLeadership(args: {
   topic: string;
@@ -24,12 +24,15 @@ export function generateThoughtLeadership(args: {
 
   // Handle missing proof points - suggest what to gather
   let proofPoints: string[];
+  let proofFull: string[] = [];
   let proofPointsNote = '';
 
   if (args.proof_points) {
-    proofPoints = splitItems(args.proof_points);
+    proofFull = splitItems(args.proof_points);
+    proofPoints = proofFull.map((p) => clipEcho(p));
   } else {
     proofPoints = generateSuggestedProofPoints(topic, articleType, ctx.v);
+    proofFull = proofPoints;
     proofPointsNote = `
 
 **NOTE:** You didn't provide proof points. The articles show a bracket prompt where each piece of proof goes.
@@ -57,7 +60,7 @@ ${proofPointsNote}
 
 ## ${args.proof_points ? 'Your' : 'Suggested'} Proof Points
 
-${proofPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
+${proofFull.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 
 ${proofPoints.length < numArticles ? `*You gave ${proofPoints.length} proof point${proofPoints.length === 1 ? '' : 's'} for ${numArticles} articles, so each article leads with a different one and some are used twice. Gather more to keep the articles apart.*\n` : `*Each article leads with a different proof point; every proof point is used.*\n`}
 ---
@@ -68,10 +71,10 @@ ${sectorBlock(ctx.v)}
   for (let i = 0; i < numArticles; i++) {
     const articleAngle = getArticleAngle(i, numArticles, articleType, topic);
     output += generateFullArticle(
-      topic,
-      yourTake,
+      clipEcho(topic, 200),
+      clipEcho(yourTake),
       proofPoints,
-      targetReader,
+      clipEcho(targetReader, 200),
       authorBackground,
       articleAngle,
       i,
@@ -90,7 +93,7 @@ ${sectorBlock(ctx.v)}
 
 Use these short posts to promote your byline articles on social media:
 
-${generatePromotionalPosts(topic, yourTake, proofPoints, numArticles, !args.proof_points)}
+${generatePromotionalPosts(clipEcho(topic, 200), clipEcho(yourTake), proofPoints, numArticles, !args.proof_points)}
 
 ---
 
@@ -173,7 +176,7 @@ function stepGuide(step: string, topic: string, reader: string, v: Vertical | nu
 // Run 19 (D80, problem 2): no headline holds an unfilled bracket. A topic that is a clause or a question ("how finance teams close
 // the month") goes before a colon, where it reads correctly; a phrase goes inside the headline.
 function getArticleAngle(index: number, total: number, articleType: string, topic: string): Angle {
-  const T = titleWords(topic);
+  const T = titleWords(clipWords(topic, 120));
   const clause = isClause(topic);
   const angles: Record<string, Angle[]> = {
     contrarian: [
@@ -330,7 +333,7 @@ function generateFullArticle(
 
 ---
 
-${generateHook(angle.hook, topic, yourTake)}
+${generateHook(angle.hook, clipEcho(topic, 200), clipEcho(yourTake))}
 
 ---
 

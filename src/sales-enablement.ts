@@ -1,4 +1,4 @@
-import { lowerFirstIfCommon, cap, SUGGESTION_FOOTER } from './utils.js';
+import { lowerFirstIfCommon, cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { splitItems, q, qs, readContext, answerFor, objectionKind, proofFor, sectorNotes, startWords, type ObjectionKind, type Vertical } from './sector.ts';
 
 // Text only (run 8): an input phrase used as a whole sentence inside a script ends with a full stop.
@@ -62,9 +62,11 @@ export function generateSalesEnablement(args: {
   sales_stage?: string;
   business_model?: string;
 }): string {
-  const product = args.product;
-  const persona = args.target_persona;
-  const proofPoints = splitItems(args.proof_points);
+  // Run 19 (B15-L1): the heading and the Quick Reference table print the product and the persona as typed; every other echo of them is cut at 280 characters.
+  const product = clipEcho(args.product);
+  const persona = clipEcho(args.target_persona);
+  const proofFull = splitItems(args.proof_points);
+  const proofPoints = proofFull.map((p) => clipEcho(p));
   const priceContext = args.price_context || 'Market rate';
   // Run 12 (R12-20): a default is shown as assumed.
   const priceShown = args.price_context || 'Market rate (assumed, not supplied)';
@@ -87,7 +89,7 @@ export function generateSalesEnablement(args: {
   // DERIVE value props from proof points if not provided
   let valueProps: string[];
   if (args.value_props) {
-    valueProps = splitItems(args.value_props);
+    valueProps = splitItems(args.value_props).map((p) => clipEcho(p));
   } else {
     valueProps = proofPoints.map(pp => deriveValuePropFromProof(pp));
   }
@@ -103,7 +105,7 @@ export function generateSalesEnablement(args: {
   const valueRows = valueProps.map((vp, i) => `| ${vp} | ${proofPoints[i % Math.max(1, proofPoints.length)] && proofPoints[i % proofPoints.length] !== vp ? proofPoints[i % proofPoints.length] : '[Add the proof you can cite for this]'} |`);
 
   let output = `# Sales Enablement Kit
-## ${product} | ${persona}
+## ${args.product} | ${args.target_persona}
 ${objectionsNote}
 ${ctx.line}
 
@@ -113,8 +115,8 @@ ${ctx.line}
 
 | Element | Detail |
 |---------|--------|
-| **Product** | ${product} |
-| **Persona** | ${persona} |
+| **Product** | ${args.product} |
+| **Persona** | ${args.target_persona} |
 | **Price Position** | ${priceShown} |
 | **Sales Stage** | ${stage.replace(/_/g, ' ')}${args.sales_stage ? '' : ' (default)'} |${!args.value_props ? `
 | **Note** | Value props taken from your proof points |` : ''}${!args.common_objections ? `
@@ -315,7 +317,7 @@ Before every ${stage.replace(/_/g, ' ')} call:
 
 ## Quick Stats to Quote
 
-${proofPoints.map(p => `- ${p}`).join('\n')}
+${proofFull.map(p => `- ${p}`).join('\n')}
 
 ---
 
@@ -350,7 +352,7 @@ function generateObjectionHandler(
 
   const kinds: Record<ObjectionKind, { ack: string; reframe: string; close: string }> = {
     price: {
-      ack: /premium|above/i.test(priceContext) ? 'I hear you: our price sits above the alternatives, so it has to earn it.' : 'I hear you: budget is always a consideration.',
+      ack: /premium|above/i.test(priceContext) ? 'Our price sits above the alternatives, so it has to earn its place.' : 'Budget is always a consideration.',
       reframe: 'What does the problem cost you today, in your own numbers?',
       close: 'Would it help to put your numbers next to the price before we talk about discounts?'
     },

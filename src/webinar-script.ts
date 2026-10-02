@@ -1,4 +1,4 @@
-import { lowerFirstIfCommon, cap, SUGGESTION_FOOTER } from './utils.js';
+import { lowerFirstIfCommon, cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { splitItems, q, readContext, startWords, audienceLine, type Vertical, type BusinessModel } from './sector.ts';
 
 type Ctx = { v: Vertical | null; model: BusinessModel | null; line: string };
@@ -16,6 +16,9 @@ export function generateWebinarScript(args: {
   business_model?: string;
 }): string {
   const topic = args.topic;
+  // Run 19 (B15-L1): the heading and the details table print the topic and the audience as typed; the script and the emails echo them cut at 200 characters.
+  const topicEcho = clipEcho(topic, 200);
+  const audienceEcho = clipEcho(args.target_audience, 200);
   const duration = args.duration || '60_min';
   const type = args.webinar_type;
   const audience = args.target_audience;
@@ -39,7 +42,7 @@ export function generateWebinarScript(args: {
   if (args.key_takeaways) {
     takeaways = splitItems(args.key_takeaways);
   } else {
-    takeaways = generateTakeawaysFromTopic(topic, type, audience, ctx.v);
+    takeaways = generateTakeawaysFromTopic(topicEcho, type, audienceEcho, ctx.v);
     takeawaysNote = '*(Suggested from the topic and type: replace with your own)*';
   }
 
@@ -100,7 +103,7 @@ ${sectorNotes(ctx)}
 
   // Generate script sections based on structure
   for (const section of structure) {
-    output += generateScriptSection(section, topic, audience, takeaways, speakers, productLevel, includePolls, product, ctx);
+    output += generateScriptSection(section, topicEcho, audienceEcho, takeaways, speakers, productLevel, includePolls, product, ctx);
   }
 
   // Add Q&A prep
@@ -126,9 +129,9 @@ For questions outside scope:
 
 ### Email 1: Same Day (Within 2 hours)
 
-**Subject:** Recording and resources from today's webinar: ${topic}
+**Subject:** Recording and resources from today's webinar: ${topicEcho}
 
-Thanks for joining us for ${q(topic)}!
+Thanks for joining us for ${q(topicEcho)}!
 
 Here's what you requested:
 - [Add the recording link]
@@ -144,7 +147,7 @@ Questions? Hit reply.
 
 ### Email 2: Day 3
 
-**Subject:** Did you catch this from our webinar? ${topic}
+**Subject:** Did you catch this from our webinar? ${topicEcho}
 
 A question from the session: [Add the most asked question]
 
@@ -156,7 +159,7 @@ Here's the quick answer: [Add a brief response]
 
 ### Email 3: Day 7
 
-**Subject:** Next steps on ${topic}
+**Subject:** Next steps on ${topicEcho}
 
 It's been a week since our webinar. By now you've probably watched the recording (or at least meant to) and thought about what we discussed, and you probably have a few questions.
 
@@ -592,23 +595,24 @@ function speakerPrompt(name: string, topic: string, audience: string, takeaways:
   const v = ctx.v;
   const w = startWords(ctx.model);
   const nth = (i: number, word: string) => takeaways[i] ? `Teach the ${word} takeaway: ${takeaways[i]}.` : `Teach the ${word} point of the session: [Add the point].`;
-  const ask = (i: number) => `Ask the panel: [Add your question ${i + 1}${takeaways[i] ? `, linked to "${takeaways[i]}"` : ''}]. Give each panelist about two minutes, then ask one follow-up.`;
+  const ask = (i: number) => `Ask the panel: [Add your question ${i + 1}${takeaways[i] ? `, linked to "${takeaways[i]}"` : ''}]${v ? `. A question in this sector's language: "${v.discovery[i % v.discovery.length]}"` : ''}. Give each panelist about two minutes, then ask one follow-up.`;
+  const others = speakers.slice(1);
+  const otherNames = others.length === 0 ? 'each panelist' : others.some((x) => x.includes(',')) ? others.join('; ') : others.join(' and ');
   const aud = q(audience);
-  const productStep = (what: string) => productLevel === 'none' ? '' : ` ${product ? `Mention ${product} in one sentence: ${what}.` : `Mention your product in one sentence: ${what}.`}`;
   const prompts: Record<string, string> = {
     'Main Content Block 2': `${nth(1, 'second')} Give one example from your own work.${v ? ` Show how this audience measures it: ${v.metrics[3] || v.metrics[1]}.` : ''} Then check the chat for questions.`,
     'Main Content Block 3': `${nth(2, 'third')} ${v ? `Answer the objection this audience raises most: "${v.objections[0].objection}". ${v.objections[0].response}` : 'Give one example from your own work'} Then check the chat for questions.`,
     'Summary & Key Takeaways': 'Recap each takeaway in one sentence, then name the one step to take first.',
     'Welcome & Agenda': `Welcome everyone to ${q(topic)}, say that the session is recorded (only if it is), and show the agenda.`,
     'Problem Context': `Describe the problem this audience faces: ${aud}. Topic: ${q(topic)}. [Add one example you have seen]`,
-    'Product Overview': `Show the product on one screen and say what it does for this audience in one sentence: [Add your sentence].${productStep('what it does')}`,
+    'Product Overview': `Show ${productLevel === 'none' ? 'the product' : (product || 'your product')} on one screen and say what it does for this audience in one sentence: [Add your sentence].`,
     'Feature Demo 1': 'Demo the core feature: start from the problem it solves, show it working end to end, then pause for questions.',
     'Feature Demo 2': 'Demo the feature that sets you apart: [Add the feature]. Show the result, not the settings.',
     'Feature Demo 3': 'Demo one advanced use: [Add the feature]. Keep it short and say who it is for.',
     'Use Case Examples': 'Walk through [Add one or two customer examples you can name, with their permission].',
-    'Pricing & Getting Started': `Explain how to start: ${startingStep(ctx.model)} and the first step after the session. Plan for the ${w.rollout} and say how long it usually takes to reach ${w.value}, only with a figure you can stand behind.`,
+    'Pricing & Getting Started': `Explain how to start: ${startingStep(ctx.model)} and the first step after the session. Plan for the ${w.rollout} and say how long it usually takes to ${w.reach}, only with a figure you can stand behind.`,
     'Special Offer & Close': '[Only if you have one: the offer and when it ends]. Thank everyone and give the one next step.',
-    'Welcome & Introductions': `Welcome everyone to ${q(topic)}, then ask ${speakers.length > 1 ? speakers.slice(1).join(' and ') : 'each panelist'} to introduce themselves in two sentences.`,
+    'Welcome & Introductions': `Welcome everyone to ${q(topic)}, then ask ${otherNames} to introduce themselves in two sentences.`,
     'Topic Introduction': `Frame the discussion: why ${q(topic)} matters to this audience now (${aud}), in two or three sentences.`,
     'Discussion Question 1': ask(0),
     'Discussion Question 2': ask(1),

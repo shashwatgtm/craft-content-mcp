@@ -1,4 +1,4 @@
-import { cap, aOrAn, SUGGESTION_FOOTER } from './utils.js';
+import { cap, aOrAn, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { readContext, startWords, type Vertical, type BusinessModel } from './sector.ts';
 
 export function generateTestimonialCapture(args: {
@@ -19,7 +19,9 @@ export function generateTestimonialCapture(args: {
   // Run 12 (R12-20): defaults are marked as assumed in the profile table.
   const roleShown = args.customer_role || '[not supplied]';
   const context = args.relationship_context || 'not supplied';
-  const story = args.success_story.trim();
+  const storyFull = args.success_story.trim();
+  // Run 19 (B15-L1): the Success Story Summary prints the story as typed; the emails and the quote drafts echo it cut at 280 characters.
+  const story = clipEcho(storyFull);
   const type = args.testimonial_type;
   const useCase = args.use_case || 'marketing materials (assumed, not supplied)';
   const incentive = args.incentive || '';
@@ -53,7 +55,7 @@ ${ctx.line}
 
 ## Success Story Summary
 
-${story}
+${storyFull}
 
 ---
 
@@ -340,7 +342,7 @@ function roleBlock(role: string | undefined): string {
   return `### Questions for ${aOrAn(role)} ${role}\n\n${qs.map((x, i) => `${i + 1}. ${x}`).join('\n')}\n`;
 }
 
-function generateInterviewQuestions(type: string, P: string, company: string, role: string | undefined, v: Vertical | null, model: BusinessModel | null, w: { rollout: string; value: string }): string {
+function generateInterviewQuestions(type: string, P: string, company: string, role: string | undefined, v: Vertical | null, model: BusinessModel | null, w: { rollout: string; value: string; reach: string }): string {
   const learning = !model || model === 'saas' || model === 'hardware_software' ? "What's the learning curve like?" : 'What did your team have to change in how it works?';
   const baseQuestions = `
 ### Warm-Up
@@ -357,7 +359,7 @@ function generateInterviewQuestions(type: string, P: string, company: string, ro
 7. How did you first hear about ${P}?
 8. What made you choose ${P} over alternatives?
 9. What was the ${w.rollout} like?
-10. How long did it take to reach ${w.value}?
+10. How long did it take to ${w.reach}?
 
 ### Results
 11. What specific results have you seen?

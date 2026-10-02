@@ -441,3 +441,24 @@ for (const [tool, args, names, sector] of CASES) {
     shared(r.text, { names, sector, saas: !/IT Services|Branchwire/.test(JSON.stringify(args)), label: tool });
   });
 }
+
+// ---- ledger B15-L1: a long pasted text cannot make an answer many times its size (repeats are cut at 200 to 280 characters) ----
+test("B15-L1: a 3,990-character text in one field gives an answer under 6 times the input plus 20,000 characters, in every tool", async () => {
+  const L = "a long pasted sentence about field sales ".repeat(95).slice(0, 3990);
+  const cases = {
+    case_study_generator: { customer_name: "Example Food Delivery Co", your_product: "Answerloop", mode: "full", challenge: L, solution: L, results: L },
+    newsletter_builder: { topic: L, cta_goal: "book a call" },
+    webinar_script: { topic: L, target_audience: L, webinar_type: "educational" },
+    content_repurposer: { source_content: L, source_type: "blog_post" },
+    thought_leadership_series: { topic: L, your_take: L, target_reader: L },
+    testimonial_capture: { customer_name: "Sam Example (fictional)", customer_company: "Example Food Delivery Co", success_story: L, testimonial_type: "video_interview" },
+    sales_enablement_content: { product: L, target_persona: L, proof_points: L },
+    craft_content_improver: { content: L, content_type: "blog_post" },
+  };
+  for (const [tool, args] of Object.entries(cases)) {
+    const total = Object.values(args).filter((v) => v === L).length * L.length;
+    const r = await call(tool, args);
+    assert.equal(r.isError, false, tool);
+    assert.ok(r.text.length < 6 * total + 20000, `${tool}: ${r.text.length} characters for ${total} typed`);
+  }
+});

@@ -1,4 +1,4 @@
-import { generateHook, lowerFirstIfCommon, cap, SUGGESTION_FOOTER } from './utils.js';
+import { generateHook, lowerFirstIfCommon, cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { splitItems, readContext, audienceLine, isClause, type Vertical } from './sector.ts';
 
 export function generateNewsletter(args: {
@@ -20,6 +20,8 @@ export function generateNewsletter(args: {
   const previousTopics = args.previous_topics ? splitItems(args.previous_topics) : [];
   const ctaGoal = args.cta_goal.trim();
   const product = (args.your_product || '').trim();
+  // Run 19 (B15-L1): the heading and the Topic row print the topic as typed; every other echo of it is cut at 200 characters.
+  const topicEcho = clipEcho(topic, 200);
   // Run 19 (D80, problems 4 and 8): the sector is read from every text the user gave.
   const ctx = readContext(undefined, [topic, args.key_points, args.previous_topics, product], [args.cta_goal]);
 
@@ -29,7 +31,7 @@ export function generateNewsletter(args: {
   if (args.key_points) {
     keyPoints = splitItems(args.key_points);
   } else {
-    keyPoints = generateKeyPointsFromTopic(topic, type, segment, ctx.v);
+    keyPoints = generateKeyPointsFromTopic(topicEcho, type, segment, ctx.v);
     keyPointsNote = '*(Suggested from the topic: replace with your own)*';
   }
 
@@ -38,10 +40,10 @@ export function generateNewsletter(args: {
 
   // Generate hooks
   const hooks = [
-    generateHook(topic, 'question'),
-    generateHook(topic, 'statistic'),
-    generateHook(topic, 'story'),
-    generateHook(topic, 'bold_statement')
+    generateHook(topicEcho, 'question'),
+    generateHook(topicEcho, 'statistic'),
+    generateHook(topicEcho, 'story'),
+    generateHook(topicEcho, 'bold_statement')
   ];
 
   // Segment-specific adjustments
@@ -93,19 +95,19 @@ ${ctx.line}
 ${topic.length > TOPIC_FULL ? `\n*Your topic is ${topic.length} characters, too long for a subject line, so the subject lines show a placeholder: replace it with a label of a few words. The full topic is used in the hooks.*\n` : ''}
 ### Option A: Curiosity-Driven
 **${subjectLines[0]}**${subjectLineLabel(type, 0)}
-- Preview text: ${generatePreviewText(0, topic)}
+- Preview text: ${generatePreviewText(0, topicEcho)}
 
 ### Option B: Benefit-Focused
 **${subjectLines[1]}**${subjectLineLabel(type, 1)}
-- Preview text: ${generatePreviewText(1, topic)}
+- Preview text: ${generatePreviewText(1, topicEcho)}
 
 ### Option C: Number/List Style
 **${subjectLines[2]}**${subjectLineLabel(type, 2)}
-- Preview text: ${generatePreviewText(2, topic)}
+- Preview text: ${generatePreviewText(2, topicEcho)}
 
 ### Option D: Personal/Direct
 **${subjectLines[3]}**${subjectLineLabel(type, 3)}
-- Preview text: ${generatePreviewText(3, topic)}
+- Preview text: ${generatePreviewText(3, topicEcho)}
 
 ---
 
@@ -133,7 +135,7 @@ ${topic.length > TOPIC_FULL ? `\n*Your topic is ${topic.length} characters, too 
 
 **Subject:** ${subjectLines[0]}
 
-**Preview:** ${generatePreviewText(0, topic)}
+**Preview:** ${generatePreviewText(0, topicEcho)}
 
 ---
 
@@ -152,9 +154,9 @@ ${previousTopics.length > 0 ? `
 Your recent topics: ${previousTopics.join('; ')}
 
 **Thread this together:**
-- Reference: "Last week we talked about ${lowerFirstIfCommon(previousTopics[0])}. This week, let's go deeper into ${lowerFirstIfCommon(topic)}..."
-- Callback: "Remember our issue on ${lowerFirstIfCommon(previousTopics[0])}? Here is how it connects to ${lowerFirstIfCommon(topic)}..."
-- Series (only if these issues form a series): "This continues our run on ${lowerFirstIfCommon(topic)}..."
+- Reference: "Last week we talked about ${lowerFirstIfCommon(previousTopics[0])}. This week, let's go deeper into ${lowerFirstIfCommon(topicEcho)}..."
+- Callback: "Remember our issue on ${lowerFirstIfCommon(previousTopics[0])}? Here is how it connects to ${lowerFirstIfCommon(topicEcho)}..."
+- Series (only if these issues form a series): "This continues our run on ${lowerFirstIfCommon(topicEcho)}..."
 ${previousTopics.length > 1 ? `- Other recent issues to link to: ${previousTopics.slice(1).join('; ')}\n` : ''}
 ---` : ''}
 

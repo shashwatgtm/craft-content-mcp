@@ -135,16 +135,16 @@ export function proofFor(kind: ObjectionKind, proofs: string[], used: Set<string
 }
 
 // Words that name how a business starts a customer, by business model (so no answer says "implementation" or "time to value" to a network or a service desk).
-export function startWords(model: BusinessModel | null): { rollout: string; value: string; unit: string } {
+export function startWords(model: BusinessModel | null): { rollout: string; value: string; reach: string; unit: string } {
   switch (model) {
-    case 'services': return { rollout: 'transition', value: 'time to a steady state', unit: 'service' };
-    case 'connectivity': return { rollout: 'migration and cut-over', value: 'time to a stable site', unit: 'site' };
-    case 'investment': return { rollout: 'onboarding of the mandate', value: 'time to the first report', unit: 'mandate' };
-    case 'transactions': return { rollout: 'integration', value: 'time to the first live transaction', unit: 'integration' };
-    case 'marketplace': return { rollout: 'onboarding', value: 'time to the first transaction', unit: 'listing' };
-    case 'hardware_software': return { rollout: 'installation and rollout', value: 'time to go-live', unit: 'site' };
-    case 'saas': return { rollout: 'implementation', value: 'time to value', unit: 'account' };
-    default: return { rollout: 'rollout', value: 'time to first results', unit: 'customer' };
+    case 'services': return { rollout: 'transition', value: 'time to a steady state', reach: 'reach a steady state', unit: 'service' };
+    case 'connectivity': return { rollout: 'migration and cut-over', value: 'time to a stable site', reach: 'get a site stable', unit: 'site' };
+    case 'investment': return { rollout: 'onboarding of the mandate', value: 'time to the first report', reach: 'receive the first report', unit: 'mandate' };
+    case 'transactions': return { rollout: 'integration', value: 'time to the first live transaction', reach: 'process the first live transaction', unit: 'integration' };
+    case 'marketplace': return { rollout: 'onboarding', value: 'time to the first transaction', reach: 'make the first transaction', unit: 'listing' };
+    case 'hardware_software': return { rollout: 'installation and rollout', value: 'time to go-live', reach: 'go live', unit: 'site' };
+    case 'saas': return { rollout: 'implementation', value: 'time to value', reach: 'see value', unit: 'account' };
+    default: return { rollout: 'rollout', value: 'time to first results', reach: 'see first results', unit: 'customer' };
   }
 }
 

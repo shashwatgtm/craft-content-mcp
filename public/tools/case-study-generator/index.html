@@ -22,7 +22,7 @@
 <meta name="twitter:description" content="Turn a customer story into a case study from the company name, your product, and the challenge, solution and results. Free, no sign-in.">
 <meta name="twitter:image" content="https://craft-content.gtmhelix.com/og.png">
 <meta name="twitter:creator" content="@Shashwat_Ghosh">
-<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/Archivo-latin-1.woff2?v=8f704806db" as="font" type="font/woff2" crossorigin>
@@ -211,7 +211,7 @@
    "@type": "WebApplication",
    "@id": "https://craft-content.gtmhelix.com/tools/case-study-generator/#app",
    "name": "Case Study Generator (CRAFT Content)",
-   "description": "Generate case studies with DISCOVERY MODE. If you have the full story, get a complete case study. If not, get interview questions to gather the story first.",
+   "description": "Build a customer case study from the challenge, solution and results you give (mode full), or an interview kit to collect them (mode discovery). Every result you list is kept, sector notes and questions are added when the sector can be read from your text, and a bracket marks anything you did not give.",
    "url": "https://craft-content.gtmhelix.com/tools/case-study-generator/",
    "applicationCategory": "BusinessApplication",
    "browserRequirements": "Any modern browser; works without JavaScript",
@@ -280,16 +280,17 @@
 
 <div class="hx-body">
 <section class="hx-section hx-run-sec" id="run" aria-label="Run Case Study Generator">
-  <div class="win hx-form-win"><div class="win-bar"><span class="t">Run Case Study Generator</span><span class="wb" aria-hidden="true"><i></i><i></i></span></div><form class="hx-form" method="post" action="/api/tools/case_study_generator" data-tool="case_study_generator" data-title="Case Study Generator"><p class="hx-help">You need: Customer name, Your product. You can add: Customer industry, Mode, Interview notes, Challenge, Solution, Results, Customer quote.</p>
+  <div class="win hx-form-win"><div class="win-bar"><span class="t">Run Case Study Generator</span><span class="wb" aria-hidden="true"><i></i><i></i></span></div><form class="hx-form" method="post" action="/api/tools/case_study_generator" data-tool="case_study_generator" data-title="Case Study Generator"><p class="hx-help">You need: Customer name, Your product. You can add: Customer industry, Mode, Interview notes, Challenge, Solution, Results, Customer quote, Business model.</p>
 <div class="hx-field"><label for="f-customer_name">Customer name <span class="hx-req" aria-hidden="true">*</span></label><input id="f-customer_name" name="customer_name" type="text" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-customer_name-help"><p class="hx-help" id="f-customer_name-help">Customer/company name</p></div>
 <div class="hx-field"><label for="f-customer_industry">Customer industry <span class="hx-opt">(optional)</span></label><input id="f-customer_industry" name="customer_industry" type="text" maxlength="6000" data-kind="string" aria-describedby="f-customer_industry-help"><p class="hx-help" id="f-customer_industry-help">Customer&#x27;s industry for context</p></div>
 <div class="hx-field"><label for="f-mode">Mode <span class="hx-opt">(optional)</span></label><select id="f-mode" name="mode" data-kind="string" aria-describedby="f-mode-help"><option value="">Not specified</option><option value="full">Full</option><option value="discovery">Discovery</option></select><p class="hx-help" id="f-mode-help">full = generate case study (requires challenge/solution/results), discovery = generate interview questions to gather story</p></div>
-<div class="hx-field"><label for="f-interview_notes">Interview notes <span class="hx-opt">(optional)</span></label><textarea id="f-interview_notes" name="interview_notes" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-interview_notes-help f-interview_notes-limit"></textarea><p class="hx-help" id="f-interview_notes-help">Optional: Raw interview notes or transcript. Parsed into a case study when mode is &#x27;full&#x27;</p><p class="hx-help" id="f-interview_notes-limit">Up to 6,000 characters in this form. For a longer document, use CRAFT Content in Claude, which takes up to 100,000.</p></div>
+<div class="hx-field"><label for="f-interview_notes">Interview notes <span class="hx-opt">(optional)</span></label><textarea id="f-interview_notes" name="interview_notes" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-interview_notes-help f-interview_notes-limit"></textarea><p class="hx-help" id="f-interview_notes-help">Optional: Raw interview notes or transcript. Used for a missing challenge, solution or results when mode is &#x27;full&#x27;; named as not used when you gave all three</p><p class="hx-help" id="f-interview_notes-limit">Up to 6,000 characters in this form. For a longer document, use CRAFT Content in Claude, which takes up to 100,000.</p></div>
 <div class="hx-field"><label for="f-challenge">Challenge <span class="hx-opt">(optional)</span></label><textarea id="f-challenge" name="challenge" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-challenge-help"></textarea><p class="hx-help" id="f-challenge-help">The customer&#x27;s challenge/problem (required for full mode)</p></div>
 <div class="hx-field"><label for="f-solution">Solution <span class="hx-opt">(optional)</span></label><textarea id="f-solution" name="solution" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-solution-help"></textarea><p class="hx-help" id="f-solution-help">How your product solved it (required for full mode)</p></div>
-<div class="hx-field"><label for="f-results">Results <span class="hx-opt">(optional)</span></label><textarea id="f-results" name="results" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-results-help"></textarea><p class="hx-help" id="f-results-help">Quantifiable outcomes (required for full mode)</p></div>
+<div class="hx-field"><label for="f-results">Results <span class="hx-opt">(optional)</span></label><textarea id="f-results" name="results" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-results-help"></textarea><p class="hx-help" id="f-results-help">Quantifiable outcomes, one per line or per semicolon (required for full mode)</p></div>
 <div class="hx-field"><label for="f-customer_quote">Customer quote <span class="hx-opt">(optional)</span></label><textarea id="f-customer_quote" name="customer_quote" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-customer_quote-help"></textarea><p class="hx-help" id="f-customer_quote-help">Optional: Direct quote from customer</p></div>
 <div class="hx-field"><label for="f-your_product">Your product <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-your_product" name="your_product" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-your_product-help"></textarea><p class="hx-help" id="f-your_product-help">Your product/service name</p></div>
+<div class="hx-field"><label for="f-business_model">Business model <span class="hx-opt">(optional)</span></label><select id="f-business_model" name="business_model" data-kind="string" aria-describedby="f-business_model-help"><option value="">Not specified</option><option value="saas">SaaS</option><option value="services">Services</option><option value="connectivity">Connectivity</option><option value="transactions">Transactions</option><option value="marketplace">Marketplace</option><option value="hardware_software">Hardware software</option><option value="investment">Investment</option></select><p class="hx-help" id="f-business_model-help">Optional: how you charge, so the advice fits it. If omitted, it is read from your text and the answer says how.</p></div>
     <div class="hx-hp" aria-hidden="true"><label for="hp-case_study_generator">Leave this empty</label><input id="hp-case_study_generator" name="leave_this_empty" type="text" tabindex="-1" autocomplete="off"></div>
     <div class="hx-actions">
       <button type="submit" class="hx-btn">Run Case Study Generator</button>
@@ -319,7 +320,7 @@
 
 <section class="hx-section" aria-labelledby="ex-h">
   <h2 id="ex-h">Example answer</h2>
-  <p class="hx-prose">From version 2.2.15 of this tool, with the inputs behind <em>Fill in an example</em>. Your own inputs give a different result.</p>
+  <p class="hx-prose">From version 2.2.17 of this tool, with the inputs behind <em>Fill in an example</em>. Your own inputs give a different result.</p>
   <article class="hxr hxr-example" aria-labelledby="ex-t">
     <header class="hxr-head">
       <p class="hxr-tag">CRAFT Content report</p>
@@ -328,52 +329,56 @@
     </header>
     <div class="hxr-actions"><button type="button" class="hx-btn hx-btn-ghost" data-print>Print or save as PDF</button></div>
     <details class="hx-run"><summary>Show the full result</summary><div class="hxr-body hx-result-body hx-output"><h4 class="hxr-h2">Case Study: Example Food Delivery Co</h4>
-<h5 class="hxr-h3">45% of tickets resolved without a human in 60 days; first response time down from 6 hours to 2 minutes with Answerloop</h5>
+<h5 class="hxr-h3">Example Food Delivery Co and Answerloop: 45% of tickets resolved without a human in 60 days</h5>
+<p><em>Sector: not clear from your inputs (name the industry for sector notes). Business model: not clear from your inputs; set Business model (saas, services, connectivity, transactions, marketplace, Hardware software or investment) for advice that fits it.</em></p>
 <hr>
 <h6 class="hxr-h4">About Example Food Delivery Co</h6>
 <p><strong>Industry:</strong> Food delivery</p>
-<p><strong>Challenge:</strong> A ticket backlog growing faster than the support team could...</p>
+<p><strong>Challenge:</strong> A ticket backlog growing faster than the support team could hire</p>
 <p><strong>Solution:</strong> Answerloop</p>
-<p><strong>Key Result:</strong> 45% of tickets resolved without a human in 60 days; first response time down from 6 hours to 2 minutes</p>
+<p><strong>Key Result:</strong> 45% of tickets resolved without a human in 60 days</p>
 <hr>
 <h5 class="hxr-h3">The Challenge</h5>
 <p>A ticket backlog growing faster than the support team could hire</p>
-<p>[What the problem cost them, in their words]</p>
+<p>[Add what the problem cost them, in their words]</p>
 <hr>
 <h5 class="hxr-h3">The Solution</h5>
 <p>AI agents that resolve refund and order-status tickets inside the help desk, with human approval for refunds</p>
 <h6 class="hxr-h4">Why Example Food Delivery Co Chose Answerloop</h6>
-<p>[Why they chose you, in their words]</p>
-<h6 class="hxr-h4">Implementation</h6>
-<p>[How the rollout went, in their words]</p>
+<p>[Add why they chose Answerloop, in their words]</p>
+<h6 class="hxr-h4">Rollout</h6>
+<p>[Add how the rollout went, in their words]</p>
 <hr>
 <h5 class="hxr-h3">The Results</h5>
-<h6 class="hxr-h4">1. 45% of tickets resolved without a human in 60 days; first response time down from 6 hours to 2 minutes</h6>
-<p>[What this result changed for them, in their words]</p>
+<h6 class="hxr-h4">1. 45% of tickets resolved without a human in 60 days</h6>
+<p>[Add what this result changed for them, in their words]</p>
+<h6 class="hxr-h4">2. First response time down from 6 hours to 2 minutes</h6>
+<p>[Add what this result changed for them, in their words]</p>
 <hr>
 <h5 class="hxr-h3">Key Takeaways</h5>
 <ol>
-<li value="1"><strong>Challenge:</strong> A ticket backlog growing faster than the support team could...</li>
+<li value="1"><strong>Challenge:</strong> A ticket backlog growing faster than the support team could hire</li>
 <li value="2"><strong>Solution:</strong> AI agents that resolve refund and order-status tickets inside the help desk, with human approval for refunds</li>
-<li value="3"><strong>Impact:</strong> 45% of tickets resolved without a human in 60 days; first response time down from 6 hours to 2 minutes</li>
+<li value="3"><strong>Impact:</strong> 45% of tickets resolved without a human in 60 days; First response time down from 6 hours to 2 minutes</li>
 </ol>
 <hr>
 <h5 class="hxr-h3">Ready to Achieve Similar Results?</h5>
-<p>[CTA: Schedule a demo / Get started / Talk to sales]</p>
+<p>[CTA: say what the reader should do next, for example book a call or read a related story]</p>
 <hr>
 <h5 class="hxr-h3">Distribution Formats</h5>
 <h6 class="hxr-h4">One-Line Version (for testimonial pages):</h6>
-<p>"Example Food Delivery Co: 45% of tickets resolved without a human in 60 days; first response time down from 6 hours to 2 minutes after implementing Answerloop."</p>
+<p>"Example Food Delivery Co with Answerloop: 45% of tickets resolved without a human in 60 days."</p>
 <h6 class="hxr-h4">Social Media Version:</h6>
-<p>Example Food Delivery Co was struggling with a ticket backlog growing faster than the support team could....</p>
-<p>Then they implemented Answerloop.</p>
-<p>The results?</p>
+<p>Challenge at Example Food Delivery Co: A ticket backlog growing faster than the support team could hire.</p>
+<p>What changed with Answerloop: AI agents that resolve refund and order-status tickets inside the help desk, with human approval for refunds.</p>
+<p>Results:</p>
 <ul>
-<li>45% of tickets resolved without a human in 60 days; first response time down from 6 hours to 2 minutes</li>
+<li>45% of tickets resolved without a human in 60 days</li>
+<li>First response time down from 6 hours to 2 minutes</li>
 </ul>
-<p>Read the full story: [link]</p>
+<p>Read the full story: [Add the link]</p>
 <h6 class="hxr-h4">Email Snippet:</h6>
-<p>Quick success story: Example Food Delivery Co (Food delivery) faced a ticket backlog growing faster than the support team could.... After implementing Answerloop, they saw 45% of tickets resolved without a human in 60 days; first response time down from 6 hours to 2 minutes. [Read the full story →]</p></div></details>
+<p>Quick success story: Example Food Delivery Co (Food delivery). Challenge: A ticket backlog growing faster than the support team could hire. Result: 45% of tickets resolved without a human in 60 days; First response time down from 6 hours to 2 minutes. [Add the link to the full story]</p></div></details>
     <footer class="hxr-foot"><span>Built by Shashwat Ghosh</span><span>https://craft-content.gtmhelix.com/tools/case-study-generator/</span></footer>
   </article>
   

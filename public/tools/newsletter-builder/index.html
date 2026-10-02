@@ -22,7 +22,7 @@
 <meta name="twitter:description" content="Build a newsletter with subject lines to test from a topic and the action you want readers to take. Free in a browser or Claude, with no sign-in.">
 <meta name="twitter:image" content="https://craft-content.gtmhelix.com/og.png">
 <meta name="twitter:creator" content="@Shashwat_Ghosh">
-<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/Archivo-latin-1.woff2?v=8f704806db" as="font" type="font/woff2" crossorigin>
@@ -211,7 +211,7 @@
    "@type": "WebApplication",
    "@id": "https://craft-content.gtmhelix.com/tools/newsletter-builder/#app",
    "name": "Newsletter Builder (CRAFT Content)",
-   "description": "Build newsletter content. Just have a topic? We'll suggest key points. Have key points? We'll craft the content.",
+   "description": "Build a newsletter draft: subject lines that use your full topic, hooks, key points, your own call to action as the button, and sector notes. Without key points it suggests five from the topic and sector. Statistics and stories are bracket prompts, never invented.",
    "url": "https://craft-content.gtmhelix.com/tools/newsletter-builder/",
    "applicationCategory": "BusinessApplication",
    "browserRequirements": "Any modern browser; works without JavaScript",
@@ -280,14 +280,15 @@
 
 <div class="hx-body">
 <section class="hx-section hx-run-sec" id="run" aria-label="Run Newsletter Builder">
-  <div class="win hx-form-win"><div class="win-bar"><span class="t">Run Newsletter Builder</span><span class="wb" aria-hidden="true"><i></i><i></i></span></div><form class="hx-form" method="post" action="/api/tools/newsletter_builder" data-tool="newsletter_builder" data-title="Newsletter Builder"><p class="hx-help">You need: Topic, CTA goal. You can add: Key points, Audience segment, Newsletter type, Tone, Previous topics.</p>
+  <div class="win hx-form-win"><div class="win-bar"><span class="t">Run Newsletter Builder</span><span class="wb" aria-hidden="true"><i></i><i></i></span></div><form class="hx-form" method="post" action="/api/tools/newsletter_builder" data-tool="newsletter_builder" data-title="Newsletter Builder"><p class="hx-help">You need: Topic, CTA goal. You can add: Key points, Audience segment, Newsletter type, Tone, Previous topics, Your product.</p>
 <div class="hx-field"><label for="f-topic">Topic <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-topic" name="topic" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-topic-help"></textarea><p class="hx-help" id="f-topic-help">Main topic/theme of the newsletter</p></div>
-<div class="hx-field"><label for="f-key_points">Key points <span class="hx-opt">(optional)</span></label><textarea id="f-key_points" name="key_points" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-key_points-help"></textarea><p class="hx-help" id="f-key_points-help">OPTIONAL: Key points to cover (comma-separated). If not provided, the tool suggests 5 points based on the topic and newsletter type</p></div>
-<div class="hx-field"><label for="f-cta_goal">CTA goal <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-cta_goal" name="cta_goal" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-cta_goal-help"></textarea><p class="hx-help" id="f-cta_goal-help">What action should readers take? (e.g., &#x27;sign up for webinar&#x27;, &#x27;try feature&#x27;, &#x27;read blog&#x27;)</p></div>
+<div class="hx-field"><label for="f-key_points">Key points <span class="hx-opt">(optional)</span></label><textarea id="f-key_points" name="key_points" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-key_points-help"></textarea><p class="hx-help" id="f-key_points-help">Optional: key points to cover, one per line, per semicolon or comma-separated. If not provided, the tool suggests 5 points based on the topic and newsletter type</p></div>
+<div class="hx-field"><label for="f-cta_goal">CTA goal <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-cta_goal" name="cta_goal" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-cta_goal-help"></textarea><p class="hx-help" id="f-cta_goal-help">What action should readers take? (e.g., &#x27;register for the webinar&#x27;, &#x27;book a 20-minute call&#x27;, &#x27;read the guide&#x27;)</p></div>
 <div class="hx-field"><label for="f-audience_segment">Audience segment <span class="hx-opt">(optional)</span></label><select id="f-audience_segment" name="audience_segment" data-kind="string" aria-describedby="f-audience_segment-help"><option value="">Not specified</option><option value="executives">Executives</option><option value="practitioners">Practitioners</option><option value="technical">Technical</option><option value="general">General</option><option value="prospects">Prospects</option><option value="customers">Customers</option></select><p class="hx-help" id="f-audience_segment-help">Audience segment affects tone and depth</p></div>
 <div class="hx-field"><label for="f-newsletter_type">Newsletter type <span class="hx-opt">(optional)</span></label><select id="f-newsletter_type" name="newsletter_type" data-kind="string" aria-describedby="f-newsletter_type-help"><option value="">Not specified</option><option value="educational">Educational</option><option value="product_update">Product update</option><option value="industry_news">Industry news</option><option value="thought_leadership">Thought leadership</option><option value="curated_links">Curated links</option></select><p class="hx-help" id="f-newsletter_type-help">Type of newsletter</p></div>
 <div class="hx-field"><label for="f-tone">Tone <span class="hx-opt">(optional)</span></label><select id="f-tone" name="tone" data-kind="string" aria-describedby="f-tone-help"><option value="">Not specified</option><option value="professional">Professional</option><option value="conversational">Conversational</option><option value="authoritative">Authoritative</option><option value="friendly">Friendly</option><option value="urgent">Urgent</option></select><p class="hx-help" id="f-tone-help">Writing tone</p></div>
 <div class="hx-field"><label for="f-previous_topics">Previous topics <span class="hx-opt">(optional)</span></label><textarea id="f-previous_topics" name="previous_topics" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-previous_topics-help"></textarea><p class="hx-help" id="f-previous_topics-help">Optional: Recent newsletter topics to avoid repetition and suggest connections</p></div>
+<div class="hx-field"><label for="f-your_product">Your product <span class="hx-opt">(optional)</span></label><textarea id="f-your_product" name="your_product" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-your_product-help"></textarea><p class="hx-help" id="f-your_product-help">Optional: your product or service name, used in the answer. Without it the answer says so and shows a placeholder.</p></div>
     <div class="hx-hp" aria-hidden="true"><label for="hp-newsletter_builder">Leave this empty</label><input id="hp-newsletter_builder" name="leave_this_empty" type="text" tabindex="-1" autocomplete="off"></div>
     <div class="hx-actions">
       <button type="submit" class="hx-btn">Run Newsletter Builder</button>
@@ -317,7 +318,7 @@
 
 <section class="hx-section" aria-labelledby="ex-h">
   <h2 id="ex-h">Example answer</h2>
-  <p class="hx-prose">From version 2.2.15 of this tool, with the inputs behind <em>Fill in an example</em>. Your own inputs give a different result.</p>
+  <p class="hx-prose">From version 2.2.17 of this tool, with the inputs behind <em>Fill in an example</em>. Your own inputs give a different result.</p>
   <article class="hxr hxr-example" aria-labelledby="ex-t">
     <header class="hxr-head">
       <p class="hxr-tag">CRAFT Content report</p>
@@ -327,61 +328,63 @@
     <div class="hxr-actions"><button type="button" class="hx-btn hx-btn-ghost" data-print>Print or save as PDF</button></div>
     <details class="hx-run"><summary>Show the full result</summary><div class="hxr-body hx-result-body hx-output"><h4 class="hxr-h2">Newsletter Builder: AI agents in customer support</h4>
 <h5 class="hxr-h3">Newsletter Configuration</h5>
-<div class="hx-table"><table><thead><tr><th>Setting</th><th>Value</th></tr></thead><tbody><tr><td><strong>Topic</strong></td><td>AI agents in customer support</td></tr><tr><td><strong>Segment</strong></td><td>practitioners</td></tr><tr><td><strong>Type</strong></td><td>educational</td></tr><tr><td><strong>Tone</strong></td><td>conversational</td></tr><tr><td><strong>CTA Goal</strong></td><td>register for our support automation webinar</td></tr></tbody></table></div>
+<div class="hx-table"><table><thead><tr><th>Setting</th><th>Value</th></tr></thead><tbody><tr><td><strong>Topic</strong></td><td>AI agents in customer support</td></tr><tr><td><strong>Product</strong></td><td>not given (add Your product to name it in the notes below)</td></tr><tr><td><strong>Segment</strong></td><td>practitioners</td></tr><tr><td><strong>Type</strong></td><td>educational</td></tr><tr><td><strong>Tone</strong></td><td>conversational</td></tr><tr><td><strong>CTA Goal</strong></td><td>register for our support automation webinar</td></tr></tbody></table></div>
 <hr>
 <h5 class="hxr-h3">Subject Lines (A/B Test These)</h5>
 <h6 class="hxr-h4">Option A: Curiosity-Driven</h6>
-<p><strong>The truth about AI agents (nobody talks about this)</strong></p>
+<p><strong>The truth about AI agents in customer support (nobody talks about this)</strong></p>
 <ul>
-<li>Preview text: Inside: [the tips readers can use today]</li>
+<li>Preview text: Plus: [Add the one thing most people get wrong about AI agents in customer support]</li>
 </ul>
-<h6 class="hxr-h4">Option B: Benefit-Focused  </h6>
-<p><strong>How to master AI agents in 2026</strong></p>
+<h6 class="hxr-h4">Option B: Benefit-Focused</h6>
+<p><strong>AI agents in customer support: what to do first, and what to skip</strong></p>
 <ul>
-<li>Preview text: Plus: [one thing you learned about AI agents in customer support]</li>
+<li>Preview text: Inside: [Add the tips readers can use today]</li>
 </ul>
 <h6 class="hxr-h4">Option C: Number/List Style</h6>
-<p><strong>5 AI agents mistakes even experts make</strong> (Example figure: replace with your own)</p>
+<p><strong>AI agents in customer support: 5 mistakes even experts make</strong> (Example figure: replace with your own)</p>
 <ul>
-<li>Preview text: Plus: [one thing you learned about AI agents in customer support]</li>
+<li>Preview text: Spoiler: [Add the answer, only if it is not what readers expect]</li>
 </ul>
 <h6 class="hxr-h4">Option D: Personal/Direct</h6>
-<p><strong>AI agents: Your complete guide</strong></p>
+<p><strong>AI agents in customer support: your complete guide</strong></p>
 <ul>
-<li>Preview text: Inside: [the tips readers can use today]</li>
+<li>Preview text: Plus: [Add one thing you learned about AI agents in customer support]</li>
 </ul>
 <hr>
 <h5 class="hxr-h3">Opening Hooks (Pick One)</h5>
 <h6 class="hxr-h4">Hook 1: Question</h6>
 <blockquote>What if everything you knew about AI agents in customer support was wrong?</blockquote>
 <h6 class="hxr-h4">Hook 2: Statistic</h6>
-<blockquote>78% of professionals struggle with AI agents in customer support (Example figure: replace with your own). Here's what the top performers do differently.</blockquote>
+<blockquote>[Add one statistic about "AI agents in customer support" with its source. Without a source, leave this hook out.]</blockquote>
 <h6 class="hxr-h4">Hook 3: Story</h6>
-<blockquote>[Story: a time AI agents in customer support went wrong for you or a customer]</blockquote>
+<blockquote>[Add a short story: a moment when "AI agents in customer support" mattered to you or to a customer]</blockquote>
 <h6 class="hxr-h4">Hook 4: Bold Statement</h6>
-<blockquote>AI agents in customer support is broken. Here's how to fix it.</blockquote>
+<blockquote>Here is what most teams get wrong about AI agents in customer support, and what to do instead.</blockquote>
 <hr>
 <h5 class="hxr-h3">Newsletter Content</h5>
 <h6 class="hxr-h4">Version: Practitioners Focus</h6>
 <hr>
-<p><strong>Subject:</strong> The truth about AI agents (nobody talks about this)</p>
-<p><strong>Preview:</strong> Plus: [one thing you learned about AI agents in customer support]</p>
+<p><strong>Subject:</strong> The truth about AI agents in customer support (nobody talks about this)</p>
+<p><strong>Preview:</strong> Plus: [Add the one thing most people get wrong about AI agents in customer support]</p>
 <hr>
 <p>What if everything you knew about AI agents in customer support was wrong?</p>
+<p><em>(Suggested from the topic: replace with your own)</em></p>
 <p><em>Writing note: Give each section one step the reader can take this week.</em></p>
-<h6 class="hxr-h4">1. Why AI agents in customer support matters now</h6>
-<p>[One fact from your market that shows why this matters now]</p>
-<h6 class="hxr-h4">2. Common mistakes with AI agents in customer support</h6>
-<p>[The two or three mistakes you see most]</p>
-<h6 class="hxr-h4">3. Step-by-step approach to AI agents in customer support</h6>
-<p>[Your steps, in order]</p>
-<h6 class="hxr-h4">4. Real examples of AI agents in customer support in action</h6>
-<p>[A real example: a customer or your own]</p>
+<h6 class="hxr-h4">1. AI agents in customer support: why it matters now</h6>
+<p>[Add one fact from your market that shows why this matters now]</p>
+<h6 class="hxr-h4">2. AI agents in customer support: the mistakes to avoid</h6>
+<p>[Add the two or three mistakes you see most]</p>
+<h6 class="hxr-h4">3. AI agents in customer support: a step-by-step approach</h6>
+<p>[Add your steps, in order]</p>
+<h6 class="hxr-h4">4. AI agents in customer support: real examples in action</h6>
+<p>[Add a real example: a customer or your own]</p>
 <h6 class="hxr-h4">5. Key takeaway and next steps</h6>
-<p>[One line to remember, and the next step]</p>
+<p>[Add one line to remember, and the next step]</p>
 <hr>
 <p><strong>Register for our support automation webinar</strong></p>
-<p>[Take action now →]</p>
+<p>[Register for our support automation webinar →]</p>
+<p>[Add the link or the reply address that does this]</p>
 <hr>
 <h5 class="hxr-h3">Content Structure Recommendation</h5>
 <p>Based on educational type and practitioners audience:</p>
@@ -392,6 +395,8 @@
 <li value="4"><strong>Summary</strong> (1 paragraph): Key takeaway</li>
 <li value="5"><strong>CTA</strong> (1 line): What to do next</li>
 </ol>
+<h5 class="hxr-h3">Sector Notes</h5>
+<p><em>Sector: not clear from your inputs (name the industry for sector notes). Business model: not clear from your inputs; set Business model (saas, services, connectivity, transactions, marketplace, Hardware software or investment) for advice that fits it.</em></p>
 <hr>
 <h5 class="hxr-h3">Pre-Send Checklist</h5>
 <ul>
@@ -415,8 +420,8 @@
 <li>They want to DO something</li>
 </ul>
 <hr>
-<h5 class="hxr-h3">Best Send Times for practitioners</h5>
-<p><strong>Tuesday-Thursday, 10-11am</strong> (mid-morning productive time) (Example figure: replace with your own)</p>
+<h5 class="hxr-h3">Send Times for practitioners</h5>
+<p>Start mid-morning on a working day, when people sit down to work. Test two send times and keep the one your own opens favour.</p>
 <hr>
 <p>Suggested timings, lengths and counts: adjust them to your own.</p></div></details>
     <footer class="hxr-foot"><span>Built by Shashwat Ghosh</span><span>https://craft-content.gtmhelix.com/tools/newsletter-builder/</span></footer>

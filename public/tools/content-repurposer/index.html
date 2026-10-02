@@ -22,7 +22,7 @@
 <meta name="twitter:description" content="Turn source content into multiple formats from the original piece and its type. Free in a browser or Claude, with no sign-in.">
 <meta name="twitter:image" content="https://craft-content.gtmhelix.com/og.png">
 <meta name="twitter:creator" content="@Shashwat_Ghosh">
-<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/Archivo-latin-1.woff2?v=8f704806db" as="font" type="font/woff2" crossorigin>
@@ -211,7 +211,7 @@
    "@type": "WebApplication",
    "@id": "https://craft-content.gtmhelix.com/tools/content-repurposer/#app",
    "name": "Content Repurposer (CRAFT Content)",
-   "description": "Transform source content into multiple formats. Just paste content: we'll generate the 5 most useful formats by default, or specify exactly what you need.",
+   "description": "Turn a source text into formats such as a LinkedIn post, an X thread, an email, a blog summary and quote cards (five by default). Key points are whole sentences chosen from your source by a stated rule and kept in its order; quote cards are never cut mid-sentence; the brand voice sets the closing line.",
    "url": "https://craft-content.gtmhelix.com/tools/content-repurposer/",
    "applicationCategory": "BusinessApplication",
    "browserRequirements": "Any modern browser; works without JavaScript",
@@ -283,7 +283,7 @@
   <div class="win hx-form-win"><div class="win-bar"><span class="t">Run Content Repurposer</span><span class="wb" aria-hidden="true"><i></i><i></i></span></div><form class="hx-form" method="post" action="/api/tools/content_repurposer" data-tool="content_repurposer" data-title="Content Repurposer"><p class="hx-help">You need: Source content, Source type. You can add: Target formats, Brand voice, Key message.</p>
 <div class="hx-field"><label for="f-source_content">Source content <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-source_content" name="source_content" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-source_content-help f-source_content-limit"></textarea><p class="hx-help" id="f-source_content-help">Original content to repurpose (blog post, article, transcript, etc.)</p><p class="hx-help" id="f-source_content-limit">Up to 6,000 characters in this form. For a longer document, use CRAFT Content in Claude, which takes up to 100,000.</p></div>
 <div class="hx-field"><label for="f-source_type">Source type <span class="hx-req" aria-hidden="true">*</span></label><select id="f-source_type" name="source_type" data-kind="string" required aria-required="true" aria-describedby="f-source_type-help"><option value="" disabled selected>Choose one</option><option value="blog_post">Blog post</option><option value="webinar_transcript">Webinar transcript</option><option value="podcast_transcript">Podcast transcript</option><option value="whitepaper">White paper</option><option value="case_study">Case study</option><option value="research_report">Research report</option><option value="presentation">Presentation</option></select><p class="hx-help" id="f-source_type-help">What type of content is the source</p></div>
-<div class="hx-field"><label for="f-target_formats">Target formats <span class="hx-opt">(optional)</span></label><textarea id="f-target_formats" name="target_formats" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-target_formats-help"></textarea><p class="hx-help" id="f-target_formats-help">OPTIONAL: Formats to generate (comma-separated). Defaults to: linkedin_post, twitter_thread, email, blog_summary, quote_cards. Other options: infographic_outline, video_script, podcast_talking_points, slide_deck_outline, newsletter_section</p></div>
+<div class="hx-field"><label for="f-target_formats">Target formats <span class="hx-opt">(optional)</span></label><textarea id="f-target_formats" name="target_formats" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-target_formats-help"></textarea><p class="hx-help" id="f-target_formats-help">Optional: formats to generate, comma-separated. Defaults to: linkedin_post, twitter_thread, email, blog_summary, quote_cards. Other options: infographic_outline, video_script, podcast_talking_points, slide_deck_outline, newsletter_section. A name outside this list is reported, not written</p></div>
 <div class="hx-field"><label for="f-brand_voice">Brand voice <span class="hx-opt">(optional)</span></label><select id="f-brand_voice" name="brand_voice" data-kind="string" aria-describedby="f-brand_voice-help"><option value="">Not specified</option><option value="professional">Professional</option><option value="casual">Casual</option><option value="authoritative">Authoritative</option><option value="friendly">Friendly</option><option value="bold">Bold</option></select><p class="hx-help" id="f-brand_voice-help">Brand voice to maintain</p></div>
 <div class="hx-field"><label for="f-key_message">Key message <span class="hx-opt">(optional)</span></label><textarea id="f-key_message" name="key_message" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-key_message-help"></textarea><p class="hx-help" id="f-key_message-help">Optional: Core message to emphasize across all formats</p></div>
     <div class="hx-hp" aria-hidden="true"><label for="hp-content_repurposer">Leave this empty</label><input id="hp-content_repurposer" name="leave_this_empty" type="text" tabindex="-1" autocomplete="off"></div>
@@ -315,7 +315,7 @@
 
 <section class="hx-section" aria-labelledby="ex-h">
   <h2 id="ex-h">Example answer</h2>
-  <p class="hx-prose">From version 2.2.15 of this tool, with the inputs behind <em>Fill in an example</em>. Your own inputs give a different result.</p>
+  <p class="hx-prose">From version 2.2.17 of this tool, with the inputs behind <em>Fill in an example</em>. Your own inputs give a different result.</p>
   <article class="hxr hxr-example" aria-labelledby="ex-t">
     <header class="hxr-head">
       <p class="hxr-tag">CRAFT Content report</p>
@@ -332,6 +332,13 @@
 <li value="2">The tickets that cost the most need an action: a refund, a reorder, an address change</li>
 <li value="3">Let the AI agent take that action inside your help desk, with a person approving anything that moves money, and measure tickets resolved, not tickets deflected</li>
 </ol>
+<p><em>Chosen as whole sentences from your source, in its order: a point scores for an opener such as First or Second, a name, a figure, a result word and the words of your key message.</em></p>
+<p><strong>Brand voice (professional):</strong> the closing question and the calls to action below are written plainly and formally; the sentences taken from your source are kept as you wrote them.</p>
+<h6 class="hxr-h4">Audience Notes</h6>
+<p><em>Sector: not clear from your inputs (name the industry for sector notes). Business model: not clear from your inputs; set Business model (saas, services, connectivity, transactions, marketplace, Hardware software or investment) for advice that fits it.</em></p>
+<ul>
+<li>Name the audience or the product category in the source to get notes in the sector's own language.</li>
+</ul>
 <hr>
 <h5 class="hxr-h3">Repurposed Content</h5>
 <h6 class="hxr-h4">LinkedIn Post</h6>
@@ -339,19 +346,18 @@
 <p>Most support automation fails because it only drafts replies</p>
 <p>Here's what stands out:</p>
 <ol>
-<li value="1">Most support automation fails because it only drafts replies</li>
-<li value="2">The tickets that cost the most need an action: a refund, a reorder, an address change</li>
-<li value="3">Let the AI agent take that action inside your help desk, with a person approving anything that moves money, and measure tickets resolved, not tickets deflected</li>
+<li value="1">The tickets that cost the most need an action: a refund, a reorder, an address change</li>
+<li value="2">Let the AI agent take that action inside your help desk, with a person approving anything that moves money, and measure tickets resolved, not tickets deflected</li>
 </ol>
 <p>Measure tickets resolved, not tickets deflected</p>
-<p>What's your take?</p>
-<p>#Automation #Support #Replies</p>
+<p>What is your view?</p>
+<p>#Deflected #Resolved #Tickets</p>
 <hr>
 <p><strong>Posting Notes:</strong></p>
 <ul>
-<li>Best time: Tuesday-Thursday, 8-10am (Example figure: replace with your own)</li>
-<li>Engage with comments in first 60 min</li>
-<li>Add 3-5 relevant hashtags (Example figure: replace with your own)</li>
+<li>Post when your own audience is online: test two slots and keep what your own data shows</li>
+<li>Engage with comments in the first hour</li>
+<li>Add a few hashtags that your readers follow</li>
 </ul>
 <h6 class="hxr-h4">Twitter/X Thread</h6>
 <hr>
@@ -365,21 +371,20 @@
 <p><strong>Tweet 4:</strong></p>
 <p>3/ Let the AI agent take that action inside your help desk, with a person approving anything that moves money, and measure tickets resolved, not tickets deflected</p>
 <p><strong>Final Tweet:</strong></p>
-<p>4/ That's the TL;DR.</p>
-<p>Full post: [link]</p>
-<p>Follow for more threads like this</p>
+<p>4/ What is your view?</p>
+<p>Full post: [Add the link]</p>
 <hr>
 <p><strong>Posting Notes:</strong></p>
 <ul>
-<li>Thread with 5-10 tweets performs best (Example figure: replace with your own)</li>
-<li>First tweet is crucial for engagement</li>
-<li>Add a "follow for more" at the end</li>
+<li>Keep the thread to the points above: one point per post</li>
+<li>The first post carries the thread: lead with the strongest line</li>
+<li>Add a closing post that points to the full piece</li>
 </ul>
 <h6 class="hxr-h4">Email Version</h6>
 <hr>
 <p><strong>Subject Line Options:</strong></p>
 <ol>
-<li value="1">Measure tickets resolved, not tickets deflected: Key insights you need to know</li>
+<li value="1">Measure tickets resolved, not tickets deflected: the key points</li>
 <li value="2">What we learned: Most support automation fails because it only drafts replies</li>
 <li value="3">[First Name], don't miss this blog post summary</li>
 </ol>
@@ -404,8 +409,8 @@
 <li>The tickets that cost the most need an action: a refund, a reorder, an address change</li>
 <li>Let the AI agent take that action inside your help desk, with a person approving anything that moves money, and measure tickets resolved, not tickets deflected</li>
 </ul>
-<p>Whether you're [audience segment 1] or [audience segment 2], these insights apply to your work.</p>
-<p><strong>The bottom line:</strong> [one sentence your readers should remember, in your words]</p>
+<p>[Add who this is for]: these insights apply to their work.</p>
+<p><strong>The bottom line:</strong> [Add one sentence your readers should remember, in your words]</p>
 <p>[Read the full version for examples, data, and implementation details →]</p>
 <hr>
 <h6 class="hxr-h4">Quote Cards (Social Graphics)</h6>
@@ -413,21 +418,21 @@
 <p><strong>Quote Card 1:</strong></p>
 <blockquote>"Most support automation fails because it only drafts replies"</blockquote>
 <ul>
-<li>Background: [Solid color or subtle pattern]</li>
+<li>Background: [Add a solid color or subtle pattern]</li>
 <li>Font: Bold, readable</li>
 <li>Branding: Logo bottom corner</li>
 </ul>
 <p><strong>Quote Card 2:</strong></p>
-<blockquote>"The tickets that cost the most need an action: a refund, a..."</blockquote>
+<blockquote>"The tickets that cost the most need an action: a refund, a reorder, an address change"</blockquote>
 <ul>
-<li>Background: [Solid color or subtle pattern]</li>
+<li>Background: [Add a solid color or subtle pattern]</li>
 <li>Font: Bold, readable</li>
 <li>Branding: Logo bottom corner</li>
 </ul>
 <p><strong>Quote Card 3:</strong></p>
-<blockquote>"Let the AI agent take that action inside your help desk, with..."</blockquote>
+<blockquote>"Let the AI agent take that action inside your help desk, with a person approving anything that moves money, and measure tickets resolved, not tickets deflected"</blockquote>
 <ul>
-<li>Background: [Solid color or subtle pattern]</li>
+<li>Background: [Add a solid color or subtle pattern]</li>
 <li>Font: Bold, readable</li>
 <li>Branding: Logo bottom corner</li>
 </ul>
@@ -435,14 +440,14 @@
 <ul>
 <li>Keep text readable on mobile</li>
 <li>Use brand colors</li>
-<li>Square format (1080x1080) for Instagram/LinkedIn (Example figure: replace with your own)</li>
+<li>Pick the image size each platform asks for</li>
 <li>Add visual hierarchy with font sizes</li>
 </ul>
 <hr>
 <hr>
 <h5 class="hxr-h3">Content Distribution Matrix</h5>
-<p>Example figures: replace with your own (the Best Time column).</p>
-<div class="hx-table"><table><thead><tr><th>Format</th><th>Platform</th><th>Best Time</th><th>Engagement Goal</th></tr></thead><tbody><tr><td>LinkedIn post</td><td>LinkedIn</td><td>Tue-Thu 8-10am</td><td>Comments, shares</td></tr><tr><td>X thread</td><td>Twitter/X</td><td>Mon-Fri 12pm</td><td>Retweets, follows</td></tr><tr><td>Email</td><td>Email list</td><td>Tue 10am</td><td>Opens, clicks</td></tr><tr><td>Blog summary</td><td>Blog</td><td>Tuesday AM</td><td>Traffic, time on page</td></tr><tr><td>Quote cards</td><td>All social</td><td>Daily</td><td>Shares, saves</td></tr></tbody></table></div>
+<p>Post each format when your own audience is online: test two slots and keep what your own data shows.</p>
+<div class="hx-table"><table><thead><tr><th>Format</th><th>Platform</th><th>Engagement Goal</th></tr></thead><tbody><tr><td>LinkedIn post</td><td>LinkedIn</td><td>Comments, shares</td></tr><tr><td>X thread</td><td>Twitter/X</td><td>Reposts, follows</td></tr><tr><td>Email</td><td>Email list</td><td>Opens, clicks</td></tr><tr><td>Blog summary</td><td>Blog</td><td>Traffic, time on page</td></tr><tr><td>Quote cards</td><td>All social</td><td>Shares, saves</td></tr></tbody></table></div>
 <hr>
 <h5 class="hxr-h3">Repurposing Checklist</h5>
 <ul>

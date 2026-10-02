@@ -22,7 +22,7 @@
 <meta name="twitter:description" content="How to call the 8 CRAFT Content tools over MCP or REST: addresses, limits, errors and every input field, from the server&#x27;s own schemas.">
 <meta name="twitter:image" content="https://craft-content.gtmhelix.com/og.png">
 <meta name="twitter:creator" content="@Shashwat_Ghosh">
-<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/Archivo-latin-1.woff2?v=8f704806db" as="font" type="font/woff2" crossorigin>
@@ -232,7 +232,7 @@
   <ul class="hx-prose">
     <li>Address: <code>https://craft-content.gtmhelix.com/mcp</code> (Streamable HTTP, stateless, JSON responses). GET returns 405 by design.</li>
     <li>Authentication: none. Every tool is marked read-only (<code>readOnlyHint: true</code>, <code>destructiveHint: false</code>) and has a title.</li>
-    <li>Rate limit: 300 requests per minute per IP address. Server: <code>craft-content-mcp</code> version 2.2.16.</li>
+    <li>Rate limit: 300 requests per minute per IP address. Server: <code>craft-content-mcp</code> version 2.2.17.</li>
     <li>Limits: 262,144 bytes per call; text fields up to 4,000 characters, except the document fields <code>interview_notes</code> (Case Study Generator), <code>source_content</code> (Content Repurposer) and <code>content</code> (CRAFT Content Improver), which take up to 100,000; one call per request (no batches). A call over a limit is refused before the tool runs.</li>
     <li>Local use: <code>npx -y @shashwatgtmalpha/craft-content-mcp</code> runs these tools over stdio (npm can lag behind this site until a new version is published).</li>
   </ul>
@@ -277,67 +277,72 @@
 <tr><td>2.2.13</td><td>30 September 2026</td><td>GitHub, commit 7ed2cde</td></tr>
 <tr><td>2.2.14</td><td>30 September 2026</td><td>GitHub, commit e097efe</td></tr>
 <tr><td>2.2.15</td><td>30 September 2026</td><td>GitHub, commit 62838d4</td></tr>
-<tr><td>2.2.16 (this site)</td><td>2 October 2026</td><td>GitHub, commit 120108c</td></tr>
+<tr><td>2.2.16</td><td>2 October 2026</td><td>GitHub, commit 804dc13</td></tr>
+<tr><td>2.2.17 (this site)</td><td>2 October 2026</td><td>GitHub, commit d65b29b</td></tr>
   </tbody></table></div>
 </section>
 
 <section class="hx-section" aria-labelledby="ref-h">
   <h2 id="ref-h">Tool reference</h2>
-  <p class="hx-sub">Generated from the server's own input schemas, version 2.2.16.</p>
+  <p class="hx-sub">Generated from the server's own input schemas, version 2.2.17.</p>
 </section>
 <section class="hx-section" id="case-study-generator" aria-labelledby="d-case-study-generator">
   <h3 id="d-case-study-generator">Case Study Generator</h3>
   <p><code>case_study_generator</code></p>
-  <p class="hx-prose">Generate case studies with DISCOVERY MODE. If you have the full story, get a complete case study. If not, get interview questions to gather the story first. <a href="/tools/case-study-generator/">Open the form</a>.</p>
+  <p class="hx-prose">Build a customer case study from the challenge, solution and results you give (mode full), or an interview kit to collect them (mode discovery). Every result you list is kept, sector notes and questions are added when the sector can be read from your text, and a bracket marks anything you did not give. <a href="/tools/case-study-generator/">Open the form</a>.</p>
   <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
 <tr><td><code>customer_name</code></td><td>string</td><td>yes</td><td></td><td>Customer/company name</td></tr>
 <tr><td><code>customer_industry</code></td><td>string</td><td>no</td><td></td><td>Customer&#x27;s industry for context</td></tr>
 <tr><td><code>mode</code></td><td>string</td><td>no</td><td>full, discovery</td><td>full = generate case study (requires challenge/solution/results), discovery = generate interview questions to gather story</td></tr>
-<tr><td><code>interview_notes</code></td><td>string</td><td>no</td><td></td><td>Optional: Raw interview notes or transcript. Parsed into a case study when mode is &#x27;full&#x27;</td></tr>
+<tr><td><code>interview_notes</code></td><td>string</td><td>no</td><td></td><td>Optional: Raw interview notes or transcript. Used for a missing challenge, solution or results when mode is &#x27;full&#x27;; named as not used when you gave all three</td></tr>
 <tr><td><code>challenge</code></td><td>string</td><td>no</td><td></td><td>The customer&#x27;s challenge/problem (required for full mode)</td></tr>
 <tr><td><code>solution</code></td><td>string</td><td>no</td><td></td><td>How your product solved it (required for full mode)</td></tr>
-<tr><td><code>results</code></td><td>string</td><td>no</td><td></td><td>Quantifiable outcomes (required for full mode)</td></tr>
+<tr><td><code>results</code></td><td>string</td><td>no</td><td></td><td>Quantifiable outcomes, one per line or per semicolon (required for full mode)</td></tr>
 <tr><td><code>customer_quote</code></td><td>string</td><td>no</td><td></td><td>Optional: Direct quote from customer</td></tr>
 <tr><td><code>your_product</code></td><td>string</td><td>yes</td><td></td><td>Your product/service name</td></tr>
+<tr><td><code>business_model</code></td><td>string</td><td>no</td><td>saas, services, connectivity, transactions, marketplace, hardware_software, investment</td><td>Optional: how you charge, so the advice fits it. If omitted, it is read from your text and the answer says how.</td></tr>
   </tbody></table></div>
 </section>
 <section class="hx-section" id="newsletter-builder" aria-labelledby="d-newsletter-builder">
   <h3 id="d-newsletter-builder">Newsletter Builder</h3>
   <p><code>newsletter_builder</code></p>
-  <p class="hx-prose">Build newsletter content. Just have a topic? We&#x27;ll suggest key points. Have key points? We&#x27;ll craft the content. <a href="/tools/newsletter-builder/">Open the form</a>.</p>
+  <p class="hx-prose">Build a newsletter draft: subject lines that use your full topic, hooks, key points, your own call to action as the button, and sector notes. Without key points it suggests five from the topic and sector. Statistics and stories are bracket prompts, never invented. <a href="/tools/newsletter-builder/">Open the form</a>.</p>
   <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
 <tr><td><code>topic</code></td><td>string</td><td>yes</td><td></td><td>Main topic/theme of the newsletter</td></tr>
-<tr><td><code>key_points</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Key points to cover (comma-separated). If not provided, the tool suggests 5 points based on the topic and newsletter type</td></tr>
-<tr><td><code>cta_goal</code></td><td>string</td><td>yes</td><td></td><td>What action should readers take? (e.g., &#x27;sign up for webinar&#x27;, &#x27;try feature&#x27;, &#x27;read blog&#x27;)</td></tr>
+<tr><td><code>key_points</code></td><td>string</td><td>no</td><td></td><td>Optional: key points to cover, one per line, per semicolon or comma-separated. If not provided, the tool suggests 5 points based on the topic and newsletter type</td></tr>
+<tr><td><code>cta_goal</code></td><td>string</td><td>yes</td><td></td><td>What action should readers take? (e.g., &#x27;register for the webinar&#x27;, &#x27;book a 20-minute call&#x27;, &#x27;read the guide&#x27;)</td></tr>
 <tr><td><code>audience_segment</code></td><td>string</td><td>no</td><td>executives, practitioners, technical, general, prospects, customers</td><td>Audience segment affects tone and depth</td></tr>
 <tr><td><code>newsletter_type</code></td><td>string</td><td>no</td><td>educational, product_update, industry_news, thought_leadership, curated_links</td><td>Type of newsletter</td></tr>
 <tr><td><code>tone</code></td><td>string</td><td>no</td><td>professional, conversational, authoritative, friendly, urgent</td><td>Writing tone</td></tr>
 <tr><td><code>previous_topics</code></td><td>string</td><td>no</td><td></td><td>Optional: Recent newsletter topics to avoid repetition and suggest connections</td></tr>
+<tr><td><code>your_product</code></td><td>string</td><td>no</td><td></td><td>Optional: your product or service name, used in the answer. Without it the answer says so and shows a placeholder.</td></tr>
   </tbody></table></div>
 </section>
 <section class="hx-section" id="webinar-script" aria-labelledby="d-webinar-script">
   <h3 id="d-webinar-script">Webinar Script</h3>
   <p><code>webinar_script</code></p>
-  <p class="hx-prose">Generate webinar scripts. Know your takeaways? Get a complete script. Still planning? We&#x27;ll suggest takeaways based on topic and type. <a href="/tools/webinar-script/">Open the form</a>.</p>
+  <p class="hx-prose">Write a webinar run of show and script for your topic, audience, type and duration: speakers as you list them, polls with answer options, content blocks with sector points, anticipated questions and follow-up emails. Without key takeaways it suggests them from the topic and type. <a href="/tools/webinar-script/">Open the form</a>.</p>
   <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
 <tr><td><code>topic</code></td><td>string</td><td>yes</td><td></td><td>Webinar topic/title</td></tr>
-<tr><td><code>target_audience</code></td><td>string</td><td>yes</td><td></td><td>Who will attend (e.g., &#x27;Marketing managers at B2B SaaS companies&#x27;)</td></tr>
+<tr><td><code>target_audience</code></td><td>string</td><td>yes</td><td></td><td>Who will attend (e.g., &#x27;Support leaders at consumer apps&#x27;)</td></tr>
 <tr><td><code>webinar_type</code></td><td>string</td><td>yes</td><td>educational, product_demo, panel_discussion, customer_story, workshop, ama</td><td>Type of webinar determines structure</td></tr>
 <tr><td><code>duration</code></td><td>string</td><td>no</td><td>30_min, 45_min, 60_min, 90_min</td><td>Webinar length</td></tr>
-<tr><td><code>key_takeaways</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: 3-5 things attendees should learn (comma-separated). If not provided, we&#x27;ll suggest based on topic</td></tr>
-<tr><td><code>speakers</code></td><td>string</td><td>no</td><td></td><td>Optional: Speaker names and titles (comma-separated)</td></tr>
+<tr><td><code>key_takeaways</code></td><td>string</td><td>no</td><td></td><td>Optional: 3-5 things attendees should learn, one per line, per semicolon or comma-separated. If not provided, they are suggested from the topic</td></tr>
+<tr><td><code>speakers</code></td><td>string</td><td>no</td><td></td><td>Optional: speakers as you want them listed. Separate speakers with semicolons or line breaks (&#x27;Name, Title; Name, Title&#x27;), or with commas if each is one phrase</td></tr>
 <tr><td><code>include_polls</code></td><td>boolean</td><td>no</td><td></td><td>Include interactive poll suggestions</td></tr>
 <tr><td><code>product_mention_level</code></td><td>string</td><td>no</td><td>none, subtle, moderate, heavy</td><td>Whether to add product tie-in placeholders to the script (&#x27;none&#x27; leaves them out)</td></tr>
+<tr><td><code>your_product</code></td><td>string</td><td>no</td><td></td><td>Optional: your product or service name, used in the answer. Without it the answer says so and shows a placeholder.</td></tr>
+<tr><td><code>business_model</code></td><td>string</td><td>no</td><td>saas, services, connectivity, transactions, marketplace, hardware_software, investment</td><td>Optional: how you charge, so the advice fits it. If omitted, it is read from your text and the answer says how.</td></tr>
   </tbody></table></div>
 </section>
 <section class="hx-section" id="content-repurposer" aria-labelledby="d-content-repurposer">
   <h3 id="d-content-repurposer">Content Repurposer</h3>
   <p><code>content_repurposer</code></p>
-  <p class="hx-prose">Transform source content into multiple formats. Just paste content: we&#x27;ll generate the 5 most useful formats by default, or specify exactly what you need. <a href="/tools/content-repurposer/">Open the form</a>.</p>
+  <p class="hx-prose">Turn a source text into formats such as a LinkedIn post, an X thread, an email, a blog summary and quote cards (five by default). Key points are whole sentences chosen from your source by a stated rule and kept in its order; quote cards are never cut mid-sentence; the brand voice sets the closing line. <a href="/tools/content-repurposer/">Open the form</a>.</p>
   <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
 <tr><td><code>source_content</code></td><td>string</td><td>yes</td><td></td><td>Original content to repurpose (blog post, article, transcript, etc.)</td></tr>
 <tr><td><code>source_type</code></td><td>string</td><td>yes</td><td>blog_post, webinar_transcript, podcast_transcript, whitepaper, case_study, research_report, presentation</td><td>What type of content is the source</td></tr>
-<tr><td><code>target_formats</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Formats to generate (comma-separated). Defaults to: linkedin_post, twitter_thread, email, blog_summary, quote_cards. Other options: infographic_outline, video_script, podcast_talking_points, slide_deck_outline, newsletter_section</td></tr>
+<tr><td><code>target_formats</code></td><td>string</td><td>no</td><td></td><td>Optional: formats to generate, comma-separated. Defaults to: linkedin_post, twitter_thread, email, blog_summary, quote_cards. Other options: infographic_outline, video_script, podcast_talking_points, slide_deck_outline, newsletter_section. A name outside this list is reported, not written</td></tr>
 <tr><td><code>brand_voice</code></td><td>string</td><td>no</td><td>professional, casual, authoritative, friendly, bold</td><td>Brand voice to maintain</td></tr>
 <tr><td><code>key_message</code></td><td>string</td><td>no</td><td></td><td>Optional: Core message to emphasize across all formats</td></tr>
   </tbody></table></div>
@@ -345,12 +350,12 @@
 <section class="hx-section" id="thought-leadership-series" aria-labelledby="d-thought-leadership-series">
   <h3 id="d-thought-leadership-series">Thought Leadership Series</h3>
   <p><code>thought_leadership_series</code></p>
-  <p class="hx-prose">Generate thought leadership article drafts (about 600 to 800 words each) from your topic, your take and your proof points. Without proof points, the drafts include suggested proof points to gather. Drafts contain placeholders to complete before publishing. <a href="/tools/thought-leadership-series/">Open the form</a>.</p>
+  <p class="hx-prose">Write outlines of thought leadership articles (600 to 800 words each once expanded) from your topic, your take (quoted as you wrote it), the reader and your proof points. Each article follows its own angle and leads with a different proof point. Without proof points it suggests evidence to gather. Brackets mark what only you can supply. <a href="/tools/thought-leadership-series/">Open the form</a>.</p>
   <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
 <tr><td><code>topic</code></td><td>string</td><td>yes</td><td></td><td>The topic you want to establish authority on</td></tr>
 <tr><td><code>your_take</code></td><td>string</td><td>yes</td><td></td><td>Your unique perspective or opinion on this topic. What do you believe that others don&#x27;t? What&#x27;s your contrarian view?</td></tr>
-<tr><td><code>target_reader</code></td><td>string</td><td>yes</td><td></td><td>Who should read this? Be specific (e.g., &#x27;B2B SaaS founders struggling with churn&#x27; not just &#x27;marketers&#x27;)</td></tr>
-<tr><td><code>proof_points</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Evidence supporting your take: personal stories, client examples, data/stats (comma-separated). If not provided, we&#x27;ll suggest proof points to gather</td></tr>
+<tr><td><code>target_reader</code></td><td>string</td><td>yes</td><td></td><td>Who should read this? Be specific (e.g., &#x27;Heads of IT at companies with many branches&#x27; not just &#x27;managers&#x27;)</td></tr>
+<tr><td><code>proof_points</code></td><td>string</td><td>no</td><td></td><td>Optional: evidence supporting your take: personal stories, client examples, data or stats, one per line, per semicolon or comma-separated. If not provided, proof points to gather are suggested</td></tr>
 <tr><td><code>author_background</code></td><td>string</td><td>no</td><td></td><td>Optional: Your role and why you&#x27;re credible (e.g., &#x27;15 years in enterprise sales&#x27;)</td></tr>
 <tr><td><code>num_articles</code></td><td>number (1 or more)</td><td>no</td><td></td><td>Number of articles to generate (1-5)</td></tr>
 <tr><td><code>article_type</code></td><td>string</td><td>no</td><td>contrarian, how_to, lessons_learned, prediction, framework</td><td>Style of articles</td></tr>
@@ -359,7 +364,7 @@
 <section class="hx-section" id="testimonial-capture" aria-labelledby="d-testimonial-capture">
   <h3 id="d-testimonial-capture">Testimonial Capture</h3>
   <p><code>testimonial_capture</code></p>
-  <p class="hx-prose">Generate testimonial request emails, interview questions, and formatted outputs. Discovery-focused by design. <a href="/tools/testimonial-capture/">Open the form</a>.</p>
+  <p class="hx-prose">Prepare a testimonial request: the request email, interview questions for the customer&#x27;s role and sector, quote drafts for the customer to edit, and a sign-off checklist. Uses your product name when you give it, and says so when you do not. <a href="/tools/testimonial-capture/">Open the form</a>.</p>
   <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
 <tr><td><code>customer_name</code></td><td>string</td><td>yes</td><td></td><td>Customer name</td></tr>
 <tr><td><code>customer_company</code></td><td>string</td><td>yes</td><td></td><td>Customer&#x27;s company</td></tr>
@@ -369,33 +374,36 @@
 <tr><td><code>testimonial_type</code></td><td>string</td><td>yes</td><td>written_quote, video_interview, case_study_interview, g2_review, reference_call</td><td>Type of testimonial needed</td></tr>
 <tr><td><code>use_case</code></td><td>string</td><td>no</td><td></td><td>Where will this testimonial be used? (website, sales deck, etc.)</td></tr>
 <tr><td><code>incentive</code></td><td>string</td><td>no</td><td></td><td>Optional: What you&#x27;re offering in return</td></tr>
+<tr><td><code>your_product</code></td><td>string</td><td>no</td><td></td><td>Optional: your product or service name, used in the answer. Without it the answer says so and shows a placeholder.</td></tr>
+<tr><td><code>business_model</code></td><td>string</td><td>no</td><td>saas, services, connectivity, transactions, marketplace, hardware_software, investment</td><td>Optional: how you charge, so the advice fits it. If omitted, it is read from your text and the answer says how.</td></tr>
   </tbody></table></div>
 </section>
 <section class="hx-section" id="sales-enablement-content" aria-labelledby="d-sales-enablement-content">
   <h3 id="d-sales-enablement-content">Sales Enablement Content</h3>
   <p><code>sales_enablement_content</code></p>
-  <p class="hx-prose">Generate sales content. Know your objections? Get complete handlers. New product with no sales data yet? We&#x27;ll suggest likely objections based on your product type. <a href="/tools/sales-enablement-content/">Open the form</a>.</p>
+  <p class="hx-prose">Build a sales kit: pitch order, a script for each objection (each answered with the sector&#x27;s pattern and the proof point that fits it), competitor responses, discovery questions and follow-up templates. Without objections it suggests the ones your sector raises. <a href="/tools/sales-enablement-content/">Open the form</a>.</p>
   <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
 <tr><td><code>product</code></td><td>string</td><td>yes</td><td></td><td>Product name and what it does</td></tr>
 <tr><td><code>target_persona</code></td><td>string</td><td>yes</td><td></td><td>Who sales is pitching to (role, company type)</td></tr>
-<tr><td><code>proof_points</code></td><td>string</td><td>yes</td><td></td><td>Evidence for claims: case studies, metrics, quotes (comma-separated)</td></tr>
-<tr><td><code>common_objections</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Sales objections you hear (comma-separated). If not provided, we&#x27;ll suggest likely objections for your product type</td></tr>
-<tr><td><code>value_props</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Key value propositions (comma-separated). Will be DERIVED from proof points if not provided</td></tr>
+<tr><td><code>proof_points</code></td><td>string</td><td>yes</td><td></td><td>Evidence for claims: case studies, metrics, quotes, one per line, per semicolon or comma-separated</td></tr>
+<tr><td><code>common_objections</code></td><td>string</td><td>no</td><td></td><td>Optional: sales objections you hear, one per line, per semicolon or comma-separated. If not provided, likely objections for your sector are suggested</td></tr>
+<tr><td><code>value_props</code></td><td>string</td><td>no</td><td></td><td>Optional: key value propositions, one per line, per semicolon or comma-separated. Taken from the proof points if not provided</td></tr>
 <tr><td><code>competitor_objections</code></td><td>string</td><td>no</td><td></td><td>Optional: &#x27;Why not [competitor]&#x27; objections</td></tr>
 <tr><td><code>price_context</code></td><td>string</td><td>no</td><td></td><td>Optional: Your pricing vs market (e.g., &#x27;Premium, 20% above market&#x27;, &#x27;Budget option&#x27;, &#x27;Mid-market&#x27;)</td></tr>
 <tr><td><code>sales_stage</code></td><td>string</td><td>no</td><td>prospecting, discovery, demo, negotiation, closing</td><td>What stage of sales funnel</td></tr>
+<tr><td><code>business_model</code></td><td>string</td><td>no</td><td>saas, services, connectivity, transactions, marketplace, hardware_software, investment</td><td>Optional: how you charge, so the advice fits it. If omitted, it is read from your text and the answer says how.</td></tr>
   </tbody></table></div>
 </section>
 <section class="hx-section" id="craft-content-improver" aria-labelledby="d-craft-content-improver">
   <h3 id="d-craft-content-improver">CRAFT Content Improver</h3>
   <p><code>craft_content_improver</code></p>
-  <p class="hx-prose">Analyze content for clarity, structure and engagement, score each area, and return suggestions, including a version with common jargon replaced and long sentences split. <a href="/tools/craft-content-improver/">Open the form</a>.</p>
+  <p class="hx-prose">Check pasted copy against listed rules (buzzwords, claims that need proof, fragments, unfilled merge fields, claims about the reader, a missing figure or ask), score each area with every deduction quoted from your text, and return the edits it made. If it finds no edit to make, it says so and prints no improved version. <a href="/tools/craft-content-improver/">Open the form</a>.</p>
   <div class="hx-table"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Allowed values</th><th>Meaning</th></tr></thead><tbody>
 <tr><td><code>content</code></td><td>string</td><td>yes</td><td></td><td>Content to analyze</td></tr>
 <tr><td><code>content_type</code></td><td>string</td><td>yes</td><td>blog_post, email, landing_page, social_post, sales_email, product_description, press_release, case_study</td><td>Type of content affects evaluation criteria</td></tr>
-<tr><td><code>goal</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: What should this content achieve? (e.g., &#x27;drive signups&#x27;, &#x27;educate readers&#x27;). If not given, a goal is chosen from the content type (for example &#x27;Get meetings booked&#x27; for a sales email)</td></tr>
-<tr><td><code>audience</code></td><td>string</td><td>no</td><td></td><td>OPTIONAL: Who is this content for? Helps tailor improvements.</td></tr>
-<tr><td><code>tone_preference</code></td><td>string</td><td>no</td><td>more_formal, more_casual, more_urgent, more_friendly, more_authoritative, keep_same</td><td>Desired tone (accepted for compatibility; it does not change the analysis)</td></tr>
+<tr><td><code>goal</code></td><td>string</td><td>no</td><td></td><td>Optional: what should this content achieve? (e.g., &#x27;book a first meeting&#x27;, &#x27;educate readers&#x27;). If not given, a goal is chosen from the content type (for example &#x27;Get meetings booked&#x27; for a sales email)</td></tr>
+<tr><td><code>audience</code></td><td>string</td><td>no</td><td></td><td>Optional: who is this content for? The check reports when the text never mentions them.</td></tr>
+<tr><td><code>tone_preference</code></td><td>string</td><td>no</td><td>more_formal, more_casual, more_urgent, more_friendly, more_authoritative, keep_same</td><td>Desired tone. Only more_formal and more_casual are checked in the text; any other value is named in the answer as not used</td></tr>
   </tbody></table></div>
 </section>
 </div>

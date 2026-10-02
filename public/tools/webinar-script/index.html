@@ -22,7 +22,7 @@
 <meta name="twitter:description" content="Script your webinar with timings from the topic, the audience and the format. Free in a browser or Claude, with no sign-in.">
 <meta name="twitter:image" content="https://craft-content.gtmhelix.com/og.png">
 <meta name="twitter:creator" content="@Shashwat_Ghosh">
-<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/Archivo-latin-1.woff2?v=8f704806db" as="font" type="font/woff2" crossorigin>
@@ -211,7 +211,7 @@
    "@type": "WebApplication",
    "@id": "https://craft-content.gtmhelix.com/tools/webinar-script/#app",
    "name": "Webinar Script (CRAFT Content)",
-   "description": "Generate webinar scripts. Know your takeaways? Get a complete script. Still planning? We'll suggest takeaways based on topic and type.",
+   "description": "Write a webinar run of show and script for your topic, audience, type and duration: speakers as you list them, polls with answer options, content blocks with sector points, anticipated questions and follow-up emails. Without key takeaways it suggests them from the topic and type.",
    "url": "https://craft-content.gtmhelix.com/tools/webinar-script/",
    "applicationCategory": "BusinessApplication",
    "browserRequirements": "Any modern browser; works without JavaScript",
@@ -280,15 +280,17 @@
 
 <div class="hx-body">
 <section class="hx-section hx-run-sec" id="run" aria-label="Run Webinar Script">
-  <div class="win hx-form-win"><div class="win-bar"><span class="t">Run Webinar Script</span><span class="wb" aria-hidden="true"><i></i><i></i></span></div><form class="hx-form" method="post" action="/api/tools/webinar_script" data-tool="webinar_script" data-title="Webinar Script"><p class="hx-help">You need: Topic, Target audience, Webinar type. You can add: Duration, Key takeaways, Speakers, Include polls, Product mention level.</p>
+  <div class="win hx-form-win"><div class="win-bar"><span class="t">Run Webinar Script</span><span class="wb" aria-hidden="true"><i></i><i></i></span></div><form class="hx-form" method="post" action="/api/tools/webinar_script" data-tool="webinar_script" data-title="Webinar Script"><p class="hx-help">You need: Topic, Target audience, Webinar type. You can add: Duration, Key takeaways, Speakers, Include polls, Product mention level, Your product, Business model.</p>
 <div class="hx-field"><label for="f-topic">Topic <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-topic" name="topic" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-topic-help"></textarea><p class="hx-help" id="f-topic-help">Webinar topic/title</p></div>
-<div class="hx-field"><label for="f-target_audience">Target audience <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-target_audience" name="target_audience" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-target_audience-help"></textarea><p class="hx-help" id="f-target_audience-help">Who will attend (e.g., &#x27;Marketing managers at B2B SaaS companies&#x27;)</p></div>
+<div class="hx-field"><label for="f-target_audience">Target audience <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-target_audience" name="target_audience" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-target_audience-help"></textarea><p class="hx-help" id="f-target_audience-help">Who will attend (e.g., &#x27;Support leaders at consumer apps&#x27;)</p></div>
 <div class="hx-field"><label for="f-webinar_type">Webinar type <span class="hx-req" aria-hidden="true">*</span></label><select id="f-webinar_type" name="webinar_type" data-kind="string" required aria-required="true" aria-describedby="f-webinar_type-help"><option value="" disabled selected>Choose one</option><option value="educational">Educational</option><option value="product_demo">Product demo</option><option value="panel_discussion">Panel discussion</option><option value="customer_story">Customer story</option><option value="workshop">Workshop</option><option value="ama">Ask me anything (AMA)</option></select><p class="hx-help" id="f-webinar_type-help">Type of webinar determines structure</p></div>
 <div class="hx-field"><label for="f-duration">Duration <span class="hx-opt">(optional)</span></label><select id="f-duration" name="duration" data-kind="string" aria-describedby="f-duration-help"><option value="">Not specified</option><option value="30_min">30 minutes</option><option value="45_min">45 minutes</option><option value="60_min">60 minutes</option><option value="90_min">90 minutes</option></select><p class="hx-help" id="f-duration-help">Webinar length</p></div>
-<div class="hx-field"><label for="f-key_takeaways">Key takeaways <span class="hx-opt">(optional)</span></label><textarea id="f-key_takeaways" name="key_takeaways" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-key_takeaways-help"></textarea><p class="hx-help" id="f-key_takeaways-help">OPTIONAL: 3-5 things attendees should learn (comma-separated). If not provided, we&#x27;ll suggest based on topic</p></div>
-<div class="hx-field"><label for="f-speakers">Speakers <span class="hx-opt">(optional)</span></label><textarea id="f-speakers" name="speakers" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-speakers-help"></textarea><p class="hx-help" id="f-speakers-help">Optional: Speaker names and titles (comma-separated)</p></div>
+<div class="hx-field"><label for="f-key_takeaways">Key takeaways <span class="hx-opt">(optional)</span></label><textarea id="f-key_takeaways" name="key_takeaways" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-key_takeaways-help"></textarea><p class="hx-help" id="f-key_takeaways-help">Optional: 3-5 things attendees should learn, one per line, per semicolon or comma-separated. If not provided, they are suggested from the topic</p></div>
+<div class="hx-field"><label for="f-speakers">Speakers <span class="hx-opt">(optional)</span></label><textarea id="f-speakers" name="speakers" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-speakers-help"></textarea><p class="hx-help" id="f-speakers-help">Optional: speakers as you want them listed. Separate speakers with semicolons or line breaks (&#x27;Name, Title; Name, Title&#x27;), or with commas if each is one phrase</p></div>
 <div class="hx-field hx-check"><input id="f-include_polls" name="include_polls" type="checkbox" value="true" data-kind="boolean" aria-describedby="f-include_polls-help"><label for="f-include_polls">Include polls <span class="hx-opt">(optional)</span></label><p class="hx-help" id="f-include_polls-help">Include interactive poll suggestions</p></div>
 <div class="hx-field"><label for="f-product_mention_level">Product mention level <span class="hx-opt">(optional)</span></label><select id="f-product_mention_level" name="product_mention_level" data-kind="string" aria-describedby="f-product_mention_level-help"><option value="">Not specified</option><option value="none">None</option><option value="subtle">Subtle</option><option value="moderate">Moderate</option><option value="heavy">Heavy</option></select><p class="hx-help" id="f-product_mention_level-help">Whether to add product tie-in placeholders to the script (&#x27;none&#x27; leaves them out)</p></div>
+<div class="hx-field"><label for="f-your_product">Your product <span class="hx-opt">(optional)</span></label><textarea id="f-your_product" name="your_product" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-your_product-help"></textarea><p class="hx-help" id="f-your_product-help">Optional: your product or service name, used in the answer. Without it the answer says so and shows a placeholder.</p></div>
+<div class="hx-field"><label for="f-business_model">Business model <span class="hx-opt">(optional)</span></label><select id="f-business_model" name="business_model" data-kind="string" aria-describedby="f-business_model-help"><option value="">Not specified</option><option value="saas">SaaS</option><option value="services">Services</option><option value="connectivity">Connectivity</option><option value="transactions">Transactions</option><option value="marketplace">Marketplace</option><option value="hardware_software">Hardware software</option><option value="investment">Investment</option></select><p class="hx-help" id="f-business_model-help">Optional: how you charge, so the advice fits it. If omitted, it is read from your text and the answer says how.</p></div>
     <div class="hx-hp" aria-hidden="true"><label for="hp-webinar_script">Leave this empty</label><input id="hp-webinar_script" name="leave_this_empty" type="text" tabindex="-1" autocomplete="off"></div>
     <div class="hx-actions">
       <button type="submit" class="hx-btn">Run Webinar Script</button>
@@ -318,7 +320,7 @@
 
 <section class="hx-section" aria-labelledby="ex-h">
   <h2 id="ex-h">Example answer</h2>
-  <p class="hx-prose">From version 2.2.15 of this tool, with the inputs behind <em>Fill in an example</em>. Your own inputs give a different result.</p>
+  <p class="hx-prose">From version 2.2.17 of this tool, with the inputs behind <em>Fill in an example</em>. Your own inputs give a different result.</p>
   <article class="hxr hxr-example" aria-labelledby="ex-t">
     <header class="hxr-head">
       <p class="hxr-tag">CRAFT Content report</p>
@@ -328,79 +330,94 @@
     <div class="hxr-actions"><button type="button" class="hx-btn hx-btn-ghost" data-print>Print or save as PDF</button></div>
     <details class="hx-run"><summary>Show the full result</summary><div class="hxr-body hx-result-body hx-output"><h4 class="hxr-h2">Webinar Script: AI agents that resolve support tickets safely</h4>
 <h5 class="hxr-h3">Webinar Details</h5>
-<div class="hx-table"><table><thead><tr><th>Setting</th><th>Value</th></tr></thead><tbody><tr><td><strong>Topic</strong></td><td>AI agents that resolve support tickets safely</td></tr><tr><td><strong>Duration</strong></td><td>45 minutes</td></tr><tr><td><strong>Type</strong></td><td>educational</td></tr><tr><td><strong>Audience</strong></td><td>Support leaders at consumer apps and SaaS companies</td></tr><tr><td><strong>Speakers</strong></td><td>[Speaker Name]</td></tr><tr><td><strong>Product Mentions</strong></td><td>subtle</td></tr><tr><td><strong>Note</strong></td><td>Key takeaways auto-suggested</td></tr></tbody></table></div>
+<div class="hx-table"><table><thead><tr><th>Setting</th><th>Value</th></tr></thead><tbody><tr><td><strong>Topic</strong></td><td>AI agents that resolve support tickets safely</td></tr><tr><td><strong>Duration</strong></td><td>45 minutes</td></tr><tr><td><strong>Type</strong></td><td>educational</td></tr><tr><td><strong>Audience</strong></td><td>Support leaders at consumer apps and SaaS companies</td></tr><tr><td><strong>Speakers</strong></td><td>[Speaker name]</td></tr><tr><td><strong>Product Mentions</strong></td><td>subtle</td></tr><tr><td><strong>Note</strong></td><td>Key takeaways auto-suggested</td></tr></tbody></table></div>
+<p><em>Sector: not clear from your inputs (name the industry for sector notes). Business model: not clear from your inputs; set Business model (saas, services, connectivity, transactions, marketplace, Hardware software or investment) for advice that fits it.</em></p>
+<p><em>Your product was not given, so the product mentions say "your product". Add Your product to name it.</em></p>
 <hr>
 <h5 class="hxr-h3">Key Takeaways for Audience</h5>
 <p><em>(Suggested from the topic and type: replace with your own)</em></p>
 <ol>
-<li value="1">Understand the fundamentals of AI agents that resolve support tickets safely</li>
+<li value="1">Understand the fundamentals: AI agents that resolve support tickets safely</li>
 <li value="2">Learn the most common mistakes to avoid</li>
 <li value="3">Get a practical framework you can apply immediately</li>
-<li value="4">Know what metrics/outcomes to track</li>
+<li value="4">Know what metrics and outcomes to track</li>
 <li value="5">Have clear next steps to implement</li>
 </ol>
 <hr>
 <h5 class="hxr-h3">Run of Show</h5>
 <div class="hx-table"><table><thead><tr><th>Time</th><th>Duration</th><th>Section</th><th>Purpose</th></tr></thead><tbody><tr><td>0:00</td><td>2 min</td><td>Welcome &amp; Housekeeping</td><td>Set expectations</td></tr><tr><td>0:02</td><td>2 min</td><td>Speaker Introduction</td><td>Build credibility</td></tr><tr><td>0:04</td><td>2 min</td><td>Agenda &amp; Learning Objectives</td><td>Preview value</td></tr><tr><td>0:06</td><td>4 min</td><td>Context Setting</td><td>Why this matters now</td></tr><tr><td>0:10</td><td>8 min</td><td>Main Content Block 1</td><td>Core teaching</td></tr><tr><td>0:18</td><td>8 min</td><td>Main Content Block 2</td><td>Core teaching</td></tr><tr><td>0:26</td><td>8 min</td><td>Main Content Block 3</td><td>Core teaching</td></tr><tr><td>0:34</td><td>3 min</td><td>Summary &amp; Key Takeaways</td><td>Reinforce learning</td></tr><tr><td>0:37</td><td>6 min</td><td>Q&amp;A</td><td>Address questions</td></tr><tr><td>0:43</td><td>2 min</td><td>Close &amp; CTA</td><td>Next steps</td></tr></tbody></table></div>
 <hr>
+<h5 class="hxr-h3">Sector Notes</h5>
+<p>No sector could be read from what you typed, so the content blocks use general prompts. Name the audience's industry or your product category to get talking points in the sector's own language.</p>
+<hr>
 <h5 class="hxr-h3">Full Script</h5>
 <h6 class="hxr-h4">Welcome &amp; Housekeeping (2 min)</h6>
 <p><strong>[ON SCREEN: Title slide with webinar name]</strong></p>
 <p><strong>SPEAKER:</strong> </p>
-<p>"Good [morning/afternoon] everyone, and welcome to 'AI agents that resolve support tickets safely.' I'm thrilled to have you here.</p>
+<p>"Good [morning/afternoon] everyone, and welcome to "AI agents that resolve support tickets safely". I'm thrilled to have you here.</p>
 <p>Before we dive in, a few quick housekeeping items:</p>
 <ul>
-<li>We're recording today's session and will send you the link within 24 hours</li>
+<li>[Only if true: We're recording today's session and will send you the link within 24 hours]</li>
 <li>Your audio is muted, but we want this to be interactive</li>
 <li>Use the chat for questions anytime: we'll address them throughout and have dedicated Q&amp;A time</li>
-<li>[If polls enabled] You'll see some polls pop up: please participate, it makes this better for everyone</li>
+<li>You'll see some polls pop up: please participate, it makes this better for everyone</li>
 </ul>
 <p>Let's get started!"</p>
 <h6 class="hxr-h4">Speaker Introduction (2 min)</h6>
 <p><strong>[ON SCREEN: Speaker bio slide]</strong></p>
+<p><strong>Introduce each speaker (as you listed them):</strong></p>
+<ol>
+<li value="1">[Speaker name]: [Add two or three sentences of background that make this person credible on this topic]</li>
+</ol>
 <p><strong>SPEAKER:</strong></p>
-<p>"Quick introduction: I'm [Speaker Name]. [2-3 sentences of relevant background establishing credibility for this topic].</p>
-<p>I'm excited to talk about AI agents that resolve support tickets safely and give you actionable takeaways you can use immediately. [Only if true: what you have learned about it, in one sentence]"</p>
+<p>"Today's session is about "AI agents that resolve support tickets safely". I'm excited to give you takeaways you can use immediately. [Only if true: what you have learned about it, in one sentence]"</p>
 <h6 class="hxr-h4">Agenda &amp; Learning Objectives (2 min)</h6>
 <p><strong>[ON SCREEN: Agenda slide]</strong></p>
 <p><strong>SPEAKER:</strong></p>
 <p>"Here's what we'll cover today:</p>
 <ol>
-<li value="1">Understand the fundamentals of AI agents that resolve support tickets safely</li>
+<li value="1">Understand the fundamentals: AI agents that resolve support tickets safely</li>
 <li value="2">Learn the most common mistakes to avoid</li>
 <li value="3">Get a practical framework you can apply immediately</li>
-<li value="4">Know what metrics/outcomes to track</li>
+<li value="4">Know what metrics and outcomes to track</li>
 <li value="5">Have clear next steps to implement</li>
 </ol>
-<p>By the end of this session, you'll walk away with [specific outcome for Support leaders at consumer apps and SaaS companies].</p>
+<p>By the end of this session, you'll walk away with [Add the outcome attendees leave with; audience: Support leaders at consumer apps and SaaS companies].</p>
 <p>Sound good? Drop a '1' in the chat if you're ready to go."</p>
 <h6 class="hxr-h4">Context Setting (4 min)</h6>
 <p><strong>[ON SCREEN: Context/problem slide]</strong></p>
 <p><strong>SPEAKER:</strong></p>
-<p>"Before we get tactical, let's talk about why AI agents that resolve support tickets safely matters right now.</p>
-<p>[Audience-specific pain point for Support leaders at consumer apps and SaaS companies]</p>
+<p>"Our topic today is "AI agents that resolve support tickets safely". Before we get tactical, here's why it matters right now.</p>
+<p>[Add the pain point this audience feels: Support leaders at consumer apps and SaaS companies]</p>
 <p>The good news? There's a better way. That's what we're here to explore.</p>
-<p><strong>[LAUNCH POLL: "What's your biggest challenge with AI agents that resolve support tickets safely?"]</strong></p>
+<p><strong>[LAUNCH POLL on "AI agents that resolve support tickets safely": "Which of these is closest to your situation today?"]</strong></p>
+<p>Poll options:</p>
+<ul>
+<li>We have a plan and it is working</li>
+<li>We have tried and it stalled</li>
+<li>We have not started yet</li>
+<li>This is not a priority this year</li>
+</ul>
 <p>Let's see what you're dealing with..."</p>
 <h6 class="hxr-h4">Main Content Block 1 (8 min)</h6>
 <p><strong>[ON SCREEN: Key concept slide]</strong></p>
 <p><strong>SPEAKER:</strong></p>
-<p>"Let's start with the first takeaway: Understand the fundamentals of AI agents that resolve support tickets safely.</p>
-<p>[Core teaching point with specific examples]</p>
+<p>"Let's start with the first takeaway: Understand the fundamentals: AI agents that resolve support tickets safely.</p>
+<p>[Add the core teaching point with specific examples]</p>
 <p>Here's what this looks like in practice:</p>
 <ul>
-<li>[Specific example 1]</li>
-<li>[Specific example 2]</li>
-<li>[Specific example 3]</li>
+<li>[Add example 1]</li>
+<li>[Add example 2]</li>
+<li>[Add example 3]</li>
 </ul>
-<p><strong>[Mention your product here: one sentence]</strong></p>
+<p><strong>[Mention your product here: one sentence on how it helps with this takeaway]</strong></p>
 <p>Any questions on this before we move on? Drop them in chat."</p>
 <h6 class="hxr-h4">Main Content Block 2 (8 min)</h6>
 <p><strong>[ON SCREEN: Relevant slide]</strong></p>
-<p><strong>SPEAKER PROMPT:</strong> Teach the second takeaway: Learn the most common mistakes to avoid. Give one example from your own work, then check the chat for questions.</p>
+<p><strong>SPEAKER PROMPT:</strong> Teach the second takeaway: Learn the most common mistakes to avoid. Give one example from your own work. Then check the chat for questions.</p>
 <h6 class="hxr-h4">Main Content Block 3 (8 min)</h6>
 <p><strong>[ON SCREEN: Relevant slide]</strong></p>
-<p><strong>SPEAKER PROMPT:</strong> Teach the third takeaway: Get a practical framework you can apply immediately. Give one example from your own work, then check the chat for questions.</p>
+<p><strong>SPEAKER PROMPT:</strong> Teach the third takeaway: Get a practical framework you can apply immediately. Give one example from your own work Then check the chat for questions.</p>
 <h6 class="hxr-h4">Summary &amp; Key Takeaways (3 min)</h6>
 <p><strong>[ON SCREEN: Relevant slide]</strong></p>
 <p><strong>SPEAKER PROMPT:</strong> Recap each takeaway in one sentence, then name the one step to take first.</p>
@@ -416,47 +433,47 @@
 <p><strong>SPEAKER:</strong></p>
 <p>"We covered a lot today. Quick recap:</p>
 <ol>
-<li value="1">Understand the fundamentals of AI agents that resolve support tickets safely</li>
+<li value="1">Understand the fundamentals: AI agents that resolve support tickets safely</li>
 <li value="2">Learn the most common mistakes to avoid</li>
 <li value="3">Get a practical framework you can apply immediately</li>
 </ol>
 <p><strong>What's your next step?</strong></p>
-<p>[Your one next step for the audience]</p>
-<p>Thanks so much for joining. You'll get the recording, slides, and resources within 24 hours.</p>
+<p>[Add the one next step for the audience]</p>
+<p>Thanks so much for joining. [Only if true: You'll get the recording, slides, and resources within 24 hours.]</p>
 <p>Have a great rest of your [day/week]!"</p>
 <p><strong>[END WEBINAR]</strong></p>
 <hr>
 <h5 class="hxr-h3">Q&amp;A Preparation</h5>
 <h6 class="hxr-h4">Anticipated Questions</h6>
 <ol>
-<li value="1"><strong>"How do I get started with AI agents that resolve support tickets safely?"</strong></li>
+<li value="1"><strong>"How do we get started with this?"</strong></li>
 </ol>
 <ul>
-<li>Response: Start with [first step]. Focus on [key principle].</li>
+<li>Response: Start with [Add the first step]. Focus on [Add the key principle].</li>
 </ul>
 <ol>
-<li value="2"><strong>"What if [common objection/concern]?"</strong></li>
+<li value="2"><strong>"What if [Add a common objection or concern]?"</strong></li>
 </ol>
 <ul>
-<li>Response: Great question. The way we address this is [solution].</li>
+<li>Response: Great question. The way we address this is [Add your solution].</li>
 </ul>
 <ol>
-<li value="3"><strong>"Can you share more examples of [takeaway 1]?"</strong></li>
+<li value="2"><strong>"Can you share more examples of this: Understand the fundamentals: AI agents that resolve support tickets safely?"</strong></li>
 </ol>
 <ul>
-<li>Response: Absolutely. [Specific example with details].</li>
+<li>Response: Absolutely. [Add a specific example with details].</li>
 </ul>
 <ol>
-<li value="4"><strong>"How does this compare to [alternative approach]?"</strong></li>
+<li value="3"><strong>"How does this compare to [Add an alternative approach]?"</strong></li>
 </ol>
 <ul>
-<li>Response: The key difference is [differentiation point].</li>
+<li>Response: The key difference is [Add your differentiation point].</li>
 </ul>
 <ol>
-<li value="5"><strong>"What resources do you recommend?"</strong></li>
+<li value="4"><strong>"What resources do you recommend?"</strong></li>
 </ol>
 <ul>
-<li>Response: I'll include my top 3 in the follow-up email, but start with [resource].</li>
+<li>Response: I'll include my top 3 in the follow-up email, but start with [Add one resource].</li>
 </ul>
 <h6 class="hxr-h4">Parking Lot Responses</h6>
 <p>For questions outside scope:</p>
@@ -468,32 +485,32 @@
 <hr>
 <h5 class="hxr-h3">Follow-Up Sequence</h5>
 <h6 class="hxr-h4">Email 1: Same Day (Within 2 hours)</h6>
-<p><strong>Subject:</strong> Recording + resources from today's AI agents that resolve support tickets safely webinar</p>
-<p>Thanks for joining us for AI agents that resolve support tickets safely!</p>
+<p><strong>Subject:</strong> Recording and resources from today's webinar: AI agents that resolve support tickets safely</p>
+<p>Thanks for joining us for "AI agents that resolve support tickets safely"!</p>
 <p>Here's what you requested:</p>
 <ul>
-<li>[Recording link]</li>
-<li>[Slides]</li>
-<li>[Any resources mentioned]</li>
+<li>[Add the recording link]</li>
+<li>[Add the slides]</li>
+<li>[Add any resources mentioned]</li>
 </ul>
 <p><strong>Quick recap:</strong></p>
 <ol>
-<li value="1">Understand the fundamentals of AI agents that resolve support tickets safely</li>
+<li value="1">Understand the fundamentals: AI agents that resolve support tickets safely</li>
 <li value="2">Learn the most common mistakes to avoid</li>
 <li value="3">Get a practical framework you can apply immediately</li>
 </ol>
 <p>Questions? Hit reply.</p>
 <hr>
 <h6 class="hxr-h4">Email 2: Day 3</h6>
-<p><strong>Subject:</strong> Did you catch this from our AI agents that resolve support tickets safely webinar?</p>
-<p>A question from the session: [most asked question]</p>
-<p>Here's the quick answer: [brief response]</p>
-<p>[Your call to action]</p>
+<p><strong>Subject:</strong> Did you catch this from our webinar? AI agents that resolve support tickets safely</p>
+<p>A question from the session: [Add the most asked question]</p>
+<p>Here's the quick answer: [Add a brief response]</p>
+<p>[Add your call to action]</p>
 <hr>
 <h6 class="hxr-h4">Email 3: Day 7</h6>
 <p><strong>Subject:</strong> Next steps on AI agents that resolve support tickets safely</p>
 <p>It's been a week since our webinar. By now you've probably watched the recording (or at least meant to) and thought about what we discussed, and you probably have a few questions.</p>
-<p>[Specific next step CTA]</p>
+<p>[Add the specific next step and how to take it]</p>
 <hr>
 <h5 class="hxr-h3">Pre-Webinar Checklist</h5>
 <h6 class="hxr-h4">Tech Setup (30 min before)</h6>

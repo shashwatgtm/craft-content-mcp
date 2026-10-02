@@ -22,7 +22,7 @@
 <meta name="twitter:description" content="Write value propositions and a pitch script from your product, the buyer your sellers speak to and your proof points. Free, no sign-in.">
 <meta name="twitter:image" content="https://craft-content.gtmhelix.com/og.png">
 <meta name="twitter:creator" content="@Shashwat_Ghosh">
-<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/Archivo-latin-1.woff2?v=8f704806db" as="font" type="font/woff2" crossorigin>
@@ -211,7 +211,7 @@
    "@type": "WebApplication",
    "@id": "https://craft-content.gtmhelix.com/tools/sales-enablement-content/#app",
    "name": "Sales Enablement Content (CRAFT Content)",
-   "description": "Generate sales content. Know your objections? Get complete handlers. New product with no sales data yet? We'll suggest likely objections based on your product type.",
+   "description": "Build a sales kit: pitch order, a script for each objection (each answered with the sector's pattern and the proof point that fits it), competitor responses, discovery questions and follow-up templates. Without objections it suggests the ones your sector raises.",
    "url": "https://craft-content.gtmhelix.com/tools/sales-enablement-content/",
    "applicationCategory": "BusinessApplication",
    "browserRequirements": "Any modern browser; works without JavaScript",
@@ -280,15 +280,16 @@
 
 <div class="hx-body">
 <section class="hx-section hx-run-sec" id="run" aria-label="Run Sales Enablement Content">
-  <div class="win hx-form-win"><div class="win-bar"><span class="t">Run Sales Enablement Content</span><span class="wb" aria-hidden="true"><i></i><i></i></span></div><form class="hx-form" method="post" action="/api/tools/sales_enablement_content" data-tool="sales_enablement_content" data-title="Sales Enablement Content"><p class="hx-help">You need: Product, Target persona, Proof points. You can add: Common objections, Value props, Competitor objections, Price context, Sales stage.</p>
+  <div class="win hx-form-win"><div class="win-bar"><span class="t">Run Sales Enablement Content</span><span class="wb" aria-hidden="true"><i></i><i></i></span></div><form class="hx-form" method="post" action="/api/tools/sales_enablement_content" data-tool="sales_enablement_content" data-title="Sales Enablement Content"><p class="hx-help">You need: Product, Target persona, Proof points. You can add: Common objections, Value props, Competitor objections, Price context, Sales stage, Business model.</p>
 <div class="hx-field"><label for="f-product">Product <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-product" name="product" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-product-help"></textarea><p class="hx-help" id="f-product-help">Product name and what it does</p></div>
 <div class="hx-field"><label for="f-target_persona">Target persona <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-target_persona" name="target_persona" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-target_persona-help"></textarea><p class="hx-help" id="f-target_persona-help">Who sales is pitching to (role, company type)</p></div>
-<div class="hx-field"><label for="f-proof_points">Proof points <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-proof_points" name="proof_points" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-proof_points-help"></textarea><p class="hx-help" id="f-proof_points-help">Evidence for claims: case studies, metrics, quotes (comma-separated)</p></div>
-<div class="hx-field"><label for="f-common_objections">Common objections <span class="hx-opt">(optional)</span></label><textarea id="f-common_objections" name="common_objections" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-common_objections-help"></textarea><p class="hx-help" id="f-common_objections-help">OPTIONAL: Sales objections you hear (comma-separated). If not provided, we&#x27;ll suggest likely objections for your product type</p></div>
-<div class="hx-field"><label for="f-value_props">Value props <span class="hx-opt">(optional)</span></label><textarea id="f-value_props" name="value_props" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-value_props-help"></textarea><p class="hx-help" id="f-value_props-help">OPTIONAL: Key value propositions (comma-separated). Will be DERIVED from proof points if not provided</p></div>
+<div class="hx-field"><label for="f-proof_points">Proof points <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-proof_points" name="proof_points" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-proof_points-help"></textarea><p class="hx-help" id="f-proof_points-help">Evidence for claims: case studies, metrics, quotes, one per line, per semicolon or comma-separated</p></div>
+<div class="hx-field"><label for="f-common_objections">Common objections <span class="hx-opt">(optional)</span></label><textarea id="f-common_objections" name="common_objections" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-common_objections-help"></textarea><p class="hx-help" id="f-common_objections-help">Optional: sales objections you hear, one per line, per semicolon or comma-separated. If not provided, likely objections for your sector are suggested</p></div>
+<div class="hx-field"><label for="f-value_props">Value props <span class="hx-opt">(optional)</span></label><textarea id="f-value_props" name="value_props" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-value_props-help"></textarea><p class="hx-help" id="f-value_props-help">Optional: key value propositions, one per line, per semicolon or comma-separated. Taken from the proof points if not provided</p></div>
 <div class="hx-field"><label for="f-competitor_objections">Competitor objections <span class="hx-opt">(optional)</span></label><textarea id="f-competitor_objections" name="competitor_objections" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-competitor_objections-help"></textarea><p class="hx-help" id="f-competitor_objections-help">Optional: &#x27;Why not [competitor]&#x27; objections</p></div>
 <div class="hx-field"><label for="f-price_context">Price context <span class="hx-opt">(optional)</span></label><textarea id="f-price_context" name="price_context" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-price_context-help"></textarea><p class="hx-help" id="f-price_context-help">Optional: Your pricing vs market (e.g., &#x27;Premium, 20% above market&#x27;, &#x27;Budget option&#x27;, &#x27;Mid-market&#x27;)</p></div>
 <div class="hx-field"><label for="f-sales_stage">Sales stage <span class="hx-opt">(optional)</span></label><select id="f-sales_stage" name="sales_stage" data-kind="string" aria-describedby="f-sales_stage-help"><option value="">Not specified</option><option value="prospecting">Prospecting</option><option value="discovery">Discovery</option><option value="demo">Demo</option><option value="negotiation">Negotiation</option><option value="closing">Closing</option></select><p class="hx-help" id="f-sales_stage-help">What stage of sales funnel</p></div>
+<div class="hx-field"><label for="f-business_model">Business model <span class="hx-opt">(optional)</span></label><select id="f-business_model" name="business_model" data-kind="string" aria-describedby="f-business_model-help"><option value="">Not specified</option><option value="saas">SaaS</option><option value="services">Services</option><option value="connectivity">Connectivity</option><option value="transactions">Transactions</option><option value="marketplace">Marketplace</option><option value="hardware_software">Hardware software</option><option value="investment">Investment</option></select><p class="hx-help" id="f-business_model-help">Optional: how you charge, so the advice fits it. If omitted, it is read from your text and the answer says how.</p></div>
     <div class="hx-hp" aria-hidden="true"><label for="hp-sales_enablement_content">Leave this empty</label><input id="hp-sales_enablement_content" name="leave_this_empty" type="text" tabindex="-1" autocomplete="off"></div>
     <div class="hx-actions">
       <button type="submit" class="hx-btn">Run Sales Enablement Content</button>
@@ -318,7 +319,7 @@
 
 <section class="hx-section" aria-labelledby="ex-h">
   <h2 id="ex-h">Example answer</h2>
-  <p class="hx-prose">From version 2.2.15 of this tool, with the inputs behind <em>Fill in an example</em>. Your own inputs give a different result.</p>
+  <p class="hx-prose">From version 2.2.17 of this tool, with the inputs behind <em>Fill in an example</em>. Your own inputs give a different result.</p>
   <article class="hxr hxr-example" aria-labelledby="ex-t">
     <header class="hxr-head">
       <p class="hxr-tag">CRAFT Content report</p>
@@ -329,6 +330,7 @@
     <details class="hx-run"><summary>Show the full result</summary><div class="hxr-body hx-result-body hx-output"><h4 class="hxr-h2">Sales Enablement Kit</h4>
 <h5 class="hxr-h3">Answerloop | VPs of Customer Support at consumer apps</h5>
 <p><strong>NOTE:</strong> You didn't provide objections. We've generated handlers for the most common objections. Update these with real objections you hear from prospects.</p>
+<p><em>Sector: not clear from your inputs (name the industry for sector notes). Business model: not clear from your inputs; set Business model (saas, services, connectivity, transactions, marketplace, Hardware software or investment) for advice that fits it.</em></p>
 <hr>
 <h5 class="hxr-h3">Quick Reference Card</h5>
 <div class="hx-table"><table><thead><tr><th>Element</th><th>Detail</th></tr></thead><tbody><tr><td><strong>Product</strong></td><td>Answerloop</td></tr><tr><td><strong>Persona</strong></td><td>VPs of Customer Support at consumer apps</td></tr><tr><td><strong>Price Position</strong></td><td>Market rate (assumed, not supplied)</td></tr><tr><td><strong>Sales Stage</strong></td><td>discovery</td></tr><tr><td><strong>Note</strong></td><td>Objections suggested: replace them with the ones you hear</td></tr></tbody></table></div>
@@ -337,12 +339,12 @@
 <h6 class="hxr-h4">Pitch Order (Lead with Strongest)</h6>
 <p><strong>1. Resolve tickets end to end</strong></p>
 <ul>
-<li><em>Why it matters to VPs of Customer Support at consumer apps:</em> [Connect to their specific pain]</li>
+<li><em>Why it matters to VPs of Customer Support at consumer apps:</em> [Add their specific pain]</li>
 <li><em>Proof:</em> 45% of tickets resolved without a human at Example Food Delivery Co</li>
 </ul>
 <p><strong>2. Human approval for refunds</strong></p>
 <ul>
-<li><em>Why it matters to VPs of Customer Support at consumer apps:</em> [Connect to their specific pain]</li>
+<li><em>Why it matters to VPs of Customer Support at consumer apps:</em> [Add their specific pain]</li>
 <li><em>Proof:</em> Live in two weeks</li>
 </ul>
 <hr>
@@ -350,7 +352,7 @@
 <h6 class="hxr-h4">Discovery Stage</h6>
 <p><strong>Discovery Call Structure:</strong></p>
 <p><strong>Opening (2 min):</strong></p>
-<p>"Thanks for taking the time. Before I tell you about Answerloop, I'd love to understand your situation. Tell me about [their main challenge area]..."</p>
+<p>"Thanks for taking the time. Before I tell you about Answerloop, I'd love to understand your situation. Tell me about [Add their main challenge area]..."</p>
 <p><strong>Questions (15 min):</strong></p>
 <p>Focus on understanding their:</p>
 <ul>
@@ -362,93 +364,98 @@
 <p><strong>Bridge (3 min):</strong></p>
 <p>"Based on what you've shared, here's how Answerloop could help: resolve tickets end to end and human approval for refunds."</p>
 <p><strong>Next Step:</strong></p>
-<p>"Would it be helpful to see a demo focused on [specific pain mentioned]?"</p>
+<p>"Would it be helpful to see a demo focused on [Add the specific pain mentioned]?"</p>
 <hr>
 <h5 class="hxr-h3">Objection Handlers</h5>
 <h6 class="hxr-h4">Objection 1: "What's the total cost of ownership?"</h6>
+<p><strong>What this is:</strong> a price objection</p>
 <p><strong>Acknowledge:</strong></p>
-<blockquote>I hear you, budget is always a consideration.</blockquote>
+<blockquote>I hear you: budget is always a consideration.</blockquote>
 <p><strong>Reframe:</strong></p>
-<blockquote>[Only if true and provable: Let me share what our customers found when they compared total cost of ownership.]</blockquote>
+<blockquote>What does the problem cost you today, in your own numbers?</blockquote>
 <p><strong>Proof Point:</strong></p>
 <blockquote>45% of tickets resolved without a human at Example Food Delivery Co</blockquote>
-<p><strong>Bridge to Value:</strong></p>
-<blockquote>Resolve tickets end to end</blockquote>
+<p><strong>Your answer pattern (advice for you, not a line to read out):</strong></p>
+<blockquote>Agree the cost of the problem in the buyer's own numbers first, then compare the price with it; trade any concession for something of equal value.</blockquote>
 <p><strong>Full Response Script:</strong></p>
-<blockquote>"I hear you, budget is always a consideration. [Only if true and provable: companies that focus only on price end up spending more in the long run on hidden costs or lost opportunity.] 45% of tickets resolved without a human at Example Food Delivery Co. The question isn't the price. It's the value. Would it help to walk through an ROI calculation based on your specific numbers?"</blockquote>
+<blockquote>"I hear you: 'What's the total cost of ownership?'. I hear you: budget is always a consideration. What does the problem cost you today, in your own numbers? 45% of tickets resolved without a human at Example Food Delivery Co. Would it help to put your numbers next to the price before we talk about discounts?"</blockquote>
 <hr>
 <h6 class="hxr-h4">Objection 2: "Implementation seems complex / takes too long"</h6>
+<p><strong>What this is:</strong> a setup and switching objection</p>
 <p><strong>Acknowledge:</strong></p>
-<blockquote>I understand the concern.</blockquote>
+<blockquote>Setup is a real concern, and you should ask about it early.</blockquote>
 <p><strong>Reframe:</strong></p>
-<blockquote>Help me understand what's driving that concern...</blockquote>
+<blockquote>Which systems and people would the change touch?</blockquote>
 <p><strong>Proof Point:</strong></p>
-<blockquote>45% of tickets resolved without a human at Example Food Delivery Co</blockquote>
-<p><strong>Bridge to Value:</strong></p>
-<blockquote>Resolve tickets end to end</blockquote>
+<blockquote>Live in two weeks</blockquote>
+<p><strong>Your answer pattern (advice for you, not a line to read out):</strong></p>
+<blockquote>Name the systems and people involved, and offer a staged plan with a rollback point for each stage.</blockquote>
 <p><strong>Full Response Script:</strong></p>
-<blockquote>"I understand your concern. Help me understand what's driving that? [Listen] Here's how we address it: Resolve tickets end to end. 45% of tickets resolved without a human at Example Food Delivery Co. Does that address your concern?"</blockquote>
+<blockquote>"I hear you: 'Implementation seems complex / takes too long'. Setup is a real concern, and you should ask about it early. Which systems and people would the change touch? Live in two weeks. Would it help to walk through the plan step by step, with a rollback point for each step?"</blockquote>
 <hr>
 <h6 class="hxr-h4">Objection 3: "We're already using a competitor / happy with current solution"</h6>
+<p><strong>What this is:</strong> an objection that needs a question first</p>
 <p><strong>Acknowledge:</strong></p>
-<blockquote>Makes sense to evaluate options thoroughly.</blockquote>
+<blockquote>Thank you for saying so directly.</blockquote>
 <p><strong>Reframe:</strong></p>
-<blockquote>What's most important to you in making this decision?</blockquote>
+<blockquote>Help me understand what is behind that, and what would change your mind?</blockquote>
 <p><strong>Proof Point:</strong></p>
-<blockquote>45% of tickets resolved without a human at Example Food Delivery Co</blockquote>
-<p><strong>Bridge to Value:</strong></p>
-<blockquote>Resolve tickets end to end</blockquote>
+<blockquote>[Add a proof point that answers this objection; none of the proof points you gave does]</blockquote>
+<p><strong>Your answer pattern (advice for you, not a line to read out):</strong></p>
+<blockquote>Ask what lies behind it and what would change their mind, then answer with evidence from a similar customer only if you have it.</blockquote>
 <p><strong>Full Response Script:</strong></p>
-<blockquote>"Makes sense to evaluate options thoroughly. What's most important to you in making this decision? [Listen] [Only if true: that's exactly where we differentiate]. Resolve tickets end to end means [specific advantage]. 45% of tickets resolved without a human at Example Food Delivery Co. What if I share a side-by-side comparison focused on what matters most to you?"</blockquote>
+<blockquote>"I hear you: 'We're already using a competitor / happy with current solution'. Thank you for saying so directly. Help me understand what is behind that, and what would change your mind? [Add a proof point that answers this objection] What would be most helpful to show you next?"</blockquote>
 <hr>
 <h6 class="hxr-h4">Objection 4: "Not the right time / other priorities"</h6>
+<p><strong>What this is:</strong> a timing objection</p>
 <p><strong>Acknowledge:</strong></p>
-<blockquote>Timing is definitely important to get right.</blockquote>
+<blockquote>Timing matters, and there is a lot on your plate.</blockquote>
 <p><strong>Reframe:</strong></p>
-<blockquote>I'm curious: what would need to change for the timing to feel right?</blockquote>
+<blockquote>What would need to change for the timing to feel right, and what date is driving that?</blockquote>
 <p><strong>Proof Point:</strong></p>
-<blockquote>45% of tickets resolved without a human at Example Food Delivery Co</blockquote>
-<p><strong>Bridge to Value:</strong></p>
-<blockquote>Resolve tickets end to end</blockquote>
+<blockquote>Live in two weeks</blockquote>
+<p><strong>Your answer pattern (advice for you, not a line to read out):</strong></p>
+<blockquote>Find the event that makes this urgent (a renewal, an audit, a season, a target) and plan back from it.</blockquote>
 <p><strong>Full Response Script:</strong></p>
-<blockquote>"Timing is definitely important. I'm curious: what would need to change for the timing to feel right? [Only if true and provable: the cost that waiting adds, in numbers you can show.] 45% of tickets resolved without a human at Example Food Delivery Co. Even if the full rollout is later, starting discovery now means you're ready when the time is right. What would be the cost of waiting another quarter?"</blockquote>
+<blockquote>"I hear you: 'Not the right time / other priorities'. Timing matters, and there is a lot on your plate. What would need to change for the timing to feel right, and what date is driving that? Live in two weeks. Would it help to plan back from that date, so the start is small and on time?"</blockquote>
 <hr>
 <h6 class="hxr-h4">Objection 5: "Need to see more proof / case studies"</h6>
+<p><strong>What this is:</strong> a request for proof</p>
 <p><strong>Acknowledge:</strong></p>
 <blockquote>Wanting proof before deciding is fair.</blockquote>
 <p><strong>Reframe:</strong></p>
 <blockquote>Which proof would settle it for you: a reference call, a case study or a pilot?</blockquote>
 <p><strong>Proof Point:</strong></p>
 <blockquote>45% of tickets resolved without a human at Example Food Delivery Co</blockquote>
-<p><strong>Bridge to Value:</strong></p>
-<blockquote>Let me set up the proof that matters most to you.</blockquote>
+<p><strong>Your answer pattern (advice for you, not a line to read out):</strong></p>
+<blockquote>Ask which proof would settle it (a reference call, a case study or a pilot) and offer the one you can really provide.</blockquote>
 <p><strong>Full Response Script:</strong></p>
-<blockquote>"Wanting proof before deciding is fair. Which proof would settle it for you: a reference call, a case study or a pilot? 45% of tickets resolved without a human at Example Food Delivery Co. I can set up whichever of these we can offer."</blockquote>
+<blockquote>"I hear you: 'Need to see more proof / case studies'. Wanting proof before deciding is fair. Which proof would settle it for you: a reference call, a case study or a pilot? 45% of tickets resolved without a human at Example Food Delivery Co. I can set up whichever of these we can offer."</blockquote>
 <hr>
 <h5 class="hxr-h3">Competitive Responses</h5>
 <p><em>No competitor-specific objections provided. Add Competitor objections parameter for battle cards.</em></p>
 <h5 class="hxr-h3">Price Justification</h5>
 <h6 class="hxr-h4">Position: Market rate (assumed, not supplied)</h6>
 <p><strong>Value Framework:</strong></p>
-<div class="hx-table"><table><thead><tr><th>Investment</th><th>Return</th></tr></thead><tbody><tr><td>Answerloop pricing</td><td>Resolve tickets end to end</td></tr><tr><td></td><td>Human approval for refunds</td></tr><tr><td></td><td>45% of tickets resolved without a human at Example Food Delivery Co</td></tr></tbody></table></div>
+<div class="hx-table"><table><thead><tr><th>Value</th><th>Proof you can cite</th></tr></thead><tbody><tr><td>Resolve tickets end to end</td><td>45% of tickets resolved without a human at Example Food Delivery Co</td></tr><tr><td>Human approval for refunds</td><td>Live in two weeks</td></tr></tbody></table></div>
+<p><strong>Investment:</strong> Answerloop is positioned at Market rate (assumed, not supplied).</p>
 <p><strong>ROI Conversation:</strong></p>
 <p>"Let me share what customers have seen:</p>
 <ul>
 <li>45% of tickets resolved without a human at Example Food Delivery Co</li>
 <li>Live in two weeks</li>
 </ul>
-<p>Based on what you've shared about your situation, here's what that could mean for you: [Calculate specific ROI for prospect]"</p>
+<p>Based on what you've shared about your situation, here's what that could mean for you: [Add the specific ROI for this prospect, from their own figures]"</p>
 <p><strong>If Price Pushback:</strong></p>
-<p>"I understand budget is a consideration. Let me ask: what's the cost of NOT solving this problem for another 6 months? (Example figure: replace with your own)</p>
-<p>Resolve tickets end to end: [the outcome you can prove]. For a company your size, that's roughly [X in savings/revenue].</p>
-<p>The question isn't whether you can afford Answerloop. It's whether you can afford not to."</p>
+<p>"I understand budget is a consideration. Let me ask: what does it cost you each month to leave this problem as it is?</p>
+<p>Resolve tickets end to end: [Add the outcome you can prove]. For a company your size, that's roughly [Add the saving or revenue, from their own figures]."</p>
 <hr>
 <h5 class="hxr-h3">Discovery Questions for VPs of Customer Support at consumer apps</h5>
 <h6 class="hxr-h4">Opening Questions</h6>
 <ol>
-<li value="1">"Tell me about your current approach to [problem area]."</li>
+<li value="1">"Tell me about your current approach to [Add the problem area]."</li>
 <li value="2">"What's working well? What's not?"</li>
-<li value="3">"How is this affecting [relevant business metric]?"</li>
+<li value="3">"How is this affecting [Add the business measure that matters to them]?"</li>
 </ol>
 <h6 class="hxr-h4">Pain Discovery</h6>
 <ol>
@@ -471,17 +478,17 @@
 <hr>
 <h5 class="hxr-h3">Follow-Up Templates</h5>
 <h6 class="hxr-h4">After Discovery Call</h6>
-<p>Subject: Answerloop next steps + [specific thing mentioned]</p>
+<p>Subject: Answerloop next steps + [Add the specific thing mentioned]</p>
 <p>Hi [Name],</p>
-<p>Thanks for sharing about [specific challenge mentioned]. </p>
+<p>Thanks for sharing about [Add the specific challenge mentioned].</p>
 <p>Based on what you described, here's what stands out:</p>
 <ul>
-<li>[Challenge 1] is costing you [impact]</li>
-<li>[Challenge 2] is blocking [goal]</li>
+<li>[Add challenge 1] is costing you [Add the impact]</li>
+<li>[Add challenge 2] is blocking [Add the goal]</li>
 </ul>
 <p>Answerloop addresses this: resolve tickets end to end.</p>
 <p>Relevant proof: 45% of tickets resolved without a human at Example Food Delivery Co</p>
-<p>Next step: [Specific action]</p>
+<p>Next step: [Add the specific action]</p>
 <p>When works for you?</p>
 <hr>
 <h6 class="hxr-h4">After Demo</h6>
@@ -495,17 +502,17 @@
 </ul>
 <p><strong>What resonated:</strong></p>
 <ul>
-<li>[Note specific moment they engaged]</li>
+<li>[Add the specific moment they engaged]</li>
 </ul>
 <p><strong>Your questions:</strong></p>
 <ul>
-<li>[Answer questions raised]</li>
+<li>[Add the answers to questions raised]</li>
 </ul>
-<p><strong>Next step:</strong> [Specific action + date]</p>
+<p><strong>Next step:</strong> [Add the specific action and date]</p>
 <p>Resources:</p>
 <ul>
-<li>[Relevant case study]</li>
-<li>[One-pager]</li>
+<li>[Add the relevant case study]</li>
+<li>[Add the one-pager]</li>
 </ul>
 <p>Talk soon,</p>
 <hr>
@@ -514,11 +521,12 @@
 <ul>
 <li>[ ] Research: Reviewed LinkedIn, recent news, annual report</li>
 <li>[ ] Context: Know their industry challenges</li>
-<li>[ ] Personalization: Have 2-3 specific observations (Example figure: replace with your own)</li>
+<li>[ ] Personalization: Have a few specific observations</li>
 <li>[ ] Objection prep: Anticipate their top 2 concerns</li>
 <li>[ ] Proof ready: Have relevant case study queued</li>
 <li>[ ] Questions ready: Top 5 discovery questions</li>
 <li>[ ] CTA clear: Know exactly what next step to propose</li>
+<li>[ ] Start plan ready: Know what the rollout would involve and how you will say it</li>
 </ul>
 <hr>
 <h5 class="hxr-h3">Quick Stats to Quote</h5>

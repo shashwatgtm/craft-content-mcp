@@ -22,7 +22,7 @@
 <meta name="twitter:description" content="Write testimonial requests and interview questions from the customer, their company, their success story and the kind you want. Free, no sign-in.">
 <meta name="twitter:image" content="https://craft-content.gtmhelix.com/og.png">
 <meta name="twitter:creator" content="@Shashwat_Ghosh">
-<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/Archivo-latin-1.woff2?v=8f704806db" as="font" type="font/woff2" crossorigin>
@@ -211,7 +211,7 @@
    "@type": "WebApplication",
    "@id": "https://craft-content.gtmhelix.com/tools/testimonial-capture/#app",
    "name": "Testimonial Capture (CRAFT Content)",
-   "description": "Generate testimonial request emails, interview questions, and formatted outputs. Discovery-focused by design.",
+   "description": "Prepare a testimonial request: the request email, interview questions for the customer's role and sector, quote drafts for the customer to edit, and a sign-off checklist. Uses your product name when you give it, and says so when you do not.",
    "url": "https://craft-content.gtmhelix.com/tools/testimonial-capture/",
    "applicationCategory": "BusinessApplication",
    "browserRequirements": "Any modern browser; works without JavaScript",
@@ -280,7 +280,7 @@
 
 <div class="hx-body">
 <section class="hx-section hx-run-sec" id="run" aria-label="Run Testimonial Capture">
-  <div class="win hx-form-win"><div class="win-bar"><span class="t">Run Testimonial Capture</span><span class="wb" aria-hidden="true"><i></i><i></i></span></div><form class="hx-form" method="post" action="/api/tools/testimonial_capture" data-tool="testimonial_capture" data-title="Testimonial Capture"><p class="hx-help">You need: Customer name, Customer company, Success story, Testimonial type. You can add: Customer role, Relationship context, Use case, Incentive.</p>
+  <div class="win hx-form-win"><div class="win-bar"><span class="t">Run Testimonial Capture</span><span class="wb" aria-hidden="true"><i></i><i></i></span></div><form class="hx-form" method="post" action="/api/tools/testimonial_capture" data-tool="testimonial_capture" data-title="Testimonial Capture"><p class="hx-help">You need: Customer name, Customer company, Success story, Testimonial type. You can add: Customer role, Relationship context, Use case, Incentive, Your product, Business model.</p>
 <div class="hx-field"><label for="f-customer_name">Customer name <span class="hx-req" aria-hidden="true">*</span></label><input id="f-customer_name" name="customer_name" type="text" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-customer_name-help"><p class="hx-help" id="f-customer_name-help">Customer name</p></div>
 <div class="hx-field"><label for="f-customer_company">Customer company <span class="hx-req" aria-hidden="true">*</span></label><input id="f-customer_company" name="customer_company" type="text" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-customer_company-help"><p class="hx-help" id="f-customer_company-help">Customer&#x27;s company</p></div>
 <div class="hx-field"><label for="f-customer_role">Customer role <span class="hx-opt">(optional)</span></label><input id="f-customer_role" name="customer_role" type="text" maxlength="6000" data-kind="string" aria-describedby="f-customer_role-help"><p class="hx-help" id="f-customer_role-help">Customer&#x27;s job title</p></div>
@@ -289,6 +289,8 @@
 <div class="hx-field"><label for="f-testimonial_type">Testimonial type <span class="hx-req" aria-hidden="true">*</span></label><select id="f-testimonial_type" name="testimonial_type" data-kind="string" required aria-required="true" aria-describedby="f-testimonial_type-help"><option value="" disabled selected>Choose one</option><option value="written_quote">Written quote</option><option value="video_interview">Video interview</option><option value="case_study_interview">Case study interview</option><option value="g2_review">G2 review</option><option value="reference_call">Reference call</option></select><p class="hx-help" id="f-testimonial_type-help">Type of testimonial needed</p></div>
 <div class="hx-field"><label for="f-use_case">Use case <span class="hx-opt">(optional)</span></label><textarea id="f-use_case" name="use_case" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-use_case-help"></textarea><p class="hx-help" id="f-use_case-help">Where will this testimonial be used? (website, sales deck, etc.)</p></div>
 <div class="hx-field"><label for="f-incentive">Incentive <span class="hx-opt">(optional)</span></label><textarea id="f-incentive" name="incentive" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-incentive-help"></textarea><p class="hx-help" id="f-incentive-help">Optional: What you&#x27;re offering in return</p></div>
+<div class="hx-field"><label for="f-your_product">Your product <span class="hx-opt">(optional)</span></label><textarea id="f-your_product" name="your_product" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-your_product-help"></textarea><p class="hx-help" id="f-your_product-help">Optional: your product or service name, used in the answer. Without it the answer says so and shows a placeholder.</p></div>
+<div class="hx-field"><label for="f-business_model">Business model <span class="hx-opt">(optional)</span></label><select id="f-business_model" name="business_model" data-kind="string" aria-describedby="f-business_model-help"><option value="">Not specified</option><option value="saas">SaaS</option><option value="services">Services</option><option value="connectivity">Connectivity</option><option value="transactions">Transactions</option><option value="marketplace">Marketplace</option><option value="hardware_software">Hardware software</option><option value="investment">Investment</option></select><p class="hx-help" id="f-business_model-help">Optional: how you charge, so the advice fits it. If omitted, it is read from your text and the answer says how.</p></div>
     <div class="hx-hp" aria-hidden="true"><label for="hp-testimonial_capture">Leave this empty</label><input id="hp-testimonial_capture" name="leave_this_empty" type="text" tabindex="-1" autocomplete="off"></div>
     <div class="hx-actions">
       <button type="submit" class="hx-btn">Run Testimonial Capture</button>
@@ -318,7 +320,7 @@
 
 <section class="hx-section" aria-labelledby="ex-h">
   <h2 id="ex-h">Example answer</h2>
-  <p class="hx-prose">From version 2.2.15 of this tool, with the inputs behind <em>Fill in an example</em>. Your own inputs give a different result.</p>
+  <p class="hx-prose">From version 2.2.17 of this tool, with the inputs behind <em>Fill in an example</em>. Your own inputs give a different result.</p>
   <article class="hxr hxr-example" aria-labelledby="ex-t">
     <header class="hxr-head">
       <p class="hxr-tag">CRAFT Content report</p>
@@ -330,7 +332,8 @@
 <h5 class="hxr-h3">Sam Example (fictional) at Example Food Delivery Co</h5>
 <hr>
 <h5 class="hxr-h3">Customer Profile</h5>
-<div class="hx-table"><table><thead><tr><th>Detail</th><th>Information</th></tr></thead><tbody><tr><td><strong>Name</strong></td><td>Sam Example (fictional)</td></tr><tr><td><strong>Company</strong></td><td>Example Food Delivery Co</td></tr><tr><td><strong>Role</strong></td><td>Head of Support Operations</td></tr><tr><td><strong>Relationship</strong></td><td>not supplied</td></tr><tr><td><strong>Testimonial Type</strong></td><td>written quote</td></tr><tr><td><strong>Use Case</strong></td><td>marketing materials (assumed, not supplied)</td></tr></tbody></table></div>
+<div class="hx-table"><table><thead><tr><th>Detail</th><th>Information</th></tr></thead><tbody><tr><td><strong>Name</strong></td><td>Sam Example (fictional)</td></tr><tr><td><strong>Company</strong></td><td>Example Food Delivery Co</td></tr><tr><td><strong>Role</strong></td><td>Head of Support Operations</td></tr><tr><td><strong>Product</strong></td><td>not given (Your product was not given, so the templates show [your product]; add it to name your product)</td></tr><tr><td><strong>Relationship</strong></td><td>not supplied</td></tr><tr><td><strong>Testimonial Type</strong></td><td>written quote</td></tr><tr><td><strong>Use Case</strong></td><td>marketing materials (assumed, not supplied)</td></tr></tbody></table></div>
+<p><em>Sector: not clear from your inputs (name the industry for sector notes). Business model: not clear from your inputs; set Business model (saas, services, connectivity, transactions, marketplace, Hardware software or investment) for advice that fits it.</em></p>
 <hr>
 <h5 class="hxr-h3">Success Story Summary</h5>
 <p>Resolved 45% of support tickets without a human in 60 days</p>
@@ -339,8 +342,8 @@
 <p><strong>Subject:</strong> Quick favor: share your success story?</p>
 <p>Hi [First name],</p>
 <p>I hope this finds you well!</p>
-<p>I've loved seeing Example Food Delivery Co's success with [Product]: resolved 45% of support tickets without a human in 60 days.</p>
-<p>Would you be willing to share a brief quote about your experience? Just 2-3 sentences about what [Product] has meant for your team.</p>
+<p>I've loved seeing Example Food Delivery Co's success with [your product]: Resolved 45% of support tickets without a human in 60 days.</p>
+<p>Would you be willing to share a brief quote about your experience? Just 2-3 sentences about what [your product] has meant for your team.</p>
 <p>Here's what it involves:</p>
 <ul>
 <li><strong>Time:</strong> 5 minutes to write (or I can draft it for you) (Example figure: replace with your own)</li>
@@ -354,50 +357,67 @@
 <h5 class="hxr-h3">Interview Questions</h5>
 <h6 class="hxr-h4">Warm-Up</h6>
 <ol>
-<li value="1">Tell me about your role at the company.</li>
-<li value="2">How long have you been using [Product]?</li>
+<li value="1">Tell me about your role at Example Food Delivery Co.</li>
+<li value="2">How long have you been using [your product]?</li>
 </ol>
-<h6 class="hxr-h4">Before [Product]</h6>
+<h6 class="hxr-h4">Before [your product]</h6>
 <ol>
-<li value="3">What was happening before you found [Product]?</li>
+<li value="3">What was happening before you found [your product]?</li>
 <li value="4">What specific challenges were you trying to solve?</li>
 <li value="5">What was the impact of those challenges on your team/business?</li>
 <li value="6">What had you tried before?</li>
 </ol>
-<h6 class="hxr-h4">Decision &amp; Implementation</h6>
+<h6 class="hxr-h4">Decision &amp; Rollout</h6>
 <ol>
-<li value="7">How did you first hear about [Product]?</li>
-<li value="8">What made you choose [Product] over alternatives?</li>
-<li value="9">What was the implementation experience like?</li>
-<li value="10">How long did it take to see value?</li>
+<li value="7">How did you first hear about [your product]?</li>
+<li value="8">What made you choose [your product] over alternatives?</li>
+<li value="9">What was the rollout like?</li>
+<li value="10">How long did it take to reach time to first results?</li>
 </ol>
 <h6 class="hxr-h4">Results</h6>
 <ol>
 <li value="11">What specific results have you seen?</li>
 <li value="12">Can you put numbers on that? (%, $, time saved)</li>
 <li value="13">How has this impacted your team's day-to-day?</li>
-<li value="14">What's the biggest win you've had with [Product]?</li>
+<li value="14">What's the biggest win you've had with [your product]?</li>
 </ol>
 <h6 class="hxr-h4">Recommendation</h6>
 <ol>
-<li value="15">What would you tell someone considering [Product]?</li>
-<li value="16">Who would you recommend [Product] to?</li>
+<li value="15">What would you tell someone considering [your product]?</li>
+<li value="16">Who would you recommend [your product] to?</li>
 </ol>
+<h6 class="hxr-h4">Questions for a Head of Support Operations</h6>
+<ol>
+<li value="1">What did a normal day look like for your team before, and what is different now?</li>
+<li value="2">Which part of the daily work got easier first, and which part did not change?</li>
+<li value="3">How did your frontline team react in the first weeks?</li>
+</ol>
+<h6 class="hxr-h4">Questions on Measures</h6>
+<p>(No sector could be read from what you typed. Name the customer's industry or your product category to get questions on the measures that sector watches.)</p>
+<h6 class="hxr-h4">Approval and Sign-Off</h6>
+<ul>
+<li>Who at Example Food Delivery Co needs to approve a named quote or a logo (legal, communications, the customer's own manager)?</li>
+<li>Is there anything about Example Food Delivery Co's use that must not be mentioned (customer data, security details, pricing)?</li>
+</ul>
 <hr>
 <h5 class="hxr-h3">Testimonial Templates</h5>
+<p><em>Drafts for the customer to edit and approve. The words in brackets are theirs to write; change anything in the result line that is not true.</em></p>
 <h6 class="hxr-h4">Short Format (1-2 sentences)</h6>
 <p><em>For: Website hero section, social proof snippets</em></p>
-<p>"[Product] helped Example Food Delivery Co [the result from the story, in their words]. [the impact, in their words]."</p>
+<p>"[Add one sentence in their words about [your product]]"</p>
+<p>Result to quote: Resolved 45% of support tickets without a human in 60 days</p>
 <p>Sam Example (fictional), Head of Support Operations at Example Food Delivery Co</p>
 <hr>
 <h6 class="hxr-h4">Medium Format (3-4 sentences)</h6>
 <p><em>For: Case study pull quotes, sales deck</em></p>
-<p>"Before [Product], [the problem, in their words]. With [Product]: Resolved 45% of support tickets without a human in 60 days. [the impact, in their words]. [What they valued, in their words]."</p>
+<p>"Before [your product]: [Add the problem, in their words]. With [your product]: [Add what changed, in their words]. [Add what they valued, in their words]."</p>
+<p>Result to quote: Resolved 45% of support tickets without a human in 60 days</p>
 <p>Sam Example (fictional), Head of Support Operations at Example Food Delivery Co</p>
 <hr>
 <h6 class="hxr-h4">Long Format (Full paragraph)</h6>
 <p><em>For: Case studies, press releases, testimonial pages</em></p>
-<p>"At Example Food Delivery Co, [the problem, in their words] was a major obstacle. We chose [Product] because of [key differentiator]. The implementation was [experience], and within [timeframe], we saw [the result from the story, in their words]. [the impact, in their words]. [What they valued, in their words]."</p>
+<p>"At Example Food Delivery Co, [Add the problem, in their words] was a major obstacle. We chose [your product] because [Add the key differentiator, in their words]. The rollout was [Add their experience], and within [Add the timeframe] we saw the result below. [Add what they valued, in their words]."</p>
+<p>Result to quote: Resolved 45% of support tickets without a human in 60 days</p>
 <p>Sam Example (fictional), Head of Support Operations at Example Food Delivery Co</p>
 <hr>
 <hr>
@@ -433,7 +453,7 @@
 </ul>
 <hr>
 <h5 class="hxr-h3">Testimonial Usage Matrix</h5>
-<div class="hx-table"><table><thead><tr><th>Channel</th><th>Format</th><th>Status</th></tr></thead><tbody><tr><td>Website homepage</td><td>Short quote</td><td>Pending</td></tr><tr><td>Case study page</td><td>Full story</td><td>Pending</td></tr><tr><td>Sales deck</td><td>Medium quote</td><td>Pending</td></tr><tr><td>Social media</td><td>Short + photo</td><td>Pending</td></tr><tr><td>Press release</td><td>Full paragraph</td><td>Pending</td></tr><tr><td>G2/Review site</td><td>Review post</td><td>Pending</td></tr></tbody></table></div>
+<div class="hx-table"><table><thead><tr><th>Channel</th><th>Format</th><th>Status</th></tr></thead><tbody><tr><td>Website homepage</td><td>Short quote</td><td>Pending</td></tr><tr><td>Case study page</td><td>Full story</td><td>Pending</td></tr><tr><td>Sales deck</td><td>Medium quote</td><td>Pending</td></tr><tr><td>Social media</td><td>Short + photo</td><td>Pending</td></tr><tr><td>Press release</td><td>Full paragraph</td><td>Pending</td></tr><tr><td>Review site</td><td>Review post</td><td>Pending</td></tr></tbody></table></div>
 <hr>
 <p>Suggested timings, lengths and counts: adjust them to your own.</p></div></details>
     <footer class="hxr-foot"><span>Built by Shashwat Ghosh</span><span>https://craft-content.gtmhelix.com/tools/testimonial-capture/</span></footer>

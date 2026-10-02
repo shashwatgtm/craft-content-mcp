@@ -15,11 +15,12 @@ const call = async (name, args) => {
   return { isError: !!j.result.isError, text: j.result.content.map((c) => c.text).join("\n") };
 };
 
-// The Clarity score and the named jargon words (empty when no jargon line is shown), read from the answer text.
+// The Clarity score and the named buzzwords (empty when no buzzword line is shown), read from the answer text.
+// Run 19 (D80, problem 5): the line is now "- Buzzwords (n): "word" in "sentence"; ..." and every buzzword found takes one point, at most four.
 const clarity = (text) => {
   const score = Number(text.match(/\| Clarity \| (\d+)\/10 \|/)[1]);
-  const line = text.match(/^- Business jargon detected: (.*)$/m);
-  return { score, jargon: line ? line[1].split(", ") : [] };
+  const line = text.match(/^- Buzzwords \(\d+\): (.*)$/m);
+  return { score, jargon: line ? [...line[1].matchAll(/"([^"]+)" in "/g)].map((m) => m[1].toLowerCase()) : [] };
 };
 
 const MYTEST = "Our platform lets revenue teams leverage AI-driven insights to optimize every stage of the pipeline across the whole organization, and our methodology aligns sales, marketing and customer success around one shared view of each account.\n\nTeams utilize real-time dashboards that pull data from the CRM, the billing system and the support desk, so leaders can act on accurate numbers every single day of the quarter.\n\nOur implementation team configures each workspace in line with the operating rhythm of the business, including weekly forecast calls, monthly board packs and quarterly planning cycles.\n\nLeading enterprises across financial services, healthcare and manufacturing rely on the platform to drive alignment at scale and deliver predictable growth across every region they operate in.";
@@ -31,23 +32,23 @@ for (const name of ["mytest", "minimal", "emptyopt"]) {
     const r = await call("craft_content_improver", args);
     assert.equal(r.isError, false);
     const c = clarity(r.text);
-    assert.deepEqual(c.jargon, ["utilize", "leverage", "optimize", "methodology"]);
-    assert.equal(c.score, 6);
+    assert.deepEqual(c.jargon, ["leverage", "optimize", "methodology", "utilize"]);
+    assert.equal(c.score, 3); // 10, minus 3 for sentences over 25 words on average, minus 4 for four buzzwords (run 19)
   });
 }
 
-test("craft_content_improver: parts of longer words are not jargon, so the clarity score is not cut for them", async () => {
-  const r = await call("craft_content_improver", { content: "We utilize tools. The implementation of the optimized plan went well. Expect more.", content_type: "blog_post" });
+test("craft_content_improver: parts of longer words are not buzzwords, so the clarity score is not cut for them", async () => {
+  const r = await call("craft_content_improver", { content: "The implementation of the synergistic plan shows robustness and empowerment. Expect more.", content_type: "blog_post" });
   assert.equal(r.isError, false);
   const c = clarity(r.text);
   assert.deepEqual(c.jargon, []);
   assert.equal(c.score, 10);
 });
 
-test("craft_content_improver: whole jargon words still count, in any letter case", async () => {
+test("craft_content_improver: whole buzzwords still count, in any letter case ('implement' is no longer on the list: it was replaced by 'start' and changed the meaning)", async () => {
   const r = await call("craft_content_improver", { content: "We Utilize tools, leverage data and implement plans. Expect more.", content_type: "blog_post" });
   assert.equal(r.isError, false);
   const c = clarity(r.text);
-  assert.deepEqual(c.jargon, ["utilize", "leverage", "implement"]);
-  assert.equal(c.score, 9);
+  assert.deepEqual(c.jargon, ["utilize", "leverage"]);
+  assert.equal(c.score, 8);
 });

@@ -1,4 +1,5 @@
-import { parseListItems, lowerFirstIfCommon, SUGGESTION_FOOTER } from './utils.js';
+import { lowerFirstIfCommon, cap, SUGGESTION_FOOTER } from './utils.js';
+import { splitItems, q, qs, readContext, answerFor, objectionKind, proofFor, sectorNotes, startWords, type ObjectionKind, type Vertical } from './sector.ts';
 
 // Text only (run 8): an input phrase used as a whole sentence inside a script ends with a full stop.
 function asSentence(text: string | undefined): string {
@@ -12,36 +13,43 @@ function midSentence(text: string): string {
   return lowerFirstIfCommon(text);
 }
 
-// Generate likely objections based on product description and price context
-function generateLikelyObjections(product: string, priceContext: string): string[] {
+// Generate likely objections when the user gave none. Run 19 (D80, problem 8): the sector's own objections first when the sector is known.
+function generateLikelyObjections(product: string, priceContext: string, v: Vertical | null): string[] {
+  if (v) return v.objections.map((o) => o.objection);
   const objections: string[] = [];
   const productLower = product.toLowerCase();
-  
+
   // Price-related objection (always common)
   if (priceContext.toLowerCase().includes('premium') || priceContext.toLowerCase().includes('above')) {
     objections.push('It costs too much / over budget');
   } else {
     objections.push('What\'s the total cost of ownership?');
   }
-  
+
   // Implementation/integration concerns
   objections.push('Implementation seems complex / takes too long');
-  
+
   // Competitor objection
   objections.push('We\'re already using a competitor / happy with current solution');
-  
+
   // Timing objection
   objections.push('Not the right time / other priorities');
-  
+
   // Trust/risk objection
   if (productLower.includes('startup') || productLower.includes('new')) {
     objections.push('You\'re too new / not proven enough');
   } else {
     objections.push('Need to see more proof / case studies');
   }
-  
+
   return objections;
 }
+
+const KIND_LABEL: Record<ObjectionKind, string> = {
+  price: 'a price objection', existing: 'an objection about a tool or provider they already have', adoption: 'an adoption objection (will people use it)',
+  implementation: 'a setup and switching objection', security: 'a security, compliance or risk objection', bundle: 'an objection about buying one bundle instead',
+  timing: 'a timing objection', accuracy: 'an accuracy and trust objection', proof: 'a request for proof', other: 'an objection that needs a question first'
+};
 
 export function generateSalesEnablement(args: {
   product: string;
@@ -52,42 +60,53 @@ export function generateSalesEnablement(args: {
   competitor_objections?: string;
   price_context?: string;
   sales_stage?: string;
+  business_model?: string;
 }): string {
   const product = args.product;
   const persona = args.target_persona;
-  const proofPoints = parseListItems(args.proof_points);
+  const proofPoints = splitItems(args.proof_points);
   const priceContext = args.price_context || 'Market rate';
   // Run 12 (R12-20): a default is shown as assumed.
   const priceShown = args.price_context || 'Market rate (assumed, not supplied)';
   const stage = args.sales_stage || 'demo';
-  
+  // Run 19 (D80, problems 4 and 8): the sector and the business model are read from every text the user gave.
+  const ctx = readContext(args.business_model, [product, args.proof_points, args.common_objections, args.value_props, args.competitor_objections, args.price_context], [persona]);
+  const w = startWords(ctx.model);
+  const walk = ctx.model === 'services' || ctx.model === 'connectivity' || ctx.model === 'investment' ? 'walkthrough' : 'demo';
+
   // HANDLE optional objections - generate if not provided
   let objections: string[];
   let objectionsNote = '';
   if (args.common_objections) {
-    objections = parseListItems(args.common_objections);
+    objections = splitItems(args.common_objections);
   } else {
-    objections = generateLikelyObjections(product, priceContext);
-    objectionsNote = `\n**NOTE:** You didn't provide objections. We've generated handlers for the most common objections. Update these with real objections you hear from prospects.\n`;
+    objections = generateLikelyObjections(product, priceContext, ctx.v);
+    objectionsNote = `\n**NOTE:** You didn't provide objections. We've generated handlers for ${ctx.v ? `the objections ${ctx.v.name} buyers raise most` : 'the most common objections'}. Update these with real objections you hear from prospects.\n`;
   }
-  
+
   // DERIVE value props from proof points if not provided
   let valueProps: string[];
   if (args.value_props) {
-    valueProps = parseListItems(args.value_props);
+    valueProps = splitItems(args.value_props);
   } else {
     valueProps = proofPoints.map(pp => deriveValuePropFromProof(pp));
   }
-  
-  const competitorObjections = args.competitor_objections ? parseListItems(args.competitor_objections) : [];
-  
-  // Generate objection handlers with proof point mapping
-  const objectionHandlers = objections.map(obj => generateObjectionHandler(obj, valueProps, proofPoints, priceContext));
-  const competitorHandlers = competitorObjections.map(obj => generateCompetitorHandler(obj, valueProps, proofPoints));
+
+  const competitorObjections = args.competitor_objections ? splitItems(args.competitor_objections) : [];
+
+  // Generate objection handlers: each objection is read on its own, answered with the sector's pattern and the proof point that fits it.
+  const usedProof = new Set<string>();
+  const usedValue = new Set<string>();
+  const objectionHandlers = objections.map(obj => generateObjectionHandler(obj, valueProps, proofPoints, priceContext, ctx.v, usedProof, usedValue));
+  const competitorHandlers = competitorObjections.map((obj, i) => generateCompetitorHandler(obj, proofPoints, i));
+
+  const valueRows = valueProps.map((vp, i) => `| ${vp} | ${proofPoints[i % Math.max(1, proofPoints.length)] && proofPoints[i % proofPoints.length] !== vp ? proofPoints[i % proofPoints.length] : '[Add the proof you can cite for this]'} |`);
 
   let output = `# Sales Enablement Kit
 ## ${product} | ${persona}
 ${objectionsNote}
+${ctx.line}
+
 ---
 
 ## Quick Reference Card
@@ -109,17 +128,17 @@ ${objectionsNote}
 
 ${valueProps.map((vp, i) => `
 **${i + 1}. ${vp}**
-- *Why it matters to ${midSentence(persona)}:* [Connect to their specific pain]${(proofPoints[i % proofPoints.length] || '') === vp ? '' : `
-- *Proof:* ${proofPoints[i % proofPoints.length] || '[Your proof point]'}`}
+- *Why it matters to ${midSentence(persona)}:* [Add their specific pain]${(proofPoints[i % proofPoints.length] || '') === vp ? '' : `
+- *Proof:* ${proofPoints[i % proofPoints.length] || '[Add your proof point]'}`}
 `).join('\n')}
 
 ---
-
+${ctx.v ? `\n${sectorNotes(ctx.v, 'all', ctx.model)}\n\n---\n` : ''}
 ## Pitch Script by Stage
 
 ### ${stage.charAt(0).toUpperCase() + stage.slice(1).replace(/_/g, ' ')} Stage
 
-${generateStagePitch(stage, product, valueProps, persona, proofPoints)}
+${generateStagePitch(stage, product, valueProps, persona, proofPoints, walk)}
 
 ---
 
@@ -127,6 +146,8 @@ ${generateStagePitch(stage, product, valueProps, persona, proofPoints)}
 
 ${objectionHandlers.map((handler, i) => `
 ### Objection ${i + 1}: "${objections[i]}"
+
+**What this is:** ${handler.label}
 
 **Acknowledge:**
 > ${handler.acknowledge}
@@ -136,10 +157,13 @@ ${objectionHandlers.map((handler, i) => `
 
 **Proof Point:**
 > ${handler.proof}
-${handler.bridge === handler.proof ? '' : `
+
+**Your answer pattern (advice for you, not a line to read out):**
+> ${handler.pattern}
+${handler.bridge ? `
 **Bridge to Value:**
 > ${handler.bridge}
-`}
+` : ''}
 **Full Response Script:**
 > "${handler.fullScript}"
 
@@ -174,9 +198,11 @@ ${handler.whenHeard}
 
 **Value Framework:**
 
-| Investment | Return |
-|------------|--------|
-${[valueProps[0] || 'Key benefit 1', valueProps[1], proofPoints[0]].filter((v, i, a) => v && a.indexOf(v) === i).map((v, i) => `| ${i === 0 ? `${product} pricing` : ''} | ${v} |`).join('\n')}
+| Value | Proof you can cite |
+|-------|--------------------|
+${valueRows.join('\n') || '| [Add your key benefit] | [Add the proof you can cite] |'}
+
+**Investment:** ${product} is positioned at ${priceShown}.
 
 **ROI Conversation:**
 
@@ -184,24 +210,25 @@ ${[valueProps[0] || 'Key benefit 1', valueProps[1], proofPoints[0]].filter((v, i
 
 ${proofPoints.slice(0, 3).map(p => `- ${p}`).join('\n')}
 
-Based on what you've shared about your situation, here's what that could mean for you: [Calculate specific ROI for prospect]"
+Based on what you've shared about your situation, here's what that could mean for you: [Add the specific ROI for this prospect, from their own figures]"
 
 **If Price Pushback:**
 
-"I understand budget is a consideration. Let me ask: what's the cost of NOT solving this problem for another 6 months? (Example figure: replace with your own)
+"I understand budget is a consideration. Let me ask: what does it cost you each month to leave this problem as it is?
 
-${valueProps[0] || '[Your key value]'}: [the outcome you can prove]. For a company your size, that's roughly [X in savings/revenue].
-
-The question isn't whether you can afford ${product}. It's whether you can afford not to."
+${valueProps[0] || '[Add your key value]'}: [Add the outcome you can prove]. For a company your size, that's roughly [Add the saving or revenue, from their own figures]."
 
 ---
 
 ## Discovery Questions for ${midSentence(persona)}
-
+${ctx.v ? `
+### In the Language of ${cap(ctx.v.name)}
+${ctx.v.discovery.map((d, i) => `${i + 1}. "${d}"`).join('\n')}
+` : ''}
 ### Opening Questions
-1. "Tell me about your current approach to [problem area]."
+1. "Tell me about your current approach to [Add the problem area]."
 2. "What's working well? What's not?"
-3. "How is this affecting [relevant business metric]?"
+3. "How is this affecting [Add the business measure that matters to them]?"
 
 ### Pain Discovery
 4. "What happens if you don't solve this in the next 6 months?"
@@ -224,29 +251,29 @@ The question isn't whether you can afford ${product}. It's whether you can affor
 
 ### After Discovery Call
 
-Subject: ${product} next steps + [specific thing mentioned]
+Subject: ${product} next steps + [Add the specific thing mentioned]
 
 Hi [Name],
 
-Thanks for sharing about [specific challenge mentioned]. 
+Thanks for sharing about [Add the specific challenge mentioned].
 
 Based on what you described, here's what stands out:
-- [Challenge 1] is costing you [impact]
-- [Challenge 2] is blocking [goal]
+- [Add challenge 1] is costing you [Add the impact]
+- [Add challenge 2] is blocking [Add the goal]
 
 ${product} addresses this${valueProps[0] ? `: ${midSentence(valueProps[0])}` : ' by solving your core problem'}.
 
 ${proofPoints[0] && proofPoints[0] !== valueProps[0] ? `Relevant proof: ${proofPoints[0]}` : ''}
 
-Next step: [Specific action]
+Next step: [Add the specific action]
 
 When works for you?
 
 ---
 
-### After Demo
+### After ${cap(walk)}
 
-Subject: ${product} demo follow-up + next steps
+Subject: ${product} ${walk} follow-up + next steps
 
 Hi [Name],
 
@@ -256,16 +283,16 @@ Great connecting today. Here's a quick recap:
 ${valueProps.slice(0, 3).map(v => `- ${v}`).join('\n')}
 
 **What resonated:**
-- [Note specific moment they engaged]
+- [Add the specific moment they engaged]
 
 **Your questions:**
-- [Answer questions raised]
+- [Add the answers to questions raised]
 
-**Next step:** [Specific action + date]
+**Next step:** [Add the specific action and date]
 
 Resources:
-- [Relevant case study]
-- [One-pager]
+- [Add the relevant case study]
+- [Add the one-pager]
 
 Talk soon,
 
@@ -277,11 +304,12 @@ Before every ${stage.replace(/_/g, ' ')} call:
 
 - [ ] Research: Reviewed LinkedIn, recent news, annual report
 - [ ] Context: Know their industry challenges
-- [ ] Personalization: Have 2-3 specific observations (Example figure: replace with your own)
+- [ ] Personalization: Have a few specific observations
 - [ ] Objection prep: Anticipate their top 2 concerns
 - [ ] Proof ready: Have relevant case study queued
 - [ ] Questions ready: Top 5 discovery questions
 - [ ] CTA clear: Know exactly what next step to propose
+- [ ] Start plan ready: Know what the ${w.rollout} would involve and how you will say it
 
 ---
 
@@ -299,102 +327,109 @@ ${SUGGESTION_FOOTER}
   return output;
 }
 
+// One handler per objection. Run 19 (D80, problem 3): the objection is read for what it is, the sector's pattern and the proof point
+// that fits it are used, and the script quotes the objection, so three objections never get one reply.
 function generateObjectionHandler(
   objection: string,
   valueProps: string[],
   proofPoints: string[],
-  priceContext: string
-): { acknowledge: string; reframe: string; proof: string; bridge: string; fullScript: string } {
-  const objLower = objection.toLowerCase();
-  
-  // Price objections
-  if (objLower.includes('price') || objLower.includes('expensive') || objLower.includes('cost') || objLower.includes('budget')) {
-    return {
-      acknowledge: "I hear you, budget is always a consideration.",
-      reframe: "[Only if true and provable: Let me share what our customers found when they compared total cost of ownership.]",
-      proof: proofPoints[0] || "[Only if true and provable: customers see ROI within X months.]",
-      bridge: valueProps[0] || "The key value driver is...",
-      fullScript: `I hear you, budget is always a consideration. [Only if true and provable: companies that focus only on price end up spending more in the long run on hidden costs or lost opportunity.] ${asSentence(proofPoints[0]) || '[Only if true and provable: our customers see ROI within a timeframe you can name.]'} The question isn't the price. It's the value. Would it help to walk through an ROI calculation based on your specific numbers?`
-    };
-  }
-  
-  // Timing objections
-  if (objLower.includes('time') || objLower.includes('now') || objLower.includes('later') || objLower.includes('busy') || objLower.includes('next quarter')) {
-    return {
-      acknowledge: "Timing is definitely important to get right.",
-      reframe: "I'm curious: what would need to change for the timing to feel right?",
-      proof: proofPoints[0] || "[Only if true and provable: companies that waited reported X in additional costs.]",
-      bridge: valueProps[0] || "The cost of waiting is often...",
-      fullScript: `Timing is definitely important. I'm curious: what would need to change for the timing to feel right? [Only if true and provable: the cost that waiting adds, in numbers you can show.] ${asSentence(proofPoints[0]) || 'Example quote (not from your input): one customer told us they wished they had started 6 months earlier (Example figure: replace with your own).'} Even if the full rollout is later, starting discovery now means you're ready when the time is right. What would be the cost of waiting another quarter?`
-    };
-  }
-  
-  // Run 12 (R12-20): an objection asking for proof gets a proof question, not the feature reframe.
-  if (objLower.includes('proof') || objLower.includes('case stud')) {
-    return {
-      acknowledge: "Wanting proof before deciding is fair.",
-      reframe: "Which proof would settle it for you: a reference call, a case study or a pilot?",
-      proof: proofPoints[0] || "[Your strongest proof point]",
-      bridge: "Let me set up the proof that matters most to you.",
-      fullScript: `Wanting proof before deciding is fair. Which proof would settle it for you: a reference call, a case study or a pilot? ${asSentence(proofPoints[0]) || '[Your strongest proof point]'} I can set up whichever of these we can offer.`
-    };
-  }
+  priceContext: string,
+  v: Vertical | null,
+  usedProof: Set<string>,
+  usedValue: Set<string>
+): { label: string; acknowledge: string; reframe: string; proof: string; pattern: string; bridge: string; fullScript: string } {
+  const kind = objectionKind(objection);
+  const proof = proofFor(kind, proofPoints, usedProof);
+  if (proof) usedProof.add(proof);
+  const valueMatch = proofFor(kind, valueProps, usedValue);
+  if (valueMatch && valueMatch !== proof) usedValue.add(valueMatch);
+  const quoted = q(objection);
+  const proofSentence = proof ? asSentence(proof) : '';
+  const missingProof = '[Add a proof point that answers this objection; none of the proof points you gave does]';
+  const pattern = answerFor(objection, v);
 
-  // Feature/capability objections
-  if (objLower.includes('feature') || objLower.includes('can\'t') || objLower.includes('doesn\'t') || objLower.includes('missing') || objLower.includes('need')) {
-    return {
-      acknowledge: "That's a fair point. Let me understand what you're trying to accomplish.",
-      reframe: "What problem are you solving with that specific feature?",
-      proof: proofPoints[0] || "[How other customers handle that use case]",
-      bridge: valueProps[0] || "[Only if true: how your core capability addresses the underlying need]",
-      fullScript: `That's a fair point. Help me understand: what's the underlying problem you're solving with that feature? [Listen] [Only if true: how your alternative approach achieves the same outcome.] ${asSentence(proofPoints[0]) || '[What customers using your approach report]'}${valueProps[0] === proofPoints[0] ? '' : ` [Only if true: how ${valueProps[0] ? midSentence(valueProps[0]) : 'your core strength'} makes that specific feature less critical.]`} Would it help to see how others handle this?`
-    };
-  }
-  
-  // Trust/risk objections
-  if (objLower.includes('risk') || objLower.includes('trust') || objLower.includes('proven') || objLower.includes('new') || objLower.includes('reference')) {
-    return {
-      acknowledge: "De-risking a decision like this is smart: you should validate before committing.",
-      reframe: "What would make you feel confident in moving forward?",
-      proof: proofPoints[0] || "[Similar companies you work with in their space]",
-      bridge: "[Only if you have one: Let me connect you with a customer who had similar concerns.]",
-      fullScript: `De-risking this decision is smart. I'd want to validate too. What would make you feel confident? ${asSentence(proofPoints[0]) || '[A customer like them you can name]'} [Only if you have a reference customer: I'd be happy to arrange a reference call.] [Only if you offer one: a pilot, guarantee or sandbox so you can validate before fully committing.] What would be most helpful for you?`
-    };
-  }
-  
-  // Competitor objections
-  if (objLower.includes('competitor') || objLower.includes('other') || objLower.includes('alternative') || objLower.includes('already')) {
-    return {
-      acknowledge: "Makes sense to evaluate options thoroughly.",
-      reframe: "What's most important to you in making this decision?",
-      proof: proofPoints[0] || "[What customers who compared you found]",
-      bridge: valueProps[0] || "[What sets you apart]",
-      fullScript: `Makes sense to evaluate options thoroughly. What's most important to you in making this decision? [Listen] [Only if true: that's exactly where we differentiate]. ${valueProps[0] || '[Your difference]'} means [specific advantage].${valueProps[0] === proofPoints[0] ? '' : ` ${asSentence(proofPoints[0]) || '[What customers who compared you found]'}`} What if I share a side-by-side comparison focused on what matters most to you?`
-    };
-  }
-  
-  // Generic handler
+  const kinds: Record<ObjectionKind, { ack: string; reframe: string; close: string }> = {
+    price: {
+      ack: /premium|above/i.test(priceContext) ? 'I hear you: our price sits above the alternatives, so it has to earn it.' : 'I hear you: budget is always a consideration.',
+      reframe: 'What does the problem cost you today, in your own numbers?',
+      close: 'Would it help to put your numbers next to the price before we talk about discounts?'
+    },
+    existing: {
+      ack: 'Makes sense: you already have something in place and it should be respected.',
+      reframe: 'What does it not do for you today, and what does that cost?',
+      close: 'Would it help to see where we work alongside it and where we would replace it?'
+    },
+    adoption: {
+      ack: 'That is a fair worry: a tool nobody uses is worse than none.',
+      reframe: 'Who would use it every day, and what would make them keep using it?',
+      close: 'Would a small pilot with those people, with an agreed way to measure use, settle it?'
+    },
+    implementation: {
+      ack: 'Setup is a real concern, and you should ask about it early.',
+      reframe: 'Which systems and people would the change touch?',
+      close: 'Would it help to walk through the plan step by step, with a rollback point for each step?'
+    },
+    security: {
+      ack: 'You should ask this before anything else.',
+      reframe: 'Which requirement matters most to your security or compliance team?',
+      close: 'Would it help if we answered your security questions in writing before the next call?'
+    },
+    bundle: {
+      ack: 'One vendor is simpler to manage, and that counts.',
+      reframe: 'What outcome do you need from this part of the bundle?',
+      close: 'Would it help to compare the outcome you need from each option, not the size of the bundle?'
+    },
+    timing: {
+      ack: 'Timing matters, and there is a lot on your plate.',
+      reframe: 'What would need to change for the timing to feel right, and what date is driving that?',
+      close: 'Would it help to plan back from that date, so the start is small and on time?'
+    },
+    accuracy: {
+      ack: 'You are right to ask: you should not trust it until you have checked it.',
+      reframe: 'What would you need to see before you trusted it with a real case?',
+      close: 'Would it help to test it on your own history, with a person approving anything risky?'
+    },
+    proof: {
+      ack: 'Wanting proof before deciding is fair.',
+      reframe: 'Which proof would settle it for you: a reference call, a case study or a pilot?',
+      close: 'I can set up whichever of these we can offer.'
+    },
+    other: {
+      ack: 'Thank you for saying so directly.',
+      reframe: 'Help me understand what is behind that, and what would change your mind?',
+      close: 'What would be most helpful to show you next?'
+    }
+  };
+  const k = kinds[kind];
+  const fullScript = `I hear you: ${qs(objection)}. ${k.ack} ${k.reframe} ${proofSentence || '[Add a proof point that answers this objection]'} ${k.close}`.replace(/\s+/g, ' ').trim();
   return {
-    acknowledge: `I understand the concern.`,
-    reframe: "Help me understand what's driving that concern...",
-    proof: proofPoints[0] || "[How you address that]",
-    bridge: valueProps[0] || "[The key benefit]",
-    fullScript: `I understand your concern. Help me understand what's driving that? [Listen] Here's how we address it: ${valueProps[0] || '[your approach]'}.${valueProps[0] === proofPoints[0] ? '' : ` ${asSentence(proofPoints[0]) || '[What customers find]'}`} Does that address your concern?`
+    label: KIND_LABEL[kind],
+    acknowledge: k.ack,
+    reframe: k.reframe,
+    proof: proof || missingProof,
+    pattern,
+    bridge: valueMatch && valueMatch !== proof ? valueMatch : '',
+    fullScript
   };
 }
 
 function generateCompetitorHandler(
   objection: string,
-  valueProps: string[],
-  proofPoints: string[]
+  proofPoints: string[],
+  index: number
 ): { whenHeard: string; response: string; trapQuestion: string; proof: string } {
-  // Run 12 (R12-20): the objection is quoted as said in the heading; it is never placed in a name slot
-  // ("Why not Salesforce already does this?" was printed before).
+  // Run 12 (R12-20): the objection is quoted as said in the heading; it is never placed in a name slot.
+  // Run 19 (D80, problem 3): each competitor objection gets its own response, built on its own words and the next proof point in turn.
+  const quoted = q(objection);
+  // "Why not X" names the alternative: ask about X itself. Any other wording is quoted whole.
+  const named = objection.trim().match(/^why not (?:the )?(.+?)\??$/i);
+  const subject = named ? named[1] : quoted;
+  const proof = proofPoints.length ? proofPoints[index % proofPoints.length] : '';
   return {
-    whenHeard: `Usually when prospects are comparing options or already use another tool`,
-    response: `Here's what we can show: ${asSentence(proofPoints[0]) || '[proof from a customer who compared both]'} What's most important to you in this decision?`,
-    trapQuestion: `Did the other option address [your key differentiator]? How did it handle [its known weakness]?`,
-    proof: proofPoints[0] || `[Proof from a customer who compared both]`
+    whenHeard: `When a prospect says ${quoted}, they are weighing you against something they already know.`,
+    response: `Here's what we can show: ${asSentence(proof) || '[Add proof from a customer who compared both]'} Then ask: what would ${subject} still leave your team to do by hand?`,
+    trapQuestion: `When you looked at ${named ? named[1] : qs(objection)}, how did it handle [Add the capability that matters most to this buyer]? What did it leave out?`,
+    proof: proof || `[Add proof from a customer who compared both]`
   };
 }
 
@@ -403,17 +438,18 @@ function generateStagePitch(
   product: string,
   valueProps: string[],
   persona: string,
-  proofPoints: string[]
+  proofPoints: string[],
+  walk: string
 ): string {
   const pitches: Record<string, string> = {
     prospecting: `
 **Cold Outreach Framework:**
 
-"Hi [Name], I'm reaching out because [the pain point you have seen ${/s$/i.test(persona.trim()) ? midSentence(persona) : `${midSentence(persona)}s`} at companies like theirs struggle with].
+"Hi [Name], I'm reaching out because [Add the pain point you have seen at companies like theirs; persona: ${midSentence(persona)}].
 
-${valueProps[0] || '[What you help with]'}: ${proofPoints[0] || '[Your proof]'} 
+${valueProps[0] || '[Add what you help with]'}: ${proofPoints[0] || '[Add your proof]'}
 
-Worth a 15-minute conversation? (Example figure: replace with your own)
+Worth a short conversation?
 
 [Your name]"
 `,
@@ -421,7 +457,7 @@ Worth a 15-minute conversation? (Example figure: replace with your own)
 **Discovery Call Structure:**
 
 **Opening (2 min):**
-"Thanks for taking the time. Before I tell you about ${product}, I'd love to understand your situation. Tell me about [their main challenge area]..."
+"Thanks for taking the time. Before I tell you about ${product}, I'd love to understand your situation. Tell me about [Add their main challenge area]..."
 
 **Questions (15 min):**
 Focus on understanding their:
@@ -434,20 +470,20 @@ Focus on understanding their:
 "Based on what you've shared, here's how ${product} could help: ${valueProps.slice(0, 2).map(midSentence).join(' and ')}."
 
 **Next Step:**
-"Would it be helpful to see a demo focused on [specific pain mentioned]?"
+"Would it be helpful to see a ${walk} focused on [Add the specific pain mentioned]?"
 `,
     demo: `
-**Demo Structure:**
+**${cap(walk)} Structure:**
 
 **Agenda (1 min):**
 "Here's what we'll cover: ${valueProps.slice(0, 3).join(', ')}. Sound good?"
 
-**Demo (20 min):**
-For each feature, frame as:
-"You mentioned [their pain]. Here's how we solve that..."
+**${cap(walk)} (20 min):**
+For each part, frame it as:
+"You mentioned [Add their pain]. Here's how we solve that..."
 
 **Social Proof (3 min):**
-"${proofPoints[0] || '[What customers like them have seen]'}"
+"${proofPoints[0] || '[Add what customers like them have seen]'}"
 
 **Questions & Objections (10 min):**
 Address them with the objection handlers in this kit.
@@ -459,22 +495,22 @@ Address them with the objection handlers in this kit.
 **Negotiation Framework:**
 
 **Establish Value First:**
-"Before we discuss terms, let's align on value. You mentioned ${product} would help you [outcome]. Based on your numbers, that's worth [ROI calculation]."
+"Before we discuss terms, let's align on value. You mentioned ${product} would help you [Add the outcome]. Based on your numbers, that's worth [Add the ROI calculation]."
 
 **Bundle, Don't Discount:**
-If asked for discount: "Instead of reducing price, let me add value. What if we included [additional feature/service]?"
+If asked for discount: "Instead of reducing price, let me add value. What if we included [Add the additional feature or service]?"
 
 **Create Urgency:**
-"This pricing is valid through [date] because [legitimate reason]."
+"This pricing is valid through [Add the date] because [Add the legitimate reason]."
 
 **Decision Timeline:**
-"What would it take to make a decision by [date]?"
+"What would it take to make a decision by [Add the date]?"
 `,
     closing: `
 **Closing Framework:**
 
 **Summary of Value:**
-"Let me recap: you needed [problem 1, 2, 3]. ${product} delivers ${valueProps.slice(0, 3).join(', ')}. ${proofPoints[0] || '[Only if true and provable: similar customers see ROI in X months.]'}"
+"Let me recap: you needed [Add problems 1, 2, 3]. ${product} delivers ${valueProps.slice(0, 3).join(', ')}. ${proofPoints[0] || '[Only if true and provable: what similar customers have seen.]'}"
 
 **The Ask:**
 "Based on everything we've discussed, are you ready to move forward?"
@@ -486,7 +522,7 @@ If asked for discount: "Instead of reducing price, let me add value. What if we 
 **If No:** "I respect that. What would need to change?"
 `
   };
-  
+
   return pitches[stage] || pitches.demo;
 }
 
@@ -495,3 +531,4 @@ If asked for discount: "Instead of reducing price, let me add value. What if we 
 function deriveValuePropFromProof(proof: string): string {
   return proof;
 }
+

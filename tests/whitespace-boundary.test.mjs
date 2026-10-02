@@ -61,7 +61,8 @@ test("newsletter_builder: a padded topic prints no double space in the subject l
 test("newsletter_builder: a topic with a trailing space in a product update has single spaces in every subject line", async () => {
   const t = await nl("AI agents ", "read the blog", { newsletter_type: "product_update" });
   assert.match(t, /^\*\*New: The AI agents feature you asked for \[only if customers asked for it\]\*\*$/m);
-  assert.match(t, /^\*\*\[Product Update\] AI agents is here\*\*$/m);
+  // Run 19 (D80, problem 2): the topic is never pasted before "is", so the fourth subject line is "Product update: AI agents".
+  assert.match(t, /^\*\*Product update: AI agents\*\*$/m);
 });
 
 test("newsletter_builder: interior double spaces and interior newlines in topic and cta_goal are kept exactly in the echoes", async () => {
@@ -76,7 +77,8 @@ test("newsletter_builder: interior double spaces and interior newlines in topic 
 
 test("newsletter_builder: a topic with interior runs of spaces makes subject lines with no empty word", async () => {
   const t = await nl("AI   agents  for finance", "read the blog", { newsletter_type: "product_update" });
-  assert.match(t, /^\*\*New: The AI agents feature you asked for \[only if customers asked for it\]\*\*$/m);
+  // Run 19 (D80, problem 2): the whole topic is used (it is no longer cut to three words), with single spaces.
+  assert.match(t, /^\*\*New: The AI agents for finance feature you asked for \[only if customers asked for it\]\*\*$/m);
   for (const s of subjectsOf(t)) assert.doesNotMatch(s, /\S {2,}\S/, s);
 });
 

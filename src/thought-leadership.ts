@@ -1,4 +1,5 @@
-import { parseListItems, lowerCommonWords, lowerFirstIfCommon, cap, titleWords, SUGGESTION_FOOTER } from './utils.js';
+import { cap, lowerFirstIfCommon, titleWords, topicWords, SUGGESTION_FOOTER } from './utils.js';
+import { splitItems, q, readContext, isClause, type Vertical } from './sector.ts';
 
 export function generateThoughtLeadership(args: {
   topic: string;
@@ -10,23 +11,25 @@ export function generateThoughtLeadership(args: {
   article_type?: string;
 }): string {
   const topic = args.topic;
-  const yourTake = args.your_take;
+  const yourTake = args.your_take.trim().replace(/^"|"$/g, '');
   const targetReader = args.target_reader;
   // Run 12 (R12-20, B5): a role the user did not give is a bracket prompt, never invented.
-  const authorBackground = args.author_background || '[your role]';
+  const authorBackground = args.author_background || '[Add your role and why you are credible]';
   const numArticles = args.num_articles || 3;
   // 3 articles is a default when num_articles was not supplied: label it as an example
   const countLabel = args.num_articles ? '' : ' (Example figure: replace with your own)';
   const articleType = args.article_type || 'contrarian';
-  
+  // Run 19 (D80, problems 4 and 8): the sector is read from every text the user gave.
+  const ctx = readContext(undefined, [topic, yourTake, args.proof_points, args.author_background], [targetReader]);
+
   // Handle missing proof points - suggest what to gather
   let proofPoints: string[];
   let proofPointsNote = '';
-  
+
   if (args.proof_points) {
-    proofPoints = parseListItems(args.proof_points);
+    proofPoints = splitItems(args.proof_points);
   } else {
-    proofPoints = generateSuggestedProofPoints(topic, yourTake, articleType);
+    proofPoints = generateSuggestedProofPoints(topic, articleType, ctx.v);
     proofPointsNote = `
 
 **NOTE:** You didn't provide proof points. The articles show a bracket prompt where each piece of proof goes.
@@ -34,7 +37,7 @@ export function generateThoughtLeadership(args: {
 
 `;
   }
-  
+
   let output = `# Thought Leadership Series: ${topic}
 
 ## Series Overview
@@ -45,8 +48,10 @@ export function generateThoughtLeadership(args: {
 | **Your Take** | ${yourTake} |
 | **Target Reader** | ${targetReader} |
 | **Author Credibility** | ${authorBackground} |
-| **Articles** | ${numArticles} byline ${numArticles === 1 ? 'piece' : 'pieces'} (600-800 words each)${countLabel} |
+| **Articles** | ${numArticles} byline ${numArticles === 1 ? 'piece' : 'pieces'} (600 to 800 words each)${countLabel} |
 | **Style** | ${articleType.replace(/_/g, ' ')} |
+
+${ctx.line}
 ${proofPointsNote}
 ---
 
@@ -54,13 +59,14 @@ ${proofPointsNote}
 
 ${proofPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 
+${proofPoints.length < numArticles ? `*You gave ${proofPoints.length} proof point${proofPoints.length === 1 ? '' : 's'} for ${numArticles} articles, so each article leads with a different one and some are used twice. Gather more to keep the articles apart.*\n` : `*Each article leads with a different proof point; every proof point is used.*\n`}
 ---
-
+${sectorBlock(ctx.v)}
 `;
 
-  // Generate full 600-800 word articles
+  // Generate the articles: each from its own angle and its own order of proof points
   for (let i = 0; i < numArticles; i++) {
-    const articleAngle = getArticleAngle(i, numArticles, articleType);
+    const articleAngle = getArticleAngle(i, numArticles, articleType, topic);
     output += generateFullArticle(
       topic,
       yourTake,
@@ -68,10 +74,11 @@ ${proofPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
       targetReader,
       authorBackground,
       articleAngle,
-      i + 1,
+      i,
       numArticles,
       countLabel,
-      !args.proof_points
+      !args.proof_points,
+      ctx.v
     );
   }
 
@@ -91,25 +98,22 @@ ${generatePromotionalPosts(topic, yourTake, proofPoints, numArticles, !args.proo
 
 | Week | Content | Platform |
 |------|---------|----------|
-${Array.from({ length: numArticles }, (_, i) => i + 1).map(n => `| Week ${n} | Article ${n} | LinkedIn Article / Medium / Company Blog |
-| Week ${n} | ${n < numArticles || numArticles === 1 ? `Promo post for Article ${n}` : 'Series summary post'} | ${n < numArticles || numArticles === 1 ? 'LinkedIn feed, Twitter' : 'LinkedIn feed'} |`).join('\n')}
-| Week ${numArticles + 1} | Pitch to industry publication | Forbes, Inc, industry trades |
+${Array.from({ length: numArticles }, (_, i) => i + 1).map(n => `| Week ${n} | Article ${n} | LinkedIn Article / your company blog |
+| Week ${n} | ${n < numArticles || numArticles === 1 ? `Promo post for Article ${n}` : 'Series summary post'} | LinkedIn feed |`).join('\n')}
+| Week ${numArticles + 1} | Pitch to an industry publication | The trade publications your readers read |
 
 ## Where to Publish
 
 **Tier 1: your owned channels**
-- LinkedIn Articles (best for B2B thought leadership)
-- Medium (broader reach, good SEO)
-- Company blog (owned asset)
+- LinkedIn Articles
+- Your company blog (an owned asset)
 
 **Tier 2: industry publications**
-- Industry-specific publications in your space
-- Trade magazines and websites
+- Publications and newsletters that ${lowerFirstIfCommon(targetReader)} read
+- Trade magazines and websites in your space
 
-**Tier 3: major outlets (pitch required)**
-- Forbes Councils (paid membership)
-- Entrepreneur, Inc (contributor programs)
-- Harvard Business Review (highly competitive)
+**Tier 3: major business outlets (pitch required)**
+- Read each outlet's contributor rules before you pitch, and pitch one piece at a time
 
 ---
 
@@ -132,91 +136,144 @@ ${SUGGESTION_FOOTER}
   return output;
 }
 
-function getArticleAngle(index: number, total: number, articleType: string): { title: string; structure: string; hook: string } {
-  const angles: Record<string, Array<{ title: string; structure: string; hook: string }>> = {
+// What readers in the sector usually raise against a take, and what a proof point that lands looks like (no figures, rule B82).
+function sectorBlock(v: Vertical | null): string {
+  if (!v) return '';
+  return `
+## Sector Notes: ${cap(v.name)}
+
+- **Counter-arguments your readers will raise:** ${v.objections.map((o) => o.objection.toLowerCase()).join('; ')}. Each article below answers one.
+- **Measures your readers use:** ${v.metrics.slice(0, 5).join(', ')}. Cite the ones your proof points really move.
+- **Terms your readers use:** ${v.vocabulary.slice(0, 6).join(', ')}.
+- **A proof point that lands:** ${v.proofShape}
+
+---
+`;
+}
+
+type Angle = { title: string; structure: string[]; hook: string; closing: string };
+
+// What to write in each part of an article, by what the part is for. The part's name is in the line, so no two articles share it.
+const STEP_GUIDES: [RegExp, (t: string, reader: string, v: Vertical | null) => string][] = [
+  [/cost|consequence/, (_t, _r, v) => `put a cost on it with measures your readers use${v ? ` (${v.metrics.slice(0, 3).join(', ')})` : ''}, using your own figures`],
+  [/avoid|persists|why people/, () => 'explain why capable people keep doing it: habit, incentives, or fear of the alternative'],
+  [/pitfall|mistake/, () => 'list the two or three mistakes you see most, and what each one costs'],
+  [/winners|implications/, () => 'say who gains and who loses if you are right, and what each should do now'],
+  [/step|method|how to|implementation|replicate|action plan|prepare|switch|face it|guide|actionable|applying|advice|new path|better alternative|new approach/, () => 'give the steps in order, one sentence each, with one example from the proof point'],
+  [/framework|model|components|breakdown|forces|predictions|lesson|learning|synthesis|discovery|breakthrough/, () => 'set the idea out in a few lines, as a list a reader could copy'],
+  [/evidence|proof|result|stories|signals|journey|parallel|struggle/, () => 'tell it as a short story: the situation, what was done, what changed, with the figure from the proof point'],
+  [/.*/, (t, reader) => `say what readers believe or do today about ${q(t)}, then your position, once and plainly, for ${reader}`]
+];
+function stepGuide(step: string, topic: string, reader: string, v: Vertical | null): string {
+  const s = step.toLowerCase();
+  const hit = STEP_GUIDES.find(([re]) => re.test(s)) as [RegExp, (t: string, reader: string, v: Vertical | null) => string];
+  return `${step.toLowerCase()}: ${hit[1](topic, lowerFirstIfCommon(reader), v)}`;
+}
+
+// Run 19 (D80, problem 2): no headline holds an unfilled bracket. A topic that is a clause or a question ("how finance teams close
+// the month") goes before a colon, where it reads correctly; a phrase goes inside the headline.
+function getArticleAngle(index: number, total: number, articleType: string, topic: string): Angle {
+  const T = titleWords(topic);
+  const clause = isClause(topic);
+  const angles: Record<string, Angle[]> = {
     contrarian: [
       {
-        title: 'Why Everything You Know About [Topic] Is Wrong',
-        structure: 'Challenge conventional wisdom → Show the evidence → Reveal the truth → New path forward',
-        hook: 'controversy'
+        title: clause ? `${T}: Why Everything You Know Is Wrong` : `Why Everything You Know About ${T} Is Wrong`,
+        structure: ['Challenge conventional wisdom', 'Show the evidence', 'Reveal the truth', 'A new path forward'],
+        hook: 'controversy',
+        closing: 'Close by asking where readers disagree: the best insights come from the conversation.'
       },
       {
-        title: 'The Uncomfortable Truth About [Topic]',
-        structure: 'Share the hard truth → Why people avoid it → Cost of avoidance → How to face it',
-        hook: 'revelation'
+        title: clause ? `${T}: The Uncomfortable Truth` : `The Uncomfortable Truth About ${T}`,
+        structure: ['Share the hard truth', 'Why people avoid it', 'The cost of avoidance', 'How to face it'],
+        hook: 'revelation',
+        closing: 'Close with one action a reader can take on Monday.'
       },
       {
-        title: 'Stop Doing [Common Practice]: What Actually Works',
-        structure: 'Common mistake → Why it persists → Better alternative → How to switch',
-        hook: 'direct_challenge'
+        title: clause ? `${T}: What to Stop Doing, and What Works` : `What to Stop Doing on ${T}, and What Works`,
+        structure: ['The common mistake', 'Why it persists', 'A better alternative', 'How to switch'],
+        hook: 'direct_challenge',
+        closing: 'Close with the one habit a reader should drop this week.'
       }
     ],
     how_to: [
       {
-        title: 'The Complete Guide to [Topic] That Nobody Teaches',
-        structure: 'Why this matters → Step-by-step framework → Common pitfalls → Advanced tips',
-        hook: 'promise_of_value'
+        title: clause ? `${T}: The Guide Nobody Teaches` : `The Complete Guide to ${T} That Nobody Teaches`,
+        structure: ['Why this matters', 'The step-by-step framework', 'Common pitfalls', 'Advanced tips'],
+        hook: 'promise_of_value',
+        closing: 'Close with a checklist the reader can copy.'
       },
       {
-        title: 'How I [Achieved Result] With [Topic]: A Playbook',
-        structure: 'The result → The journey → The method → How to replicate',
-        hook: 'proof_of_results'
+        title: clause ? `${T}: A Playbook` : `How I Approach ${T}: A Playbook`,
+        structure: ['The result', 'The journey', 'The method', 'How to replicate it'],
+        hook: 'proof_of_results',
+        closing: 'Close with the first step to replicate it.'
       },
       {
-        title: '[Topic] Masterclass: From Struggling to Succeeding',
-        structure: 'The struggle → The breakthrough → The framework → Implementation guide',
-        hook: 'transformation'
+        title: clause ? `${T}: From Struggling to Succeeding` : `${T}: From Struggling to Succeeding`,
+        structure: ['The struggle', 'The breakthrough', 'The framework', 'The implementation guide'],
+        hook: 'transformation',
+        closing: 'Close by naming the first thing to change.'
       }
     ],
     lessons_learned: [
       {
-        title: 'What [X Years] in [Field] Taught Me About [Topic]',
-        structure: 'Career context → Key lessons → Stories behind each → Actionable advice',
-        hook: 'experience_credibility'
+        title: clause ? `${T}: What I Have Learned` : `What I Have Learned About ${T}`,
+        structure: ['Career context', 'Key lessons', 'The stories behind each', 'Actionable advice'],
+        hook: 'experience_credibility',
+        closing: 'Close with the lesson you would repeat to your younger self.'
       },
       {
-        title: 'The Biggest Mistake I Made With [Topic] (And What It Taught Me)',
-        structure: 'The mistake → The consequences → The learning → How to avoid it',
-        hook: 'vulnerability'
+        title: clause ? `${T}: The Biggest Mistake I Made` : `The Biggest Mistake I Made With ${T} (And What It Taught Me)`,
+        structure: ['The mistake', 'The consequences', 'The learning', 'How to avoid it'],
+        hook: 'vulnerability',
+        closing: 'Close with the warning sign you now watch for.'
       },
       {
-        title: '[Number] Lessons From [Specific Experience] That Changed How I Think About [Topic]',
-        structure: 'Context → Lesson 1 → Lesson 2 → Lesson 3 → Synthesis',
-        hook: 'numbered_wisdom'
+        title: clause ? `${T}: Lessons That Changed My Mind` : `Lessons That Changed How I Think About ${T}`,
+        structure: ['Context', 'The first lesson', 'The second lesson', 'The third lesson', 'Synthesis'],
+        hook: 'numbered_wisdom',
+        closing: 'Close by asking which lesson readers have learned the hard way.'
       }
     ],
     prediction: [
       {
-        title: 'The Future of [Topic]: What\'s Coming in the Next 5 Years (Example figure: replace with your own)',
-        structure: 'Current state → Driving forces → Predictions → How to prepare',
-        hook: 'future_vision'
+        title: clause ? `${T}: What I Expect Next` : `The Future of ${T}: What I Expect Next`,
+        structure: ['The current state', 'The driving forces', 'The predictions', 'How to prepare'],
+        hook: 'future_vision',
+        closing: 'Close with the one preparation step to take now.'
       },
       {
-        title: 'Why [Topic] Will Look Completely Different by [Year]',
-        structure: 'What\'s changing → Early signals → Implications → Action plan',
-        hook: 'change_warning'
+        title: clause ? `${T}: Why It Will Look Different` : `Why ${T} Will Look Different Soon`,
+        structure: ['What is changing', 'The early signals', 'The implications', 'An action plan'],
+        hook: 'change_warning',
+        closing: 'Close with the signal readers should watch.'
       },
       {
-        title: '[Topic] Is at an Inflection Point: Here\'s What Comes Next',
-        structure: 'The inflection → Historical parallel → New paradigm → Winners and losers',
-        hook: 'urgency'
+        title: clause ? `${T}: Where It Goes Next` : `${T} Is at a Turning Point: Here's What Comes Next`,
+        structure: ['The turning point', 'A historical parallel', 'The new approach', 'Winners and losers'],
+        hook: 'urgency',
+        closing: 'Close by asking readers where they see it going.'
       }
     ],
     framework: [
       {
-        title: 'The [Name] Framework: A New Way to Think About [Topic]',
-        structure: 'Why existing approaches fail → Framework intro → Components → Application',
-        hook: 'new_model'
+        title: clause ? `${T}: A Framework` : `A New Way to Think About ${T}: A Framework`,
+        structure: ['Why existing approaches fail', 'The framework', 'Its components', 'Applying it'],
+        hook: 'new_model',
+        closing: 'Close with one example of applying the framework this week.'
       },
       {
-        title: 'Introducing [Framework]: How Top Performers Approach [Topic]',
-        structure: 'Pattern observation → Framework extraction → Detailed breakdown → Implementation',
-        hook: 'best_practice'
+        title: clause ? `${T}: How Top Performers Approach It` : `How Top Performers Approach ${T}`,
+        structure: ['The pattern you observed', 'The framework you extracted', 'A detailed breakdown', 'Implementation'],
+        hook: 'best_practice',
+        closing: 'Close by asking readers what pattern they see.'
       },
       {
-        title: 'The Simple Model That Changed How I Think About [Topic]',
-        structure: 'Before the model → Discovery → The model → Results since',
-        hook: 'simplification'
+        title: clause ? `${T}: The Simple Model` : `The Simple Model That Changed How I Think About ${T}`,
+        structure: ['Before the model', 'The discovery', 'The model', 'The results since'],
+        hook: 'simplification',
+        closing: 'Close with the one-line version of the model.'
       }
     ]
   };
@@ -231,206 +288,168 @@ function generateFullArticle(
   proofPoints: string[],
   targetReader: string,
   authorBackground: string,
-  angle: { title: string; structure: string; hook: string },
-  articleNum: number,
+  angle: Angle,
+  index: number,
   totalArticles: number,
   countLabel: string,
-  suggested: boolean
+  suggested: boolean,
+  v: Vertical | null
 ): string {
-  const title = angle.title.replace(/\[Topic\]/g, titleWords(topic));
-  // Run 12 (R12-20, B5): suggested proof and missing proof are printed as bracket prompts, never as the author's story.
-  const proof1 = proofSlot(proofPoints[0], suggested, '[Your first example]');
-  const proof2 = proofSlot(proofPoints[1], suggested, '[Your second example]');
-  const proof3 = proofSlot(proofPoints[2], suggested, '[Your third example]');
-  
+  const title = angle.title;
+  const n = proofPoints.length || 1;
+  // Each article starts from a different proof point and walks through the others in turn, so no two articles lean on the same example in the same place.
+  const proofAt = (k: number) => proofSlot(proofPoints[(index + k) % n], suggested, '[Add your example]');
+  const objection = v ? v.objections[index % v.objections.length] : null;
+
+  const sections = angle.structure.map((step, k) => {
+    const lines: string[] = [`## ${step}`, ''];
+    lines.push(`[Write this part: ${stepGuide(step, topic, targetReader, v)}]`);
+    // With one proof point, it is printed once per article (at the evidence step) instead of under every heading.
+    if (n > 1 || k === Math.min(1, angle.structure.length - 1)) lines.push('', `Proof point for "${step}": ${proofAt(k)}`);
+    if (k === 0 && index === 0 && authorBackground && !authorBackground.startsWith('[')) lines.push('', `[Draw on your background: ${authorBackground}]`);
+    if (objection && k === Math.min(2, angle.structure.length - 1)) lines.push('', `[Answer the objection your readers raise: "${objection.objection}". ${objection.response}]`);
+    return lines.join('\n');
+  }).join('\n\n');
+
   return `
 ---
 
-## Article ${articleNum} of ${totalArticles}${countLabel}
+## Article ${index + 1} of ${totalArticles}${index === 0 ? countLabel : ''}
 
 **Headline:** ${title}
-**Structure:** ${angle.structure}
-**Word Count:** ~750 words
+**Structure:** ${angle.structure.join(' → ')}
+**Target length:** 600 to 800 words (this draft is an outline: expand each section)
+**Written for:** ${targetReader}
+**Lead proof point:** ${proofAt(0)}
 
 ---
 
 # ${title}
 
-*By [Your Name], ${authorBackground}*
+*By [Your name], ${authorBackground}*
 
 ---
 
-${generateHook(angle.hook, topic, yourTake, targetReader)}
+${generateHook(angle.hook, topic, yourTake)}
 
 ---
 
-## The Real Problem
-
-Let me paint a picture you'll probably recognize.
-
-This is for ${lowerFirstIfCommon(targetReader)}. [Only if true of your readers: what they have already tried on ${lowerFirstIfCommon(topic)}, for example books, webinars or consultants]
-
-[Only if true of your readers: the gap they feel, for example "the results aren't matching the effort"]
-
-[Your lesson, only if true: for example, "Here's what I've learned: it's usually the advice."]
-
-[Only if true and provable: why the usual advice about ${lowerFirstIfCommon(topic)} falls short, for example "it assumes that what worked in one context will work in yours"]
-
-${yourTake}. And that changes everything about how you should approach this.
+${sections}
 
 ---
 
-## What I've Seen
+${angle.closing}
 
-Let me tell you about ${proof1}.
-
-[**CUSTOMIZE:** Insert your specific story here. Be concrete: names, numbers, timeline, outcomes. The more specific, the more credible. This should be 2-3 paragraphs showing the reality of this proof point.]
-
-Then there is ${proof2}. [Only if true and provable: why it shows the same pattern, so the first example was not an isolated incident]
-
-[**CUSTOMIZE:** Second story or data point here. Different context, same underlying truth. This builds the case that your take isn't a fluke. It's a pattern. Another 2-3 paragraphs.]
-
-[Only if true and provable: what these examples reveal that contradicts the conventional wisdom about ${lowerFirstIfCommon(topic)}.]
-
-[Your reason for holding this view, in your own words]
-
----
-
-## A Different Approach
-
-Once you accept that ${lowerCommonWords(yourTake)}, a different path forward becomes clear.
-
-**First**, you have to unlearn the habits that are working against you. This is harder than learning new ones. It means questioning assumptions you didn't even know you had.
-
-**Second**, you need a new framework for thinking about ${lowerFirstIfCommon(topic)}. Not a rigid system, because those fail the moment reality deviates from the plan. But a set of principles that guide decision-making when the playbook doesn't apply.
-
-**Third**, you have to be willing to look foolish in the short term: the right approach can look wrong to outside observers until the results come in. Your example: ${proof3}. [What it taught you, in one sentence]
-
-Here's what this looks like in practice:
-
-- Rather than following conventional wisdom, question every assumption
-- Instead of optimizing for vanity metrics, optimize for real outcomes
-- Stop asking "what's everyone else doing?" and start asking "what actually works?"
-
-The specifics will vary based on your situation. But the underlying principle remains: ${lowerCommonWords(yourTake)}.
-
----
-
-## The Path Forward
-
-If you're among ${lowerFirstIfCommon(targetReader)}, you have a choice to make.
-
-You can keep following the standard advice about ${lowerFirstIfCommon(topic)}. [Only if true: where that advice has fallen short for your readers]
-
-Or you can accept an uncomfortable truth: ${lowerCommonWords(yourTake)}.
-
-I know which path I'd choose. [Your proof: the results this path has produced for you or for others]
-
-The question is whether you're ready to see ${lowerFirstIfCommon(topic)} differently.
-
-**What's your experience been? I'd love to hear whether this resonates, or where you disagree. The best insights come from the conversation.**
-
----
-
-*[Your Name] is ${authorBackground}. Connect on LinkedIn or reach out at [email].*
+*[Your name] is ${authorBackground}. Connect on LinkedIn or reach out at [Add your email].*
 
 ---
 
 **Publishing Notes:**
-- Backup headline: "What most ${lowerFirstIfCommon(targetReader)} get wrong about ${lowerFirstIfCommon(topic)}"
-- Recommended image: Visual representing the contrast between conventional and alternative approach
-- Best posting time: Tuesday-Thursday, 8-10am (Example figure: replace with your own)
+- Second headline to test: [Add a second headline written for ${lowerFirstIfCommon(targetReader)}]
 
 ---
 
 `;
 }
 
-function generateHook(hookType: string, topic: string, yourTake: string, targetReader: string): string {
+// Hooks. Run 19 (D80, problem 2): the user's take is quoted once, in a block of its own; it is never joined into a sentence of ours.
+function generateHook(hookType: string, topic: string, yourTake: string): string {
+  const take = `> "${yourTake}"`;
+  const t = q(topic);
   const hooks: Record<string, string> = {
-    controversy: `Here's something that might make you uncomfortable: ${lowerCommonWords(yourTake)}.
+    controversy: `Open with your position, in your own words:
 
-I know that goes against everything you've been told about ${lowerFirstIfCommon(topic)}. [Your experience: how long you have worked on this, and what changed your mind]
+${take}
 
-If you're among ${lowerFirstIfCommon(targetReader)}, this matters more than you think. Here's why.`,
+[Add how long you have worked on ${t} and what changed your mind]`,
 
-    revelation: `Here's a view on ${lowerFirstIfCommon(topic)} for ${lowerFirstIfCommon(targetReader)}: ${lowerCommonWords(yourTake)}.
+    revelation: `Open with the view you hold on ${t}:
 
-[Only if true: why the people who have figured this out do not talk about it publicly] [Your experience: how often you have seen this pattern]`,
+${take}
 
-    direct_challenge: `Stop. Before you read another article about ${lowerFirstIfCommon(topic)}, I need to tell you something.
+[Only if true: why the people who have figured this out do not talk about it publicly]`,
 
-[Only if true and provable: the common advice your readers follow, and how it makes things worse]
+    direct_challenge: `Open by asking the reader to stop for a moment before the next article on ${t}:
 
-${yourTake}. [Your experience: how long you have worked with ${targetReader}, and what you saw]`,
+${take}
 
-    promise_of_value: `What if I told you that ${lowerFirstIfCommon(topic)} is simpler than everyone makes it out to be?
+[Only if true and provable: the common advice your readers follow, and how it makes things worse]`,
 
-Not easy. Simple. There's a difference.
+    promise_of_value: `Open with the promise: ${t} is simpler than the usual advice makes it. Then give your position:
 
-[Your experience: how you learned what works with ${lowerFirstIfCommon(topic)}]. Here it is, in a form you can start using today. Not theory. Not frameworks that look good in slideshows.`,
+${take}
 
-    proof_of_results: `Here's something worth sharing.
+[Add how you learned what works, in a few words]`,
 
-[Your story: when you first saw that ${lowerCommonWords(yourTake)}]. [Your proof: the results you have seen since, in your own work or with ${targetReader}]
+    proof_of_results: `Open with a result, then give your position:
 
-This isn't about incremental improvement. This is about fundamentally rethinking ${lowerFirstIfCommon(topic)}.`,
+${take}
 
-    transformation: `[Your story: where you were with ${lowerFirstIfCommon(topic)} before, and what it was like]
+[Add when you first saw this, and the results you have seen since]`,
 
-Then something shifted. I realized that ${lowerCommonWords(yourTake)}. [What happened next, in one or two sentences]`,
+    transformation: `Open with where you were before, then what shifted:
 
-    experience_credibility: `[Your experience: how long you have worked on ${lowerFirstIfCommon(topic)}, and the mistakes you made along the way]
+[Add where you were with ${t} before, and what it was like]
 
-One truth has emerged that I wish someone had told me from the start:
+${take}`,
 
-${yourTake}`,
+    experience_credibility: `Open with your experience on ${t}:
 
-    vulnerability: `[Your story: a mistake you made with ${lowerFirstIfCommon(topic)}, and what it cost you]
+[Add how long you have worked on it, and the mistakes you made along the way]
 
-[What it taught you, and how it changed your approach to ${lowerFirstIfCommon(topic)}]
+The one thing you wish someone had told you:
 
-Here's what happened, and what it might mean for you.`,
+${take}`,
 
-    numbered_wisdom: `[Your experience: how long you have worked in this space]. Success with ${lowerFirstIfCommon(topic)} comes down to a handful of non-obvious insights.
+    vulnerability: `Open with the mistake:
 
-Not tactics. Not hacks. Insights: the kind that change how you think about the problem entirely.
+[Add a mistake you made with ${t}, and what it cost you]
 
-${yourTake} was the first one. Here are the others.`,
+What it taught you:
 
-    future_vision: `[Your prediction: how the ${lowerFirstIfCommon(topic)} landscape will shift, and your evidence]
+${take}`,
 
-If you're among ${lowerFirstIfCommon(targetReader)}, [Only if true: the opportunity this shift creates for those who see it coming].
+    numbered_wisdom: `Open by saying success on ${t} comes down to a handful of non-obvious insights. The first one:
 
-Here's what I'm seeing, and what you should do about it.`,
+${take}
 
-    change_warning: `[Only if true: what is changing in ${lowerFirstIfCommon(topic)} that most ${targetReader} haven't noticed yet]
+[Add the others, in a line each]`,
 
-[Your evidence: the signals you see, and where]
+    future_vision: `Open with your prediction on ${t}:
 
-${yourTake}. Here's why that matters now more than ever.`,
+[Add how the landscape will shift, and your evidence]
 
-    urgency: `[Only if true and provable: why ${lowerFirstIfCommon(topic)} is at an inflection point now, and your evidence]
+${take}`,
 
-If you're among ${lowerFirstIfCommon(targetReader)}, your choices in the next 12-18 months will determine which side of this shift you end up on. (Example figure: replace with your own)`,
+    change_warning: `Open with what is changing:
 
-    new_model: `The way we think about ${lowerFirstIfCommon(topic)} is fundamentally flawed.
+[Only if true: what is changing in ${t} that most readers have not noticed yet, and your evidence]
 
-[Only if true and provable: the mental model that holds ${targetReader} back, and your evidence]
+${take}`,
 
-Here's a different way to think about it.`,
+    urgency: `Open with why now:
 
-    best_practice: `[Your research: whose approach to ${lowerFirstIfCommon(topic)} you have studied, and how]
+[Only if true and provable: why ${t} is at a turning point now, and your evidence]
 
-[Only if your research shows it: what they do that differs from the standard advice]
+${take}`,
 
-Here's the pattern.`,
+    new_model: `Open with what is wrong in the way most people think about ${t}:
 
-    simplification: `${cap(lowerFirstIfCommon(topic))} is overcomplicated.
+${take}
+
+[Only if true and provable: the mental model that holds readers back, and your evidence]`,
+
+    best_practice: `Open with the pattern you studied:
+
+[Add whose approach to ${t} you have studied, and how]
+
+${take}`,
+
+    simplification: `Open with how complicated ${t} has become:
 
 [Only if true: why it is made to look complex, in your own words]
 
-Here's the model.`
+${take}`
   };
 
   return hooks[hookType] || hooks.controversy;
@@ -438,25 +457,24 @@ Here's the model.`
 
 function generatePromotionalPosts(topic: string, yourTake: string, proofPoints: string[], numArticles: number, suggested: boolean): string {
   let posts = '';
-  
+  const tags = topicWords(topic, 2).map((w) => `#${w.charAt(0).toUpperCase()}${w.slice(1)}`).join(' ');
+
   for (let i = 0; i < numArticles; i++) {
-    const proof = proofSlot(proofPoints[i % proofPoints.length], suggested, '[Your story]');
+    const proof = proofSlot(proofPoints[i % proofPoints.length], suggested, '[Add your story]');
     posts += `
 ### Promo Post ${i + 1} (for Article ${i + 1})
 
 ---
 
-${yourTake}
+> "${yourTake}"
 
-I know that's not what the experts say.
-
-What convinced me: ${proof}.
+Proof point: ${proof}
 
 Here's what I learned:
 
-→ [Your first lesson, for example: the conventional wisdom about ${lowerFirstIfCommon(topic)} is backwards]
-→ [Your second lesson, for example: what actually works looks nothing like the playbook]
-→ [Your third lesson, for example: the people getting results are doing something different]
+→ [Add your first lesson]
+→ [Add your second lesson]
+→ [Add your third lesson]
 
 I just published a deep dive on this, sharing the evidence, what it means, and what to do about it.
 
@@ -466,27 +484,27 @@ What's your experience been?
 
 ---
 
-**Target length:** ~200 words (this draft is shorter: add your own story)
-**Hashtags:** #${topic.replace(/\s+/g, '')} #ThoughtLeadership #Insights
+**Target length:** about 200 words (this draft is shorter: add your own story)
+**Hashtags:** ${tags ? tags + ' ' : ''}#ThoughtLeadership
 
 ---
 
 `;
   }
-  
+
   return posts;
 }
 
 // Generate suggested proof points when user doesn't provide them
-function generateSuggestedProofPoints(topic: string, yourTake: string, articleType: string): string[] {
+function generateSuggestedProofPoints(topic: string, articleType: string, v: Vertical | null): string[] {
   const baseProofs = [
     `A personal story where you learned this lesson about ${lowerFirstIfCommon(topic)} the hard way`,
-    `A client/colleague example that demonstrates ${yourTake.substring(0, 50)}...`,
+    `A client or colleague example that shows your take in action`,
     `An industry statistic or data point that supports your position`,
     `A contrast example: someone who did it the "wrong" way and what happened`,
     `A recent observation or trend that validates your thinking`
   ];
-  
+
   // Adjust based on article type
   const typeSpecificProofs: Record<string, string[]> = {
     contrarian: [
@@ -525,13 +543,15 @@ function generateSuggestedProofPoints(topic: string, yourTake: string, articleTy
       `Testimonial or feedback from someone who used the framework`
     ]
   };
-  
-  return typeSpecificProofs[articleType] || baseProofs;
+
+  const list = typeSpecificProofs[articleType] || baseProofs;
+  // The sector's own proof shape comes first when the sector is known.
+  return v ? [`Evidence in ${v.name}: ${v.proofShape.replace(/\.$/, '').replace(/^A /, 'a ')}`, ...list.slice(0, 4)] : list;
 }
 
 // Run 12 (R12-20, B5): a proof point the user gave is printed as given; a suggested one becomes a bracket prompt
-// ("[Your story: evidence that the conventional wisdom fails (study, example, data)]"); a missing one gets the fallback prompt.
+// ("[Add your story: evidence that the conventional wisdom fails (study, example, data)]"); a missing one gets the fallback prompt.
 function proofSlot(point: string | undefined, suggested: boolean, fallback: string): string {
   if (!point) return fallback;
-  return suggested ? `[Your story: ${point.charAt(0).toLowerCase()}${point.slice(1)}]` : point;
+  return suggested ? `[Add your story: ${point.charAt(0).toLowerCase()}${point.slice(1)}]` : point;
 }

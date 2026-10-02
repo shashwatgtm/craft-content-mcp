@@ -1,13 +1,15 @@
 # Case Study: FlowOps
 
-## Late deliveries down 60% with RouteIQ
+## FlowOps and RouteIQ: Late deliveries down 60%
+
+*Sector: read from your inputs as logistics tech. Business model: software subscription (the usual model in this sector, assumed; set business_model to change it).*
 
 ---
 
 ### About FlowOps
 
 **Industry:** Logistics
-**Challenge:** Dispatchers spent four hours a day planning routes by hand...
+**Challenge:** Dispatchers spent four hours a day planning routes by hand and late deliveries hit 18 percent.
 **Solution:** RouteIQ
 **Key Result:** Late deliveries down 60%
 
@@ -17,7 +19,7 @@
 
 Dispatchers spent four hours a day planning routes by hand and late deliveries hit 18 percent.
 
-[What the problem cost them, in their words]
+[Add what the problem cost them, in their words]
 
 ---
 
@@ -27,11 +29,11 @@ RouteIQ planned routes automatically and sent drivers live updates.
 
 ### Why FlowOps Chose RouteIQ
 
-[Why they chose you, in their words]
+[Add why they chose RouteIQ, in their words]
 
 ### Implementation
 
-[How the rollout went, in their words]
+[Add how the implementation went, in their words]
 
 ---
 
@@ -39,15 +41,15 @@ RouteIQ planned routes automatically and sent drivers live updates.
 
 ### 1. Late deliveries down 60%
 
-[What this result changed for them, in their words]
+[Add what this result changed for them, in their words]
 
-### 2. planning time cut from 4 hours to 30 minutes
+### 2. Planning time cut from 4 hours to 30 minutes
 
-[What this result changed for them, in their words]
+[Add what this result changed for them, in their words]
 
 ### 3. 12% lower fuel cost
 
-[What this result changed for them, in their words]
+[Add what this result changed for them, in their words]
 
 ---
 
@@ -61,37 +63,45 @@ RouteIQ planned routes automatically and sent drivers live updates.
 
 ## Key Takeaways
 
-1. **Challenge:** Dispatchers spent four hours a day planning routes by hand...
+1. **Challenge:** Dispatchers spent four hours a day planning routes by hand and late deliveries hit 18 percent.
 2. **Solution:** RouteIQ planned routes automatically and sent drivers live updates.
-3. **Impact:** Late deliveries down 60%
+3. **Impact:** Late deliveries down 60%; Planning time cut from 4 hours to 30 minutes; 12% lower fuel cost
 
 ---
 
 ## Ready to Achieve Similar Results?
 
-[CTA: Schedule a demo / Get started / Talk to sales]
+[CTA: say what the reader should do next, for example book a call or read a related story]
+
+---
+
+## Sector Notes: Logistics tech
+
+- **A strong proof point here:** A before and after of cost per delivery or first-attempt delivery at one hub, measured over a full cycle of busy and quiet weeks.
+- **What readers in this sector measure:** cost per delivery, first-attempt delivery rate, on-time delivery, deliveries per vehicle per day, vehicle utilisation, failed delivery and return rate, dispatch planning time.
+- **Terms this sector's buyers use:** dispatch, fleet, last-mile, route plan, first-attempt delivery, proof of delivery, 3PL, cost per delivery, delivery SLA, TMS.
+- **Your results:** they carry a figure. Not yet shown: cost per delivery, first-attempt delivery rate, on-time delivery, vehicle utilisation. If the customer tracks any of these, add one.
 
 ---
 
 ## Distribution Formats
 
 ### One-Line Version (for testimonial pages):
-"FlowOps: late deliveries down 60% after implementing RouteIQ."
+"FlowOps with RouteIQ: Late deliveries down 60%."
 
 ### Social Media Version:
-FlowOps was struggling with dispatchers spent four hours a day planning routes by hand....
+Challenge at FlowOps: Dispatchers spent four hours a day planning routes by hand and late deliveries hit 18 percent.
+What changed with RouteIQ: RouteIQ planned routes automatically and sent drivers live updates.
 
-Then they implemented RouteIQ.
-
-The results?
+Results:
 - Late deliveries down 60%
-- planning time cut from 4 hours to 30 minutes
+- Planning time cut from 4 hours to 30 minutes
 - 12% lower fuel cost
 
-"We got our afternoons back...."
+> "We got our afternoons back."
 
-Read the full story: [link]
+Read the full story: [Add the link]
 
 ### Email Snippet:
-Quick success story: FlowOps (Logistics) faced dispatchers spent four hours a day planning routes by hand.... After implementing RouteIQ, they saw late deliveries down 60%. [Read the full story →]
+Quick success story: FlowOps (Logistics). Challenge: Dispatchers spent four hours a day planning routes by hand and late deliveries hit 18 percent. Result: Late deliveries down 60%; Planning time cut from 4 hours to 30 minutes. [Add the link to the full story]
 

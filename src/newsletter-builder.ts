@@ -1,4 +1,5 @@
-import { parseListItems, generateHook, lowerCommonWords, lowerFirstIfCommon, cap, SUGGESTION_FOOTER } from './utils.js';
+import { generateHook, lowerFirstIfCommon, cap, SUGGESTION_FOOTER } from './utils.js';
+import { splitItems, readContext, audienceLine, isClause, type Vertical } from './sector.ts';
 
 export function generateNewsletter(args: {
   topic: string;
@@ -8,6 +9,7 @@ export function generateNewsletter(args: {
   newsletter_type?: string;
   tone?: string;
   previous_topics?: string;
+  your_product?: string;
 }): string {
   // Run 18 (R18-26, P05-WS-01): topic and cta_goal are trimmed at the boundary, so the heading, the Topic and CTA Goal table rows
   // and the subject lines never carry stray spaces or line breaks. Interior whitespace is kept exactly.
@@ -15,22 +17,25 @@ export function generateNewsletter(args: {
   const segment = args.audience_segment || 'general';
   const type = args.newsletter_type || 'educational';
   const tone = args.tone || 'professional';
-  const previousTopics = args.previous_topics ? parseListItems(args.previous_topics) : [];
+  const previousTopics = args.previous_topics ? splitItems(args.previous_topics) : [];
   const ctaGoal = args.cta_goal.trim();
-  
+  const product = (args.your_product || '').trim();
+  // Run 19 (D80, problems 4 and 8): the sector is read from every text the user gave.
+  const ctx = readContext(undefined, [topic, args.key_points, args.previous_topics, product], [args.cta_goal]);
+
   // DERIVE key points from topic if not provided
   let keyPoints: string[];
   let keyPointsNote = '';
   if (args.key_points) {
-    keyPoints = parseListItems(args.key_points);
+    keyPoints = splitItems(args.key_points);
   } else {
-    keyPoints = generateKeyPointsFromTopic(topic, type, segment);
+    keyPoints = generateKeyPointsFromTopic(topic, type, segment, ctx.v);
     keyPointsNote = '*(Suggested from the topic: replace with your own)*';
   }
 
   // Generate multiple subject line options
-  const subjectLines = generateSubjectLines(topic, type, segment);
-  
+  const subjectLines = generateSubjectLines(topic, type);
+
   // Generate hooks
   const hooks = [
     generateHook(topic, 'question'),
@@ -48,8 +53,26 @@ export function generateNewsletter(args: {
     prospects: { depth: 'introductory', length: 'short', focus: 'benefits' },
     customers: { depth: 'advanced', length: 'moderate', focus: 'optimization' }
   };
-  
+
   const config = segmentConfig[segment as keyof typeof segmentConfig] || segmentConfig.general;
+
+  const sectorBlock = ctx.v ? `
+## Sector Notes: ${cap(ctx.v.name)}
+
+${ctx.line}
+
+- ${audienceLine(ctx.v)}
+- **A proof point that lands:** ${ctx.v.proofShape}
+- **Terms this audience uses:** ${ctx.v.vocabulary.slice(0, 6).join(', ')}.
+
+---
+` : `
+## Sector Notes
+
+${ctx.line}
+
+---
+`;
 
   let output = `# Newsletter Builder: ${topic}
 
@@ -58,6 +81,7 @@ export function generateNewsletter(args: {
 | Setting | Value |
 |---------|-------|
 | **Topic** | ${topic} |
+| **Product** | ${product || 'not given (add your_product to name it in the notes below)'} |
 | **Segment** | ${segment} |
 | **Type** | ${type.replace(/_/g, ' ')} |
 | **Tone** | ${tone} |
@@ -66,22 +90,22 @@ export function generateNewsletter(args: {
 ---
 
 ## Subject Lines (A/B Test These)
-
+${topic.length > TOPIC_FULL ? `\n*Your topic is ${topic.length} characters, too long for a subject line, so the subject lines show a placeholder: replace it with a label of a few words. The full topic is used in the hooks.*\n` : ''}
 ### Option A: Curiosity-Driven
 **${subjectLines[0]}**${subjectLineLabel(type, 0)}
-- Preview text: ${generatePreviewText(subjectLines[0], topic)}
+- Preview text: ${generatePreviewText(0, topic)}
 
-### Option B: Benefit-Focused  
+### Option B: Benefit-Focused
 **${subjectLines[1]}**${subjectLineLabel(type, 1)}
-- Preview text: ${generatePreviewText(subjectLines[1], topic)}
+- Preview text: ${generatePreviewText(1, topic)}
 
 ### Option C: Number/List Style
 **${subjectLines[2]}**${subjectLineLabel(type, 2)}
-- Preview text: ${generatePreviewText(subjectLines[2], topic)}
+- Preview text: ${generatePreviewText(2, topic)}
 
 ### Option D: Personal/Direct
 **${subjectLines[3]}**${subjectLineLabel(type, 3)}
-- Preview text: ${generatePreviewText(subjectLines[3], topic)}
+- Preview text: ${generatePreviewText(3, topic)}
 
 ---
 
@@ -109,28 +133,29 @@ export function generateNewsletter(args: {
 
 **Subject:** ${subjectLines[0]}
 
-**Preview:** ${generatePreviewText(subjectLines[0], topic)}
+**Preview:** ${generatePreviewText(0, topic)}
 
 ---
 
 ${hooks[0]}
 
-${generateBodyContent(keyPoints, config, tone, args.key_points ? '' : type)}
+${keyPointsNote ? keyPointsNote + '\n\n' : ''}${generateBodyContent(keyPoints, config, tone, args.key_points ? '' : type)}
+${product ? `*Product note: [Add one sentence on how ${product} helps with this topic, only where it fits the story]*
 
-${generateCtaSection(ctaGoal, segment)}
+` : ''}${generateCtaSection(ctaGoal)}
 
 ---
 
 ${previousTopics.length > 0 ? `
 ## Connection to Previous Content
 
-Your recent topics: ${previousTopics.join(', ')}
+Your recent topics: ${previousTopics.join('; ')}
 
 **Thread this together:**
 - Reference: "Last week we talked about ${lowerFirstIfCommon(previousTopics[0])}. This week, let's go deeper into ${lowerFirstIfCommon(topic)}..."
-- Callback: "Remember the ${lowerFirstIfCommon(previousTopics[0])} framework? Here's how it applies to ${lowerFirstIfCommon(topic)}..."
-- Series (only if these issues form a series): "This continues our ${lowerFirstIfCommon(topic)} series..."
-
+- Callback: "Remember our issue on ${lowerFirstIfCommon(previousTopics[0])}? Here is how it connects to ${lowerFirstIfCommon(topic)}..."
+- Series (only if these issues form a series): "This continues our run on ${lowerFirstIfCommon(topic)}..."
+${previousTopics.length > 1 ? `- Other recent issues to link to: ${previousTopics.slice(1).join('; ')}\n` : ''}
 ---` : ''}
 
 ## Content Structure Recommendation
@@ -138,9 +163,7 @@ Your recent topics: ${previousTopics.join(', ')}
 Based on ${type.replace(/_/g, ' ')} type and ${segment} audience:
 
 ${getStructureRecommendation(type, segment)}
-
----
-
+${sectorBlock}
 ## Pre-Send Checklist
 
 - [ ] Subject line A/B test set up
@@ -161,7 +184,7 @@ ${getSegmentTips(segment)}
 
 ---
 
-## Best Send Times for ${segmentPhrase(segment)}
+## Send Times for ${segmentPhrase(segment)}
 
 ${getSendTimesForSegment(segment)}
 
@@ -173,17 +196,15 @@ ${SUGGESTION_FOOTER}
   return output;
 }
 
-// Words that cannot end a shortened topic: cutting "Onboarding checklists for SaaS teams"
-// to its first 3 words gave "Onboarding checklists for", which broke every subject line.
-const TRAILING_CONNECTORS = new Set(['a', 'an', 'the', 'and', 'or', 'for', 'of', 'to', 'in', 'on', 'at', 'by', 'with', 'from', 'about', 'into', 'vs', 'vs.', '&']);
-
+// Run 19 (D80, problem 2): a topic of up to 90 characters is used whole. A longer one is cut at a word boundary (never to three words),
+// and never ends on a joining word.
+// Over 90 characters, a topic is too long for a subject line and is never cut in the middle of a phrase: the subject lines show a
+// placeholder for a short label, and the full topic stays in the hooks and the heading.
+const TOPIC_FULL = 90;
+const LABEL = '[Add a short label for this topic]';
 function shortenTopic(topic: string): string {
-  // Split on runs of spaces after a trim, so a stray or doubled space never makes an empty word (and a double space in the subject lines).
-  const words = topic.trim().split(/ +/).slice(0, 3);
-  while (words.length > 1 && TRAILING_CONNECTORS.has(words[words.length - 1].toLowerCase())) {
-    words.pop();
-  }
-  return words.join(' ');
+  const flat = topic.trim().replace(/ +/g, ' ');
+  return flat.length <= TOPIC_FULL ? flat : LABEL;
 }
 
 // Option indexes of the subject lines that open with an example count ("5 ... mistakes"), per newsletter type.
@@ -191,7 +212,7 @@ function shortenTopic(topic: string): string {
 const EXAMPLE_COUNT_SUBJECTS: Record<string, number[]> = {
   educational: [2],
   product_update: [],
-  industry_news: [],
+  industry_news: [2],
   thought_leadership: [],
   curated_links: [1]
 };
@@ -203,97 +224,100 @@ function subjectLineLabel(type: string, index: number): string {
   return indexes.includes(index) ? ' (Example figure: replace with your own)' : '';
 }
 
-function generateSubjectLines(topic: string, type: string, segment: string): string[] {
-  const topicWords = shortenTopic(topic);
+// Run 19 (D80, problem 2): every subject line places the topic after a colon, after "about" or after "on", where a phrase, a clause
+// or a question all read correctly. None puts it before "is" or after "Why" or "How to".
+function generateSubjectLines(topic: string, type: string): string[] {
+  const short = shortenTopic(topic);
   // Text only (run 10, R10-28): the topic placed after leading words follows the first-word rule
-  // ("5 faster contract review mistakes"; names and acronyms keep their capitals). Product updates keep it as typed.
-  const topicMid = lowerFirstIfCommon(topicWords);
-  
-  const templates = {
+  // (names and acronyms keep their capitals). Product updates keep it as typed.
+  const mid = lowerFirstIfCommon(short);
+  const head = cap(mid);
+
+  const templates: Record<string, string[]> = {
     educational: [
-      `The truth about ${topicMid} (nobody talks about this)`,
-      `How to master ${topicMid} in ${new Date().getFullYear()}`,
-      `5 ${topicMid} mistakes even experts make`,
-      `${cap(topicMid)}: Your complete guide`
+      `The truth about ${mid} (nobody talks about this)`,
+      `${head}: what to do first, and what to skip`,
+      `${head}: 5 mistakes even experts make`,
+      `${head}: your complete guide`
     ],
     product_update: [
-      `New: The ${topicWords} feature you asked for [only if customers asked for it]`,
-      `You asked, we built: ${topicWords} [only if customers asked for it]`,
-      `Just shipped: ${topicWords} (+ what's next)`,
-      `[Product Update] ${topicWords} is here`
+      isClause(topic) ? `New: ${short} [only if customers asked for it]` : `New: The ${short} feature you asked for [only if customers asked for it]`,
+      `You asked, we built: ${short} [only if customers asked for it]`,
+      `Just shipped: ${short} (+ what's next)`,
+      `Product update: ${short}`
     ],
     industry_news: [
-      `This week in ${topicMid}: What you need to know`,
-      `Breaking: ${topicWords} is changing (here's how)`,
-      `${topicWords} news: 3 stories that matter`,
-      `The ${topicMid} update everyone's talking about [only if true]`
+      `This week in ${mid}: what you need to know`,
+      `${head}: what is changing, and what it means`,
+      `${head}: 3 stories that matter`,
+      `The update on ${mid} that everyone is talking about [only if true]`
     ],
     thought_leadership: [
-      `Why ${topicMid} is broken (and how to fix it)`,
-      `Unpopular opinion: ${topicWords}`,
-      `The future of ${topicMid} (my prediction)`,
-      `What I learned about ${topicMid} the hard way [only if true]`
+      `${head}: what most people get wrong`,
+      `Unpopular opinion on ${mid}`,
+      `${head}: my prediction`,
+      `${head}: what I learned the hard way [only if true]`
     ],
     curated_links: [
-      `${topicWords}: Best reads this week`,
-      `5 must-read ${topicMid} articles`,
-      `Your ${topicMid} reading list`,
-      `This week's best ${topicMid} content`
+      `${head}: best reads this week`,
+      `5 must-read links on ${mid}`,
+      `Your reading list on ${mid}`,
+      `This week's best content on ${mid}`
     ]
   };
-  
-  return templates[type as keyof typeof templates] || templates.educational;
+
+  return templates[type] || templates.educational;
 }
 
-function generatePreviewText(subject: string, topic: string): string {
-  // Preview should complement, not repeat subject
+// Preview text: one line per option, chosen by the option's place (the same input always gives the same answer).
+function generatePreviewText(index: number, topic: string): string {
+  const t = topic.trim().length <= TOPIC_FULL ? lowerFirstIfCommon(topic) : 'this topic';
   const previews = [
-    `Plus: [the one thing most people get wrong about ${lowerFirstIfCommon(topic)}]`,
-    `Inside: [the tips readers can use today]`,
-    `Spoiler: [the answer, only if it is not what readers expect]`,
-    `Plus: [one thing you learned about ${lowerFirstIfCommon(topic)}]`,
-    `Read time: 4 minutes (Example figure: replace with your own)`
+    `Plus: [Add the one thing most people get wrong about ${t}]`,
+    `Inside: [Add the tips readers can use today]`,
+    `Spoiler: [Add the answer, only if it is not what readers expect]`,
+    `Plus: [Add one thing you learned about ${t}]`
   ];
-  return previews[Math.floor(Math.random() * previews.length)];
+  return previews[index % previews.length];
 }
 
 // Run 12 (R12-20): one writing prompt per section instead of the same body under every heading. The prompts follow the
 // suggested key points of each newsletter type, in order; key points the user gave get one general prompt each.
 const SECTION_PROMPTS: Record<string, string[]> = {
   educational: [
-    '[One fact from your market that shows why this matters now]',
-    '[The two or three mistakes you see most]',
-    '[Your steps, in order]',
-    '[A real example: a customer or your own]',
-    '[One line to remember, and the next step]'
+    '[Add one fact from your market that shows why this matters now]',
+    '[Add the two or three mistakes you see most]',
+    '[Add your steps, in order]',
+    '[Add a real example: a customer or your own]',
+    '[Add one line to remember, and the next step]'
   ],
   product_update: [
-    '[What changed, in one or two sentences]',
-    '[The benefit for the reader]',
-    '[The first steps to try it]',
-    '[Two or three tips from your team]',
+    '[Add what changed, in one or two sentences]',
+    '[Add the benefit for the reader]',
+    '[Add the first steps to try it]',
+    '[Add two or three tips from your team]',
     '[Only if you can share it: what comes next]'
   ],
   industry_news: [
-    '[The news, with its source]',
-    '[What it means for the reader]',
-    '[A view from someone you can name, with their permission]',
-    '[The signals to watch]',
-    '[One or two actions to take]'
+    '[Add the news, with its source]',
+    '[Add what it means for the reader]',
+    '[Add a view from someone you can name, with their permission]',
+    '[Add the signals to watch]',
+    '[Add one or two actions to take]'
   ],
   thought_leadership: [
-    '[Your view, in one or two sentences]',
-    '[Your evidence: a story, a number or a source]',
-    '[What you have seen them do differently]',
-    '[Your framework, in a few lines]',
-    '[One to three actions for this week]'
+    '[Add your view, in one or two sentences]',
+    '[Add your evidence: a story, a number or a source]',
+    '[Add what you have seen them do differently]',
+    '[Add your framework, in a few lines]',
+    '[Add one to three actions for this week]'
   ],
   curated_links: [
-    '[Title, link and one line on why it is worth reading]',
-    '[Title, link and one line on why it is worth watching]',
-    '[Name, link and what it does]',
-    '[The take, its source and your view]',
-    '[Your note]'
+    '[Add the title, link and one line on why it is worth reading]',
+    '[Add the title, link and one line on why it is worth watching]',
+    '[Add the name, link and what it does]',
+    '[Add the take, its source and your view]',
+    '[Add your note]'
   ]
 };
 
@@ -301,10 +325,10 @@ const SECTION_PROMPTS: Record<string, string[]> = {
 const DEPTH_NOTE: Record<string, string> = {
   'high-level': 'Keep each section to its business impact: outcomes over activities.',
   'tactical': 'Give each section one step the reader can take this week.',
-  'deep': 'Give each section the mechanism and the details: [specific settings], [specific steps], [specific tests].',
+  'deep': 'Give each section the mechanism and the details: the settings, the steps and the tests.',
   'accessible': 'Keep each section simple: one idea, in plain words.',
   'introductory': 'Assume the reader is new to this: start from the basics.',
-  'advanced': 'Assume the reader knows the basics: go straight to [advanced use case].'
+  'advanced': 'Assume the reader knows the basics: go straight to the advanced use case.'
 };
 
 function generateBodyContent(keyPoints: string[], config: { depth: string; length: string; focus: string }, tone: string, type: string): string {
@@ -314,9 +338,9 @@ function generateBodyContent(keyPoints: string[], config: { depth: string; lengt
 `;
 
   keyPoints.forEach((point, index) => {
-    content += `### ${index + 1}. ${point}
+    content += `### ${index + 1}. ${cap(point)}
 
-${prompts[index] || '[Your two or three sentences on this point]'}
+${prompts[index] || '[Add two or three sentences on this point]'}
 
 `;
   });
@@ -324,52 +348,22 @@ ${prompts[index] || '[Your two or three sentences on this point]'}
   return content;
 }
 
-function generateCtaSection(ctaGoal: string, segment: string): string {
+// Run 19 (D80, problem 3): the call to action is the one the user gave, used as the heading and as the button. It is never
+// replaced by a fixed offer (a demo, a guide) the user did not name.
+function generateCtaSection(ctaGoal: string): string {
   const goalLower = ctaGoal.toLowerCase();
-  
-  if (goalLower.includes('demo') || goalLower.includes('call')) {
-    return `---
-
-**Ready to see this in action?**
-
-[Book a 15-minute demo →]
-
-No pressure, just answers.`;
-  }
-  
-  if (goalLower.includes('download') || goalLower.includes('guide')) {
-    return `---
-
-**Want the complete playbook?**
-
-[Download the free guide →]
-
-[What the guide adds to this issue]`;
-  }
-  
-  if (goalLower.includes('reply') || goalLower.includes('feedback')) {
-    return `---
-
-**What do you think?**
-
-Hit reply and let me know.`;
-  }
-  
-  if (goalLower.includes('share')) {
-    return `---
-
-**Found this useful?**
-
-Forward to a colleague who needs to see this.
-
-[Share on LinkedIn →]`;
-  }
-  
+  const button = `[${cap(ctaGoal)} →]`;
+  let helper = '[Add the link or the reply address that does this]';
+  if (/\b(reply|feedback)\b/.test(goalLower)) helper = 'Hit reply and let me know.';
+  else if (/\bshare\b/.test(goalLower)) helper = 'Forward this to a colleague who needs to see it.';
+  else if (/\b(download|guide)\b/.test(goalLower)) helper = '[Add what the download adds to this issue]';
   return `---
 
 **${cap(ctaGoal)}**
 
-[Take action now →]`;
+${button}
+
+${helper}`;
 }
 
 function getStructureRecommendation(type: string, segment: string): string {
@@ -405,18 +399,18 @@ function getStructureRecommendation(type: string, segment: string): string {
 4. **Your commentary** (1 paragraph): Why these matter
 5. **CTA** (1 line): Suggest content for next week`
   };
-  
+
   return structures[type] || structures.educational;
 }
 
 function getSegmentTips(segment: string): string {
   const tips: Record<string, string> = {
     executives: `
-- Keep it under 300 words
+- Keep it short
 - Lead with business impact
 - Use bullet points for scanning
 - Include executive summary at top
-- ROI and metrics matter most`,
+- Outcomes and metrics matter most`,
     practitioners: `
 - Include specific how-to steps
 - Link to resources and templates
@@ -448,61 +442,64 @@ function getSegmentTips(segment: string): string {
 - Community and best practices
 - They want to optimize`
   };
-  
+
   return tips[segment] || tips.general;
 }
 
+// Run 19: no benchmark claims. Each line is a starting point to test against your own open and click data.
 function getSendTimesForSegment(segment: string): string {
   const times: Record<string, string> = {
-    executives: '**Tuesday or Thursday, 7-8am** (before their day gets busy) (Example figure: replace with your own)',
-    practitioners: '**Tuesday-Thursday, 10-11am** (mid-morning productive time) (Example figure: replace with your own)',
-    technical: '**Tuesday-Wednesday, 2-3pm** (afternoon coding break) (Example figure: replace with your own)',
-    general: '**Tuesday, 10am** (highest average open rates) (Example figure: replace with your own)',
-    prospects: '**Tuesday or Thursday, 9-10am** (early but not too early) (Example figure: replace with your own)',
-    customers: '**Wednesday, 10am** (mid-week, good engagement) (Example figure: replace with your own)'
+    executives: 'Start early in the working day, before meetings begin. Test two send times and keep the one your own opens favour.',
+    practitioners: 'Start mid-morning on a working day, when people sit down to work. Test two send times and keep the one your own opens favour.',
+    technical: 'Start in the afternoon, when people look for a break from focused work. Test two send times and keep the one your own opens favour.',
+    general: 'Start mid-morning on a working day. Test two send times and keep the one your own opens favour.',
+    prospects: 'Start mid-morning on a working day, not first thing. Test two send times and keep the one your own opens favour.',
+    customers: 'Start mid-week, mid-morning. Test two send times and keep the one your own opens favour.'
   };
-  
+
   return times[segment] || times.general;
 }
 
-// Generate key points from topic when not provided
-function generateKeyPointsFromTopic(topic: string, type: string, segment: string): string[] {
-  // Text only (run 10, R10-28): "Why faster contract review matters now", not "Why Faster contract review ...".
+// Generate key points from topic when not provided. Run 19: the topic is placed after a colon, so a phrase, a clause or a question
+// all read correctly, and where the sector is known the points use its measures, objections and proof shape.
+function generateKeyPointsFromTopic(topic: string, type: string, segment: string, v: Vertical | null): string[] {
+  const T = cap(lowerFirstIfCommon(topic));
   const t = lowerFirstIfCommon(topic);
-  // Base points that apply to most topics
+  const objection = v ? v.objections[0].objection.toLowerCase() : '';
+  const measures = v ? v.metrics.slice(0, 3).join(', ') : '';
   const basePoints: Record<string, string[]> = {
     educational: [
-      `Why ${t} matters now`,
-      `Common mistakes with ${t}`,
-      `Step-by-step approach to ${t}`,
-      `Real examples of ${t} in action`,
+      `${T}: why it matters now`,
+      v ? `The objection readers raise most: ${objection}` : `${T}: the mistakes to avoid`,
+      `${T}: a step-by-step approach`,
+      v ? `What to measure: ${measures}` : `${T}: real examples in action`,
       `Key takeaway and next steps`
     ],
     product_update: [
-      `What's new with ${lowerFirstIfCommon(topic)}`,
+      `What's new: ${t}`,
       `How this helps you`,
       `How to get started`,
       `Tips for best results`,
       `What's coming next`
     ],
     industry_news: [
-      `Latest developments in ${t}`,
+      `Latest developments: ${t}`,
       `Why this matters to you`,
       `Expert perspectives`,
-      `What to watch for`,
+      v ? `Signals to watch: ${measures}` : `What to watch for`,
       `How to prepare`
     ],
     thought_leadership: [
-      `The contrarian view on ${t}`,
-      `Evidence that challenges conventional wisdom`,
+      `The contrarian view: ${t}`,
+      v ? `Evidence that challenges conventional wisdom: ${v.proofShape.replace(/\.$/, '').replace(/^A /, 'a ')}` : `Evidence that challenges conventional wisdom`,
       `What top performers do differently`,
-      `Framework for thinking about ${t}`,
+      `A framework for thinking about it: ${t}`,
       `Actions to take this week`
     ],
     curated_links: [
-      `Best read on ${t} this week`,
-      `Must-watch video on ${t}`,
-      `Tool/resource for ${t}`,
+      `Best read this week: ${t}`,
+      `Must-watch video: ${t}`,
+      `Tool or resource: ${t}`,
       `Hot take worth considering`,
       `What we're thinking about`
     ]
@@ -510,17 +507,17 @@ function generateKeyPointsFromTopic(topic: string, type: string, segment: string
 
   // Adjust based on segment
   const points = basePoints[type] || basePoints.educational;
-  
+
   // For executives, make more strategic
   if (segment === 'executives') {
-    return points.map(p => p.replace('Step-by-step', 'Strategic').replace('How to', 'Why to'));
+    return points.map(p => p.replace('step-by-step', 'strategic').replace('How to', 'Why to'));
   }
-  
+
   // For technical, make more detailed
   if (segment === 'technical') {
     return points.map(p => p.replace('approach', 'implementation').replace('tips', 'best practices'));
   }
-  
+
   return points;
 }
 

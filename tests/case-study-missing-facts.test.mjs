@@ -1,6 +1,6 @@
 // Run 15 (R15-11, D35): Case Study Generator, mode "full" with no interview_notes and a fact left out.
 // The answer is the existing discovery interview kit, with a first line that names the missing facts.
-// A complete input returns exactly the case study of version 2.2.12 (saved in tests/fixtures/).
+// A complete input returns exactly the saved case study (tests/fixtures/). The fixture is the 2.2.12 case study regenerated in run 19 (R19-35, D80), because the answer changed on purpose: results split into items, no cut text, sector notes.
 // In-process through the Netlify function handlers (no network, no deploy): /mcp (mcp.mjs) and the web form endpoint (api.mjs).
 // Run: npm run build, then node --test tests/case-study-missing-facts.test.mjs
 import { test } from "node:test";

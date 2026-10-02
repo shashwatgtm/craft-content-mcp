@@ -1,10 +1,11 @@
 // Utility functions for content analysis and generation
+import { pickKeyPoints, sentencesOf } from './sector.ts';
 
 // Last line of any output that suggests timings, lengths or counts (lengths in words, time boxes, cadences).
 export const SUGGESTION_FOOTER = 'Suggested timings, lengths and counts: adjust them to your own.';
 
 // Text only (run 9): common words that may open an input phrase. Mid-sentence, only these are lowered
-// ("Fewer no-shows" becomes "fewer no-shows"). Any other capitalised word is kept as typed, because it may be a
+// ("Fewer missed handoffs" becomes "fewer missed handoffs"). Any other capitalised word is kept as typed, because it may be a
 // name or an acronym ("Salesforce data you can trust", "Microsoft Teams approvals", "AI deal scoring", "CRM hygiene").
 const COMMON_WORDS = new Set((
   'a an the this that these those our your their my its his her we you they it me us them all any each every ' +
@@ -49,8 +50,8 @@ const COMMON_WORDS = new Set((
   'cost costs price prices pricing budget budgets value roi time times hours days weeks months minutes setup ' +
   'set-up implementation integration integrations security compliance privacy risk risks errors error mistakes ' +
   'issues issue problems problem pain pains gaps gap delays delay bottlenecks friction complexity visibility ' +
-  'control access approvals approval handoffs handoff meetings meeting appointments appointment bookings ' +
-  'booking reminders reminder no-shows cancellations patients patient staff employees employee managers manager ' +
+  'control access approvals approval handoffs handoff meetings meeting bookings ' +
+  'booking reminders reminder cancellations staff employees employee managers manager ' +
   'leaders leader executives reps rep agents agent partners partner vendors vendor suppliers supplier companies ' +
   'company businesses business organisations organizations enterprises enterprise startups startup founders ' +
   'founder owners owner operations operators finance hr legal procurement engineering developers developer ' +
@@ -81,7 +82,7 @@ const COMMON_WORDS = new Set((
   'lost won '
 ).split(/\s+/).filter(Boolean));
 // A word counts as common when it is in the list, or ends in -ing or -ed ("Automated", "Missing"). A hyphenated
-// word counts by its first part ("Two-way", "No-shows").
+// word counts by its first part ("Two-way", "No-code").
 function isCommonWord(word: string): boolean {
   const head = word.split('-')[0].replace(/[^A-Za-z']+$/, '');
   if (!/^[A-Z][a-z']*$/.test(head) || head === 'I' || /[A-Z]/.test(word.slice(1))) return false;
@@ -109,9 +110,9 @@ export function topicWords(text: string, n: number): string[] {
 const KNOWN_NAMES = new Set((
   'Salesforce Microsoft Slack HubSpot LinkedIn Google Gmail Outlook Excel Zoom Zendesk Jira Notion Shopify Stripe ' +
   'Marketo Pardot Gong Intercom Freshworks Oracle SAP Workday ServiceNow Snowflake Tableau Asana Trello Dropbox ' +
-  'Apple Amazon AWS Azure Facebook Instagram WhatsApp YouTube Acme ExampleCo Sam ' +
-  // Run 11: the company and competitor names in the test inputs and the page examples.
-  'Clausewise Bengaluru Clari Northwind ClinicFlow Metricly'
+  'Apple Amazon AWS Azure Facebook Instagram WhatsApp YouTube Sam ' +
+  // Run 11: the company and competitor names in the test inputs and the page examples. Run 19: the dummy names are gone.
+  'Bengaluru Clari Northwind Metricly'
 ).split(/\s+/).filter(Boolean));
 function bareWord(word: string): string {
   return word.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, '');
@@ -122,7 +123,7 @@ function isKnownName(word: string): boolean {
 }
 // Run 11: a known name typed in lower case gets its capitals back ("bengaluru teams" becomes "Bengaluru teams"). Names
 // that are also ordinary words (Slack, Zoom, Notion, Gong, Sam ...) are kept when typed with a capital, never raised.
-const PLAIN_WORDS = new Set('slack zoom notion excel oracle stripe apple amazon gong sam outlook workday snowflake asana tableau intercom acme sap azure'.split(' '));
+const PLAIN_WORDS = new Set('slack zoom notion excel oracle stripe apple amazon gong sam outlook workday snowflake asana tableau intercom sap azure'.split(' '));
 const NAME_BY_LOWER = new Map([...KNOWN_NAMES].filter(n => !PLAIN_WORDS.has(n.toLowerCase())).map(n => [n.toLowerCase(), n] as [string, string]));
 function fixNames(phrase: string): string {
   return phrase.replace(/[A-Za-z]+/g, w => (w === w.toLowerCase() && NAME_BY_LOWER.get(w)) || w);
@@ -139,10 +140,10 @@ function lowerJobTitle(phrase: string): string {
 }
 // Run 10: the first word of an input phrase keeps its capital only when it is a known name, has an inner capital or is
 // all capitals (HubSpot, AI, CRM), holds a digit (B2B, Q4), or starts a name of two words: the next word is capitalised
-// too (New York, Clinic Group A, Competitor A) and is not a known name on its own ("Native Salesforce" is not a name).
+// too (New York, Group A, Competitor A) and is not a known name on its own ("Native Salesforce" is not a name).
 // Run 11: a one-letter word keeps its capital (I, X), and a common first word never makes the next word a name ("For
-// Clausewise contract review" becomes "for Clausewise contract review"), unless the next word is a one-letter label after
-// a noun (Competitor A) or the phrase opens with three capitalised words (Example Clinic Group).
+// Northwind contract review" becomes "for Northwind contract review"), unless the next word is a one-letter label after
+// a noun (Competitor A) or the phrase opens with three capitalised words (Example Logistics Group).
 function keepsFirstCapital(word: string, next: string, third = ''): boolean {
   const w = bareWord(word);
   if (!/^[A-Z]/.test(w) || (w.length === 1 && !(w === 'A' && next)) || isKnownName(w)) return true; // the article A is not a one-letter name
@@ -290,229 +291,274 @@ function countSyllables(text: string): number {
   return total;
 }
 
+// ----------------------------------------------------------------------------------------------------------------------------
+// Run 19 R19-35 (owner decision D80, problem 5): honest scores. Every point taken off comes from a counted, listed finding that
+// quotes the text; a text with no finding scores 10; the rating cannot be EXCELLENT while a hard finding (buzzword, unsupported
+// superlative, fragment, unfilled merge field, claim about the reader) is open; the overall score is the average of the four
+// scores and the lowest one, so one weak area cannot hide behind three strong ones. The checks do not judge whether a claim is true.
+// ----------------------------------------------------------------------------------------------------------------------------
+export interface Finding {
+  dimension: 'clarity' | 'structure' | 'engagement' | 'goalAlignment';
+  rule: string;
+  penalty: number;
+  text: string;
+  suggestion: string;
+  hard: boolean;
+}
 export interface ContentAnalysis {
   clarity: { score: number; issues: string[]; suggestions: string[] };
   structure: { score: number; issues: string[]; suggestions: string[] };
   engagement: { score: number; issues: string[]; suggestions: string[] };
   goalAlignment: { score: number; issues: string[]; suggestions: string[] };
   overall: { score: number; rating: string };
+  findings: Finding[];
 }
 
-export function analyzeContent(content: string, contentType: string, goal: string): ContentAnalysis {
+// Buzzwords (whole words and their forms): each distinct one found takes 1 clarity point, at most 4.
+export const BUZZ = /\b(?:leverag(?:e|es|ed|ing)|utili[sz](?:e|es|ed|ing)|synerg(?:y|ies)|paradigms?|optimi[sz](?:e|es|ed|ing)|facilitat(?:e|es|ed|ing)|methodolog(?:y|ies)|empower(?:s|ed|ing)?|streamlin(?:e|es|ed|ing)|unlock(?:s|ed|ing)?|delight(?:s|ed|ing)?|cutting-edge|innovative|seamless(?:ly)?|robust|holistic|state-of-the-art|game-chang(?:ing|er)|revolutionary|next-generation|best-of-breed|turnkey|mission-critical)\b/gi;
+// Superlatives and promises that need proof: each distinct one takes 1 engagement point, at most 3.
+export const SUPERLATIVE = /\b(?:best[- ]in[- ]class|world[- ]class|industry[- ]leading|market[- ]leading|category[- ]leading|number one|unrivall?ed|unmatched|unparalleled|guaranteed|proven track record|the only)\b|(?:^|\s)#1\b/gi;
+// A claim about the reader that the writer may not be able to support (sales emails and emails): 2 engagement points.
+const READER_CLAIM = /\bI (?:noticed|saw|read|came across|heard|see)\b[^.!?\n]*\b(?:your|you|you're)\b[^.!?\n]*/i;
+// An unfilled merge field or placeholder: 2 structure points.
+const MERGE_FIELD = /\{\{?[^{}\n]{1,40}\}\}?|\[(?!x\])[A-Za-z][^\]\n]{0,40}\](?!\()/g;
+// An ask (a call to action) in the text.
+const ASK = /\b(?:sign up|sign-up|register|download|learn more|get started|contact (?:us|me)|subscribe|try|book|schedule|click|reply|call (?:us|me)|talk to|speak (?:to|with)|get in touch|join|request|start (?:your|a)|apply|buy|order|see (?:it|how|if)|would you (?:like|be open|be willing|be interested)|are you open|open to|could we|can we|shall we|let's|do you have (?:\d+ |a few )?minutes|worth a)\b/i;
+// A goal that needs an ask in the text.
+const NEEDS_ASK = /\b(?:convert|sign ?-?up|leads?|book(?:ed|ing)?|meetings?|demos?|calls?|trial|register|registrations?|download|subscribe|buy|purchas\w*|inquir\w*|enquir\w*|reply|replies|respon\w*|apply|clicks?)\b/i;
+const VERBISH = /^(?:is|are|was|were|be|been|being|has|have|had|do|does|did|will|can|could|would|should|may|might|must|get|gets|got|make|makes|made|help|helps|cut|cuts|fell|rose|grew|grow|grows|save|saves|resolve|resolves|run|runs|ran|go|goes|went|take|takes|took|see|sees|saw|need|needs|want|wants|rises|falls|drops|dropped|beat|beats|won|win|wins)$/i;
+const TRANSITIONS = ['however', 'therefore', 'additionally', 'furthermore', 'consequently', 'moreover', 'first', 'second', 'finally'];
+const AUDIENCE_STOP = new Set(['general', 'audience', 'people', 'companies', 'company', 'business', 'businesses', 'teams', 'team', 'customers', 'their', 'which', 'those', 'these', 'large', 'small', 'medium', 'mid-size', 'midsize', 'with', 'from', 'that']);
+
+function distinct(text: string, re: RegExp): string[] {
+  const seen = new Map<string, string>();
+  for (const m of text.match(new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g')) || []) {
+    const k = m.trim().toLowerCase();
+    if (!seen.has(k)) seen.set(k, m.trim());
+  }
+  return [...seen.values()];
+}
+function sentenceWith(content: string, needle: string): string {
+  const s = content.split(/(?<=[.!?])\s+|\n+/).find((x) => x.toLowerCase().includes(needle.toLowerCase()));
+  return clipEcho((s || needle).trim(), 160);
+}
+// The body of an email or a post without its Subject line and greeting, for the opening-sentence check.
+export function bodyOf(content: string): string {
+  return content.split(/\n/).filter((l) => !/^\s*(?:subject:|(?:hi|hello|dear|hey)\b[^.!?]*,\s*$)/i.test(l)).join('\n').trim() || content;
+}
+
+export function analyzeContent(content: string, contentType: string, goal: string, opts: { audience?: string } = {}): ContentAnalysis {
   const analysis: ContentAnalysis = {
     clarity: { score: 0, issues: [], suggestions: [] },
     structure: { score: 0, issues: [], suggestions: [] },
     engagement: { score: 0, issues: [], suggestions: [] },
     goalAlignment: { score: 0, issues: [], suggestions: [] },
-    overall: { score: 0, rating: '' }
+    overall: { score: 0, rating: '' },
+    findings: []
   };
-  
+  const note = (dimension: Finding['dimension'], rule: string, penalty: number, text: string, suggestion: string, hard = false) => {
+    analysis.findings.push({ dimension, rule, penalty, text, suggestion, hard });
+    analysis[dimension].issues.push(text);
+    if (suggestion && !analysis[dimension].suggestions.includes(suggestion)) analysis[dimension].suggestions.push(suggestion);
+    scores[dimension] -= penalty;
+  };
+  const scores = { clarity: 10, structure: 10, engagement: 10, goalAlignment: 10 };
+
   const words = countWords(content);
   const sentences = countSentences(content);
   const avgWords = avgWordsPerSentence(content);
-  const readability = calculateReadability(content);
-  
-  // CLARITY ANALYSIS
-  let clarityScore = 10;
-  
-  // Check sentence length
+  const sentenceList = sentencesOf(content);
+  const emailLike = contentType === 'sales_email' || contentType === 'email';
+
+  // CLARITY: sentence length, passive voice, buzzwords, fragments
   if (avgWords > 25) {
-    clarityScore -= 3;
-    analysis.clarity.issues.push(`Sentences too long (avg ${avgWords} words)`);
-    analysis.clarity.suggestions.push('Break sentences at natural pauses. Target 15-20 words per sentence.');
+    note('clarity', 'sentence-length', 3, `Sentences too long (avg ${avgWords} words)`, 'Break sentences at natural pauses. Target 15 to 20 words per sentence.');
   } else if (avgWords > 20) {
-    clarityScore -= 1;
-    analysis.clarity.issues.push(`Sentences slightly long (avg ${avgWords} words)`);
-    analysis.clarity.suggestions.push('Consider shortening some sentences for easier scanning.');
+    note('clarity', 'sentence-length', 1, `Sentences slightly long (avg ${avgWords} words)`, 'Consider shortening some sentences for easier scanning.');
   }
-  
-  // Check for passive voice indicators
-  const passivePatterns = /\b(was|were|been|being|is|are|am)\s+\w+ed\b/gi;
-  const passiveMatches = content.match(passivePatterns) || [];
+  const passiveMatches = content.match(/\b(was|were|been|being|is|are|am)\s+\w+ed\b/gi) || [];
   if (passiveMatches.length > sentences * 0.3) {
-    clarityScore -= 2;
-    analysis.clarity.issues.push(`High passive voice usage (${passiveMatches.length} instances)`);
-    analysis.clarity.suggestions.push('Convert to active voice: "X did Y" instead of "Y was done by X"');
+    note('clarity', 'passive', 2, `High passive voice usage (${passiveMatches.length} instances)`, 'Convert to active voice: "X did Y" instead of "Y was done by X"');
   }
-  
-  // Check for jargon/complexity
-  const jargonWords = ['utilize', 'leverage', 'synergy', 'paradigm', 'optimize', 'facilitate', 'implement', 'methodology'];
-  // Run 16 R16-13 (D46): whole words only, so "implementation" does not count as "implement".
-  const foundJargon = jargonWords.filter(j => new RegExp('\\b' + j + '\\b', 'i').test(content));
-  if (foundJargon.length > 2) {
-    clarityScore -= 1;
-    analysis.clarity.issues.push(`Business jargon detected: ${foundJargon.join(', ')}`);
-    analysis.clarity.suggestions.push('Replace with simpler words: "use" instead of "utilize", "improve" instead of "optimize"');
+  const buzz = distinct(content, BUZZ);
+  if (buzz.length > 0) {
+    const shown = buzz.slice(0, 4).map((b) => `"${b}" in "${sentenceWith(content, b)}"`).join('; ');
+    note('clarity', 'buzzwords', Math.min(4, buzz.length), `Buzzwords (${buzz.length}): ${shown}${buzz.length > 4 ? `; and ${buzz.length - 4} more: ${buzz.slice(4).join(', ')}` : ''}`, 'Say what the product does in plain words: "use" instead of "leverage" or "utilize", "help" instead of "empower", "improve" instead of "optimize".', true);
   }
-  
-  analysis.clarity.score = Math.max(0, clarityScore);
-  
-  // STRUCTURE ANALYSIS
-  let structureScore = 10;
-  
-  // Check for headers/sections
-  const hasHeaders = /^#{1,3}\s|^\*\*[^*]+\*\*$|^[A-Z][^a-z]+$/gm.test(content);
+  const fragments = sentenceList.filter((s) => /^[\d$₹€£]/.test(s) && s.split(/\s+/).length >= 3 && !s.split(/\s+/).some((w) => VERBISH.test(w.replace(/[^A-Za-z]/g, '')) || (w.length > 4 && /(?:ed|ing)$/i.test(w.replace(/[^A-Za-z]/g, '')))));
+  if (fragments.length > 0) {
+    note('clarity', 'fragment', Math.min(4, 2 * fragments.length), `Sentence fragment (a figure with no verb): "${clipEcho(fragments[0], 160)}"${fragments.length > 1 ? ` and ${fragments.length - 1} more` : ''}`, 'Turn each figure into a sentence that says who got it and what changed, for example "At <customer>, <result>."', true);
+  }
+
+  // STRUCTURE: headers, paragraph length, transitions, unfilled merge fields
+  const paragraphs = content.split(/\n\n+/).filter((p) => p.trim().length > 0);
+  const hasHeaders = /^#{1,3}\s|^\*\*[^*]+\*\*$|^[A-Z][^a-z]+$/m.test(content);
   if (!hasHeaders && words > 200) {
-    structureScore -= 3;
-    analysis.structure.issues.push('No clear section headers');
-    analysis.structure.suggestions.push('Add headers to break up content and aid scanning');
+    note('structure', 'headers', 3, 'No clear section headers', 'Add headers to break up content and aid scanning');
   }
-  
-  // Check paragraph length
-  const paragraphs = content.split(/\n\n+/).filter(p => p.trim().length > 0);
-  const longParagraphs = paragraphs.filter(p => countWords(p) > 100);
+  const longParagraphs = paragraphs.filter((p) => countWords(p) > 100);
   if (longParagraphs.length > 0) {
-    structureScore -= 2;
-    analysis.structure.issues.push(`${longParagraphs.length} paragraph${longParagraphs.length === 1 ? '' : 's'} over 100 words`);
-    analysis.structure.suggestions.push('Break long paragraphs at topic shifts. Aim for 50-75 words per paragraph.');
+    note('structure', 'long-paragraph', 2, `${longParagraphs.length} paragraph${longParagraphs.length === 1 ? '' : 's'} over 100 words`, 'Break long paragraphs at topic shifts. Aim for 50 to 75 words per paragraph.');
   }
-  
-  // Check for logical flow indicators
-  const transitionWords = ['however', 'therefore', 'additionally', 'furthermore', 'consequently', 'moreover', 'first', 'second', 'finally'];
-  const foundTransitions = transitionWords.filter(t => content.toLowerCase().includes(t));
+  // Run 19: whole words only ("secondary" is not "second"; B16-10).
+  const lowerContent = content.toLowerCase();
+  const foundTransitions = TRANSITIONS.filter((t) => new RegExp('\\b' + t + '\\b').test(lowerContent));
   if (foundTransitions.length < 2 && paragraphs.length > 3) {
-    structureScore -= 2;
-    analysis.structure.issues.push('Few transition words: may feel disjointed');
-    analysis.structure.suggestions.push('Add transitions: "However...", "As a result...", "First... Second..."');
+    note('structure', 'transitions', 2, 'Few transition words: may feel disjointed', 'Add transitions: "However...", "As a result...", "First... Second..."');
   }
-  
-  analysis.structure.score = Math.max(0, structureScore);
-  
-  // ENGAGEMENT ANALYSIS
-  let engagementScore = 10;
-  
-  // Check for questions
+  const merge = distinct(content, MERGE_FIELD);
+  if (merge.length > 0) {
+    note('structure', 'merge-field', 2, `Unfilled merge field or placeholder: ${merge.slice(0, 4).join(', ')}`, 'Fill every merge field and placeholder before sending, or check that your email tool fills it.', true);
+  }
+
+  // ENGAGEMENT: question, "you" language, a figure, superlatives, claims about the reader, the opening sentence
   const questionCount = (content.match(/\?/g) || []).length;
   if (questionCount === 0 && contentType !== 'press_release') {
-    engagementScore -= 2;
-    analysis.engagement.issues.push('No questions to engage reader');
-    analysis.engagement.suggestions.push('Add a rhetorical question to draw readers in');
+    note('engagement', 'question', 2, 'No questions to engage reader', 'Add a rhetorical question to draw readers in');
   }
-  
-  // Check for "you" language
   const youCount = (content.match(/\byou\b|\byour\b/gi) || []).length;
   if (youCount < 3 && contentType !== 'press_release') {
-    engagementScore -= 2;
-    analysis.engagement.issues.push('Limited "you" language: feels impersonal');
-    analysis.engagement.suggestions.push('Reframe benefits in terms of "you": "You\'ll save time" vs "It saves time"');
+    note('engagement', 'you-language', 2, 'Limited "you" language: feels impersonal', 'Reframe benefits in terms of "you": "You\'ll save time" vs "It saves time"');
   }
-  
-  // Check for power words
-  const powerWords = ['free', 'new', 'proven', 'easy', 'guaranteed', 'save', 'results', 'discover', 'secret', 'exclusive'];
-  const foundPowerWords = powerWords.filter(p => content.toLowerCase().includes(p));
-  if (foundPowerWords.length === 0) {
-    engagementScore -= 1;
-    analysis.engagement.issues.push('No power words for emotional impact');
-    analysis.engagement.suggestions.push('Add: proven, results, discover, exclusive, free');
+  if (words >= 20 && !/\d/.test(content)) {
+    note('engagement', 'no-figure', 2, 'No specific figure in the text', 'Add one result you can prove, with its number and timeframe, or a named example.');
   }
-  
-  // Check hook (first sentence)
-  const firstSentence = content.split(/[.!?]/)[0] || '';
+  const supers = distinct(content, SUPERLATIVE);
+  if (supers.length > 0) {
+    note('engagement', 'superlative', Math.min(3, supers.length), `Claims that need proof (${supers.length}): ${supers.slice(0, 4).map((s) => `"${s}" in "${sentenceWith(content, s)}"`).join('; ')}`, 'Remove the claim or back it with a result you can show.', true);
+  }
+  if (emailLike) {
+    const claim = content.match(READER_CLAIM);
+    if (claim) {
+      note('engagement', 'reader-claim', 2, `Claim about the reader that you may not be able to support: "${clipEcho(claim[0].trim(), 160)}"`, 'Only say what you saw if you can name the source (their post, their job ad, their site); otherwise open with the problem.', true);
+    }
+  }
+  const body = bodyOf(content);
+  const firstSentence = body.split(/[.!?]/)[0] || '';
   if (countWords(firstSentence) > 20) {
-    engagementScore -= 2;
-    analysis.engagement.issues.push('Opening sentence too long: may lose readers');
-    analysis.engagement.suggestions.push('Start with a punchy hook under 15 words');
+    note('engagement', 'hook', 2, `Opening sentence too long (${countWords(firstSentence)} words): may lose readers`, 'Start with a hook of 15 words or fewer');
   }
-  
-  analysis.engagement.score = Math.max(0, engagementScore);
-  
-  // GOAL ALIGNMENT ANALYSIS
-  let goalScore = 10;
+
+  // GOAL ALIGNMENT: an ask where the goal needs one, evidence for trust goals, and whether the text speaks to the audience
   const goalLower = goal.toLowerCase();
-  const contentLower = content.toLowerCase();
-  
-  // Check if CTA exists
-  const ctaPatterns = /\b(sign up|register|download|learn more|get started|contact|subscribe|try|book|schedule|click)\b/gi;
-  const hasCTA = ctaPatterns.test(content);
-  
-  if (goalLower.includes('convert') || goalLower.includes('sign up') || goalLower.includes('lead')) {
-    if (!hasCTA) {
-      goalScore -= 4;
-      analysis.goalAlignment.issues.push('Goal requires conversion but no CTA found');
-      analysis.goalAlignment.suggestions.push('Add clear CTA: "Sign up now", "Get started today"');
-    }
+  const hasCTA = ASK.test(content);
+  if (NEEDS_ASK.test(goalLower) && !hasCTA) {
+    note('goalAlignment', 'ask', 4, 'The goal needs the reader to do something, but no ask was found', 'Add one clear ask: what the reader should do next, and how.');
   }
-  
-  if (goalLower.includes('educate') || goalLower.includes('inform')) {
-    if (words < 300) {
-      goalScore -= 2;
-      analysis.goalAlignment.issues.push('Educational content may be too brief');
-      analysis.goalAlignment.suggestions.push('Expand with examples, data, or how-to steps');
-    }
+  if ((goalLower.includes('educate') || goalLower.includes('inform')) && words < 300) {
+    note('goalAlignment', 'educate-length', 2, 'Educational content may be too brief', 'Expand with examples, data, or how-to steps');
   }
-  
   if (goalLower.includes('awareness') || goalLower.includes('brand')) {
     const brandMentions = (content.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b/g) || []).length;
     if (brandMentions < 2) {
-      goalScore -= 2;
-      analysis.goalAlignment.issues.push('Brand/product mentions may be insufficient for awareness');
-      analysis.goalAlignment.suggestions.push('Ensure brand is mentioned prominently');
+      note('goalAlignment', 'brand', 2, 'Brand/product mentions may be insufficient for awareness', 'Ensure brand is mentioned prominently');
     }
   }
-  
   if (goalLower.includes('trust') || goalLower.includes('credibility')) {
-    const hasNumbers = /\d+%|\$\d+|\d+x|\d+\s*(customer|client|user)/i.test(content);
-    if (!hasNumbers) {
-      goalScore -= 3;
-      analysis.goalAlignment.issues.push('No data/proof points for credibility');
-      analysis.goalAlignment.suggestions.push('Add specific metrics: "50% faster", "10,000+ customers" (Example figure: replace with your own)');
+    if (!/\d+%|\$\d+|\d+x|\d+\s*(customer|client|user)/i.test(content)) {
+      note('goalAlignment', 'trust-evidence', 3, 'No data or proof points for credibility', 'Add figures you can prove: a result, a count of customers, a time saved.');
     }
   }
-  
-  analysis.goalAlignment.score = Math.max(0, goalScore);
-  
-  // Calculate overall
-  const totalScore = analysis.clarity.score + analysis.structure.score + 
-                     analysis.engagement.score + analysis.goalAlignment.score;
-  analysis.overall.score = Math.round(totalScore / 4 * 10) / 10;
-  
+  if (opts.audience && opts.audience.trim()) {
+    const terms = [...new Set((opts.audience.toLowerCase().match(/[a-z][a-z-]{4,}/g) || []).filter((w) => !AUDIENCE_STOP.has(w)))];
+    if (terms.length > 0 && !terms.some((t) => new RegExp('\\b' + t.replace(/[-]/g, '[- ]'), 'i').test(content))) {
+      note('goalAlignment', 'audience', 1, `The text never mentions your audience (${opts.audience.trim()}): none of ${terms.slice(0, 4).join(', ')} appears`, 'Name who this is for, or use their own words for the problem.');
+    }
+  }
+
+  for (const d of ['clarity', 'structure', 'engagement', 'goalAlignment'] as const) analysis[d].score = Math.max(0, scores[d]);
+  const all = [analysis.clarity.score, analysis.structure.score, analysis.engagement.score, analysis.goalAlignment.score];
+  const average = all.reduce((a, b) => a + b, 0) / 4;
+  analysis.overall.score = Math.round(((average + Math.min(...all)) / 2) * 10) / 10;
   if (analysis.overall.score >= 8) analysis.overall.rating = 'EXCELLENT';
   else if (analysis.overall.score >= 6) analysis.overall.rating = 'GOOD';
   else if (analysis.overall.score >= 4) analysis.overall.rating = 'NEEDS WORK';
   else analysis.overall.rating = 'MAJOR REVISION NEEDED';
-  
+  if (analysis.overall.rating === 'EXCELLENT' && analysis.findings.some((f) => f.hard)) analysis.overall.rating = 'GOOD';
   return analysis;
 }
 
-export function generateImprovedVersion(content: string, analysis: ContentAnalysis): string {
-  let improved = content;
-  
-  // Apply common improvements
-  
-  // Shorten very long sentences
-  // Run 12 (R21-26): each paragraph is handled on its own, so the paragraph breaks of the input are kept.
-  improved = improved.split(/\n[ \t]*\n/).map((paragraph) => {
-    const sentences = paragraph.split(/(?<=[.!?])\s+/);
-    const improvedSentences = sentences.map(s => {
-      if (countWords(s) > 30) {
-        // Try to split at conjunctions
-        // Text only (run 8): the joining word that starts the new sentence gets a capital ("And", not "and").
-        const split = s.replace(/,\s*(and|but|so|or)\s+/gi, (_m: string, c: string) => `.\n${c.charAt(0).toUpperCase()}${c.slice(1)} `);
-        return split.charAt(0).toUpperCase() + split.slice(1);
-      }
-      return s;
-    });
-    return improvedSentences.join(' ');
-  }).join('\n\n');
-  
-  // Replace common jargon
-  const jargonReplacements: Record<string, string> = {
-    'utilize': 'use',
-    'leverage': 'use',
-    'facilitate': 'help',
-    'implement': 'start',
-    'methodology': 'method',
-    'optimize': 'improve',
-    'synergy': 'collaboration',
-    'paradigm': 'approach'
-  };
-  
-  for (const [jargon, replacement] of Object.entries(jargonReplacements)) {
-    const regex = new RegExp(`\\b${jargon}\\b`, 'gi');
-    improved = improved.replace(regex, replacement);
+// Your text with each flagged sentence marked, so every finding can be found in the text. Shows at most the first 4,000 characters.
+export function annotateText(content: string): string {
+  const shown = content.length > 4000 ? content.slice(0, 4000) : content;
+  const lines = shown.split('\n').map((line) => {
+    if (!line.trim()) return '';
+    return line.split(/(?<=[.!?])\s+/).map((s) => {
+      const flags: string[] = [];
+      if (new RegExp(BUZZ.source, 'i').test(s)) flags.push('buzzword');
+      if (new RegExp(SUPERLATIVE.source, 'i').test(s)) flags.push('claim needs proof');
+      if (/^[\d$\u20b9\u20ac\u00a3]/.test(s) && s.split(/\s+/).length >= 3 && !s.split(/\s+/).some((w) => VERBISH.test(w.replace(/[^A-Za-z]/g, '')) || (w.length > 4 && /(?:ed|ing)$/i.test(w.replace(/[^A-Za-z]/g, ''))))) flags.push('fragment');
+      if (new RegExp(MERGE_FIELD.source).test(s)) flags.push('unfilled merge field');
+      if (READER_CLAIM.test(s)) flags.push('claim about the reader');
+      if (countWords(s) > 30) flags.push(`long sentence, ${countWords(s)} words`);
+      return flags.length ? `${s} **[${flags.join('; ')}]**` : s;
+    }).join(' ');
+  });
+  return lines.map((l) => (l ? `> ${l}` : '>')).join('\n') + (content.length > 4000 ? '\n\n*(Only the first 4,000 characters are shown.)*' : '');
+}
+
+// Tone: only the two tones that can be checked in the text are checked; any other is named as not used.
+export function toneCheck(content: string, tone: string | undefined): { notes: string[]; used: boolean } {
+  if (!tone || tone === 'keep_same') return { notes: [], used: false };
+  if (tone === 'more_formal') {
+    const c = distinct(content, /\b\w+n't\b|\b(?:we|you|they|I|who|that|there|here|it|let|what)'(?:re|ve|ll|d|m|s)\b/gi);
+    return { used: true, notes: [c.length ? `Contractions found, which read as informal: ${c.slice(0, 6).join(', ')}. Write them out in full for a more formal tone.` : 'No contractions found: nothing to change for a more formal tone.'] };
   }
-  
-  return improved;
+  if (tone === 'more_casual') {
+    const f = distinct(content, /\b(?:furthermore|moreover|hereby|therefore|consequently|pursuant|kindly|thus)\b/gi);
+    return { used: true, notes: [f.length ? `Formal joining words found: ${f.join(', ')}. Plainer words ("so", "also", "and") read as more casual.` : 'No formal joining words found: nothing to change for a more casual tone.'] };
+  }
+  return { used: false, notes: [`tone_preference ${tone.replace(/^more_/, 'more_')} was not used: this tool checks tone only for more_formal and more_casual.`] };
+}
+
+// ---- the improved version: real edits, each one listed; or none, said plainly ----
+const HYPE_ADJ = '(?:cutting-edge|best-in-class|world-class|state-of-the-art|innovative|robust|seamless|holistic|game-changing|revolutionary|industry-leading|market-leading|next-generation)';
+const VERB_EDITS: [RegExp, [string, string, string, string]][] = [
+  [/\bleverag(e|es|ed|ing)\b/gi, ['use', 'uses', 'used', 'using']],
+  [/\butili[sz](e|es|ed|ing)\b/gi, ['use', 'uses', 'used', 'using']],
+  [/\bfacilitat(e|es|ed|ing)\b/gi, ['help', 'helps', 'helped', 'helping']],
+  [/\boptimi[sz](e|es|ed|ing)\b/gi, ['improve', 'improves', 'improved', 'improving']],
+  [/\bempower(s|ed|ing)?\b/gi, ['help', 'helps', 'helped', 'helping']],
+  [/\bstreamlin(e|es|ed|ing)\b/gi, ['simplify', 'simplifies', 'simplified', 'simplifying']],
+  [/\bunlock(s|ed|ing)?\b/gi, ['get', 'gets', 'got', 'getting']],
+];
+const NOUN_EDITS: [RegExp, string, string][] = [
+  [/\bmethodolog(y|ies)\b/gi, 'method', 'methods'],
+  [/\bsynerg(y|ies)\b/gi, 'collaboration', 'collaboration'],
+  [/\bparadigms?\b/gi, 'approach', 'approaches'],
+];
+function keepCase(from: string, to: string): string {
+  return from[0] === from[0].toUpperCase() && from[0] !== from[0].toLowerCase() ? to.charAt(0).toUpperCase() + to.slice(1) : to;
+}
+function editSentence(s: string): string {
+  let t = s;
+  t = t.replace(new RegExp(`(^|[.!?]\\s+)${HYPE_ADJ}\\s+(\\w)`, 'gi'), (_m, pre: string, ch: string) => pre + ch.toUpperCase());
+  t = t.replace(new RegExp(`\\b${HYPE_ADJ}\\s+`, 'gi'), '');
+  for (const [re, forms] of VERB_EDITS) {
+    t = t.replace(re, (m: string, suffix: string | undefined) => {
+      const f = suffix === 'ing' ? forms[3] : suffix === 'ed' ? forms[2] : suffix === 's' || suffix === 'es' ? forms[1] : forms[0];
+      return keepCase(m, f);
+    });
+  }
+  for (const [re, one, many] of NOUN_EDITS) t = t.replace(re, (m: string, suffix: string | undefined) => keepCase(m, suffix === 'ies' ? many : one));
+  if (countWords(t) > 30) {
+    // Text only (run 8): the joining word that starts the new sentence gets a capital ("And", not "and").
+    const split = t.replace(/,\s*(and|but|so|or)\s+/gi, (_m: string, c: string) => `.\n${c.charAt(0).toUpperCase()}${c.slice(1)} `);
+    t = split.charAt(0).toUpperCase() + split.slice(1);
+  }
+  return t;
+}
+export function generateImprovedVersion(content: string, _analysis?: ContentAnalysis): { text: string; edits: { before: string; after: string }[] } {
+  const edits: { before: string; after: string }[] = [];
+  const text = content.split('\n').map((line) => {
+    if (!line.trim()) return line;
+    return line.split(/(?<=[.!?])\s+/).map((sentence) => {
+      const after = editSentence(sentence);
+      if (after !== sentence) edits.push({ before: sentence.trim(), after: after.trim() });
+      return after;
+    }).join(' ');
+  }).join('\n');
+  return edits.length === 0 ? { text: content, edits } : { text, edits };
 }
 
 // Run 12 (R12-11b, A5-3): output bound. A point, title or quoted sentence taken from a pasted document is
@@ -523,40 +569,26 @@ export function clipEcho(text: string, max: number = MAX_ECHO): string {
   return text.length > max ? text.slice(0, max - 3).trimEnd() + '...' : text;
 }
 
+
+// Key points of a pasted text: whole sentences chosen by the rule in sector.ts (pickKeyPoints), at most five, in the source's order.
 export function extractKeyPoints(text: string): string[] {
-  const points: string[] = [];
-  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
-  
-  // Look for sentences with key indicators
-  const keyIndicators = ['key', 'important', 'main', 'critical', 'essential', 'result', 'achieve', 'outcome', 'benefit', 'value'];
-  
-  for (const sentence of sentences) {
-    const lower = sentence.toLowerCase();
-    if (keyIndicators.some(k => lower.includes(k))) {
-      points.push(sentence.trim());
-    }
-  }
-  
-  // If no key points found, take first few sentences
-  if (points.length === 0 && sentences.length > 0) {
-    points.push(...sentences.slice(0, 3).map(s => s.trim()));
-  }
-  
-  return points.slice(0, 5).map((p) => clipEcho(p));
+  return pickKeyPoints(text).map((p) => clipEcho(p));
 }
 
+// Hooks for a newsletter. Run 19: the topic is placed only where any topic reads correctly (a phrase, a clause or a question),
+// the statistic is a prompt (no invented figure), and the story is a prompt that quotes the topic.
 export function generateHook(topic: string, style: 'question' | 'statistic' | 'story' | 'bold_statement'): string {
+  const t = lowerFirstIfCommon(topic);
   switch (style) {
     case 'question':
-      return `What if everything you knew about ${lowerFirstIfCommon(topic)} was wrong?`;
+      return `What if everything you knew about ${t} was wrong?`;
     case 'statistic':
-      return `78% of professionals struggle with ${lowerFirstIfCommon(topic)} (Example figure: replace with your own). Here's what the top performers do differently.`;
+      return `[Add one statistic about "${topic}" with its source. Without a source, leave this hook out.]`;
     case 'story':
-      // Run 12 (R12-20, B5): a story is the user's to tell; it is a bracket prompt, never an invented first-person event.
-      return `[Story: a time ${lowerFirstIfCommon(topic)} went wrong for you or a customer]`;
+      return `[Add a short story: a moment when "${topic}" mattered to you or to a customer]`;
     case 'bold_statement':
-      return `${cap(lowerFirstIfCommon(topic))} is broken. Here's how to fix it.`;
+      return `Here is what most teams get wrong about ${t}, and what to do instead.`;
     default:
-      return `Let's talk about ${lowerFirstIfCommon(topic)}.`;
+      return `Let's talk about ${t}.`;
   }
 }

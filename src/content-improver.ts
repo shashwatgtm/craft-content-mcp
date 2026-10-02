@@ -1,4 +1,5 @@
-import { analyzeContent, generateImprovedVersion, countWords, avgWordsPerSentence, calculateReadability, ContentAnalysis, SUGGESTION_FOOTER, clipEcho } from './utils.js';
+import { analyzeContent, generateImprovedVersion, toneCheck, annotateText, bodyOf, countWords, avgWordsPerSentence, calculateReadability, ContentAnalysis, SUGGESTION_FOOTER, clipEcho } from './utils.js';
+import { readContext, audienceLine, sentencesOf } from './sector.ts';
 
 // Default goals by content type
 const DEFAULT_GOALS: Record<string, string> = {
@@ -23,49 +24,44 @@ export function generateContentImprover(args: {
   const contentType = args.content_type || 'blog_post';
   const goal = args.goal || DEFAULT_GOALS[contentType] || 'Improve clarity and engagement';
   const audience = args.audience || 'general audience';
-  const tonePreference = args.tone_preference || 'keep_same';
-  
+
   // Note if goal was auto-assigned
   const goalNote = args.goal ? '' : ` *(auto-assigned based on content type)*`;
-  
-  // Perform actual analysis
-  const analysis = analyzeContent(content, contentType, goal);
+
+  // Perform actual analysis. Run 19 (D80, problem 5): every point taken off comes from a listed finding that quotes the text.
+  const analysis = analyzeContent(content, contentType, goal, { audience: args.audience });
   const readability = calculateReadability(content);
   const wordCount = countWords(content);
   const avgSentenceLength = avgWordsPerSentence(content);
-  
-  // Generate improved version
-  const improvedContent = generateImprovedVersion(content, analysis);
-  
-  // Create specific recommendations based on analysis
-  const priorityFixes: string[] = [];
-  
-  // Sort by lowest scores first
-  const dimensions = [
-    { name: 'Clarity', ...analysis.clarity },
-    { name: 'Structure', ...analysis.structure },
-    { name: 'Engagement', ...analysis.engagement },
-    { name: 'Goal Alignment', ...analysis.goalAlignment }
-  ].sort((a, b) => a.score - b.score);
-  
-  for (const dim of dimensions) {
-    if (dim.score < 7 && dim.suggestions.length > 0) {
-      priorityFixes.push(`**${dim.name}** (${dim.score}/10): ${dim.suggestions[0]}`);
-    }
-  }
+
+  // Generate improved version: real edits, each one listed; or none, said plainly
+  const improved = generateImprovedVersion(content, analysis);
+  const tone = toneCheck(content, args.tone_preference);
+  const ctx = readContext(undefined, [content, args.goal], [args.audience]);
+
+  // Create specific recommendations based on analysis: the findings that cost the most points first
+  const priorityFixes = [...analysis.findings].sort((a, b) => b.penalty - a.penalty).slice(0, 6).map((f) => {
+    const dim = f.dimension === 'goalAlignment' ? 'Goal Alignment' : f.dimension.charAt(0).toUpperCase() + f.dimension.slice(1);
+    return `**${dim}** (${analysis[f.dimension].score}/10): ${f.text}${f.suggestion ? `. Fix: ${f.suggestion}` : ''}`;
+  });
+
+  const buzzFound = analysis.findings.some((f) => f.rule === 'buzzwords');
+  const hardFound = analysis.findings.some((f) => f.hard);
 
   let output = `# Content Analysis & Improvement Report
 
 ## Content Overview
 - **Type:** ${contentType.replace(/_/g, ' ')}
 - **Goal:** ${goal}${goalNote}
-- **Audience:** ${audience}
+- **Audience:** ${args.audience || 'not given (add audience to check that the text speaks to it)'}
 - **Word Count:** ${wordCount}
 - **Avg Sentence Length:** ${avgSentenceLength} words
 
 ---
 
 ## Overall Score: ${analysis.overall.score}/10 (${analysis.overall.rating})
+
+*How this is scored: each score starts at 10 and loses points only for the findings listed below, each quoted from your text. The overall score is the average of the four scores and the lowest one, so one weak area cannot hide behind three strong ones. A rating of EXCELLENT is not given while a buzzword, an unproven claim, a fragment, an unfilled merge field or an unsupported claim about the reader is open. These checks do not judge whether your claims are true.*
 
 | Dimension | Score | Status |
 |-----------|-------|--------|
@@ -87,55 +83,90 @@ ${readability.analysis}
 ## Detailed Analysis
 
 ### Clarity Issues Found
-${analysis.clarity.issues.length > 0 
+${analysis.clarity.issues.length > 0
   ? analysis.clarity.issues.map(i => `- ${i}`).join('\n')
-  : '- No major clarity issues'}
+  : '- No clarity issues found by these checks'}
 
 ### Structure Issues Found
-${analysis.structure.issues.length > 0 
+${analysis.structure.issues.length > 0
   ? analysis.structure.issues.map(i => `- ${i}`).join('\n')
-  : '- Well-structured content'}
+  : '- No structure issues found by these checks'}
 
 ### Engagement Issues Found
-${analysis.engagement.issues.length > 0 
+${analysis.engagement.issues.length > 0
   ? analysis.engagement.issues.map(i => `- ${i}`).join('\n')
-  : '- Engaging content'}
+  : '- No engagement issues found by these checks'}
 
 ### Goal Alignment Issues Found
-${analysis.goalAlignment.issues.length > 0 
+${analysis.goalAlignment.issues.length > 0
   ? analysis.goalAlignment.issues.map(i => `- ${i}`).join('\n')
-  : '- Well-aligned with goals'}
+  : '- No goal alignment issues found by these checks'}
 
 ---
 
 ## Priority Fixes (Do These First)
 
-${priorityFixes.length > 0 
+${priorityFixes.length > 0
   ? priorityFixes.map((fix, i) => `${i + 1}. ${fix}`).join('\n\n')
-  : 'No critical fixes needed: your content is in good shape!'}
+  : 'No fixes needed by these checks. They do not judge whether your claims are true or your offer is strong.'}
 
 ---
 
+## Your Text, With the Findings Marked
+
+${annotateText(content)}
+
+---
+${improved.edits.length > 0 ? `
+## Edits Made
+
+${improved.edits.slice(0, 20).map((e, i) => `${i + 1}. Before: "${clipEcho(e.before, 200)}"
+   After: "${clipEcho(e.after, 200)}"`).join('\n')}${improved.edits.length > 20 ? `\n\n*The first 20 of ${improved.edits.length} edits are listed; the improved version below has all of them.*` : ''}
+
+*Each edit replaces a buzzword with a plainer word, or removes a claim that needs proof (add it back only with proof), or splits a very long sentence. Nothing else in your text was changed.*
+
+---
+` : ''}
 ## Improved Version
 
-Below is an auto-improved version addressing common issues:
+${improved.edits.length > 0
+  ? `${improved.edits.length} edit${improved.edits.length === 1 ? '' : 's'} made (listed above). Everything else is your original text.
 
 ---
 
-${improvedContent}
+${improved.text}`
+  : `No automatic edits were found. The text above contains no buzzword, long sentence or unproven claim that this tool can replace on its own, so there is no improved version to show. The findings in Priority Fixes need your facts or your judgement.`}
 
 ---
 
 ## Before/After Comparison
 
 ### Original First Sentence:
-> ${clipEcho(content.split(/[.!?]/)[0]?.trim() || 'N/A')}
+> ${clipEcho(bodyOf(content).split(/[.!?]/)[0]?.trim() || 'N/A')}
 
 ### Suggested Opening:
-> ${generateBetterHook(content, contentType, goal)}
+> ${suggestOpening(content)}
 
 ---
+${tone.notes.length > 0 ? `
+## Tone Check
 
+${tone.notes.map((n) => `- ${n}`).join('\n')}
+
+---
+` : ''}${ctx.v ? `
+## What This Audience Looks For
+
+${ctx.line}
+
+- ${audienceLine(ctx.v)}
+- **Measures readers watch:** ${ctx.v.metrics.join(', ')}.
+- **Terms this audience uses:** ${ctx.v.vocabulary.join(', ')}.
+- **A proof point that lands:** ${ctx.v.proofShape}
+- ${measuresNamed(content, ctx.v.metrics)}
+
+---
+` : ''}
 ## Tips for this ${contentType.replace(/_/g, ' ')}
 
 ${getContentTypeTips(contentType, goal)}
@@ -144,7 +175,7 @@ ${getContentTypeTips(contentType, goal)}
 
 ## Quick Checklist
 
-${generateChecklist(contentType, goal, analysis)}
+${generateChecklist(contentType, goal, analysis, buzzFound, hardFound)}
 
 ---
 
@@ -154,84 +185,80 @@ ${SUGGESTION_FOOTER}
   return output;
 }
 
-function generateBetterHook(content: string, contentType: string, goal: string): string {
-  const goalLower = goal.toLowerCase();
-  
-  if (goalLower.includes('convert') || goalLower.includes('sign up')) {
-    return `Struggling with [problem]? Here's the solution that [benefit] in just [timeframe].`;
-  }
-  
-  if (goalLower.includes('educate') || goalLower.includes('inform')) {
-    return `Everything you need to know about [topic], explained simply.`;
-  }
-  
-  if (goalLower.includes('engage') || contentType === 'social_post') {
-    return `Unpopular opinion: [contrarian take on topic]. Here's why...`;
-  }
-  
-  if (contentType === 'sales_email') {
-    return `[Name], I noticed [specific observation about their company]. Quick question: [relevant question]?`;
-  }
-  
-  if (contentType === 'landing_page') {
-    return `[Primary benefit] without [primary pain point]. Get started in [timeframe].`;
-  }
-  
-  return `[Hook that addresses reader's main pain point or desire]`;
+// Which of the sector's measures the text already names (a measure counts when one of its long words appears).
+function measuresNamed(content: string, metrics: string[]): string {
+  const lower = content.toLowerCase();
+  const named = metrics.filter((m) => m.toLowerCase().split(/\s+/).filter((w) => w.length >= 6).some((w) => lower.includes(w)));
+  return named.length
+    ? `Your text already speaks to: ${named.join(', ')}.`
+    : 'Your text names none of these measures. If you have a figure you can prove for one of them, put it in the first two sentences.';
+}
+
+// Run 19 (D80, problems 2 and 5): the suggested opening is built from the text itself. It is never a blank template: with no fact
+// to lead with, it says what is missing.
+function suggestOpening(content: string): string {
+  const body = sentencesOf(bodyOf(content));
+  const proof = body.find((s) => /(?<![A-Za-z0-9])\d/.test(s) && !/\?\s*$/.test(s) && s.split(/\s+/).length >= 4);
+  if (!proof) return 'No opening can be built from this text without a fact from you. Add one specific result or one sourced observation about the reader\'s work, then lead with it and run this tool again.';
+  const clean = proof.replace(/[.!?]+$/, '');
+  const fragment = /^[\d$₹€£]/.test(proof) && !/\b(?:is|are|was|were|has|have|had|fell|rose|grew|cut|saved?|resolves?|helps?)\b/i.test(proof);
+  return fragment
+    ? `Your strongest proof is "${clean}". Open with it as a full sentence that says who got it and what changed.`
+    : `Lead with the proof you already have: "${clean}".`;
 }
 
 function getContentTypeTips(contentType: string, goal: string): string {
   const tips: Record<string, string> = {
     blog_post: `
-- **Ideal length:** 1,500-2,500 words for SEO (Example figure: replace with your own)
-- **Subheadings:** Every 300-400 words
+- **Length:** as long as the argument needs, and no longer
+- **Subheadings:** every few paragraphs
 - **Include:** At least one image, list, or quote
 - **CTA placement:** Middle and end of post
-- **Meta description:** 150-160 characters summarizing value`,
-    
+- **Meta description:** one sentence that summarizes the value`,
+
     email: `
-- **Subject line:** 6-10 words, personalized if possible
+- **Subject line:** short, specific, personalized if possible
 - **Preview text:** Complement (don't repeat) subject line
-- **Length:** 50-125 words for highest engagement (Example figure: replace with your own)
+- **Length:** short enough to read on a phone
 - **CTA:** One clear, specific action
-- **P.S. line:** Second CTA or urgency element`,
-    
+- **P.S. line:** Second CTA or reminder`,
+
     landing_page: `
-- **Headline:** Clear benefit in 10 words or less
+- **Headline:** Clear benefit in a few words
 - **Subheadline:** Expand on how you deliver the benefit
 - **Social proof:** Above the fold
-- **CTA:** Visible without scrolling, repeated 3x (Example figure: replace with your own)
+- **CTA:** Visible without scrolling, repeated where the page is long
 - **Form fields:** Minimize: each field reduces conversion`,
-    
+
     social_post: `
 - **Hook:** First line must stop the scroll
 - **Format:** Short paragraphs, line breaks, emojis sparingly
 - **Engagement:** Ask a question or opinion
-- **Hashtags:** 3-5 relevant tags (Example figure: replace with your own)
+- **Hashtags:** a few relevant tags
 - **CTA:** What action do you want?`,
-    
+
     sales_email: `
 - **Subject:** Personalized, curiosity-driven
 - **Opening:** About THEM, not you
 - **Value prop:** One clear benefit
 - **Proof:** Brief case study or metric
 - **CTA:** Specific, low-commitment ask
-- **Length:** Under 150 words`,
-    
+- **Length:** short enough to read in under a minute`,
+
     product_description: `
 - **Lead with benefits:** What problem it solves
 - **Features as proof:** How it delivers benefits
 - **Social proof:** Reviews, testimonials, ratings
-- **Sensory language:** Help them visualize using it
-- **Urgency:** Stock levels, time-limited offers`,
-    
+- **Specifics:** what is included, sizes, materials or limits
+- **Clarity:** say what it is in the first line`,
+
     press_release: `
 - **Headline:** Newsworthy angle, not promotional
 - **Lead paragraph:** Who, what, when, where, why
 - **Quotes:** From executives and/or customers
 - **Boilerplate:** Company description at end
 - **Contact:** Clear media contact info`,
-    
+
     case_study: `
 - **Structure:** Challenge → Solution → Results
 - **Specifics:** Named customer, real numbers
@@ -239,7 +266,7 @@ function getContentTypeTips(contentType: string, goal: string): string {
 - **Visuals:** Screenshots, graphs, before/after
 - **CTA:** "See how you can achieve similar results"`
   };
-  
+
   return tips[contentType] || `
 - Focus on your primary goal: ${goal}
 - Match tone to audience expectations
@@ -247,35 +274,37 @@ function getContentTypeTips(contentType: string, goal: string): string {
 - Use specific examples and data`;
 }
 
-function generateChecklist(contentType: string, goal: string, analysis: ContentAnalysis): string {
+function generateChecklist(contentType: string, goal: string, analysis: ContentAnalysis, buzzFound: boolean, hardFound: boolean): string {
   const checks: string[] = [];
-  
+
   // Universal checks
   // The mark is chosen first, then the text is added, so a passed check keeps its text.
-  checks.push((analysis.clarity.score >= 7 ? 'Yes:' : '[ ]') + ' Clear, jargon-free language');
+  // Run 19 (B16-16): the jargon tick follows the buzzword finding as well as the clarity score.
+  checks.push((analysis.clarity.score >= 7 && !buzzFound ? 'Yes:' : '[ ]') + ' Clear, jargon-free language');
   checks.push((analysis.structure.score >= 7 ? 'Yes:' : '[ ]') + ' Logical structure');
   checks.push((analysis.engagement.score >= 7 ? 'Yes:' : '[ ]') + ' Engaging opening hook');
   checks.push((analysis.goalAlignment.score >= 7 ? 'Yes:' : '[ ]') + ' Aligns with stated goal');
-  
+  checks.push((hardFound ? '[ ]' : 'Yes:') + ' No unproven claims, fragments or unfilled merge fields');
+
   // Content-type specific
   if (contentType === 'email' || contentType === 'sales_email') {
     checks.push('[ ] Subject line optimized');
     checks.push('[ ] Single clear CTA');
     checks.push('[ ] Mobile-friendly format');
   }
-  
+
   if (contentType === 'landing_page') {
     checks.push('[ ] Benefit-driven headline');
     checks.push('[ ] Social proof included');
     checks.push('[ ] CTA above the fold');
   }
-  
+
   if (contentType === 'blog_post') {
     checks.push('[ ] SEO-optimized title');
     checks.push('[ ] Meta description written');
     checks.push('[ ] Internal/external links added');
   }
-  
+
   // Run 12 (R12-20b): one list item per check, now that no symbol starts the line.
   return checks.map((c) => `- ${c}`).join('\n');
 }

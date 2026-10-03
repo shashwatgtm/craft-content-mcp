@@ -391,5 +391,8 @@ const SELLER_VOICE = new Set(['sales_email', 'email', 'landing_page', 'product_d
 const NOT_SELLER_LINE = /^(?:subject:|(?:hi|hello|dear|hey)\b|(?:thanks|thank you|best|regards|kind regards|cheers|sincerely)\b|teams? at\b|would you be open|are you open|can we (?:talk|book|schedule)|reply\b)|\boften deal with\b/i;
 function sellerWords(content: string, contentType: string): string {
   if (!SELLER_VOICE.has(contentType)) return '';
-  return content.split('\n').map((l) => l.trim()).filter((l) => l && !NOT_SELLER_LINE.test(l))[0]?.slice(0, 300) || '';
+  const lines = content.split('\n').map((l) => l.trim()).filter((l) => l && !NOT_SELLER_LINE.test(l));
+  // The line that states what the sender sells ("Brightline X is ...", "X helps ...") first; a line about the reader ("Many heads of IT at banks tell us ...") names the buyer's industry, not the product.
+  const states = lines.find((l) => /^[A-Z][\w&.-]*(?:\s+[A-Za-z0-9&.-]+){0,5}\s+(?:is|are|helps?|provides?|offers?|builds?|makes?|gives?|runs?)\s/.test(l) && !/^(?:I|We|You|Many|Most|Teams?)\s/.test(l));
+  return (states || lines[0] || '').slice(0, 300);
 }

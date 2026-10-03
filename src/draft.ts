@@ -110,7 +110,12 @@ export function splitProof(raw: unknown): string[] {
   const out: string[] = [];
   for (const line of lines) {
     const marks = [...line.matchAll(LABEL_CLOSE)];
-    if (marks.length === 0) { out.push(...splitList(line)); continue; }
+    if (marks.length === 0) {
+      // an item that opens with a known opener ("Customer quote:", "Recognition", "Named a") starts a new item after a comma or a semicolon
+      const pieces = splitOutsideParens(line, /[,;]\s+(?=(?:Customer (?:quote|words)|Recognition|Named (?:a|as)|Featured in|Success story)\b)/);
+      for (const piece of pieces) out.push(...(pieces.length > 1 ? [piece.replace(/[,;]\s*$/, '')] : splitList(piece)));
+      continue;
+    }
     let start = 0;
     for (const m of marks) {
       const end = (m.index as number) + m[0].lastIndexOf(')') + 1;
@@ -123,7 +128,13 @@ export function splitProof(raw: unknown): string[] {
   // inside one chunk, "; Capital" outside brackets starts another item; "; 2,000+ man hours" continues the one before
   const items: string[] = [];
   for (const chunk of out) {
-    const pieces = splitOutsideParens(chunk, /;\s+(?=[A-Z"“])/).filter((x) => x.split(/\s+/).length >= 3 || !items.length);
+    const raw = splitOutsideParens(chunk, /;\s+(?=[A-Z"“])/);
+    // a piece shorter than 60 characters is the start of the item that follows ("Success story: sensitive credentials exposed; Acme secured ...")
+    const pieces: string[] = [];
+    for (const piece of raw) {
+      if (pieces.length && pieces[pieces.length - 1].length < 60) pieces[pieces.length - 1] += ', ' + piece;
+      else pieces.push(piece);
+    }
     for (const piece of pieces.length ? pieces : [chunk]) items.push(piece.replace(/;\s+(?=[\d a-z])/g, ', '));
   }
   return items.map((x) => x.replace(/[;,]\s*$/, '').trim()).filter(Boolean);
@@ -225,4 +236,54 @@ export function shortenClauses(sentence: string, max: number): string {
   // a first clause that is far too long is cut at a word boundary and marked with "..." (a pasted document without punctuation)
   if (best > max * 1.5) return clipAtWord(t, max) + '...';
   return t.slice(0, best).replace(/[,;:\s]+$/, '');
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// Hashtags: the brand named in the text (never a random word), the sector's own terms that the text uses, then the sector's name.
+// With none of them, no hashtag is invented and the line says what to add.
+// ---------------------------------------------------------------------------------------------------------------------------
+import type { Vertical } from './verticals.ts';
+const camelTag = (t: string) => t.split(/[\s-]+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join('').replace(/[^A-Za-z0-9]/g, '');
+export function brandFrom(...texts: (string | undefined)[]): string {
+  for (const raw of texts) {
+    const t = (raw || '').trim();
+    const m = /^([A-Z][A-Za-z0-9]+(?:\s[A-Z][A-Za-z0-9]+)?)\s*:/.exec(t)
+      || /^([A-Z][A-Za-z0-9]+(?:\s[A-Z][A-Za-z0-9]+)?)(?:'s|’s) (?:view|take|position)\b/.exec(t)
+      || /^([A-Z][A-Za-z0-9]+(?:\s[A-Z][A-Za-z0-9]+)?)\s+(?:team|group|company)\b/.exec(t)
+      || /\bAt ([A-Z][A-Za-z0-9]+(?:\s[A-Z][A-Za-z0-9]+)?) we\b/.exec(t)
+      || /\b(?:Head|Director|VP|Founder|CEO|CMO|Manager|Lead)[A-Za-z ]* (?:at|of) ([A-Z][A-Za-z0-9]+(?:\s[A-Z][A-Za-z0-9]+)?)\b/.exec(t);
+    if (m) return m[1];
+  }
+  return '';
+}
+export function makeHashtags(text: string, brand: string, v: Vertical | null, extra: string[] = []): string {
+  const lower = text.toLowerCase();
+  const tags: string[] = [];
+  if (brand) tags.push(camelTag(brand));
+  if (v) for (const term of v.vocabulary) if (tags.length < 4 && lower.includes(term.toLowerCase())) tags.push(camelTag(term));
+  if (v && tags.length < 4) tags.push(camelTag(v.name));
+  for (const e of extra) if (tags.length < 4) tags.push(camelTag(e));
+  const uniq = tags.filter((t, i) => t && tags.findIndex((x) => x.toLowerCase() === t.toLowerCase()) === i);
+  return uniq.length ? uniq.map((t) => `#${t}`).join(' ') : 'Hashtags: none are suggested because the text names no brand and no sector term. Add the brand name and one term your readers search for.';
+}
+
+// Claims in a text that need a source before they are published: superlatives and "first and only" style claims.
+const SUPERLATIVE_CLAIM = /\b(?:the first and only|first and only|the only|the first|world'?s first|world'?s largest|largest|#1|number one|best[- ]in[- ]class|world[- ]class|industry[- ]leading|market[- ]leading|leading provider|unrivall?ed|guaranteed|proven track record)\b/i;
+export function claimsToSource(texts: string[]): string[] {
+  const out: string[] = [];
+  for (const t of texts) {
+    const m = SUPERLATIVE_CLAIM.exec(t);
+    if (m && !out.includes(m[0].toLowerCase())) out.push(m[0].toLowerCase());
+  }
+  return out;
+}
+
+// A short label for a long topic or headline subject: up to 90 characters as it is; otherwise cut before a trailing description
+// (", described as", ", which", ", with") or at the first semicolon or colon outside brackets; never in the middle of a phrase.
+export function headlineSubject(topic: string, max = 90): string {
+  const t = fixNumbers(topic.trim().replace(/\s+/g, ' '));
+  if (t.length <= max) return t;
+  const cut = splitOutsideParens(t, /,\s+(?:described as|which|that|with|including|for|so|where)\b|[;:]\s+/)[0];
+  if (cut && cut.split(/\s+/).length >= 3 && cut.length <= max) return cut;
+  return shortenClauses(t, max);
 }

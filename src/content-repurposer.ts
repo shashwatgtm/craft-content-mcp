@@ -1,6 +1,6 @@
 import { countWords, SUGGESTION_FOOTER, aOrAn } from './utils.js';
 import { splitItems, pickKeyPoints, readContext, audienceLine, firstSentence, sentencesOf, q, type Vertical } from './sector.ts';
-import { parseProof, fixNumbers, endSentence, shortenClauses, proseJoin, KIND_NOTE, type ProofItem } from './draft.ts';
+import { parseProof, fixNumbers, endSentence, shortenClauses, proseJoin, makeHashtags, brandFrom, KIND_NOTE, type ProofItem } from './draft.ts';
 
 // Default formats when user doesn't specify
 const DEFAULT_FORMATS = ['linkedin_post', 'twitter_thread', 'email', 'blog_summary', 'quote_cards'];
@@ -487,16 +487,8 @@ function subjectPoint(point: string | undefined): string {
   return p.length <= 60 ? p : '';
 }
 
-const camel = (t: string) => t.split(/[\s-]+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join('').replace(/[^A-Za-z0-9]/g, '');
 // Hashtags: the brand named in the key message or in "At X we built" (never a random word of the text), the sector's own terms that the
 // source uses, then the sector's name. With none of them, no hashtag is invented.
 function hashtags(content: string, keyMessage: string, v: Vertical | null): string {
-  const lower = `${content} ${keyMessage}`.toLowerCase();
-  const tags: string[] = [];
-  const brand = /^([A-Z][A-Za-z0-9]+(?:\s[A-Z][A-Za-z0-9]+)?)\s*:/.exec(keyMessage.trim()) || /\bAt ([A-Z][A-Za-z0-9]+(?:\s[A-Z][A-Za-z0-9]+)?) we\b/.exec(content);
-  if (brand) tags.push(camel(brand[1]));
-  if (v) for (const term of v.vocabulary) if (tags.length < 4 && lower.includes(term.toLowerCase())) tags.push(camel(term));
-  if (v && tags.length < 4) tags.push(camel(v.name));
-  const uniq = tags.filter((t, i) => t && tags.findIndex((x) => x.toLowerCase() === t.toLowerCase()) === i);
-  return uniq.length ? uniq.map((t) => `#${t}`).join(' ') : 'Hashtags: none are suggested because the source names no brand and no sector term. Add the brand name and one term your readers search for.';
+  return makeHashtags(`${content} ${keyMessage}`, brandFrom(keyMessage, content), v);
 }

@@ -169,9 +169,12 @@ function generateSubjectLines(label: string, clause: boolean, type: string, poin
   const mid = lowerFirstIfCommon(short);
   const head = cap(mid);
   const cut = (p: string, max: number) => { const c = shortenClauses(p, max); return /\.\.\.$/.test(c) ? clipAtWord(p, max) : c; };
-  const p0 = points[0] ? `${head}: ${cut(points[0], 60)}` : '';
-  const p1 = points[1] ? `${head}: ${cut(points[1], 60)}` : '';
-  const fig = figures[0] ? `${head}: ${cut(figures[0], 60)}` : '';
+  // A point that only repeats the topic ("Supply chains break in the gaps: supply chains break in the gaps") makes no second subject line.
+  const same = (a: string) => { const x = a.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(), y = head.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); return x.length > 0 && (y.startsWith(x.slice(0, 24)) || x.startsWith(y.slice(0, 24))); };
+  const withHead = (pt: string | undefined) => (pt && !same(cut(pt, 60)) ? `${head}: ${cut(pt, 60)}` : '');
+  const p0 = withHead(points[0]);
+  const p1 = withHead(points[1]);
+  const fig = figures[0] && !same(cut(figures[0], 60)) ? `${head}: ${cut(figures[0], 60)}` : '';
   const measure = v ? `${head}: where you stand on ${v.metrics[0]}` : '';
   const n = points.length;
   const count = n >= 2 ? (clause ? `${head}: ${n} points` : `${n} points on ${mid}`) : '';

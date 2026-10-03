@@ -201,7 +201,7 @@ function generateRequestEmail(
 *Note: review sites suit software products, where buyers read them before they buy. For this kind of business a named reference call or a case study is the more usual proof. Send this email only if your buyers do read a review site.*
 `
     : '';
-  const about = own.length ? `${seenBlock(company, own)}` : `\nI would like to hear how ${P} has worked for youand for your team at ${company}.\n`;
+  const about = own.length ? `${seenBlock(company, own)}` : `\nI would like to hear how ${P} has worked for you and for your team${/^your company$/i.test(company) ? "" : ` at ${company}`}.\n`;
   const templates: Record<string, string> = {
     written_quote: `
 **Subject:** Quick favor: share your experience with ${P}?

@@ -3,7 +3,7 @@
 // text instead of pasting it into fixed sentences, split typed lists, and pick whole sentences from a source text.
 // Rule B82: nothing here adds a statistic, a benchmark or a named-company fact.
 
-import { detectVertical, detectModel, explainSector, MODEL_NAME, type Vertical, type BusinessModel, type ReaderInput } from './verticals.ts';
+import { detectVertical, detectModel, explainSector, profileFor, MODEL_NAME, type Vertical, type BusinessModel, type ReaderInput } from './verticals.ts';
 
 export type { Vertical, BusinessModel, ReaderInput };
 
@@ -50,27 +50,16 @@ export function readContext(explicitModel: unknown, raw: ReaderInput): { v: Vert
   let v = detectVertical(input);
   const m = detectModel(explicitModel, input);
   const source = v ? explainSector(input).source : null;
-  // The fintech notes in src/verticals.ts cover finance operations (the close, reconciliation, spend). They do not fit an investment
-  // business, so for that business they are not shown (a wrong-sector note is worse than none). Reported to the lead.
-  // The same holds when the seller's own words name no sector and only the buyer's industry points to fintech while that buyer is an
-  // investor (an asset allocator, a pension fund, an insurer's investment desk): the seller's product may be anything.
+  // A seller that manages money gets the investment notes (profileFor), and an AI native seller of support automation the support notes.
+  // When only the buyer's industry points to fintech and that buyer is an investor, the seller's product may be anything: no notes are shown.
   const allText = [input.seller, input.context, input.role, input.buyer].flatMap((g) => (Array.isArray(g) ? g : [])).filter((x): x is string => typeof x === 'string').join(' \n ');
   const investorBuyer = /\b(?:asset (?:allocators?|managers?)|pension (?:funds?|schemes?)|endowments?|wealth managers?|investment (?:managers?|banks?|strateg\w+)|hedge funds?|family offices?|sovereign|quant(?:itative)? (?:strateg\w+|investing))\b/i.test(allText)
     && !/\b(?:reconcil\w*|expenses?|month-end|close the books|payroll|invoic\w*|accounts (?:payable|receivable)|spend management|corporate cards?|prepaid cards?|reimburse\w*)\b/i.test(allText);
-  const investmentFintech = !!v && v.id === 'fintech' && (m.model === 'investment' || investorBuyer);
-  if (investmentFintech) v = null;
-  // The AI native notes in src/verticals.ts are written around a support desk (resolution rate, escalation, handling time). When nothing in
-  // the inputs is about support, those items are left out of the view of the sector that the tool prints; nothing is added.
-  if (v && v.id === 'ai-native' && !/\b(?:support|tickets?|customer service|help ?desk|contact cent(?:re|er)s?|chat(?:bots?)?|cx|customer experience|agents? assist)\b/i.test(allText)) {
-    v = {
-      ...v,
-      metrics: v.metrics.filter((x) => !/resolution|escalation|handling time|satisfaction/i.test(x)),
-      vocabulary: v.vocabulary.filter((x) => !/resolution|automation rate/i.test(x)),
-      buyerRoles: v.buyerRoles.filter((x) => !/customer experience/i.test(x)),
-    };
-  }
+  const withheld = !!v && v.id === 'fintech' && m.model !== 'investment' && investorBuyer;
+  if (withheld) v = null;
+  else v = profileFor(v, m.model, input);
   const from = source === 'role' ? ' (the job titles name it)' : source === 'buyer' ? ' (the buyer\'s industry names it; your own description names no sector)' : '';
-  const sector = investmentFintech ? (m.model === 'investment' ? 'read from your inputs as an investment business. No sector notes are shown, because the built-in notes cover the corporate finance office (the close, reconciliation, spend), not investing' : 'not named by your own description; the buyer is an investor. No sector notes are shown, because the built-in notes cover the corporate finance office (the close, reconciliation, spend), not investing (name what you sell to get sector notes)') : v ? `read from your inputs as ${v.name}${from}` : 'not clear from your inputs (name the industry for sector notes)';
+  const sector = withheld ? 'not named by your own description; the buyer is an investor. No sector notes are shown, because the built-in notes cover the corporate finance office (the close, reconciliation, spend), not investing (name what you sell to get sector notes)' : v ? `read from your inputs as ${v.name}${from}` : 'not clear from your inputs (name the industry for sector notes)';
   const model = m.model
     ? `${MODEL_NAME[m.model]} (${m.how === 'input' ? 'from business_model' : m.how === 'sector' ? 'the usual model in this sector, assumed; set business_model to change it' : 'read from your inputs; set business_model to change it'})`
     : 'not clear from your inputs; set business_model (saas, services, connectivity, transactions, marketplace, hardware_software or investment) for advice that fits it';

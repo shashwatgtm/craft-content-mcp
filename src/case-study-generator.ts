@@ -1,6 +1,6 @@
 import { SUGGESTION_FOOTER, clipEcho, cap } from './utils.js';
 import { q, readContext, startWords, firstSentence, sentencesOf, fromIndicator, type Vertical, type BusinessModel } from './sector.ts';
-import { parseProof, fixNumbers, endSentence, lowerFirstWord, proseJoin, plural, type ProofItem, type ProofKind } from './draft.ts';
+import { parseProof, fixNumbers, endSentence, lowerFirstWord, isGenericName, proseJoin, plural, type ProofItem, type ProofKind } from './draft.ts';
 
 type Ctx = { v: Vertical | null; model: BusinessModel | null; line: string };
 
@@ -308,11 +308,6 @@ ${keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 `;
 }
 
-// A customer name that names no company ("a Locus customer (Retail)", "a customer", "name not given").
-function genericCustomer(name: string): boolean {
-  return /^(?:an?|the|one of (?:our|the))\s+.{0,60}\bcustomers?\b|name not given|not given|^customer\b|^client\b|^anonymous|^unnamed/i.test(name.trim());
-}
-
 // The sector's measures that the results do not mention: ask the customer for one of them.
 function missingMeasures(v: Vertical, results: string): string[] {
   const lower = results.toLowerCase();
@@ -336,7 +331,7 @@ function generateFullCaseStudy(
 ): string {
   const v = ctx.v;
   const w = startWords(ctx.model);
-  const generic = genericCustomer(customerName);
+  const generic = isGenericName(customerName);
   const items = results.trim() && results !== 'not supplied' ? parseProof(results) : [];
   const grp = (k: ProofKind[]) => items.filter((i) => k.includes(i.kind));
   const outcomes = grp(['result']);

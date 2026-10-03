@@ -1,5 +1,6 @@
 import { cap, aOrAn, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { readContext, startWords, type Vertical, type BusinessModel } from './sector.ts';
+import { parseProof, fixNumbers, endSentence, capFirst, proseJoin, isGenericName, shortenClauses, KIND_NOTE, type ProofItem } from './draft.ts';
 
 export function generateTestimonialCapture(args: {
   customer_name: string;
@@ -13,27 +14,39 @@ export function generateTestimonialCapture(args: {
   your_product?: string;
   business_model?: string;
 }): string {
-  const name = args.customer_name;
-  const company = args.customer_company;
-  const role = args.customer_role || '[their role]';
+  const name = args.customer_name.trim();
+  const company = args.customer_company.trim();
+  const role = args.customer_role?.trim() || '';
   // Run 12 (R12-20): defaults are marked as assumed in the profile table.
-  const roleShown = args.customer_role || '[not supplied]';
+  const roleShown = role || 'not supplied';
   const context = args.relationship_context || 'not supplied';
-  const storyFull = args.success_story.trim();
-  // Run 19 (B15-L1): the Success Story Summary prints the story as typed; the emails and the quote drafts echo it cut at 280 characters.
-  const story = clipEcho(storyFull);
+  const storyFull = fixNumbers(args.success_story.trim());
   const type = args.testimonial_type;
   const useCase = args.use_case || 'marketing materials (assumed, not supplied)';
   const incentive = args.incentive || '';
   // Run 19 (D80, problems 3, 4 and 8): the product the user named is used everywhere the old kit printed "[Product]"; the sector and the
   // business model are read from every text the user gave.
   const product = (args.your_product || '').trim();
-  const P = product || '[your product]';
+  const genericCo = isGenericName(company);
+  const fromCompany = genericCo ? (/^(?:an?|the)\s+(.+?)\s+customer\b/i.exec(company)?.[1] || '') : '';
+  const P = product || fromCompany || 'the product';
+  const co = genericCo ? 'your company' : company;
   const ctx = readContext(args.business_model, { seller: [product], context: [storyFull, args.use_case, args.relationship_context], role: [args.customer_role] });
   const w = startWords(ctx.model);
 
+  // The success story is sorted: only a result, a quote or a story with a figure can be said to belong to this company, and only when
+  // the company is named. A result of another customer, a recognition or a company-wide count is never put in this contact's mouth.
+  const items = parseProof(storyFull);
+  const own = genericCo ? [] : items.filter((i) => i.kind === 'result' || i.kind === 'quote' || (i.kind === 'title' && i.figure));
+  const elsewhere = items.filter((i) => !own.includes(i));
+  const first = isGenericName(name) ? '' : name.replace(/\s*\(.*\)\s*$/, '').split(/\s+/)[0];
+  const greeting = first ? `Hi ${first},` : 'Hello,';
+  const person = isGenericName(name) ? 'the contact' : name;
+
+  const storyBlock = items.length ? `${items.map((p, i) => `${i + 1}. ${endSentence(capFirst(clipEcho(p.shown, 300)))} *(${KIND_NOTE[p.kind]}${own.includes(p) ? `; used as ${company}'s result` : genericCo ? '; company name not given, so not put to this contact' : '; not put to this contact'})*`).join('\n')}` : '';
+
   let output = `# Testimonial Capture Kit
-## ${name} at ${company}
+## ${isGenericName(name) ? (role || 'Contact') : name} at ${company}
 
 ---
 
@@ -44,7 +57,7 @@ export function generateTestimonialCapture(args: {
 | **Name** | ${name} |
 | **Company** | ${company} |
 | **Role** | ${roleShown} |
-| **Product** | ${product || 'not given (your_product was not given, so the templates show [your product]; add it to name your product)'} |
+| **Product** | ${product || (fromCompany ? `not given (your_product was not given; ${fromCompany} is read from the company field; add your_product to name your product)` : 'not given (your_product was not given, so the templates say "the product"; add it to name your product)')} |
 | **Relationship** | ${context} |
 | **Testimonial Type** | ${type.replace(/_/g, ' ')} |
 | **Use Case** | ${useCase} |
@@ -57,60 +70,53 @@ ${ctx.line}
 
 ${storyFull}
 
+${items.length > 1 || (items.length === 1 && own.length === 0) ? `**What each part of the story is, and how this kit uses it:**\n\n${storyBlock}\n\n${genericCo ? `*The company name (${company}) does not name a company, so none of these is put to the contact as their own result. The request email asks about their experience instead, and the results are kept for you to check against what the contact tells you.*` : own.length ? `*${own.length} of ${items.length} ${own.length === 1 ? 'part is' : 'parts are'} used as ${company}'s result in the email and the templates. Recognition, company-wide counts and claims are not.*` : `*None of these is a customer result or quote, so the email does not state a result.*`}\n` : ''}
 ---
 
 ## Request Email
 
 `;
 
-  // Generate type-specific request email
-  output += generateRequestEmail(name, company, story, type, useCase, incentive, P, ctx.model);
+  output += generateRequestEmail(greeting, co, own, type, useCase, incentive, P, ctx.model, role);
 
-  // Generate interview questions based on type
   output += `
 
 ---
 
 ## Interview Questions
 
-${generateInterviewQuestions(type, P, company, args.customer_role, ctx.v, ctx.model, w)}
+${generateInterviewQuestions(type, P, co, role, ctx.v, ctx.model, w, own)}
 
 ---
 
 ## Testimonial Templates
 
-*Drafts for the customer to edit and approve. The words in brackets are theirs to write; change anything in the result line that is not true.*
+*Sentence starters to offer the customer. The customer completes them in their own words and approves the final text; nothing below is a quote until they do.*
 
 ### Short Format (1-2 sentences)
 *For: Website hero section, social proof snippets*
 
-"[Add one sentence in their words about ${P}]"
-
-Result to quote: ${story}
-
-${name}, ${role} at ${company}
+Starter: "Since we started with ${P}, ..."
+${own.length ? `\nFact to check with the customer before quoting: ${endSentence(capFirst(clipEcho(own[0].shown, 220)))}\n` : ''}
+${isGenericName(name) ? (role || 'Contact') : name}${isGenericName(name) || !role ? '' : `, ${role}`} at ${company}
 
 ---
 
 ### Medium Format (3-4 sentences)
 *For: Case study pull quotes, sales deck*
 
-"Before ${P}: [Add the problem, in their words]. With ${P}: [Add what changed, in their words]. [Add what they valued, in their words]."
-
-Result to quote: ${story}
-
-${name}, ${role} at ${company}
+Starters: "Before ${P}, ..." then "With ${P}, ..." then "What I value most is ..."
+${own.length ? `\nFacts to check with the customer before quoting:\n${own.slice(0, 3).map((p) => `- ${endSentence(capFirst(clipEcho(p.shown, 220)))}`).join('\n')}\n` : ''}
+${isGenericName(name) ? (role || 'Contact') : name}${isGenericName(name) || !role ? '' : `, ${role}`} at ${company}
 
 ---
 
 ### Long Format (Full paragraph)
 *For: Case studies, press releases, testimonial pages*
 
-"At ${company}, [Add the problem, in their words] was a major obstacle. We chose ${P} because [Add the key differentiator, in their words]. The ${w.rollout} was [Add their experience], and within [Add the timeframe] we saw the result below. [Add what they valued, in their words]."
-
-Result to quote: ${story}
-
-${name}, ${role} at ${company}
+Starters: "At ${co}, the problem was ..." then "We chose ${P} because ..." then "The ${w.rollout} was ..." then "Within ... we saw ..."
+${own.length ? `\nFacts to check with the customer before quoting:\n${own.slice(0, 4).map((p) => `- ${endSentence(capFirst(clipEcho(p.shown, 220)))}`).join('\n')}\n` : ''}
+${isGenericName(name) ? (role || 'Contact') : name}${isGenericName(name) || !role ? '' : `, ${role}`} at ${company}
 
 ---
 
@@ -170,31 +176,37 @@ ${SUGGESTION_FOOTER}
   return output;
 }
 
+// The lines of the request that state what the sender has seen: only results that belong to this company, each whole, as a list.
+function seenBlock(company: string, own: ProofItem[]): string {
+  if (!own.length) return '';
+  return `\nWhat I have seen at ${company}:\n${own.slice(0, 3).map((p) => `- ${endSentence(capFirst(clipEcho(p.shown, 220)))}`).join('\n')}\n`;
+}
+
 function generateRequestEmail(
-  name: string,
+  greeting: string,
   company: string,
-  story: string,
+  own: ProofItem[],
   type: string,
   useCase: string,
   incentive: string,
   P: string,
-  model: BusinessModel | null
+  model: BusinessModel | null,
+  role: string
 ): string {
   const reviewNote = model && model !== 'saas' && model !== 'hardware_software'
     ? `
 *Note: review sites suit software products, where buyers read them before they buy. For this kind of business a named reference call or a case study is the more usual proof. Send this email only if your buyers do read a review site.*
 `
     : '';
+  const about = own.length ? `${seenBlock(company, own)}` : `\nI would like to hear how ${P} has worked for you${role ? ` as ${aOrAn(role)} ${role}` : ''} and for your team at ${company}.\n`;
   const templates: Record<string, string> = {
     written_quote: `
-**Subject:** Quick favor: share your success story?
+**Subject:** Quick favor: share your experience with ${P}?
 
-Hi [First name],
+${greeting}
 
 I hope this finds you well!
-
-I've loved seeing ${company}'s success with ${P}: ${story.replace(/[.!?]+$/, '')}.
-
+${about}
 Would you be willing to share a brief quote about your experience? Just 2-3 sentences about what ${P} has meant for your team.
 
 Here's what it involves:
@@ -209,13 +221,13 @@ Thanks for considering,
 [Your name]
 `,
     video_interview: `
-**Subject:** Invite: Share ${company}'s story in a quick video
+**Subject:** Invite: share your story in a quick video
 
-Hi [First name],
+${greeting}
 
 I hope you're doing well!
-
-${company}'s success with ${P} (${story.replace(/[.!?]+$/, '')}) is exactly the kind of story that helps others facing similar challenges.
+${about}
+Your story is exactly the kind that helps others facing similar challenges.
 
 Would you be open to a brief video interview? Here's what it looks like:
 
@@ -226,29 +238,26 @@ Would you be open to a brief video interview? Here's what it looks like:
 - **Your review:** You'll approve the final edit before anything goes live
 ${incentive ? `- **Thank you:** ${incentive}` : ''}
 
-[Only if true: We handle all production. You just show up and share your story.]
+If you say yes, tell me whether you want us to handle the production so you only have to show up and share your story.
 
-Would [next week] work for you?
+Would next week work for you?
 
 Best,
 [Your name]
 `,
     case_study_interview: `
-**Subject:** Feature ${company} in our next case study?
+**Subject:** ${company === 'your company' ? 'Feature your company' : `Feature ${company}`} in our next case study?
 
-Hi [First name],
-
-Your team's results with ${P} have been impressive: ${story.replace(/[.!?]+$/, '')}.
-
-I'd love to tell ${company}'s story in a detailed case study. This would include:
+${greeting}
+${about}
+I'd love to tell your story in a detailed case study. This would include:
 
 - **Interview:** 30-45 minute call about your journey
 - **Draft review:** You approve all content before publishing
-- **Exposure:** Featured on our website [Only if true: and shared with our newsletter readers]
-- **Backlinks:** [Only if you offer them: links to ${company} throughout]
+- **Exposure:** Featured on our website, and in our newsletter if you agree
 ${incentive ? `- **Thank you:** ${incentive}` : ''}
 
-Would you be open to a quick call to discuss? [Only if you have them: I can share examples of past case studies we've done.]
+Would you be open to a quick call to discuss? I can share examples of past case studies we've done if that helps.
 
 Best,
 [Your name]
@@ -256,13 +265,13 @@ Best,
     g2_review: `${reviewNote}
 **Subject:** Quick favor: a short review of ${P}?
 
-Hi [First name],
+${greeting}
 
 I hope you're well!
+${about}
+Your experience with ${P} would really help others make informed decisions.
 
-[Only if true: We're building our presence on a review site, and] your experience with ${P} would really help others make informed decisions.
-
-Would you be willing to leave a quick review? Here's the link: [Add the review link]
+Would you be willing to leave a quick review? Send them the link to the review page (add it before sending).
 
 It takes only a few minutes, and you can be as detailed or brief as you'd like.
 ${incentive ? `\nAs a thank you: ${incentive}` : ''}
@@ -275,11 +284,11 @@ Thanks for considering,
     reference_call: `
 **Subject:** Would you be a reference for ${P}?
 
-Hi [First name],
+${greeting}
 
 I hope you're doing well!
-
-A prospect, [Add their company], is evaluating ${P} and facing [Add their challenge, only if it is similar to what ${company} had]. They'd love to hear directly from someone who's been through the journey.
+${about}
+A prospect who is evaluating ${P} would like to hear directly from someone who has been through the journey. (Name the prospect and their challenge in this paragraph, only if it is similar to what ${company} had.)
 
 Would you be open to a brief reference call? Here's what it involves:
 
@@ -300,36 +309,45 @@ Thanks,
   return templates[type] || templates.written_quote;
 }
 
-// Role families read from the customer's job title: each gets three questions in that role's own terms.
+// Role families read from the customer's job title: each gets three questions in that role's own terms. The first family that matches wins,
+// so a security operations role is read as security, not operations.
 const ROLE_QUESTIONS: [RegExp, string, string[]][] = [
+  [/security|ciso|\bsoc\b|risk|compliance|analyst/i, 'security', [
+    'What did your team see in the first weeks that it had not seen before?',
+    'How did the change affect the time your analysts spend on low-value work, and on alerts that turned out not to matter?',
+    'What did your auditors or leadership ask for, and what did you show them?']],
   [/finance|controller|cfo|accounts|treasury|audit/i, 'finance', [
     'How did the month-end close, the approvals or the audit preparation change for your team?',
     'What did your own review or audit say before and after?',
     'Who in finance had to be convinced, and what convinced them?']],
-  [/operations|\bops\b|logistics|supply|transport|fleet|dispatch|last-mile|warehouse/i, 'operations', [
-    'What did a normal day look like for your team before, and what is different now?',
-    'Which part of the daily work got easier first, and which part did not change?',
-    'How did your frontline team react in the first weeks?']],
-  [/\bIT\b|network|infrastructure|cio|cto|technology|systems/i, 'IT', [
-    'What did you have to change in your own systems, and how long did the change take?',
-    'How did the change affect your team\'s workload and incident handling?',
-    'What did your security or architecture review need to see?']],
-  [/security|ciso|\bsoc\b|risk|compliance/i, 'security', [
-    'What did your team see in the first weeks that it had not seen before?',
-    'How did the change affect the time your analysts spend on low-value work?',
-    'What did your auditors or leadership ask for, and what did you show them?']],
-  [/support|customer (?:service|experience|success)|\bcx\b/i, 'support', [
-    'How did your team\'s day change once the product took over the routine work?',
-    'What did your agents think of it in the first month?',
-    'Which kinds of cases do you still keep with people, and why?']],
+  [/product|pricing|billing|packaging/i, 'product', [
+    'How did the way you launch or change pricing and packaging change, and how long does a change take now?',
+    'What did your finance and engineering teams stop having to do by hand?',
+    'What would you tell another product leader about moving off the old setup?']],
   [/engineer|developer|\bqa\b|devops|platform/i, 'engineering', [
     'What did your developers notice first in their daily work?',
     'How did it fit into the pipeline and tools you already had?',
     'What would you tell another engineering lead about the effort to adopt it?']],
-  [/sales|marketing|revenue|growth|\bcro\b|distribution/i, 'revenue', [
+  [/\bIT\b|network|infrastructure|cio|cto|technology|systems/i, 'IT', [
+    'What did you have to change in your own systems, and how long did the change take?',
+    'How did the change affect your team\'s workload and incident handling?',
+    'What did your security or architecture review need to see?']],
+  [/support|customer (?:service|experience|success)|\bcx\b/i, 'support', [
+    'How did your team\'s day change once the product took over the routine work?',
+    'What did your agents think of it in the first month?',
+    'Which kinds of cases do you still keep with people, and why?']],
+  [/sales|marketing|revenue|growth|\bcro\b|distribution|national/i, 'revenue', [
     'What changed in the way your reps or campaigns work?',
     'Which number moved first, and how soon did you see it?',
-    'How did you get your team to adopt it?']]
+    'How did you get your team to adopt it?']],
+  [/operations|\bops\b|\bcoo\b|logistics|supply|transport|fleet|dispatch|last-mile|warehouse/i, 'operations', [
+    'What did a normal day look like for your team before, and what is different now?',
+    'Which part of the daily work got easier first, and which part did not change?',
+    'How did your frontline team react in the first weeks?']],
+  [/investment|portfolio|allocat|\bcio\b/i, 'investment', [
+    'How did the way you form a view or build a portfolio change, and what did your investment committee ask to see?',
+    'What did you need to understand about how the output is produced before you relied on it?',
+    'What would you tell another allocator about the first months?']]
 ];
 
 function roleBlock(role: string | undefined): string {
@@ -342,8 +360,9 @@ function roleBlock(role: string | undefined): string {
   return `### Questions for ${aOrAn(role)} ${role}\n\n${qs.map((x, i) => `${i + 1}. ${x}`).join('\n')}\n`;
 }
 
-function generateInterviewQuestions(type: string, P: string, company: string, role: string | undefined, v: Vertical | null, model: BusinessModel | null, w: { rollout: string; value: string; reach: string }): string {
+function generateInterviewQuestions(type: string, P: string, company: string, role: string | undefined, v: Vertical | null, model: BusinessModel | null, w: { rollout: string; value: string; reach: string }, own: ProofItem[]): string {
   const learning = !model || model === 'saas' || model === 'hardware_software' ? "What's the learning curve like?" : 'What did your team have to change in how it works?';
+  const figures = own.filter((p) => p.figure).slice(0, 3);
   const baseQuestions = `
 ### Warm-Up
 1. Tell me about your role at ${company}.
@@ -366,15 +385,21 @@ function generateInterviewQuestions(type: string, P: string, company: string, ro
 12. Can you put numbers on that? (%, $, time saved)
 13. How has this impacted your team's day-to-day?
 14. What's the biggest win you've had with ${P}?
+${figures.map((f, i) => `${15 + i}. You told us: "${clipEcho(f.text, 160)}". What was the figure before, what is it now, over what period, and who measured it?`).join('\n')}
 
 ### Recommendation
-15. What would you tell someone considering ${P}?
-16. Who would you recommend ${P} to?
+${15 + figures.length}. What would you tell someone considering ${P}?
+${16 + figures.length}. Who would you recommend ${P} to?
 
 ${roleBlock(role)}
 ${v ? `### Questions on the Measures ${cap(v.name)} Buyers Look For
 
 ${v.metrics.slice(0, 3).map((m, i) => `${i + 1}. How did ${m} change after the ${w.rollout}? What was it before, and over what period?`).join('\n')}
+
+### Context Questions in the Language of ${cap(v.name)}
+Ask these in the past tense, about the time before ${P}:
+
+${v.discovery.slice(0, 3).map((d, i) => `${i + 1}. ${d}`).join('\n')}
 
 *A strong proof point here: ${v.proofShape}*
 *Terms this sector's buyers use, to listen for in the answers: ${v.vocabulary.slice(0, 6).join(', ')}.*
@@ -383,33 +408,34 @@ ${v.metrics.slice(0, 3).map((m, i) => `${i + 1}. How did ${m} change after the $
 (No sector could be read from what you typed. Name the customer's industry or your product category to get questions on the measures that sector watches.)
 `}
 ### Approval and Sign-Off
-- Who at ${company} needs to approve a named quote or a logo (legal, communications, the customer's own manager)?
-- Is there anything about ${company}'s use that must not be mentioned (customer data, security details, pricing)?
+- Who at ${company === 'your company' ? 'your company' : company} needs to approve a named quote or a logo (legal, communications, the customer's own manager)?
+- Is there anything about ${company === 'your company' ? 'your company\'s' : `${company}'s`} use that must not be mentioned (customer data, security details, pricing)?
 `;
 
+  const n = 17 + figures.length;
   const typeSpecific: Record<string, string> = {
     video_interview: `
 
 ### Video-Specific Questions
-17. What was the moment you knew ${P} was working?
-18. If you could go back, what would you tell yourself about this decision?
-19. What surprised you most about working with us?`,
+${n}. What was the moment you knew ${P} was working?
+${n + 1}. If you could go back, what would you tell yourself about this decision?
+${n + 2}. What surprised you most about working with us?`,
 
     case_study_interview: `
 
 ### Case Study Deep-Dive
-17. Can you walk me through a specific scenario where ${P} made a difference?
-18. What metrics do you track? How have they changed?
-19. What does your team's workflow look like now vs. before?
-20. Any unexpected benefits?`,
+${n}. Can you walk me through a specific scenario where ${P} made a difference?
+${n + 1}. What metrics do you track? How have they changed?
+${n + 2}. What does your team's workflow look like now vs. before?
+${n + 3}. Any unexpected benefits?`,
 
     reference_call: `
 
 ### Reference-Specific
-17. What should prospects know about the ${w.rollout}?
-18. ${learning}
-19. How responsive is support?
-20. What would you do differently if starting over?`
+${n}. What should prospects know about the ${w.rollout}?
+${n + 1}. ${learning}
+${n + 2}. How responsive is support?
+${n + 3}. What would you do differently if starting over?`
   };
 
   return baseQuestions + (typeSpecific[type] || '');

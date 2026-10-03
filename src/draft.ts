@@ -287,3 +287,8 @@ export function headlineSubject(topic: string, max = 90): string {
   if (cut && cut.split(/\s+/).length >= 3 && cut.length <= max) return cut;
   return shortenClauses(t, max);
 }
+
+// A customer or company name that names nobody ("a Locus customer (Retail)", "contact at a Happay customer (name not given)").
+export function isGenericName(name: string): boolean {
+  return /^(?:an?|the|one of (?:our|the))\s+.{0,60}\bcustomers?\b|\bname not given\b|\bnot given\b|^customer\b|^client\b|^anonymous|^unnamed|^contact at\b/i.test(name.trim());
+}

@@ -75,7 +75,7 @@ export function readContext(explicitModel: unknown, raw: ReaderInput): { v: Vert
         ...v,
         metrics: ['integration effort with the systems already in place', 'security and access review outcome', 'time to go live', 'support effort after go-live'],
         buyerRoles: ['Head of IT', 'IT Manager', 'Security Lead', ...v.buyerRoles.slice(0, 1)],
-        committee: 'The business owner of the function signs; IT checks how it fits the systems already in place (ERP, DMS and the like), security and access, and who supports it after go-live.',
+        committee: `The business owner of the function signs; IT checks how it fits the systems already in place (${v.subtype === 'fmcg-retail-execution' ? 'ERP, DMS and the like' : 'ERP and the like'}), security and access, and who supports it after go-live.`,
         discovery: [...v.discovery.filter((d) => /system|erp|dms|tms|wms|integrat|data/i.test(d)), ...v.discovery.filter((d) => !/system|erp|dms|tms|wms|integrat|data/i.test(d))],
       };
       lens = 'IT';

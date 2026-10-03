@@ -38,7 +38,7 @@ export const tools: Tool[] = [
   },
   {
     name: "newsletter_builder",
-    description: "Builds a newsletter draft from your topic and the action you want readers to take. Optional key points, audience segment, newsletter type, tone, earlier topics and your product fit it to the reader. Returns subject lines that use your full topic, hooks, key points, your own call to action as the button and sector notes. Without key points it suggests some from the topic and sector. Statistics and stories appear as bracket prompts for you to fill.",
+    description: "Writes a first draft of a newsletter issue from your topic and the action you want readers to take. Optional key points, audience segment, newsletter type, tone, earlier topics and your product fit it to the reader. Returns a subject line and preview, an opening, a short section for each key point, your own call to action as the button, A/B subject lines, alternative opening hooks and sector notes. Without key points it suggests some from the topic and sector. The draft uses only what you gave: it adds no statistic or customer story, and says what it did not get.",
     inputSchema: {
       type: "object",
       properties: {
@@ -71,7 +71,7 @@ export const tools: Tool[] = [
   },
   {
     name: "webinar_script",
-    description: "Writes a webinar run of show and script from your topic, target audience and webinar type. Optional duration, key takeaways, speakers, polls, product mention level, your product and business model shape it. Returns the run of show, speakers as you list them, polls with answer options, content blocks with sector points, anticipated questions and follow-up emails. Without key takeaways it suggests them from the topic and type.",
+    description: "Writes a webinar run of show and a full spoken script from your topic, target audience and webinar type. Optional duration, key takeaways, speakers, polls, product mention level, your product and business model shape it. Returns the run of show, the script with the speaker lines and on-screen cues for each segment built from your takeaways and speakers, polls with answer options, anticipated questions with answers, a follow-up email sequence and sector notes. Without key takeaways it suggests them from the topic and type. The script uses only what you gave and says what it did not get.",
     inputSchema: {
       type: "object",
       properties: {
@@ -103,7 +103,7 @@ export const tools: Tool[] = [
   },
   {
     name: "content_repurposer",
-    description: "Turns a source text into other formats such as a LinkedIn post, an X thread, an email, a blog summary and quote cards. Needs the source text and its type. Optional target formats, brand voice and a key message steer the result. Returns each format built from whole sentences of your source, with key points chosen by a stated rule and kept in the source order, and names any requested format it does not know.",
+    description: "Turns a source text into finished versions for other channels: a LinkedIn post, an X thread, an email, a blog summary and quote cards. Needs the source text and its type. Optional target formats, brand voice and a key message steer the result. Each version is written from whole sentences of your source, with key points chosen by a stated rule and kept in the source order; claims it cannot support are listed to source, and any requested format it does not know is named. Returns the versions, notes on the key points and proof used, and sector notes.",
     inputSchema: {
       type: "object",
       properties: {
@@ -129,7 +129,7 @@ export const tools: Tool[] = [
   },
   {
     name: "thought_leadership_series",
-    description: "Writes outlines of thought leadership articles from your topic, your take and the reader you write for. Optional proof points, author background, number of articles and article style shape them. Returns an outline for each article on its own angle, your take quoted as you wrote it, your proof points used across the articles and bracket prompts for what only you can supply. Without proof points it suggests evidence to gather.",
+    description: "Writes a first draft of each article in a thought leadership series from your topic, your take and the reader you write for. Optional proof points, author background, number of articles and article style shape them. Returns, for each article, a headline, a short draft with the objection it answers, your proof and a way to test the idea, a promotional post for each article, a publishing order and sector notes. Your take and proof points are quoted as you wrote them and no result, customer or figure is invented. Without proof points it names the evidence to gather.",
     inputSchema: {
       type: "object",
       properties: {

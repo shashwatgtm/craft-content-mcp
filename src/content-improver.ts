@@ -1,5 +1,6 @@
-import { analyzeContent, generateImprovedVersion, toneCheck, annotateText, bodyOf, countWords, avgWordsPerSentence, calculateReadability, ContentAnalysis, SUGGESTION_FOOTER, clipEcho } from './utils.js';
+import { analyzeContent, generateImprovedVersion, toneCheck, annotateText, bodyOf, countWords, avgWordsPerSentence, calculateReadability, ContentAnalysis, SUGGESTION_FOOTER, clipEcho, ASK } from './utils.js';
 import { readContext, audienceLine, sentencesOf } from './sector.ts';
+import { shortenClauses, clipAtWord, endSentence, fixNumbers, FIGURE } from './draft.ts';
 
 // Default goals by content type
 const DEFAULT_GOALS: Record<string, string> = {
@@ -20,7 +21,7 @@ export function generateContentImprover(args: {
   audience?: string;
   tone_preference?: string;
 }): string {
-  const content = args.content;
+  const content = fixNumbers(args.content);
   const contentType = args.content_type || 'blog_post';
   const goal = args.goal || DEFAULT_GOALS[contentType] || 'Improve clarity and engagement';
   const audience = args.audience || 'general audience';
@@ -37,6 +38,8 @@ export function generateContentImprover(args: {
   // Generate improved version: real edits, each one listed; or none, said plainly
   const improved = generateImprovedVersion(content, analysis);
   const tone = toneCheck(content, args.tone_preference);
+  const emailLike = contentType === 'sales_email' || contentType === 'email';
+  const shorter = emailLike && (wordCount > 120 || analysis.findings.some((f) => f.rule === 'subject-length' || f.rule === 'sentence-length' || f.rule === 'run-on')) ? shorterEmail(content) : null;
   const ctx = readContext(undefined, { context: [content, args.goal], buyer: [args.audience] });
 
   // Create specific recommendations based on analysis: the findings that cost the most points first
@@ -65,7 +68,7 @@ export function generateContentImprover(args: {
 
 | Dimension | Score | Status |
 |-----------|-------|--------|
-| Clarity | ${analysis.clarity.score}/10 | ${analysis.clarity.score >= 7 ? 'Yes' : analysis.clarity.score >= 5 ? 'Note' : 'No'} |
+| Clarity | ${analysis.clarity.score}/10 | ${analysis.clarity.score >= 7 && readability.score >= 40 ? 'Yes' : analysis.clarity.score >= 5 ? 'Note' : 'No'} |
 | Structure | ${analysis.structure.score}/10 | ${analysis.structure.score >= 7 ? 'Yes' : analysis.structure.score >= 5 ? 'Note' : 'No'} |
 | Engagement | ${analysis.engagement.score}/10 | ${analysis.engagement.score >= 7 ? 'Yes' : analysis.engagement.score >= 5 ? 'Note' : 'No'} |
 | Goal Alignment | ${analysis.goalAlignment.score}/10 | ${analysis.goalAlignment.score >= 7 ? 'Yes' : analysis.goalAlignment.score >= 5 ? 'Note' : 'No'} |
@@ -138,11 +141,19 @@ ${improved.text}`
   : `No automatic edits were found. The text above contains no buzzword, long sentence or unproven claim that this tool can replace on its own, so there is no improved version to show. The findings in Priority Fixes need your facts or your judgement.`}
 
 ---
+${shorter ? `
+## Suggested Shorter Version
 
+${shorter.text}
+
+*Built only from your own text: nothing was added. ${shorter.left.length ? `Left out: ${shorter.left.map((l) => `"${l}"`).join('; ')}.` : ''} Check that nothing you need is missing before you use it.*
+
+---
+` : ''}
 ## Before/After Comparison
 
 ### Original First Sentence:
-> ${clipEcho((sentencesOf(bodyOf(content))[0] || '').replace(/[.!?]+$/, '').trim() || 'N/A')}
+> ${clipEcho((sentencesOf(bodyOf(content))[0] || '').replace(/[.!?]+$/, '').trim() || 'N/A', 400)}
 
 ### Suggested Opening:
 > ${suggestOpening(content)}
@@ -164,6 +175,8 @@ ${ctx.line}
 - **Terms this audience uses:** ${ctx.v.vocabulary.join(', ')}.
 - **A proof point that lands:** ${ctx.v.proofShape}
 - ${measuresNamed(content, ctx.v.metrics)}
+- **Questions this reader asks before they reply:** ${ctx.v.objections.map((o) => `"${o.objection}"`).join('; ')}. A text for this audience answers the first one or two in a line each.
+- **Who else reads it:** ${ctx.v.committee}
 
 ---
 ` : ''}
@@ -175,7 +188,7 @@ ${getContentTypeTips(contentType, goal)}
 
 ## Quick Checklist
 
-${generateChecklist(contentType, goal, analysis, buzzFound, hardFound)}
+${generateChecklist(contentType, goal, analysis, buzzFound, hardFound, readability.score, content)}
 
 ---
 
@@ -198,13 +211,52 @@ function measuresNamed(content: string, metrics: string[]): string {
 // to lead with, it says what is missing.
 function suggestOpening(content: string): string {
   const body = sentencesOf(bodyOf(content));
-  const proof = body.find((s) => /(?<![A-Za-z0-9])\d/.test(s) && !/\?\s*$/.test(s) && s.split(/\s+/).length >= 4);
+  // a piece of a sentence (split at semicolons) that holds a figure and says what changed; else one with a figure
+  const pieces = body.flatMap((s) => s.split(/;\s+/)).map((x) => x.trim()).filter(Boolean);
+  const outcome = /\b(?:reduc\w+|cut|cuts|saved?|saves|improv\w+|increas\w+|grew|grow|boost\w*|achiev\w+|automat\w+|consolidat\w+|expanded|faster|from \d[\d.,]*%? to|resolved|fell|rose)\b/i;
+  const fig = (x: string) => FIGURE.test(x) && !/\?\s*$/.test(x) && x.split(/\s+/).length >= 4;
+  const sc = (x: string) => (fig(x) ? 2 : -9) + (outcome.test(x) ? 1 : 0) + (/from \d[\d.,]*%? to|\d%|[$₹€£]\s?\d|lakhs?/i.test(x) ? 3 : 0) + (/customer|quote|case study/i.test(x) ? 2 : 0) + (/^(?:recognition|named|leader|featured)\b/i.test(x) ? -9 : 0);
+  const proof = pieces.filter((x) => sc(x) > 0).sort((a, b) => sc(b) - sc(a))[0];
   if (!proof) return 'No opening can be built from this text without a fact from you. Add one specific result or one sourced observation about the reader\'s work, then lead with it and run this tool again.';
-  const clean = proof.replace(/[.!?]+$/, '');
+  const clean = shortenClauses(proof.replace(/[.!?]+$/, ''), 220);
   const fragment = /^[\d$₹€£]/.test(proof) && !/\b(?:is|are|was|were|has|have|had|fell|rose|grew|cut|saved?|resolves?|helps?)\b/i.test(proof);
   return fragment
     ? `Your strongest proof is "${clean}". Open with it as a full sentence that says who got it and what changed.`
     : `Lead with the proof you already have: "${clean}".`;
+}
+
+// A shorter email cut from the user's own text: a subject line of about eight words, the opening problem, the first thing the
+// product does, the one proof item that holds a figure and says what changed, and the ask. Nothing is added or reworded.
+function shorterEmail(content: string): { text: string; left: string[] } | null {
+  const lines = content.split('\n').map((l) => l.trim());
+  const subjectLine = lines.find((l) => /^subject:/i.test(l));
+  const greeting = lines.find((l) => /^(?:hi|hello|dear|hey)\b[^.!?]*,?\s*$/i.test(l));
+  const signIdx = lines.findIndex((l) => /^(?:thanks|thank you|best|regards|kind regards|cheers|sincerely)\b/i.test(l));
+  const sign = signIdx >= 0 ? lines.slice(signIdx).filter(Boolean) : [];
+  const bodyText = lines.filter((l) => l && l !== subjectLine && l !== greeting && !sign.includes(l)).join('\n');
+  const sentences = sentencesOf(bodyText);
+  if (sentences.length < 2) return null;
+  const ask = [...sentences].reverse().find((s) => ASK.test(s));
+  const rest = sentences.filter((s) => s !== ask);
+  const pieces = rest.flatMap((s) => s.split(/;\s+/)).map((x) => x.trim());
+  const outcome = /\b(?:reduc\w+|cut|cuts|saved?|saves|improv\w+|increas\w+|grew|grow|boost\w*|achiev\w+|automat\w+|consolidat\w+|expanded|faster|resolved|fell|rose|from \d[\d.,]*%? to)\b/i;
+  const score = (x: string) => (FIGURE.test(x) ? 2 : -9) + (outcome.test(x) ? 1 : -9) + (/from \d[\d.,]*%? to|\d%|[$₹€£]\s?\d|lakhs?/i.test(x) ? 3 : 0) + (/customer|quote|case study/i.test(x) ? 2 : 0) + (/^(?:recognition|named|leader|featured)\b/i.test(x) ? -9 : 0);
+  const proof = pieces.filter((x) => score(x) > 0).sort((a, b) => score(b) - score(a))[0];
+  const opening = rest[0];
+  const product = rest.find((s, i) => i > 0 && s !== proof && !(proof && s.includes(proof)));
+  const kept: string[] = [];
+  const out: string[] = [];
+  if (subjectLine) out.push(`Subject: ${shortenClauses(subjectLine.replace(/^subject:\s*/i, ''), 60)}`);
+  if (greeting) out.push(greeting);
+  if (opening) { out.push(endSentence(shortenClauses(opening, 170))); kept.push(opening); }
+  if (product) { out.push(endSentence(shortenClauses(product, 170))); kept.push(product); }
+  if (proof) { out.push(endSentence(shortenClauses(proof, 200))); kept.push(proof); }
+  if (ask) { out.push(ask); kept.push(ask); }
+  out.push(...sign);
+  const left = rest.filter((s) => !kept.includes(s) && !(proof && s.includes(proof) && kept.includes(proof))).map((s) => clipAtWord(s.replace(/\s+/g, ' '), 50) + (s.length > 50 ? '...' : ''));
+  if (proof && opening && !kept.includes(opening)) return null;
+  const text = out.join('\n');
+  return countWords(text) < countWords(content) ? { text, left: left.slice(0, 4) } : null;
 }
 
 function getContentTypeTips(contentType: string, goal: string): string {
@@ -274,23 +326,28 @@ function getContentTypeTips(contentType: string, goal: string): string {
 - Use specific examples and data`;
 }
 
-function generateChecklist(contentType: string, goal: string, analysis: ContentAnalysis, buzzFound: boolean, hardFound: boolean): string {
+function generateChecklist(contentType: string, goal: string, analysis: ContentAnalysis, buzzFound: boolean, hardFound: boolean, flesch: number, content: string): string {
   const checks: string[] = [];
 
   // Universal checks
   // The mark is chosen first, then the text is added, so a passed check keeps its text.
   // Run 19 (B16-16): the jargon tick follows the buzzword finding as well as the clarity score.
-  checks.push((analysis.clarity.score >= 7 && !buzzFound ? 'Yes:' : '[ ]') + ' Clear, jargon-free language');
+  // Run 20 (round 1b): a text that is very hard to read (Flesch under 40) is not ticked as clear.
+  checks.push((analysis.clarity.score >= 7 && !buzzFound && flesch >= 40 ? 'Yes:' : '[ ]') + ` Clear, jargon-free language${flesch < 40 ? ` (Flesch ${flesch}: hard to read)` : ''}`);
   checks.push((analysis.structure.score >= 7 ? 'Yes:' : '[ ]') + ' Logical structure');
   checks.push((analysis.engagement.score >= 7 ? 'Yes:' : '[ ]') + ' Engaging opening hook');
   checks.push((analysis.goalAlignment.score >= 7 ? 'Yes:' : '[ ]') + ' Aligns with stated goal');
   checks.push((hardFound ? '[ ]' : 'Yes:') + ' No unproven claims, fragments or unfilled merge fields');
 
-  // Content-type specific
+  // Content-type specific: these are read from the text
   if (contentType === 'email' || contentType === 'sales_email') {
-    checks.push('[ ] Subject line optimized');
-    checks.push('[ ] Single clear CTA');
-    checks.push('[ ] Mobile-friendly format');
+    const subject = content.split('\n').map((l) => l.trim()).find((l) => /^subject:/i.test(l));
+    const sw = subject ? countWords(subject.replace(/^subject:\s*/i, '')) : 0;
+    checks.push(!subject ? '[ ] Subject line: none found in the text' : sw <= 12 ? `Yes: Subject line short (${sw} words)` : `[ ] Subject line optimized: it is ${sw} words`);
+    const asks = sentencesOf(bodyOf(content)).filter((s) => ASK.test(s)).length;
+    checks.push(asks === 0 ? '[ ] Single clear CTA: no ask was found' : asks <= 2 ? `Yes: Single clear CTA (${asks} ask found)` : `[ ] Single clear CTA: ${asks} asks found, keep one`);
+    const longPara = content.split(/\n\n+/).some((p) => countWords(p) > 100);
+    checks.push(!longPara && avgWordsPerSentence(content) <= 25 ? 'Yes: Mobile-friendly format (short paragraphs and sentences)' : '[ ] Mobile-friendly format: long paragraphs or sentences');
   }
 
   if (contentType === 'landing_page') {

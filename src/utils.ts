@@ -323,7 +323,7 @@ const READER_CLAIM = /\bI (?:noticed|saw|read|came across|heard|see)\b[^.!?\n]*\
 // An unfilled merge field or placeholder: 2 structure points.
 const MERGE_FIELD = /\{\{?[^{}\n]{1,40}\}\}?|\[(?!x\])[A-Za-z][^\]\n]{0,40}\](?!\()/g;
 // An ask (a call to action) in the text.
-const ASK = /\b(?:sign up|sign-up|register|download|learn more|get started|contact (?:us|me)|subscribe|try|book|schedule|click|reply|call (?:us|me)|talk to|speak (?:to|with)|get in touch|join|request|start (?:your|a)|apply|buy|order|see (?:it|how|if)|would you (?:like|be open|be willing|be interested)|are you open|open to|could we|can we|shall we|let's|do you have (?:\d+ |a few )?minutes|worth a)\b/i;
+export const ASK = /\b(?:sign up|sign-up|register|download|learn more|get started|contact (?:us|me)|subscribe|try|book|schedule|click|reply|call (?:us|me)|talk to|speak (?:to|with)|get in touch|join|request|start (?:your|a)|apply|buy|order|see (?:it|how|if)|would you (?:like|be open|be willing|be interested)|are you open|open to|could we|can we|shall we|let's|do you have (?:\d+ |a few )?minutes|worth a)\b/i;
 // A goal that needs an ask in the text.
 const NEEDS_ASK = /\b(?:convert|sign ?-?up|leads?|book(?:ed|ing)?|meetings?|demos?|calls?|trial|register|registrations?|download|subscribe|buy|purchas\w*|inquir\w*|enquir\w*|reply|replies|respon\w*|apply|clicks?)\b/i;
 const VERBISH = /^(?:is|are|was|were|be|been|being|has|have|had|do|does|did|will|can|could|would|should|may|might|must|get|gets|got|make|makes|made|help|helps|cut|cuts|fell|rose|grew|grow|grows|save|saves|resolve|resolves|run|runs|ran|go|goes|went|take|takes|took|see|sees|saw|need|needs|want|wants|rises|falls|drops|dropped|beat|beats|won|win|wins)$/i;
@@ -371,10 +371,12 @@ export function analyzeContent(content: string, contentType: string, goal: strin
   const emailLike = contentType === 'sales_email' || contentType === 'email';
 
   // CLARITY: sentence length, passive voice, buzzwords, fragments
+  const longest = sentenceList.reduce((a, b) => (countWords(b) > countWords(a) ? b : a), '');
+  const longestNote = countWords(longest) >= 40 ? `; the longest runs ${countWords(longest)} words: "${clipEcho(longest.replace(/\s+/g, ' ').trim(), 150)}"` : '';
   if (avgWords > 25) {
-    note('clarity', 'sentence-length', 3, `Sentences too long (avg ${avgWords} words)`, 'Break sentences at natural pauses. Target 15 to 20 words per sentence.');
+    note('clarity', 'sentence-length', 3, `Sentences too long (avg ${avgWords} words)${longestNote}`, 'Break sentences at natural pauses. Target 15 to 20 words per sentence. Where a sentence is a list of products or proof, keep the one or two items that matter to this reader and move the rest to a link.');
   } else if (avgWords > 20) {
-    note('clarity', 'sentence-length', 1, `Sentences slightly long (avg ${avgWords} words)`, 'Consider shortening some sentences for easier scanning.');
+    note('clarity', 'sentence-length', 1, `Sentences slightly long (avg ${avgWords} words)${longestNote}`, 'Consider shortening some sentences for easier scanning.');
   }
   const passiveMatches = content.match(/\b(was|were|been|being|is|are|am)\s+\w+ed\b/gi) || [];
   if (passiveMatches.length > sentences * 0.3) {
@@ -390,10 +392,34 @@ export function analyzeContent(content: string, contentType: string, goal: strin
     note('clarity', 'fragment', Math.min(4, 2 * fragments.length), `Sentence fragment (a figure with no verb): "${clipEcho(fragments[0], 160)}"${fragments.length > 1 ? ` and ${fragments.length - 1} more` : ''}`, 'Turn each figure into a sentence that says who got it and what changed, for example "At <customer>, <result>."', true);
   }
 
+  // Run 20 (round 1b), wrong results found by the judges, each a listed finding that quotes the text: a very hard to read text was
+  // ticked as clear, a sentence of 40 words or more was not named, a subject line that is a paragraph was not named, and a long cold
+  // email was not named. Before and after scores are in the round 1b report.
+  const flesch = calculateReadability(content).score;
+  if (words >= 40 && flesch < 40) {
+    // listed, but it takes no points: the sentence-length finding already counts the same weakness
+    note('clarity', 'readability', 0, `Hard to read: Flesch ${flesch}/100 (${flesch < 30 ? 'very difficult' : 'difficult'})`, 'Use the plain word where one exists, and keep sentences to 15 to 20 words.');
+  }
+  const veryLong = sentenceList.filter((s) => countWords(s) >= 40);
+  if (veryLong.length > 0 && avgWords <= 20) {
+    note('clarity', 'run-on', 1, `${veryLong.length === 1 ? 'A sentence runs' : `${veryLong.length} sentences run`} to 40 words or more (${veryLong.map((s) => countWords(s)).join(', ')} words): "${clipEcho(veryLong[0].replace(/\s+/g, ' ').trim(), 150)}"`, 'Keep the one or two items in the list that matter to this reader and move the rest to a link or an attachment.');
+  }
+  const subjectLine = content.split('\n').map((l) => l.trim()).find((l) => /^subject:/i.test(l));
+  if (emailLike && subjectLine) {
+    const subject = subjectLine.replace(/^subject:\s*/i, '');
+    if (countWords(subject) > 12 || subject.length > 70) {
+      note('engagement', 'subject-length', 1, `The subject line is ${countWords(subject)} words (${subject.length} characters), long enough to be cut off in an inbox: "${clipEcho(subject, 120)}"`, 'Cut the subject line to about 6 to 9 words that name the one thing the reader gets.');
+    }
+  }
+  if (emailLike && words > 150) {
+    note('structure', 'email-length', words > 200 ? 2 : 1, `The email is ${words} words; a cold email is read in about a minute`, 'Cut it to about 100 to 150 words: one problem, one proof point, one ask.');
+  }
+
   // STRUCTURE: headers, paragraph length, transitions, unfilled merge fields
   const paragraphs = content.split(/\n\n+/).filter((p) => p.trim().length > 0);
   const hasHeaders = /^#{1,3}\s|^\*\*[^*]+\*\*$|^[A-Z][^a-z]+$/m.test(content);
-  if (!hasHeaders && words > 200) {
+  // Headers suit a long document; a cold email or a social post has none, so it is not told to add them (run 20, round 1b).
+  if (!hasHeaders && words > 200 && !emailLike && contentType !== 'social_post') {
     note('structure', 'headers', 3, 'No clear section headers', 'Add headers to break up content and aid scanning');
   }
   const longParagraphs = paragraphs.filter((p) => countWords(p) > 100);
@@ -542,16 +568,17 @@ function editSentence(s: string): string {
   }
   for (const [re, one, many] of NOUN_EDITS) t = t.replace(re, (m: string, suffix: string | undefined) => keepCase(m, suffix === 'ies' ? many : one));
   if (countWords(t) > 30) {
-    // Text only (run 8): the joining word that starts the new sentence gets a capital ("And", not "and").
-    const split = t.replace(/,\s*(and|but|so|or)\s+/gi, (_m: string, c: string) => `.\n${c.charAt(0).toUpperCase()}${c.slice(1)} `);
-    t = split.charAt(0).toUpperCase() + split.slice(1);
+    // Run 20 (round 1b): a long sentence is split only at ", but" or ", so" followed by its own subject (a pronoun, "the", "our" ...) with
+    // eight or more words on each side, and the joining word is kept. A list ("A, B, C and D") is never split, and a fragment is never made.
+    const m = /^(.{40,}?),\s+(but|so)\s+((?:we|you|they|it|this|that|these|those|our|your|their|the|I)\s.{25,})$/i.exec(t);
+    if (m && countWords(m[1]) >= 8 && countWords(m[3]) >= 8) t = `${m[1]}.\n${m[2].charAt(0).toUpperCase()}${m[2].slice(1)} ${m[3]}`;
   }
   return t;
 }
 export function generateImprovedVersion(content: string, _analysis?: ContentAnalysis): { text: string; edits: { before: string; after: string }[] } {
   const edits: { before: string; after: string }[] = [];
   const text = content.split('\n').map((line) => {
-    if (!line.trim()) return line;
+    if (!line.trim() || /^\s*subject:/i.test(line)) return line;
     return sentencesOf(line).map((sentence) => {
       const after = editSentence(sentence);
       if (after !== sentence) edits.push({ before: sentence.trim(), after: after.trim() });

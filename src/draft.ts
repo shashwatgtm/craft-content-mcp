@@ -90,6 +90,9 @@ export function splitList(raw: unknown): string[] {
 // ---------------------------------------------------------------------------------------------------------------------------
 // Proof, results and recognition: sorted by what they are, never presented as something they are not.
 // ---------------------------------------------------------------------------------------------------------------------------
+// A real figure: a percentage, a money amount, a count with a unit, or a number of two or more digits; not a token such as 4G or 3PL.
+export const FIGURE = /[$₹€£]\s?\d|(?<![A-Za-z])\d[\d.,]*\s?(?:%|x\b|\+|k\b|m\b|mn\b|million|billion|lakhs?|crore|days?|hours?|weeks?|months?|years?|minutes?|seconds?|percent|sources|branches|sites|trucks|customers|businesses|companies)|(?<![A-Za-z0-9])\d{2,}(?![A-Za-z0-9])/i;
+
 export type ProofKind = 'result' | 'quote' | 'recognition' | 'title' | 'scale' | 'claim';
 export interface ProofItem {
   text: string;           // the item as typed, label removed
@@ -153,7 +156,7 @@ export function parseProof(raw: unknown): ProofItem[] {
     const label = m ? m[1].trim() : '';
     const text = (m ? item.slice(0, m.index) : item).trim().replace(/[;,.\s]+$/, '');
     const l = label.toLowerCase();
-    const figure = /\d/.test(text);
+    const figure = FIGURE.test(text);
     let kind: ProofKind;
     if (RECOGNITION.test(text) && !/\bcustomer quote\b/.test(l)) kind = 'recognition';
     else if (/quote/.test(l)) kind = 'quote';
@@ -224,18 +227,25 @@ export function usesAny(text: string, words: string[]): string[] {
 export function shortenClauses(sentence: string, max: number): string {
   const t = sentence.trim().replace(/[.!?]+$/, '');
   if (t.length <= max) return t;
-  const parts = splitOutsideParens(t, /[;,]\s+|:\s+(?=[A-Za-z])/);
-  // keep the separators: rebuild from the original text positions
-  let end = 0;
-  let best = 0;
-  let pos = 0;
-  for (let i = 0; i < parts.length; i++) {
-    const at = t.indexOf(parts[i], pos);
-    pos = at + parts[i].length;
-    end = pos;
-    if (end <= max) best = end; else break;
+  // Boundaries outside brackets: a semicolon or a colon always ends a clause; a comma ends one only when the piece before it has three
+  // or more words and the piece after it has four or more (so "flights, hotels, cabs" is a list and is never cut in the middle).
+  const cuts: number[] = [];
+  let depth = 0;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (c === '(') depth++; else if (c === ')') depth = Math.max(0, depth - 1);
+    if (depth > 0) continue;
+    if ((c === ';' || (c === ':' && /\s/.test(t[i + 1] || ''))) ) cuts.push(i);
+    else if (c === ',' && /\s/.test(t[i + 1] || '') && !/\d$/.test(t.slice(0, i))) {
+      const before = t.slice(cuts.length ? cuts[cuts.length - 1] + 1 : 0, i).split(/\s+/).filter(Boolean).length;
+      const nextEnd = t.slice(i + 1).search(/[,;:]/);
+      const after = (nextEnd < 0 ? t.slice(i + 1) : t.slice(i + 1, i + 1 + nextEnd)).split(/\s+/).filter(Boolean).length;
+      if (before >= 3 && after >= 4) cuts.push(i);
+    }
   }
-  if (best === 0) best = (() => { const at = t.indexOf(parts[0]); return at + parts[0].length; })();
+  let best = -1;
+  for (const c of cuts) if (c <= max) best = c;
+  if (best < 0) best = cuts.length ? cuts[0] : Math.min(t.length, max);
   // a first clause that is far too long is cut at a word boundary and marked with "..." (a pasted document without punctuation)
   if (best > max * 1.5) return clipAtWord(t, max) + '...';
   return t.slice(0, best).replace(/[,;:\s]+$/, '');

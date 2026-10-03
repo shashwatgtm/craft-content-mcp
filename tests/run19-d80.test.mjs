@@ -127,7 +127,7 @@ test("newsletter_builder: the full topic in grammar-safe subject lines, no inven
   for (const s of subjects) assert.match(s, /AI agents in customer support/i, s);
   assert.doesNotMatch(r.text, /Why AI agents is|AI agents is broken/);
   assert.doesNotMatch(r.text, /78%/);
-  assert.match(r.text, /\[Register for our support automation webinar/i);
+  assert.match(r.text, /Button: Register for our support automation webinar/i);   // run 21c: draft rewrite (the button is a plain line, no bracket placeholder)
   assert.doesNotMatch(r.text, /15-minute demo|No pressure/);
 });
 
@@ -155,9 +155,10 @@ test("webinar_script: speakers are listed as typed, never pasted after 'I'm'; po
   shared(r.text, { names: ["Answerloop", "Head of Support Operations from a customer", "Head of Marketing at Answerloop"], sector: AI_SECTOR, label: "webinar" });
   assert.doesNotMatch(r.text, /I'm Head of|I'm \[?Speaker/);
   assert.match(r.text, /Poll options:\n(- [^\n]+\n){3,}/);
-  assert.match(r.text, /A word on Answerloop, kept short: it is built to address/i);
+  // run 21c: draft rewrite (the subtle product line is the user's own description; the recording line is one stage direction, conditional)
+  assert.match(r.text, /A word on Answerloop, kept short: /i);
   assert.doesNotMatch(r.text, /^- We're recording today's session/m);
-  assert.match(r.text, /If you are recording, say: "We're recording today's session/i);
+  assert.match(r.text, /add the line "This session is recorded and the link will follow" only if you record it/i);
   assert.doesNotMatch(r.text, /free trial|plans or trial/i);
 });
 

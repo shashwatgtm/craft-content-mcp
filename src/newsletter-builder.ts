@@ -23,7 +23,7 @@ export function generateNewsletter(args: {
   // Run 19 (B15-L1): the heading and the Topic row print the topic as typed; every other echo of it is cut at 200 characters.
   const topicEcho = clipEcho(topic, 200);
   // Run 19 (D80, problems 4 and 8): the sector is read from every text the user gave.
-  const ctx = readContext(undefined, [topic, args.key_points, args.previous_topics, product], [args.cta_goal]);
+  const ctx = readContext(undefined, { seller: [product], context: [topic, args.key_points, args.previous_topics, args.cta_goal] });
 
   // DERIVE key points from topic if not provided
   let keyPoints: string[];

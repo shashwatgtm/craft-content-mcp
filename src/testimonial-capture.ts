@@ -29,7 +29,7 @@ export function generateTestimonialCapture(args: {
   // business model are read from every text the user gave.
   const product = (args.your_product || '').trim();
   const P = product || '[your product]';
-  const ctx = readContext(args.business_model, [product, story, args.use_case, args.relationship_context, args.customer_role]);
+  const ctx = readContext(args.business_model, { seller: [product], context: [storyFull, args.use_case, args.relationship_context], role: [args.customer_role] });
   const w = startWords(ctx.model);
 
   let output = `# Testimonial Capture Kit

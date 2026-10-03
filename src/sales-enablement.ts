@@ -72,7 +72,7 @@ export function generateSalesEnablement(args: {
   const priceShown = args.price_context || 'Market rate (assumed, not supplied)';
   const stage = args.sales_stage || 'demo';
   // Run 19 (D80, problems 4 and 8): the sector and the business model are read from every text the user gave.
-  const ctx = readContext(args.business_model, [product, args.proof_points, args.common_objections, args.value_props, args.competitor_objections, args.price_context], [persona]);
+  const ctx = readContext(args.business_model, { seller: [args.product, args.value_props], context: [args.proof_points, args.common_objections, args.competitor_objections, args.price_context], role: [args.target_persona] });
   const w = startWords(ctx.model);
   const walk = ctx.model === 'services' || ctx.model === 'connectivity' || ctx.model === 'investment' ? 'walkthrough' : 'demo';
 

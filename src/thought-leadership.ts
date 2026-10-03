@@ -20,7 +20,7 @@ export function generateThoughtLeadership(args: {
   const countLabel = args.num_articles ? '' : ' (Example figure: replace with your own)';
   const articleType = args.article_type || 'contrarian';
   // Run 19 (D80, problems 4 and 8): the sector is read from every text the user gave.
-  const ctx = readContext(undefined, [topic, yourTake, args.proof_points, args.author_background], [targetReader]);
+  const ctx = readContext(undefined, { seller: [topic], context: [yourTake, args.proof_points, args.author_background], role: [targetReader] });
 
   // Handle missing proof points - suggest what to gather
   let proofPoints: string[];

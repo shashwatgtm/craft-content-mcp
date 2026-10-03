@@ -37,7 +37,7 @@ export function generateContentImprover(args: {
   // Generate improved version: real edits, each one listed; or none, said plainly
   const improved = generateImprovedVersion(content, analysis);
   const tone = toneCheck(content, args.tone_preference);
-  const ctx = readContext(undefined, [content, args.goal], [args.audience]);
+  const ctx = readContext(undefined, { context: [content, args.goal], buyer: [args.audience] });
 
   // Create specific recommendations based on analysis: the findings that cost the most points first
   const priorityFixes = [...analysis.findings].sort((a, b) => b.penalty - a.penalty).slice(0, 6).map((f) => {

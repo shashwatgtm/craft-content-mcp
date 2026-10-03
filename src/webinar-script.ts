@@ -34,7 +34,7 @@ export function generateWebinarScript(args: {
   const productLevel = args.product_mention_level || 'subtle';
   const product = (args.your_product || '').trim();
   // Run 19 (D80, problems 4 and 8): the sector and the business model are read from every text the user gave.
-  const ctx: Ctx = readContext(args.business_model, [topic, args.key_takeaways, product, args.speakers], [audience]);
+  const ctx: Ctx = readContext(args.business_model, { seller: [product, topic], context: [args.key_takeaways, args.speakers], buyer: [audience] });
 
   // DERIVE key takeaways from topic if not provided
   let takeaways: string[];

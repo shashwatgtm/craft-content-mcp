@@ -3,9 +3,9 @@
 // text instead of pasting it into fixed sentences, split typed lists, and pick whole sentences from a source text.
 // Rule B82: nothing here adds a statistic, a benchmark or a named-company fact.
 
-import { detectVertical, detectModel, MODEL_NAME, VERTICALS, type Vertical, type BusinessModel } from './verticals.ts';
+import { detectVertical, detectModel, explainSector, MODEL_NAME, type Vertical, type BusinessModel, type ReaderInput } from './verticals.ts';
 
-export type { Vertical, BusinessModel };
+export type { Vertical, BusinessModel, ReaderInput };
 
 // A list typed by the user: one item per line or per semicolon, or a comma list. A comma fragment that starts with a joining
 // word ("not overnight", "which ...") stays with the item before it, so "Routes re-planned in under a minute, not overnight"
@@ -37,29 +37,23 @@ export function qs(s: string): string {
 }
 
 // The sector and the business model read from the inputs, with one line saying how they were read.
-// Run 19: `primary` holds the texts that describe the seller's own domain (the product, the problem, the proof, the topic); `secondary`
-// holds the texts that name the buyer or the customer (their industry, their role, the audience). A customer's industry is not the
-// seller's sector, so they are used only to confirm a sector that one word in the primary texts already points to. They never choose a
-// sector on their own: with no sector word in the primary texts, the answer says the sector is not clear.
-export function readContext(explicitModel: unknown, primary: unknown[], secondary: unknown[] = []): { v: Vertical | null; model: BusinessModel | null; how: string; line: string } {
-  const joined = primary.filter((x) => typeof x === 'string' && x.trim()).join(' \n ');
-  const pointed = joined ? VERTICALS.filter((x) => new RegExp(x.match.source, 'i').test(joined)).map((x) => x.id) : [];
-  let v = detectVertical(...primary);
-  let texts: unknown[] = primary;
-  if (!v) {
-    const wide = detectVertical(...primary, ...secondary);
-    if (wide && pointed.includes(wide.id)) { v = wide; texts = [...primary, ...secondary]; }
-  }
-  const m = detectModel(explicitModel, ...texts);
+// Run 20 (D92): one reader, src/verticals.ts (detectVertical, detectModel, explainSector). The seller's own words go first (what it
+// sells, the category, the product description), then the free text about the deal, then job titles, then the buyer's industry.
+// The reader decides alone; there is no second rule here.
+export function readContext(explicitModel: unknown, input: ReaderInput): { v: Vertical | null; model: BusinessModel | null; how: string; line: string; source: string | null } {
+  let v = detectVertical(input);
+  const m = detectModel(explicitModel, input);
+  const source = v ? explainSector(input).source : null;
   // The fintech notes in src/verticals.ts cover finance operations (the close, reconciliation, spend). They do not fit an investment
   // business, so for that business they are not shown (a wrong-sector note is worse than none). Reported to the lead.
   const investmentFintech = !!v && v.id === 'fintech' && m.model === 'investment';
   if (investmentFintech) v = null;
-  const sector = investmentFintech ? 'read from your inputs as fintech, and the business as investment management. The built-in fintech notes cover finance operations, not investment, so none are shown' : v ? `read from your inputs as ${v.name}` : 'not clear from your inputs (name the industry for sector notes)';
+  const from = source === 'role' ? ' (the job titles name it)' : source === 'buyer' ? ' (the buyer\'s industry names it; your own description names no sector)' : '';
+  const sector = investmentFintech ? 'read from your inputs as fintech, and the business as investment management. The built-in fintech notes cover finance operations, not investment, so none are shown' : v ? `read from your inputs as ${v.name}${from}` : 'not clear from your inputs (name the industry for sector notes)';
   const model = m.model
     ? `${MODEL_NAME[m.model]} (${m.how === 'input' ? 'from business_model' : m.how === 'sector' ? 'the usual model in this sector, assumed; set business_model to change it' : 'read from your inputs; set business_model to change it'})`
     : 'not clear from your inputs; set business_model (saas, services, connectivity, transactions, marketplace, hardware_software or investment) for advice that fits it';
-  return { v, model: m.model, how: m.how, line: `*Sector: ${sector}. Business model: ${model}.*` };
+  return { v, model: m.model, how: m.how, line: `*Sector: ${sector}. Business model: ${model}.*`, source };
 }
 
 // Sector notes: the buying committee, what the sector measures and its usual objections (no figures, rule B82).

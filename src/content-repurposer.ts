@@ -39,7 +39,7 @@ export function generateContentRepurposer(args: {
   const title = titleInfo.title;
   const keyPoints = pickKeyPoints(content, keyMessage, titleInfo.fromSource ? title : '').map((p) => clipEcho(p));
   const wordCount = countWords(content);
-  const ctx = readContext(undefined, [content, keyMessage, title]);
+  const ctx = readContext(undefined, { seller: [keyMessage], context: [content, title] });
   const hook = titleInfo.fromSource ? title : firstSentence(content);
   const unknown = targetFormats.map((f) => f.toLowerCase().replace(/\s+/g, '_')).filter((f) => !KNOWN_FORMATS.includes(f));
 

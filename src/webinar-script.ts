@@ -1,6 +1,6 @@
 import { lowerFirstIfCommon, cap, SUGGESTION_FOOTER } from './utils.js';
 import { q, readContext, startWords, audienceLine, isClause, type Vertical, type BusinessModel } from './sector.ts';
-import { splitList, unpackTopic, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, roleOf, clipAtWord } from './draft.ts';
+import { splitList, tidyPoint, unpackTopic, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, roleOf, clipAtWord } from './draft.ts';
 
 type Ctx = { v: Vertical | null; model: BusinessModel | null; line: string };
 
@@ -51,7 +51,7 @@ export function generateWebinarScript(args: {
   let takeaways: string[];
   let takeawaysNote = '';
   if (args.key_takeaways) {
-    takeaways = splitList(args.key_takeaways);
+    takeaways = splitList(args.key_takeaways).map(tidyPoint);
   } else {
     takeaways = generateTakeawaysFromTopic(label, type, audience, ctx.v);
     takeawaysNote = '*(Suggested from the topic and type: replace with your own)*';
@@ -448,7 +448,7 @@ Sound good? Type a 1 in the chat if you're ready to go."
 
 ${painPoint(w)}
 
-${v ? `In ${v.name}, the people who decide this are usually ${proseJoin(v.buyerRoles.slice(0, 3))}.` : ''} The good news? There is a better way. That's what we're here to explore.
+${v ? `In ${w.field || v.name}, the people who decide this are usually ${proseJoin(v.buyerRoles.slice(0, 3))}.` : ''} The good news? There is a better way. That's what we're here to explore.
 
 ${w.includePolls ? `**LAUNCH POLL on ${q(label)}: "Which of these is closest to your situation today?"**
 Poll options:
@@ -523,7 +523,7 @@ function blockScript(section: { name: string; duration: number }, w: W, mine: st
 
 ${teach}
 
-${v ? `How this audience measures it: ${measure}. Ask them for their own number before you give any example.\n` : ''}${objection && k === 2 ? `\nThe objection to answer here: "${objection.objection}". ${objection.response}\n` : ''}${v ? `\nQuestion for the chat: "${question}"\n` : ''}${productLine(w, mine[0] ? q(shortenClauses(mine[0], 90)) : 'this block')}
+${v ? `How this audience measures it: ${measure}. Ask them for their own number before you give any example.\n` : ''}${objection && k === 2 ? `\nThe objection to answer here: "${objection.objection}". ${objection.response}\n` : ''}${v ? `\nQuestion for the chat: "${question}"\n` : ''}${productLine(w, mine[0] ? `"${shortenClauses(mine[0], 110)}"` : 'this block')}
 Any questions on this before we move on? Drop them in chat."
 
 `;

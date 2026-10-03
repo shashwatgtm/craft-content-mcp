@@ -1,6 +1,6 @@
 import { generateHook, lowerFirstIfCommon, cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { readContext, audienceLine, isClause, type Vertical } from './sector.ts';
-import { splitList, unpackTopic, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, clipAtWord } from './draft.ts';
+import { splitList, tidyPoint, unpackTopic, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, clipAtWord } from './draft.ts';
 
 export function generateNewsletter(args: {
   topic: string;
@@ -33,7 +33,7 @@ export function generateNewsletter(args: {
   let keyPoints: string[];
   let keyPointsNote = '';
   if (args.key_points) {
-    keyPoints = splitList(args.key_points);
+    keyPoints = splitList(args.key_points).map(tidyPoint);
   } else {
     keyPoints = generateKeyPointsFromTopic(label, type, segment, ctx.v);
     keyPointsNote = '*(Suggested from the topic: replace with your own)*';

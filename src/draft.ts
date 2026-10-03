@@ -332,3 +332,12 @@ export function productParts(product: string): { name: string; facts: string[]; 
   const facts = splitOutsideParens(rest, /,\s+|:\s+|;\s+/).map((x) => x.replace(/^(?:and|an?|the)\s+/i, '').trim()).filter((x) => x.length >= 3);
   return { name, facts, description: rest };
 }
+
+// "the page claims X" is a note about where the point came from. In a point for a reader it becomes the claim with its source label:
+// "X (page claim)". A point that already carries the label is left as it is.
+export function tidyPoint(p: string): string {
+  const m = /^the (?:page|site|website) claims\s+(?:that\s+)?(.+)$/i.exec(p.trim());
+  if (!m) return p.trim();
+  const rest = m[1].trim();
+  return /\(page claim\)/i.test(rest) ? rest : `${rest.charAt(0).toUpperCase()}${rest.slice(1)} (page claim)`;
+}

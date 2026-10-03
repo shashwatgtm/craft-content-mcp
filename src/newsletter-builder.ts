@@ -1,5 +1,6 @@
 import { generateHook, lowerFirstIfCommon, cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
-import { splitItems, readContext, audienceLine, isClause, type Vertical } from './sector.ts';
+import { readContext, audienceLine, isClause, type Vertical } from './sector.ts';
+import { splitList, unpackTopic, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, clipAtWord } from './draft.ts';
 
 export function generateNewsletter(args: {
   topic: string;
@@ -13,15 +14,18 @@ export function generateNewsletter(args: {
 }): string {
   // Run 18 (R18-26, P05-WS-01): topic and cta_goal are trimmed at the boundary, so the heading, the Topic and CTA Goal table rows
   // and the subject lines never carry stray spaces or line breaks. Interior whitespace is kept exactly.
-  const topic = args.topic.trim();
+  const topic = fixNumbers(args.topic.trim());
   const segment = args.audience_segment || 'general';
   const type = args.newsletter_type || 'educational';
   const tone = args.tone || 'professional';
-  const previousTopics = args.previous_topics ? splitItems(args.previous_topics) : [];
+  const previousTopics = args.previous_topics ? splitList(args.previous_topics) : [];
   const ctaGoal = args.cta_goal.trim();
   const product = (args.your_product || '').trim();
-  // Run 19 (B15-L1): the heading and the Topic row print the topic as typed; every other echo of it is cut at 200 characters.
-  const topicEcho = clipEcho(topic, 200);
+  // Run 20 (round 1b): a long topic typed as "How <readers> can tackle <problem>, from <company>" is read into its parts; every
+  // repeat of the topic uses a short label (the problem's first clause), and the full topic is printed once, in the table.
+  const parts = unpackTopic(topic);
+  const label = parts.short ? topic.replace(/ +/g, ' ') : parts.label;
+  const clause = !parts.short || isClause(topic) || LABEL_CLAUSE.test(label);
   // Run 19 (D80, problems 4 and 8): the sector is read from every text the user gave.
   const ctx = readContext(undefined, { seller: [product], context: [topic, args.key_points, args.previous_topics, args.cta_goal] });
 
@@ -29,22 +33,19 @@ export function generateNewsletter(args: {
   let keyPoints: string[];
   let keyPointsNote = '';
   if (args.key_points) {
-    keyPoints = splitItems(args.key_points);
+    keyPoints = splitList(args.key_points);
   } else {
-    keyPoints = generateKeyPointsFromTopic(topicEcho, type, segment, ctx.v);
+    keyPoints = generateKeyPointsFromTopic(label, type, segment, ctx.v);
     keyPointsNote = '*(Suggested from the topic: replace with your own)*';
   }
+  const figures = keyPoints.filter((p) => /\d/.test(p));
+  const v = ctx.v;
 
   // Generate multiple subject line options
-  const subjectLines = generateSubjectLines(topic, type);
+  const subjectLines = generateSubjectLines(label, clause, type, keyPoints.length, v, topic);
 
   // Generate hooks
-  const hooks = [
-    generateHook(topicEcho, 'question'),
-    generateHook(topicEcho, 'statistic'),
-    generateHook(topicEcho, 'story'),
-    generateHook(topicEcho, 'bold_statement')
-  ];
+  const hooks = generateHooks(label, clause, v, figures);
 
   // Segment-specific adjustments
   const segmentConfig = {
@@ -66,6 +67,7 @@ ${ctx.line}
 - ${audienceLine(ctx.v)}
 - **A proof point that lands:** ${ctx.v.proofShape}
 - **Terms this audience uses:** ${ctx.v.vocabulary.slice(0, 6).join(', ')}.
+- **Objections to answer in the issue:** ${ctx.v.objections.map((o) => o.objection.toLowerCase()).join('; ')}.
 
 ---
 ` : `
@@ -76,14 +78,16 @@ ${ctx.line}
 ---
 `;
 
-  let output = `# Newsletter Builder: ${topic}
+  const readers = parts.audience ? `\n*The topic names its readers (${clipAtWord(parts.audience, 120)}). The subject lines and hooks use the problem as the label: ${q2(label)}.*\n` : '';
+
+  const output = `# Newsletter Builder: ${topic}
 
 ## Newsletter Configuration
 
 | Setting | Value |
 |---------|-------|
 | **Topic** | ${topic} |
-| **Product** | ${product || 'not given (add your_product to name it in the notes below)'} |
+| **Product** | ${product || (parts.company ? `${parts.company} (read from the topic)` : 'not given (add your_product to name it in the notes below)')} |
 | **Segment** | ${segment} |
 | **Type** | ${type.replace(/_/g, ' ')} |
 | **Tone** | ${tone} |
@@ -92,38 +96,28 @@ ${ctx.line}
 ---
 
 ## Subject Lines (A/B Test These)
-${topic.length > TOPIC_FULL ? `\n*Your topic is ${topic.length} characters, too long for a subject line, so the subject lines show a placeholder: replace it with a label of a few words. The full topic is used in the hooks.*\n` : ''}
+${readers}
 ### Option A: Curiosity-Driven
 **${subjectLines[0]}**${subjectLineLabel(type, 0)}
-- Preview text: ${generatePreviewText(0, topicEcho)}
+- Preview text: ${previewText(0, keyPoints)}
 
 ### Option B: Benefit-Focused
 **${subjectLines[1]}**${subjectLineLabel(type, 1)}
-- Preview text: ${generatePreviewText(1, topicEcho)}
+- Preview text: ${previewText(1, keyPoints)}
 
 ### Option C: Number/List Style
 **${subjectLines[2]}**${subjectLineLabel(type, 2)}
-- Preview text: ${generatePreviewText(2, topicEcho)}
+- Preview text: ${previewText(2, keyPoints)}
 
 ### Option D: Personal/Direct
 **${subjectLines[3]}**${subjectLineLabel(type, 3)}
-- Preview text: ${generatePreviewText(3, topicEcho)}
+- Preview text: ${previewText(3, keyPoints)}
 
 ---
 
 ## Opening Hooks (Pick One)
 
-### Hook 1: Question
-> ${hooks[0]}
-
-### Hook 2: Statistic
-> ${hooks[1]}
-
-### Hook 3: Story
-> ${hooks[2]}
-
-### Hook 4: Bold Statement
-> ${hooks[3]}
+${hooks.map((h, i) => `### Hook ${i + 1}: ${h.name}\n> ${h.text}`).join('\n\n')}
 
 ---
 
@@ -135,14 +129,14 @@ ${topic.length > TOPIC_FULL ? `\n*Your topic is ${topic.length} characters, too 
 
 **Subject:** ${subjectLines[0]}
 
-**Preview:** ${generatePreviewText(0, topicEcho)}
+**Preview:** ${previewText(0, keyPoints)}
 
 ---
 
-${hooks[0]}
+${hooks[0].text}
 
-${keyPointsNote ? keyPointsNote + '\n\n' : ''}${generateBodyContent(keyPoints, config, tone, args.key_points ? '' : type)}
-${product ? `*Product note: [Add one sentence on how ${product} helps with this topic, only where it fits the story]*
+${keyPointsNote ? keyPointsNote + '\n\n' : ''}${generateBodyContent(keyPoints, config, args.key_points ? '' : type, v, type, label)}
+${product ? `*Where ${product} fits: one sentence on how it helps with this topic, only where it fits the story and only with a result you can prove.*
 
 ` : ''}${generateCtaSection(ctaGoal)}
 
@@ -154,9 +148,9 @@ ${previousTopics.length > 0 ? `
 Your recent topics: ${previousTopics.join('; ')}
 
 **Thread this together:**
-- Reference: "Last week we talked about ${lowerFirstIfCommon(previousTopics[0])}. This week, let's go deeper into ${lowerFirstIfCommon(topicEcho)}..."
-- Callback: "Remember our issue on ${lowerFirstIfCommon(previousTopics[0])}? Here is how it connects to ${lowerFirstIfCommon(topicEcho)}..."
-- Series (only if these issues form a series): "This continues our run on ${lowerFirstIfCommon(topicEcho)}..."
+- Reference: "Last week we talked about ${lowerFirstIfCommon(previousTopics[0])}. This week, let's go deeper into ${lowerFirstIfCommon(label)}..."
+- Callback: "Remember our issue on ${lowerFirstIfCommon(previousTopics[0])}? Here is how it connects to ${lowerFirstIfCommon(label)}..."
+- Series (only if these issues form a series): "This continues our run on ${lowerFirstIfCommon(label)}..."
 ${previousTopics.length > 1 ? `- Other recent issues to link to: ${previousTopics.slice(1).join('; ')}\n` : ''}
 ---` : ''}
 
@@ -198,16 +192,9 @@ ${SUGGESTION_FOOTER}
   return output;
 }
 
-// Run 19 (D80, problem 2): a topic of up to 90 characters is used whole. A longer one is cut at a word boundary (never to three words),
-// and never ends on a joining word.
-// Over 90 characters, a topic is too long for a subject line and is never cut in the middle of a phrase: the subject lines show a
-// placeholder for a short label, and the full topic stays in the hooks and the heading.
-const TOPIC_FULL = 90;
-const LABEL = '[Add a short label for this topic]';
-function shortenTopic(topic: string): string {
-  const flat = topic.trim().replace(/ +/g, ' ');
-  return flat.length <= TOPIC_FULL ? flat : LABEL;
-}
+const q2 = (s: string) => `"${s}"`;
+// A label that is a clause (a verb inside it) cannot follow "about", "on" or "of": it is placed before a colon only.
+const LABEL_CLAUSE = /\b(?:is|are|was|were|run|runs|combine|combines|means|rely|relies|chain|chains|sits|happens|hand|hands|can|will|must|should|have|has|do|does|break|breaks|fragments|drift|drifts)\b/i;
 
 // Option indexes of the subject lines that open with an example count ("5 ... mistakes"), per newsletter type.
 // Unknown types use the educational subject lines, as generateSubjectLines does.
@@ -227,101 +214,76 @@ function subjectLineLabel(type: string, index: number): string {
 }
 
 // Run 19 (D80, problem 2): every subject line places the topic after a colon, after "about" or after "on", where a phrase, a clause
-// or a question all read correctly. None puts it before "is" or after "Why" or "How to".
-function generateSubjectLines(topic: string, type: string): string[] {
-  const short = shortenTopic(topic);
+// or a question all read correctly. Run 20 (round 1b): a label that holds a verb is placed before a colon only.
+function generateSubjectLines(label: string, clause: boolean, type: string, nPoints: number, v: Vertical | null, fullTopic: string): string[] {
+  const short = label.length > 90 ? clipAtWord(label, 90) : label;
   // Text only (run 10, R10-28): the topic placed after leading words follows the first-word rule
   // (names and acronyms keep their capitals). Product updates keep it as typed.
   const mid = lowerFirstIfCommon(short);
   const head = cap(mid);
+  const n = Math.max(3, Math.min(nPoints, 5));
+  const measure = v ? v.metrics[0] : '';
 
   const templates: Record<string, string[]> = {
     educational: [
-      `The truth about ${mid} (nobody talks about this)`,
-      `${head}: what to do first, and what to skip`,
-      `${head}: 5 mistakes even experts make`,
+      clause ? `${head}: the part nobody talks about` : `The truth about ${mid} (nobody talks about this)`,
+      measure ? `${head}: what to do first, and what to measure (${measure})` : `${head}: what to do first, and what to skip`,
+      `${head}: ${n} mistakes even experts make`,
       `${head}: your complete guide`
     ],
     product_update: [
-      isClause(topic) ? `New: ${short} [only if customers asked for it]` : `New: The ${short} feature you asked for [only if customers asked for it]`,
-      `You asked, we built: ${short} [only if customers asked for it]`,
+      isClause(fullTopic) || clause ? `New: ${short} (only if customers asked for it)` : `New: The ${short} feature you asked for (only if customers asked for it)`,
+      `You asked, we built: ${short} (only if customers asked for it)`,
       `Just shipped: ${short} (+ what's next)`,
       `Product update: ${short}`
     ],
     industry_news: [
-      `This week in ${mid}: what you need to know`,
+      clause ? `${head}: what you need to know this week` : `This week in ${mid}: what you need to know`,
       `${head}: what is changing, and what it means`,
-      `${head}: 3 stories that matter`,
-      `The update on ${mid} that everyone is talking about [only if true]`
+      `${head}: ${n} stories that matter`,
+      clause ? `${head}: the signals to watch` : `The update on ${mid} that everyone is talking about (only if true)`
     ],
     thought_leadership: [
       `${head}: what most people get wrong`,
-      `Unpopular opinion on ${mid}`,
+      clause ? `${head}: my view, and where I disagree` : `Unpopular opinion on ${mid}`,
       `${head}: my prediction`,
-      `${head}: what I learned the hard way [only if true]`
+      `${head}: what I learned the hard way (only if true)`
     ],
     curated_links: [
       `${head}: best reads this week`,
-      `5 must-read links on ${mid}`,
-      `Your reading list on ${mid}`,
-      `This week's best content on ${mid}`
+      `${n} must-read links on ${clause ? 'this' : mid}${clause ? ': ' + short : ''}`,
+      clause ? `${head}: your reading list` : `Your reading list on ${mid}`,
+      clause ? `${head}: this week's best content` : `This week's best content on ${mid}`
     ]
   };
 
   return templates[type] || templates.educational;
 }
 
-// Preview text: one line per option, chosen by the option's place (the same input always gives the same answer).
-function generatePreviewText(index: number, topic: string): string {
-  const t = topic.trim().length <= TOPIC_FULL ? lowerFirstIfCommon(topic) : 'this topic';
-  const previews = [
-    `Plus: [Add the one thing most people get wrong about ${t}]`,
-    `Inside: [Add the tips readers can use today]`,
-    `Spoiler: [Add the answer, only if it is not what readers expect]`,
-    `Plus: [Add one thing you learned about ${t}]`
-  ];
-  return previews[index % previews.length];
+// Preview text: one line per option, built from the key points (the same input always gives the same answer).
+function previewText(index: number, points: string[]): string {
+  const a = points[index % Math.max(1, points.length)] || '';
+  const b = points[(index + 1) % Math.max(1, points.length)] || '';
+  const sa = shortenClauses(a, 70);
+  const sb = shortenClauses(b, 70);
+  if (!a) return 'Add key_points to get preview text built from them.';
+  const lead = ['Inside', 'Plus', 'In this issue', 'Also'][index % 4];
+  return a === b ? `${lead}: ${sa}` : `${lead}: ${sa}; ${sb}`;
 }
 
-// Run 12 (R12-20): one writing prompt per section instead of the same body under every heading. The prompts follow the
-// suggested key points of each newsletter type, in order; key points the user gave get one general prompt each.
-const SECTION_PROMPTS: Record<string, string[]> = {
-  educational: [
-    '[Add one fact from your market that shows why this matters now]',
-    '[Add the two or three mistakes you see most]',
-    '[Add your steps, in order]',
-    '[Add a real example: a customer or your own]',
-    '[Add one line to remember, and the next step]'
-  ],
-  product_update: [
-    '[Add what changed, in one or two sentences]',
-    '[Add the benefit for the reader]',
-    '[Add the first steps to try it]',
-    '[Add two or three tips from your team]',
-    '[Only if you can share it: what comes next]'
-  ],
-  industry_news: [
-    '[Add the news, with its source]',
-    '[Add what it means for the reader]',
-    '[Add a view from someone you can name, with their permission]',
-    '[Add the signals to watch]',
-    '[Add one or two actions to take]'
-  ],
-  thought_leadership: [
-    '[Add your view, in one or two sentences]',
-    '[Add your evidence: a story, a number or a source]',
-    '[Add what you have seen them do differently]',
-    '[Add your framework, in a few lines]',
-    '[Add one to three actions for this week]'
-  ],
-  curated_links: [
-    '[Add the title, link and one line on why it is worth reading]',
-    '[Add the title, link and one line on why it is worth watching]',
-    '[Add the name, link and what it does]',
-    '[Add the take, its source and your view]',
-    '[Add your note]'
-  ]
-};
+// Hooks. The question is the sector's own discovery question when the sector is known; the statistic uses a figure the user gave,
+// never an invented one; the story and the statement say what input would complete them.
+function generateHooks(label: string, clause: boolean, v: Vertical | null, figures: string[]): { name: string; text: string }[] {
+  const t = lowerFirstIfCommon(label);
+  const fig = figures[0];
+  return [
+    { name: 'Question', text: v ? v.discovery[0] : clause ? `What if ${t}?` : `What if everything you knew about ${t} was wrong?` },
+    { name: 'Statistic', text: fig ? `${endSentence(capFirst(fig))} Use it as the opening line, and name where the figure comes from.` : 'No figure was given in key_points, so there is no statistic hook. Add one figure you can source to key_points to get it.' },
+    { name: 'Story', text: v ? `Open with a week in the life of ${aRole(v.buyerRoles[0])}: what they check first, and what goes wrong. Give one real moment in key_points to have it written out.` : 'Open with one real moment from a customer or from your own week. Give it in key_points to have it written out.' },
+    { name: 'Bold Statement', text: clause ? `Here is what most teams get wrong, and what to do instead: ${t}.` : `Here is what most teams get wrong about ${t}, and what to do instead.` }
+  ];
+}
+function aRole(role: string): string { return `${/^[aeiou]/i.test(role) ? 'an' : 'a'} ${role}`; }
 
 // How deep to write for the chosen audience: printed once above the sections.
 const DEPTH_NOTE: Record<string, string> = {
@@ -333,20 +295,71 @@ const DEPTH_NOTE: Record<string, string> = {
   'advanced': 'Assume the reader knows the basics: go straight to the advanced use case.'
 };
 
-function generateBodyContent(keyPoints: string[], config: { depth: string; length: string; focus: string }, tone: string, type: string): string {
-  const prompts = type ? (SECTION_PROMPTS[type] || SECTION_PROMPTS.educational) : [];
+// What to add to finish a section of this newsletter type, in order. Each says what input or fact would complete it.
+const SECTION_FINISH: Record<string, string[]> = {
+  educational: [
+    'add one fact from your market that shows why this matters now',
+    'add the two or three mistakes you see most',
+    'add your steps, in order',
+    'add a real example: a customer or your own',
+    'add one line to remember, and the next step'
+  ],
+  product_update: [
+    'add what changed, in one or two sentences',
+    'add the benefit for the reader',
+    'add the first steps to try it',
+    'add two or three tips from your team',
+    'add what comes next, only if you can share it'
+  ],
+  industry_news: [
+    'add the news, with its source',
+    'add what it means for the reader',
+    'add a view from someone you can name, with their permission',
+    'add the signals to watch',
+    'add one or two actions to take'
+  ],
+  thought_leadership: [
+    'add your view, in one or two sentences',
+    'add your evidence: a story, a number or a source',
+    'add what you have seen them do differently',
+    'add your framework, in a few lines',
+    'add one to three actions for this week'
+  ],
+  curated_links: [
+    'add the title, link and one line on why it is worth reading',
+    'add the title, link and one line on why it is worth watching',
+    'add the name, link and what it does',
+    'add the take, its source and your view',
+    'add your note'
+  ]
+};
+
+const MAX_SECTIONS = 6;
+function generateBodyContent(keyPoints: string[], config: { depth: string; length: string; focus: string }, suggestedType: string, v: Vertical | null, type: string, label: string): string {
+  const finish = SECTION_FINISH[type] || SECTION_FINISH.educational;
   let content = `*Writing note: ${DEPTH_NOTE[config.depth] || DEPTH_NOTE.accessible}*
 
 `;
+  const shown = keyPoints.slice(0, MAX_SECTIONS);
+  shown.forEach((point, index) => {
+    const figure = /\d/.test(point);
+    const heading = shortenClauses(point, 110);
+    const full = endSentence(capFirst(point));
+    content += `### ${index + 1}. ${cap(heading)}
 
-  keyPoints.forEach((point, index) => {
-    content += `### ${index + 1}. ${cap(point)}
-
-${prompts[index] || '[Add two or three sentences on this point]'}
+${full === `${cap(heading)}.` ? '' : `${full}\n\n`}${v ? `Ask your reader: "${v.discovery[index % v.discovery.length]}"\n\n` : ''}${figure ? `*This point holds a figure. Name where it comes from before the issue goes out.*\n\n` : ''}*To finish this section: ${finish[index % finish.length]}.*
 
 `;
   });
+  if (keyPoints.length > shown.length) {
+    content += `### More points from your list
 
+${keyPoints.slice(shown.length).map((p) => `- ${endSentence(capFirst(p))}`).join('\n')}
+
+*These ${keyPoints.length - shown.length} points did not get a section of their own, to keep the issue short. Fold them into the sections above or hold them for the next issue.*
+
+`;
+  }
   return content;
 }
 
@@ -355,10 +368,10 @@ ${prompts[index] || '[Add two or three sentences on this point]'}
 function generateCtaSection(ctaGoal: string): string {
   const goalLower = ctaGoal.toLowerCase();
   const button = `[${cap(ctaGoal)} →]`;
-  let helper = '[Add the link or the reply address that does this]';
+  let helper = 'Link the button to the page or the reply address that does this.';
   if (/\b(reply|feedback)\b/.test(goalLower)) helper = 'Hit reply and let me know.';
   else if (/\bshare\b/.test(goalLower)) helper = 'Forward this to a colleague who needs to see it.';
-  else if (/\b(download|guide)\b/.test(goalLower)) helper = '[Add what the download adds to this issue]';
+  else if (/\b(download|guide)\b/.test(goalLower)) helper = 'Say what the download adds to this issue.';
   return `---
 
 **${cap(ctaGoal)}**

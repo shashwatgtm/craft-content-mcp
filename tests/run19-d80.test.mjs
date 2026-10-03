@@ -148,16 +148,16 @@ test("newsletter_builder: a topic of up to 90 characters is used whole in every 
 });
 
 // ---- webinar_script ----
-test("webinar_script: speakers are listed as typed, never pasted after 'I'm'; polls carry options; product named; the recording promise is bracketed", async () => {
+test("webinar_script: speakers are listed as typed, never pasted after 'I'm'; polls carry options; product named; the recording promise is conditional", async () => {
   const r = await call("webinar_script", { topic: "AI agents that resolve support tickets safely", target_audience: "Support leaders at consumer apps and SaaS companies", webinar_type: "educational", duration: "45_min", product_mention_level: "subtle", key_takeaways: "How an LLM is evaluated before go-live, Why a person approves every refund, What to measure after launch",
     speakers: "Head of Support Operations from a customer, Head of Marketing at Answerloop", your_product: "Answerloop", include_polls: true });
   assert.equal(r.isError, false);
   shared(r.text, { names: ["Answerloop", "Head of Support Operations from a customer", "Head of Marketing at Answerloop"], sector: AI_SECTOR, label: "webinar" });
   assert.doesNotMatch(r.text, /I'm Head of|I'm \[?Speaker/);
   assert.match(r.text, /Poll options:\n(- [^\n]+\n){3,}/);
-  assert.match(r.text, /Answerloop: one sentence/i);
+  assert.match(r.text, /Product line \(subtle\): one sentence on how Answerloop helps/i);
   assert.doesNotMatch(r.text, /^- We're recording today's session/m);
-  assert.match(r.text, /\[Only if true: [^\]]*recording/i);
+  assert.match(r.text, /recording today's session[^\n]*say this only if it is true/i);
   assert.doesNotMatch(r.text, /free trial|plans or trial/i);
 });
 

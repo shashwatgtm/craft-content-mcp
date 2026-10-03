@@ -11,6 +11,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 import { tools } from "./tools.js";
+import { neutraliseDeep } from "./echo-safe.js";
 import { generateCaseStudy } from "./case-study-generator.js";
 import { generateNewsletter } from "./newsletter-builder.js";
 import { generateWebinarScript } from "./webinar-script.js";
@@ -162,7 +163,10 @@ export function createServer(): Server {
 
   // Call tool handler
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    const { name, arguments: args } = request.params;
+    // Run 20 (D86, echo safeguard): the single choke point. Every string argument is neutralised once, here, before the
+    // checks and before any tool builds its answer; the stdio path (src/index.ts) and the hosted path (netlify/functions/mcp.mjs) both come through this handler.
+    const name = request.params.name;
+    const args = neutraliseDeep(request.params.arguments);
 
     const problem = checkRequiredInputs(name, args as Record<string, unknown> | undefined);
     if (problem) {

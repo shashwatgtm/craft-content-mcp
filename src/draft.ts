@@ -355,7 +355,10 @@ export function productParts(product: string): { name: string; facts: string[]; 
   const from = /^(.+?)\s+(?:from|by|of)\s+[A-Z]/.exec(first);
   if (first.split(/\s+/).length > 5 && from) first = from[1];
   const words = first.split(/\s+/);
-  const name = words.length <= 5 && first.length <= 60 ? first : words.slice(0, 4).join(' ');
+  // run 21c round 3: a long first segment is cut before its first joining word, so the short name is a noun phrase ("Enterprise AI platform"), never a clause fragment ("Enterprise AI platform that")
+  const joiner = first.search(/\s+(?:that|which|who|where|for|with|to|by|on|in|of|and|or|from|connects?|helps?|lets?|gives?|makes?|builds?|runs?|designs?|turns?|unifies?|joins?|uses?|brings?|powers?|automates?)\b/i);
+  const head = joiner > 0 ? first.slice(0, joiner).trim() : '';
+  const name = words.length <= 5 && first.length <= 60 ? first : head && head.split(/\s+/).length <= 4 ? head : words.slice(0, 3).join(' ');
   const rest = text.slice(text.indexOf(segs[0]) + segs[0].length).replace(/^[,:;\s]+/, '');
   const facts = splitOutsideParens(rest || text, /,\s+|:\s+|;\s+/).map((x) => x.replace(/^(?:and|an?|the)\s+/i, '').trim()).filter((x) => x.length >= 3);
   return { name, facts, description: rest || text };

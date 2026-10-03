@@ -57,16 +57,17 @@ export function readContext(explicitModel: unknown, raw: ReaderInput): { v: Vert
   const allText = [input.seller, input.context, input.role, input.buyer].flatMap((g) => (Array.isArray(g) ? g : [])).filter((x): x is string => typeof x === 'string').join(' \n ');
   const investorBuyer = /\b(?:asset (?:allocators?|managers?)|pension (?:funds?|schemes?)|endowments?|wealth managers?|investment (?:managers?|banks?|strateg\w+)|hedge funds?|family offices?|sovereign|quant(?:itative)? (?:strateg\w+|investing))\b/i.test(allText)
     && !/\b(?:reconcil\w*|expenses?|month-end|close the books|payroll|invoic\w*|accounts (?:payable|receivable)|spend management|corporate cards?|prepaid cards?|reimburse\w*)\b/i.test(allText);
-  const withheld = !!v && v.id === 'fintech' && m.model !== 'investment' && investorBuyer;
-  if (withheld) v = null;
-  else v = profileFor(v, m.model, input);
+  // An investor buyer with no sector in the seller's own words: the seller's product may be anything, but the buyers are allocators, so the
+  // investment notes (roles, measures, objections of an allocator) are the ones that fit what the buyer reads.
+  const investorOnly = !!v && v.id === 'fintech' && m.model !== 'investment' && investorBuyer;
+  const withheld = false;
+  v = investorOnly ? profileFor(v, 'investment', input) : profileFor(v, m.model, input);
   // The persona's function decides the measures when the sector's own are another function's: a finance buyer of a billing product
   // reads finance measures, an IT buyer of a sales app reads integration and access measures. Existing words only; no figure.
   let lens = '';
   if (v && !withheld && v.id !== 'fintech' && m.model !== 'investment') {
     const roleText = (Array.isArray(input.role) ? input.role : []).filter((x): x is string => typeof x === 'string').join(' ');
-    const billing = v.id === 'saas' && /\b(?:billing|invoic\w*|dunning|prorat\w*|revenue recognition)\b/i.test((Array.isArray(input.seller) ? input.seller : []).filter((x): x is string => typeof x === 'string').join(' '));
-    if (FINANCE_ROLE.test(roleText) || billing) {
+    if (FINANCE_ROLE.test(roleText) && !/billing/i.test(v.name)) {
       const fin = VERTICALS.find((x) => x.id === 'fintech');
       if (fin) { v = { ...v, metrics: fin.metrics, buyerRoles: fin.buyerRoles, discovery: fin.discovery, vocabulary: [...v.vocabulary.filter((x) => !/activation|time to value|net revenue retention|onboarding|customer success/i.test(x)), ...fin.vocabulary], proofShape: fin.proofShape }; lens = 'finance'; }
     } else if (IT_ROLE.test(roleText) && ['vertical-saas', 'saas', 'logistics-tech'].includes(v.id)) {
@@ -74,7 +75,8 @@ export function readContext(explicitModel: unknown, raw: ReaderInput): { v: Vert
         ...v,
         metrics: ['integration effort with the systems already in place', 'security and access review outcome', 'time to go live', 'support effort after go-live'],
         buyerRoles: ['Head of IT', 'IT Manager', 'Security Lead', ...v.buyerRoles.slice(0, 1)],
-        discovery: v.discovery.filter((d) => /system|erp|dms|tms|wms|integrat|data/i.test(d)),
+        committee: 'The business owner of the function signs; IT checks how it fits the systems already in place (ERP, DMS and the like), security and access, and who supports it after go-live.',
+        discovery: [...v.discovery.filter((d) => /system|erp|dms|tms|wms|integrat|data/i.test(d)), ...v.discovery.filter((d) => !/system|erp|dms|tms|wms|integrat|data/i.test(d))],
       };
       lens = 'IT';
     }
@@ -85,7 +87,7 @@ export function readContext(explicitModel: unknown, raw: ReaderInput): { v: Vert
   }
   const from = source === 'role' ? ' (the job titles name it)' : source === 'buyer' ? ' (the buyer\'s industry names it; your own description names no sector)' : '';
   const lensNote = lens ? ` (measures and questions follow the ${lens} buyer)` : '';
-  const sector = withheld ? 'not named by your own description; the buyer is an investor. No sector notes are shown, because the built-in notes cover the corporate finance office (the close, reconciliation, spend), not investing (name what you sell to get sector notes)' : v ? `read from your inputs as ${v.name}${from}${lensNote}` : 'not clear from your inputs (name the industry for sector notes)';
+  const sector = investorOnly ? `the buyers are investors, so the investment notes are shown (your own description names no sector; ${v ? v.name : 'investment management'})` : v ? `read from your inputs as ${v.name}${from}${lensNote}` : 'not clear from your inputs (name the industry for sector notes)';
   const model = m.model
     ? `${MODEL_NAME[m.model]} (${m.how === 'input' ? 'from business_model' : m.how === 'sector' ? 'the usual model in this sector, assumed; set business_model to change it' : 'read from your inputs; set business_model to change it'})`
     : 'not clear from your inputs; set business_model (saas, services, connectivity, transactions, marketplace, hardware_software or investment) for advice that fits it';

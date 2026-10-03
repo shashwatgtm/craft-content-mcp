@@ -332,7 +332,7 @@ test("round 2, webinar: every content block teaches something, a CFO of a billin
   assert.equal(blocks.length, 3);
   for (const b of blocks) assert.doesNotMatch(b, /no takeaway of its own/);
   assert.doesNotMatch(t, /activation rate|time to value|net revenue retention/);
-  assert.match(t, /days to close the books|reconciliation effort|approval cycle time/);
+  assert.match(t, /billing errors and disputes|invoice accuracy/);
   assert.doesNotMatch(t, /on the home page/);
   assert.match(t, /The answer is to /);
 });
@@ -361,7 +361,8 @@ test("round 2, thought leadership: unlabeled proof is split, no bare story title
   assert.match(t, /\n3\. Lanehop Market Recognition From Example Analyst For 7 Years/);
   for (const m of t.matchAll(/\*\*Headline:\*\* ([^\n]+)/g)) assert.doesNotMatch(m[1], /\.\.\.|\bTo$|Marke\b/);
   assert.doesNotMatch(t, /Say what|Set the idea out|Turn the position into steps|Open with|Close with/);
-  assert.match(t, /The argument of this piece is that "/);
+  assert.match(t, /This piece argues something different|is incomplete: "|The position: "|There is a view on/);
+  assert.doesNotMatch(t, /That argument has a test/);
 });
 test("round 2, case study: an unnamed customer gets no one company's result as its headline or snippet, and a narrative line is not offered as a customer quote", async () => {
   const t = await call("case_study_generator", { ...CS, results: "Northfield Stores cut outage hours by 40% across 400 branches (case study); Harbor Retail consolidated its network under one partner (customer quote); Harbor Retail CIO: it changed how we run every site (customer quote)" });

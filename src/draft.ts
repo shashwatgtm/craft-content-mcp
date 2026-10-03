@@ -73,7 +73,7 @@ export function splitList(raw: unknown): string[] {
   for (const p of parts) {
     const prevLast = merged.length ? (merged[merged.length - 1].split(/\s+/).pop() || '') : '';
     // a short capitalised fragment after an item that ends in an acronym or place ("across the US; UK; EU") continues that list
-    const placeList = merged.length > 0 && p.split(/\s+/).length <= 3 && /^[A-Z]/.test(p) && !/\d/.test(p) && (/^[A-Z]{2,5}[,.]?$/.test(prevLast) || /^[A-Z][a-z]+$/.test(prevLast));
+    const placeList = merged.length > 0 && (p.split(/\s+/).length <= 3 || (/^[A-Z]{2,5}\b/.test(p) && /^[A-Z]{2,5}[,.]?$/.test(prevLast) && p.split(/\s+/).length <= 7)) && /^[A-Z]/.test(p) && !/\d/.test(p) && (/^[A-Z]{2,5}[,.]?$/.test(prevLast) || /^[A-Z][a-z]+$/.test(prevLast));
     if (merged.length && (JOINER.test(p) || placeList)) merged[merged.length - 1] += ', ' + p;
     else merged.push(p);
   }
@@ -91,7 +91,8 @@ export function splitList(raw: unknown): string[] {
   const welded: string[] = [];
   for (const cur of out) {
     const prev = welded[welded.length - 1];
-    if (prev !== undefined && /^[a-z]/.test(cur) && cur.split(/\s+/).length < 8 && !/[.!?]$/.test(prev) && prev.length + cur.length < 260) welded[welded.length - 1] = `${prev}, ${cur}`;
+    const stump = /^(?:instead of|by |from |for |with |built |backed |replacing |offering |plus |including |through |across |the world's )/i.test(cur);
+    if (prev !== undefined && ((/^[a-z]/.test(cur) && cur.split(/\s+/).length < 8) || stump) && !/[.!?]$/.test(prev) && prev.length + cur.length < 420) welded[welded.length - 1] = `${prev}, ${cur}`;
     else welded.push(cur);
   }
   return welded;
@@ -220,7 +221,14 @@ export function clipAtWord(s: string, max: number): string {
   if (t.length <= max) return t;
   const cut = t.slice(0, max);
   const at = cut.lastIndexOf(' ');
-  return (at > 20 ? cut.slice(0, at) : cut).replace(/[,;:\s-]+$/, '');
+  return dropTail((at > 20 ? cut.slice(0, at) : cut).replace(/[,;:\s-]+$/, ''));
+}
+// A cut never ends on a joining word ("... modernization and", "... with the"): those words are taken off the end.
+const TAIL = /\s+(?:and|or|the|a|an|of|to|with|for|in|on|by|as|while|that|which|from|at|than|so|but|plus|into|over|under|per|its|their|our|your|is|are)$/i;
+export function dropTail(s: string): string {
+  let t = s.replace(/[,;:\s-]+$/, '');
+  for (let i = 0; i < 4 && TAIL.test(t); i++) t = t.replace(TAIL, '').replace(/[,;:\s-]+$/, '');
+  return t;
 }
 
 // A person's role and employer typed as "CFO at Fintech" or "Head of IT, Acme": the role, then the rest.
@@ -265,7 +273,7 @@ export function shortenClauses(sentence: string, max: number): string {
   if (best < 0 && cuts.length && cuts[0] <= max * 1.5) best = cuts[0];
   // no clause boundary within reach: cut at a word and say so with "..." (a pasted text without punctuation)
   if (best < 0) return clipAtWord(t, max) + '...';
-  return t.slice(0, best).replace(/[,;:\s]+$/, '');
+  return dropTail(t.slice(0, best));
 }
 
 // ---------------------------------------------------------------------------------------------------------------------------
@@ -314,7 +322,7 @@ export function headlineSubject(topic: string, max = 90): string {
   const t = fixNumbers(topic.trim().replace(/\s+/g, ' '));
   if (t.length <= max) return t;
   const cut = splitOutsideParens(t, /,\s+(?:described as|which|that|with|including|for|so|where)\b|[;:]\s+/)[0];
-  if (cut && cut.split(/\s+/).length >= 3 && cut.length <= max) return cut;
+  if (cut && cut.split(/\s+/).length >= 2 && cut.length <= max) return cut;
   const sc = shortenClauses(t, max);
   return /\.\.\.$/.test(sc) ? clipAtWord(t, max) : sc;
 }
@@ -369,4 +377,20 @@ export function asAnswer(response: string): string {
   const first = r.split(/\s+/)[0] || '';
   const body = /^(?:Show|Ask|Offer|Compare|Name|Plan|Map|Tie|Propose|Prepare|Align|Start|Agree|State|Bring|Use|Give|Explain|Walk)$/.test(first) ? `The answer is to ${r.charAt(0).toLowerCase()}${r.slice(1)}` : r;
   return /[.!?]$/.test(body) ? body : `${body}.`;
+}
+
+// Superlative claims ("the first and only", "the world's first", "the world's largest") are taken out of a sentence that is meant to be
+// published: "the first and only integrated platform" becomes "an integrated platform". The removed claims are returned so the tool can
+// name them once, as claims to prove before they are put back.
+export function softenClaims(text: string): { text: string; removed: string[] } {
+  const removed: string[] = [];
+  let t = text;
+  const rules: [RegExp, string][] = [
+    [/\bthe first and only\b/gi, 'a'], [/\bfirst and only\b/gi, 'a'], [/\bthe world'?s first\b/gi, 'an'], [/\bworld'?s first\b/gi, 'an'],
+    [/\bthe world'?s (?:largest|leading|best)\b/gi, 'a'], [/\b(?:industry|market|category)[- ]leading\b/gi, ''], [/\bbest[- ]in[- ]class\b/gi, ''], [/\bworld[- ]class\b/gi, ''],
+    [/\bunrivall?ed\b/gi, ''], [/\bproven track record\b/gi, 'track record']
+  ];
+  for (const [re, rep] of rules) t = t.replace(re, (m) => { removed.push(m.toLowerCase()); return rep; });
+  t = t.replace(/\b(a|an) ([aeiou])/gi, (m, a, c) => (a.toLowerCase() === 'a' ? `an ${c}` : m)).replace(/\ban ([b-df-hj-np-tv-z])/gi, (m, c) => `a ${c}`).replace(/\s{2,}/g, ' ');
+  return { text: t, removed: [...new Set(removed)] };
 }

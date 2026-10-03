@@ -1,6 +1,6 @@
 import { cap, lowerFirstIfCommon, titleWords, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { q, readContext, isClause, clipWords, type Vertical } from './sector.ts';
-import { parseProof, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, roleOf, makeHashtags, brandFrom, asAnswer, claimsToSource, headlineSubject, KIND_NOTE, type ProofItem } from './draft.ts';
+import { parseProof, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, roleOf, makeHashtags, brandFrom, asAnswer, claimsToSource, softenClaims, headlineSubject, KIND_NOTE, type ProofItem } from './draft.ts';
 
 export function generateThoughtLeadership(args: {
   topic: string;
@@ -27,18 +27,20 @@ export function generateThoughtLeadership(args: {
 
   // Proof points: sorted by what they are. Customer results and quotes carry the argument; recognition and company-wide counts do not.
   const suggested = !args.proof_points;
-  const items: ProofItem[] = args.proof_points ? parseProof(args.proof_points) : [];
+  const removedClaims: string[] = [];
+  const soft = (t: string) => { const r = softenClaims(t); removedClaims.push(...r.removed); return r.text; };
+  const items: ProofItem[] = args.proof_points ? parseProof(args.proof_points).map((i) => ({ ...i, text: soft(i.text), shown: soft(i.shown) })) : [];
   const evidence = items.filter((i) => i.kind === 'result' || i.kind === 'quote');
   const others = items.filter((i) => !evidence.includes(i));
   const suggestedProofs = suggested ? generateSuggestedProofPoints(topic, articleType, v) : [];
 
   const topicNorm = topic.toLowerCase().replace(/\W+/g, ' ').trim();
-  const takeAll = splitTake(yourTake);
+  const takeAll = splitTake(soft(yourTake));
   const takeNew = takeAll.filter((t) => { const n = t.toLowerCase().replace(/\W+/g, ' ').trim(); return !(topicNorm.includes(n) || n.includes(topicNorm)); });
   const takeParts = (takeNew.length ? takeNew : takeAll).map((t) => clipEcho(t));
   const brand = brandFrom(yourTake, args.author_background || '', topic);
   const tags = makeHashtags(`${topic} ${yourTake} ${args.proof_points || ''}`, brand, v);
-  const claims = claimsToSource([yourTake, ...items.map((i) => i.text)]);
+  const claims = [...new Set([...claimsToSource([yourTake, args.proof_points || '']), ...removedClaims])];
   const reader = { full: targetReader, role: shortenClauses(targetReader.split(/;/)[0].trim(), 60) };
 
   let output = `# Thought Leadership Series: ${topic}
@@ -68,7 +70,7 @@ ${suggested ? suggestedProofs.map((p, i) => `${i + 1}. ${p}`).join('\n') : items
 ${suggested ? '' : evidence.length < numArticles
     ? `*${evidence.length === 0 ? 'None of your proof points is a customer result or quote' : `You gave ${evidence.length} customer ${evidence.length === 1 ? 'result' : 'results'} for ${numArticles} articles`}, so ${evidence.length === 0 ? 'each article marks where a result goes' : 'some articles reuse one in a different place'}. Recognition and company-wide counts are used as credibility lines, never as examples.*\n`
     : `*Each article leads with a different customer result. Recognition and company-wide counts are used as credibility lines, never as examples.*\n`}
-${claims.length ? `**Claims to source before you publish:** your take or proof points use ${proseJoin(claims.map((c) => `"${c}"`))}. A claim of this kind needs a source a reader can check, or it should be reworded.\n` : ''}
+${claims.length ? `**Claims to source before you publish:** your take or proof points use ${proseJoin(claims.map((c) => `"${c}"`))}. The articles and posts below leave it out; add it back once, in one place, and only if you can prove it with a source a reader can check.\n` : ''}
 ---
 ${sectorBlock(v)}
 `;
@@ -77,7 +79,7 @@ ${sectorBlock(v)}
   for (let i = 0; i < numArticles; i++) {
     const articleAngle = getArticleAngle(i, numArticles, articleType, headlineSubject(topic, 120));
     output += generateFullArticle({
-      topic: headlineSubject(topic, 120), take: yourTake, thesis: takeParts[i % takeParts.length], reader, authorBackground, angle: articleAngle, index: i, total: numArticles,
+      topic: headlineSubject(topic, 120), take: yourTake, thesis: takeParts[i % takeParts.length], hasEvidence: evidence.length > 0, reader, authorBackground, angle: articleAngle, index: i, total: numArticles,
       parts: takeParts, readerNoun: /[;]/.test(targetReader) || targetReader.length > 60 ? 'your readers' : lowerFirstIfCommon(targetReader), stories: items.filter((i) => i.kind === 'title'), countLabel, suggested, v, evidence, others, suggestedProofs, tags
     });
   }
@@ -90,7 +92,7 @@ ${sectorBlock(v)}
 
 Use these short posts to promote your byline articles on social media:
 
-${generatePromotionalPosts(takeParts, evidence, suggestedProofs, numArticles, suggested, v, tags)}
+${generatePromotionalPosts(takeParts, evidence, suggestedProofs, numArticles, suggested, v, tags, items.some((x) => x.kind === 'title'))}
 
 ---
 
@@ -300,56 +302,61 @@ function getArticleAngle(index: number, total: number, articleType: string, topi
 
 
 interface Art {
+  hasEvidence: boolean;
   topic: string; take: string; thesis: string; reader: { full: string; role: string }; authorBackground: string; angle: Angle; index: number; total: number;
   parts: string[]; readerNoun: string; stories: ProofItem[]; countLabel: string; suggested: boolean; v: Vertical | null; evidence: ProofItem[]; others: ProofItem[]; suggestedProofs: string[]; tags: string;
 }
 
-// The body of one section, written from the take, the proof point, the objection and the measures of this article as sentences the
-// author can use. Nothing is added that the inputs or the sector file do not hold: no figure, no quote, no customer.
+// The body of one section, written as sentences from this article's own objection, measures, question and evidence. Each article and each
+// section takes a different measure and question, so no sentence is repeated. Nothing is added that the inputs or the sector file do not
+// hold: no figure, no quote, no customer.
+function questionsFor(a: Art): string[] {
+  return a.v ? a.v.discovery.filter((d) => !/\bclient'?s?\b|current provider/i.test(d)) : [];
+}
 function sectionBody(step: string, a: Art, k: number, proof: ProofItem | undefined, objection: { objection: string; response: string } | null, story: ProofItem | undefined): string[] {
   const s = step.toLowerCase();
   const v = a.v;
   const who = a.readerNoun;
-  const measures = v ? proseJoin(v.metrics.slice(0, 3)) : '';
-  const argument = k === 0 ? `The argument of this piece is that "${a.thesis}".` : 'That argument has a test.';
-  const test = v ? `For ${who}, the test of that argument is ${measures}.` : '';
+  const mx = (j: number) => (v ? v.metrics[(a.index * 2 + k + j) % v.metrics.length] : '');
+  const qs = questionsFor(a);
+  const question = qs.length ? `A question for ${who} to take into the next meeting: "${qs[(a.index + k) % qs.length]}"` : '';
   const evidence = proof
     ? `The evidence: ${endSentence(capFirst(clipEcho(proof.shown, 300)))}`
     : story
-      ? `The evidence to build on is the story behind "${clipEcho(story.text, 160)}": take its starting value, end value and period before you cite it.`
-      : v ? `No customer result was given for this section. The proof that carries it in this field: ${lowerFirst(v.proofShape)}` : 'No customer result was given for this section.';
+      ? `The story behind "${clipEcho(story.text, 140)}" is the evidence to build on: take its starting value, end value and period before you cite it.`
+      : v ? `No customer result was given for this section. What would carry it in this field: ${lowerFirst(v.proofShape)}` : 'No customer result was given for this section.';
   const counter = objection ? `The objection ${who} will raise is "${objection.objection}".` : '';
   const answer = objection ? asAnswer(objection.response) : '';
-  const question = v ? `The question to take into the next meeting: "${v.discovery[(a.index + k) % v.discovery.length]}"` : '';
+  const pick = <T,>(xs: T[]) => xs[(a.index + k) % xs.length];
   const lines: string[] = [];
   if (/cost|consequence|saved|what it cost/.test(s)) {
-    lines.push(`${argument} ${v ? `Put a cost on it in the measures ${who} watch: ${measures}. ` : ''}${evidence}`);
+    lines.push(`${v ? `The cost shows up in ${mx(0)} and ${mx(1)}. ` : ''}Put your reader's own figures on both; this draft gives none. ${evidence}`);
   } else if (/components|breakdown/.test(s) && a.parts.length >= 2) {
-    lines.push(`The position has ${a.parts.length} ${a.parts.length === 1 ? 'part' : 'parts'}:`);
+    lines.push('The position has parts a reader can check one by one:');
     for (const t of a.parts) lines.push(`- ${endSentence(capFirst(clipEcho(t)))}`);
-    if (v) lines.push(`Each one shows up in ${measures}.`);
+    if (v) lines.push(`Read the first against ${mx(0)} and the second against ${mx(1)}.`);
   } else if (/evidence|proof|result|stories|signals|journey|parallel|show the|the result/.test(s) && !/what was done/.test(s)) {
-    lines.push(`${argument} ${evidence}`);
-    if (v) lines.push(`The measure to read it against is ${v.metrics[a.index % v.metrics.length]}.`);
+    lines.push(`${evidence}${v ? ` ${pick([`Read it against ${mx(0)}.`, `The measure that matters here is ${mx(0)}.`, `Set it beside ${mx(0)} and ${mx(1)}.`])}` : ''}`);
   } else if (/what was done|step|method|how to|implementation|replicate|action plan|prepare|switch|face it|guide|actionable|applying|advice|new path|better alternative|new approach|what to do next/.test(s)) {
-    lines.push(`If the argument holds, the next step for ${who} is concrete. ${proof ? `The worked example: ${endSentence(capFirst(clipEcho(proof.shown, 300)))} ` : ''}${question}`);
-  } else if (/objection|truth|reveal|pitfall|mistake|avoid|persists|why people|why existing|existing approaches fail|buying group|question to ask/.test(s) && objection) {
-    lines.push(`${argument} ${counter} ${answer}`);
+    lines.push(`${pick([`Start with one live case and read it against ${mx(0)}.`, `Pick the team closest to the problem and measure ${mx(0)} before you change anything.`, `Change one thing first, and watch ${mx(0)} for a full cycle.`])} ${proof ? `The worked example: ${endSentence(capFirst(clipEcho(proof.shown, 300)))} ` : ''}${question}`);
+  } else if (/objection|truth|reveal|pitfall|mistake|avoid|persists|why people|why existing|existing approaches fail|buying group|question to ask|challenge|common/.test(s) && objection) {
+    lines.push(`${counter} ${answer} ${v ? pick([`The measure that settles it is ${mx(0)}.`, `Readers settle it by looking at ${mx(0)} and ${mx(1)}.`, `Put ${mx(0)} next to it and the answer is visible.`]) : ''}`);
   } else if (/framework|model|forces|predictions|lesson|learning|synthesis|discovery|breakthrough|simple/.test(s)) {
-    lines.push(`${argument} ${test}`);
+    lines.push(`${v ? `Three checks make the argument concrete for ${who}: ${mx(0)}, ${mx(1)} and ${mx(2)}. ` : ''}${question}`);
     if (objection) lines.push(`${counter} ${answer}`);
   } else if (/winners|implications/.test(s)) {
-    lines.push(`If the argument holds, ${v ? `${proseJoin(v.buyerRoles.slice(0, 3))} gain or lose on ${measures}` : 'some readers gain and some lose'}. ${question}`);
+    lines.push(`${v ? `${proseJoin(v.buyerRoles.slice(0, 3))} gain when ${mx(0)} moves the right way; whoever keeps the current way loses ground on it. ` : ''}${question}`);
   } else {
-    lines.push(`${argument} ${counter} ${test}`.trim());
+    lines.push(`${counter} ${answer} ${question}`.trim());
   }
-  return lines;
+  return lines.map((l) => l.replace(/\s+/g, ' ').trim());
 }
 const lowerFirst = (s: string) => (/[A-Z0-9]/.test(s.slice(1, 3)) ? s : s.charAt(0).toLowerCase() + s.slice(1));
 
 function closingProse(a: Art): string {
-  const q1 = a.v ? ` If you take one question into your next meeting, make it this one: "${a.v.discovery[(a.index + 2) % a.v.discovery.length]}"` : '';
-  return `The point to leave with: "${a.thesis}".${q1} Where do you disagree? Say so, because the best insights come from the conversation.`;
+  const qs = questionsFor(a);
+  const q1 = qs.length ? `If you take one question into your next meeting, make it this one: "${qs[(a.index + 3) % qs.length]}" ` : '';
+  return `${q1}Where do you disagree? Say so, because the best insights come from the conversation.`;
 }
 
 function generateFullArticle(a: Art): string {
@@ -364,7 +371,7 @@ function generateFullArticle(a: Art): string {
 
   const sections = angle.structure.map((step, k) => {
     const lines: string[] = [`## ${step}`, ''];
-    const body = sectionBody(step, a, k, k === 0 ? undefined : proofAt(k - 1), k === Math.min(2, angle.structure.length - 1) ? objection : k === 0 ? objection : null, a.stories.length ? a.stories[(index + k) % a.stories.length] : undefined);
+    const body = sectionBody(step, a, k, k === 0 ? undefined : proofAt(k - 1), k === Math.min(2, angle.structure.length - 1) ? (v ? v.objections[(index + 1) % v.objections.length] : null) : k === 0 ? objection : null, a.stories.length ? a.stories[(index + k) % a.stories.length] : undefined);
     lines.push(...body);
     return lines.join('\n');
   }).join('\n\n');
@@ -430,8 +437,9 @@ function generateHook(hookType: string, a: Art, objection: { objection: string; 
   return (hooks[hookType] || hooks.controversy).replace(/\s+/g, ' ').trim();
 }
 
-function generatePromotionalPosts(takeParts: string[], evidence: ProofItem[], suggestedProofs: string[], numArticles: number, suggested: boolean, v: Vertical | null, tags: string): string {
+function generatePromotionalPosts(takeParts: string[], evidence: ProofItem[], suggestedProofs: string[], numArticles: number, suggested: boolean, v: Vertical | null, tags: string, hasStories: boolean): string {
   let posts = '';
+  const qs = v ? v.discovery.filter((d) => !/\bclient'?s?\b|current provider/i.test(d)) : [];
   for (let i = 0; i < numArticles; i++) {
     const proof = evidence.length ? evidence[i % evidence.length] : undefined;
     posts += `
@@ -441,11 +449,11 @@ function generatePromotionalPosts(takeParts: string[], evidence: ProofItem[], su
 
 > "${takeParts[i % takeParts.length]}"
 
-${proof ? `The evidence: ${endSentence(capFirst(clipEcho(proof.shown, 300)))}` : suggested ? `The evidence to add: ${suggestedProofs[0] || 'one result with its figure'}.` : 'No customer result was given for this post.'}
+${proof ? `The evidence: ${endSentence(capFirst(clipEcho(proof.shown, 300)))}` : suggested ? `The evidence to add: ${suggestedProofs[0] || 'one result with its figure'}.` : hasStories ? 'The customer stories in your list have no result detail yet, so this post makes no claim about a result.' : 'No customer result was given for this post.'}
 
-${v ? `The question I would ask your team: "${v.discovery[i % v.discovery.length]}"` : 'What has your own experience been?'}
+${qs.length ? `The question I would ask your team: "${qs[i % qs.length]}"` : 'What has your own experience been?'}
 
-I just published a piece on this, with the evidence and what to do about it. Link in comments.
+I just published a piece on this${proof ? ', with the evidence' : ''} and what to do about it. Link in comments.
 
 ---
 

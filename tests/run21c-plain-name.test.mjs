@@ -28,6 +28,15 @@ test("a long plain description gives a short name that does not end mid clause",
     assert.ok(n.split(/\s+/).length >= 2, `a one word name from a description: ${d} -> ${n}`);
   }
   assert.equal(productParts("Lanehop, a route planning platform for delivery fleets").name, "Lanehop");
+  // a comma inside a list of what it covers is not the end of a name
+  for (const d of [
+    "Integrated travel, expense and payment management platform for enterprises: expense capture, approvals and prepaid cards",
+    "Billing, invoicing and revenue recognition software for subscription companies",
+  ]) {
+    const n = productParts(d).name;
+    assert.doesNotMatch(n, /^(?:Integrated travel|Billing)$/, `${d} -> ${n}`);
+    assert.ok(n.split(/\s+/).length >= 2, `${d} -> ${n}`);
+  }
 });
 
 test("sales_enablement_content does not print a clause fragment as the product name", async () => {

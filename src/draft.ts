@@ -351,6 +351,10 @@ export function productParts(product: string): { name: string; facts: string[]; 
   const text = fixNumbers(product.trim().replace(/\s+/g, ' '));
   const segs = splitOutsideParens(text, /,\s+|:\s+|;\s+/);
   let first = segs[0] || text;
+  // run 21c round 3: a comma inside a list of what the product covers ("Integrated travel, expense and payment management platform") is not the end of a name
+  const second = segs[1] || '';
+  const listy = segs.length >= 2 && (segs[0] || '').split(/\s+/).length <= 3 && /^[a-z]/.test(second) && !/^(?:an?|the|our|its|their|it|is|are|that|which)\b/i.test(second) && /\band\b/i.test(second.split(/[,:;]/)[0]);
+  if (listy) first = `${segs[0]}, ${second}`;
   // "Sonata managed services from Sonata Software" is named by what comes before "from"
   const from = /^(.+?)\s+(?:from|by|of)\s+[A-Z]/.exec(first);
   if (first.split(/\s+/).length > 5 && from) first = from[1];
@@ -360,7 +364,8 @@ export function productParts(product: string): { name: string; facts: string[]; 
   const head = joiner > 0 ? first.slice(0, joiner).trim() : '';
   const lead = [...words.slice(0, 4)]; while (lead.length > 2 && /^(?:that|which|who|where|for|with|to|by|on|in|of|and|or|from|the|a|an)$/i.test(lead[lead.length - 1])) lead.pop();
   const hw = head ? head.split(/\s+/).length : 0;
-  const name = words.length <= 5 && first.length <= 60 ? first : hw >= 2 && hw <= 4 ? head : lead.join(' ');
+  const listHead = listy ? (() => { const j2 = first.search(/\s+(?:for|that|which|who|where|with|by|from)\b/i); const h = (j2 > 0 ? first.slice(0, j2) : first).trim(); return h.split(/\s+/).length <= 8 ? h : h.split(/\s+/).slice(0, 6).join(' '); })() : '';
+  const name = listy ? listHead : words.length <= 5 && first.length <= 60 ? first : hw >= 2 && hw <= 4 ? head : lead.join(' ');
   const rest = text.slice(text.indexOf(segs[0]) + segs[0].length).replace(/^[,:;\s]+/, '');
   const facts = splitOutsideParens(rest || text, /,\s+|:\s+|;\s+/).map((x) => x.replace(/^(?:and|an?|the)\s+/i, '').trim()).filter((x) => x.length >= 3);
   return { name, facts, description: rest || text };

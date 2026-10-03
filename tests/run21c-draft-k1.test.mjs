@@ -89,7 +89,7 @@ test("webinar: the long topic is spoken once, and a run-on takeaway is quoted", 
   const run = "releases that wait on a quarterly freeze because testing is manual and nobody dares to change the core, so every fix queues behind the next release, and the team spends its time on the freeze calendar";
   let i = script.toLowerCase().indexOf(run);
   assert.ok(i > 0);
-  while (i >= 0) { assert.equal(script[i - 1], '"'); i = script.toLowerCase().indexOf(run, i + 1); }
+  while (i >= 0) { assert.ok(["\"", "'"].includes(script[i - 1]), "run 21c E11: a quoted run-on inside a speaker block uses single quotes, so the block's own quotes do not nest"); i = script.toLowerCase().indexOf(run, i + 1); }
 });
 
 test("newsletter: eight key points give six sections and every count says six", async () => {

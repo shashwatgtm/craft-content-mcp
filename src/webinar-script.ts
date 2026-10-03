@@ -1,6 +1,6 @@
 import { lowerFirstIfCommon, cap, SUGGESTION_FOOTER } from './utils.js';
 import { q, readContext, startWords, audienceLine, isClause, type Vertical, type BusinessModel } from './sector.ts';
-import { splitList, tidyPoint, unpackTopic, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, roleOf, clipAtWord } from './draft.ts';
+import { splitList, asAnswer, tidyPoint, unpackTopic, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, roleOf, clipAtWord } from './draft.ts';
 
 type Ctx = { v: Vertical | null; model: BusinessModel | null; line: string };
 
@@ -39,13 +39,13 @@ export function generateWebinarScript(args: {
     ? (/[;\n]/.test(args.speakers) ? args.speakers.split(/[;\n]/).map((x) => x.trim()).filter(Boolean) : splitList(args.speakers))
     : [];
   const speakers = speakerList.length ? speakerList
-    : args.webinar_type === 'panel_discussion' ? ['Moderator (not named)', 'Panelist 1 (not named)', 'Panelist 2 (not named)'] : ['Speaker (not named)'];
+    : args.webinar_type === 'panel_discussion' ? ['Moderator (name not given)', 'Panelist 1 (name not given)', 'Panelist 2 (name not given)'] : ['Speaker (name not given)'];
   const includePolls = args.include_polls ?? true;
   const productLevel = args.product_mention_level || 'subtle';
   const given = (args.your_product || '').trim();
   const product = given || (productLevel === 'none' ? '' : parts.company);
   // Run 19 (D80, problems 4 and 8): the sector and the business model are read from every text the user gave.
-  const ctx: Ctx = readContext(args.business_model, { seller: [given || parts.company, topic], context: [args.key_takeaways, args.speakers], buyer: [audience] });
+  const ctx: Ctx = readContext(args.business_model, { seller: [given || parts.company, topic], context: [args.key_takeaways, args.speakers], role: [audience], buyer: [audience] });
 
   // DERIVE key takeaways from topic if not provided
   let takeaways: string[];
@@ -374,8 +374,11 @@ function pollOptions(ctx: Ctx): string[] {
 
 // The takeaways of one main content block: the takeaways are shared out over the blocks in order, so every one is taught.
 function blockTakeaways(takeaways: string[], block: number, blocks: number): string[] {
-  const per = Math.ceil(takeaways.length / Math.max(1, blocks));
-  return takeaways.slice(block * per, block * per + per);
+  const n = takeaways.length;
+  const base = Math.floor(n / blocks);
+  const extra = n % blocks;
+  const start = block * base + Math.min(block, extra);
+  return takeaways.slice(start, start + base + (block < extra ? 1 : 0));
 }
 
 // How the session is named aloud: a topic that is a clause is introduced as the subject of today's session.
@@ -421,7 +424,7 @@ Let's get started!"
 **ON SCREEN: Speaker bio slide**
 
 **Introduce each speaker (as you listed them):**
-${w.speakers.map((sp, i) => `${i + 1}. ${sp}${/not named/.test(sp) ? ': give the name, then two or three sentences of background that make this person credible on this topic' : ': two or three sentences of background that make this person credible on this topic'}`).join('\n')}
+${w.speakers.map((sp, i) => `${i + 1}. ${sp}${/name not given/.test(sp) ? ': name not given, so introduce yourself in one line and say why you are credible on this topic' : ': two or three sentences of background that make this person credible on this topic'}`).join('\n')}
 
 **SPEAKER:**
 "Today's session is about ${q(label)}. I'm excited to give you takeaways you can use immediately."
@@ -457,9 +460,9 @@ ${pollOptions(w.ctx).map((o) => `- ${o}`).join('\n')}
 Let's see what you're dealing with..."
 
 `,
-    'Main Content Block 1': blockScript(section, w, mine, 0, opening),
-    'Main Content Block 2': blockScript(section, w, mine, 1, opening),
-    'Main Content Block 3': blockScript(section, w, mine, 2, opening),
+    'Main Content Block 1': blockScript(section, w, mine, 0, opening, blocks),
+    'Main Content Block 2': blockScript(section, w, mine, 1, opening, blocks),
+    'Main Content Block 3': blockScript(section, w, mine, 2, opening, blocks),
     'Q&A': `${opening(section.name)}
 **ON SCREEN: Q&A slide**
 
@@ -483,7 +486,7 @@ ${w.takeaways.slice(0, 3).map((t, i) => `${i + 1}. ${endSentence(capFirst(t))}`)
 
 **What's your next step?**
 
-${v ? `The usual first step in ${v.name}: ${lowerFirst(v.salesMotion)}` : 'Name the one next step for the audience.'}
+${v ? `The usual first step in ${w.field || v.name}: ${lowerFirst(v.salesMotion)}` : 'The next step is one conversation: tell attendees how to book it, and what it will cover.'}
 
 Thanks so much for joining. You'll get the recording, slides and resources within 24 hours (say this only if it is true).
 
@@ -508,23 +511,23 @@ Have a great rest of your day!"
 
 // One main content block: the takeaways it teaches, how this audience measures them, the sector objection for the last block, a
 // question for the chat, and where the product line goes.
-function blockScript(section: { name: string; duration: number }, w: W, mine: string[], k: number, opening: (n: string) => string): string {
+function blockScript(section: { name: string; duration: number }, w: W, mine: string[], k: number, opening: (n: string) => string, blocks: number): string {
   const v = w.ctx.v;
-  const lead = k === 0 ? 'Let\'s start with' : k === 1 ? 'Next:' : 'Last:';
-  const teach = mine.length ? mine.map((t) => `- ${endSentence(capFirst(t))}`).join('\n') : '- This block has no takeaway of its own (you gave fewer takeaways than blocks): use it for a worked example or a customer story.';
+  const lead = k === 0 ? "Let's start with the first idea." : k === blocks - 1 ? 'Last, and the most practical part.' : 'That brings us to the next part.';
+  const who = w.role ? `a ${w.role}` : 'this audience';
+  const teach = mine.length ? mine.map((t) => endSentence(capFirst(t))).join(' ') : 'This block has no takeaway of its own, so use it for a worked example or a customer story.';
   const measure = v ? v.metrics[(k * 2) % v.metrics.length] : '';
   const question = v ? v.discovery[(k + 1) % v.discovery.length] : '';
-  const objection = v ? v.objections[k % v.objections.length] : null;
+  const objection = v && k >= 1 ? v.objections[(k - 1) % v.objections.length] : null;
+  const next = k < blocks - 1 ? 'Hold that thought, because the next part builds on it.' : 'Put those three parts together and you have the plan.';
   return `${opening(section.name)}
 **ON SCREEN: Key concept slide**
 
 **SPEAKER:**
-"${lead} ${mine.length > 1 ? 'these points' : 'this point'}.
+"${lead} ${teach}
 
-${teach}
-
-${v ? `How this audience measures it: ${measure}. Ask them for their own number before you give any example.\n` : ''}${objection && k === 2 ? `\nThe objection to answer here: "${objection.objection}". ${objection.response}\n` : ''}${v ? `\nQuestion for the chat: "${question}"\n` : ''}${productLine(w, mine[0] ? `"${shortenClauses(mine[0], 110)}"` : 'this block')}
-Any questions on this before we move on? Drop them in chat."
+${v ? `For ${who}, this comes down to ${measure}. Before we go on, think of your own number for it, because the examples only help if you can compare them with yours.\n\nQuestion for the chat: "${question}"\n` : ''}${objection ? `\nYou may be thinking: "${objection.objection}." ${asAnswer(objection.response)}\n` : ''}${productLine(w, mine[0] ? `"${shortenClauses(mine[0], 110)}"` : 'this block')}
+${next} Any questions before we move on? Drop them in chat."
 
 `;
 }

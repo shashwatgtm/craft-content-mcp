@@ -46,7 +46,7 @@ export function generateContentRepurposer(args: {
   const points = pointsFull.map((p) => shortenClauses(p, 260));
   const wordCount = countWords(content);
   const ctx = readContext(undefined, { seller: [(paras[0] || '').split(/:\s*what to do about\b/i)[0].slice(0, 150)], context: [keyMessage, content, title] });
-  const hook = titleInfo.fromSource ? title : keyMessage ? shortenClauses(keyMessage, 160) : shortenClauses(firstSentence(body), 160);
+  const hook = titleInfo.fromSource && title.split(/\s+/).length > 4 ? title : keyMessage ? shortenClauses(keyMessage, 160) : shortenClauses(firstSentence(body), 160);
   const unknown = targetFormats.map((f) => f.toLowerCase().replace(/\s+/g, '_')).filter((f) => !KNOWN_FORMATS.includes(f));
   const customerProof = proof.filter((p) => p.kind === 'result' || p.kind === 'quote' || (p.kind === 'title' && p.figure));
   const bestProof = ['result', 'quote', 'title'].map((kind) => customerProof.find((p) => p.kind === kind && p.figure)).find(Boolean) || customerProof[0];
@@ -134,11 +134,20 @@ function capFirstChar(s: string): string { return s.charAt(0).toUpperCase() + s.
 // says something; "The obstacle is <x>" becomes "The obstacle: <x>".
 function cleanPoint(p: string): string {
   const t = p.trim();
+  const cap1 = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
   const deliver = /^.{3,400}?\b(?:are|is) asked to deliver:\s*(.+)$/i.exec(t);
-  if (deliver) return `The audience is asked to deliver: ${deliver[1]}`;
+  if (deliver) return cap1(deliver[1]);
   const todo = /^.{3,300}?:\s*what to do about\s+(.+)$/i.exec(t);
   if (todo) return `The problem: ${todo[1]}`;
+  const built = /^At ([A-Z][\w&.-]*(?:\s[A-Z][\w&.-]*)?) we built (?:[\w&.\s-]+?) around (?:this|these)(?:\s+\w+)?:\s*(.+)$/.exec(t);
+  if (built) return `What ${built[1]} built: ${built[2]}`;
   return t.replace(/^The obstacle is\s+/i, 'The obstacle: ');
+}
+// A line fit for a subject line: a whole clause of at most `max` characters, else nothing (never a cut phrase).
+function subjectSafe(text: string | undefined, max: number): string {
+  if (!text) return '';
+  const t = shortenClauses(text.replace(/^(?:The problem|The obstacle|What [\w&.\s-]+ built):\s*/, ''), max);
+  return t.length <= max && !/\.\.\.$/.test(t) ? t : '';
 }
 
 // Two key points that say the same thing (more than half of their long words shared) are one point; the earlier stays.
@@ -191,7 +200,7 @@ function formatName(format: string): string {
   return names[key] || format.replace(/_/g, ' ');
 }
 
-const proofLine = (k: Kit, label = 'Result'): string => k.bestProof ? (/^customer (?:quote|words):/i.test(k.bestProof.text) ? endSentence(k.bestProof.shown) : `${label}: ${endSentence(k.bestProof.shown)}`) : '';
+const proofLine = (k: Kit, label = 'Result'): string => k.bestProof ? (/^customer (?:quote|words):/i.test(k.bestProof.text) ? endSentence(k.bestProof.shown) : `${k.bestProof.kind === 'title' ? 'Customer story' : label}: ${endSentence(k.bestProof.shown)}`) : '';
 const pointLines = (ps: string[], mark: (p: string, i: number) => string): string => ps.map(mark).join('\n');
 // A line for a tweet: complete, at most 270 characters, ending at a clause boundary.
 const tweet = (s: string): string => endSentence(shortenClauses(s, 270));
@@ -248,9 +257,9 @@ ${tweets.map((t, i) => `**Tweet ${i + 1}${i === 0 ? ' (Hook)' : ''}:**\n${t}${t.
 ---
 
 **Subject Line Options:**
-1. ${k.title}${/[?!]$/.test(k.title) ? '' : ': the key points'}
-2. ${subjectPoint(rest[0]) ? `What we learned: ${subjectPoint(rest[0])}` : subjectPoint(k.hook) ? `What to know: ${subjectPoint(k.hook)}` : `A short ${kind} summary`}
-3. ${k.bestProof ? `Proof inside: ${shortenClauses(k.bestProof.text, 70)}` : `A short ${kind} summary for you`}
+1. ${subjectSafe(k.title, 70) ? `${subjectSafe(k.title, 70)}${/[?!:]/.test(k.title) ? '' : ': the key points'}` : `A short ${kind} summary: the key points`}
+2. ${subjectSafe(rest[0], 60) ? `What we learned: ${subjectSafe(rest[0], 60)}` : subjectSafe(k.hook, 60) ? `What to know: ${subjectSafe(k.hook, 60)}` : `What we learned: a short ${kind} summary`}
+3. ${k.bestProof && subjectSafe(k.bestProof.text.replace(/^Customer (?:quote|words):\s*/i, ''), 60) ? `${k.bestProof.kind === 'title' ? 'A customer story' : 'Proof inside'}: ${subjectSafe(k.bestProof.text.replace(/^Customer (?:quote|words):\s*/i, ''), 60)}` : `A short ${kind} summary for you`}
 
 **Email Body:**
 
@@ -441,9 +450,9 @@ Read the full ${kind}: add the link.
 // on a card (180 characters). A card is never cut mid-sentence.
 function extractQuotes(k: Kit): { text: string; by?: string }[] {
   const out: { text: string; by?: string }[] = [];
-  for (const p of k.proof) if (p.kind === 'quote' && p.text.length <= 180) out.push({ text: p.text.replace(/^(?:customer (?:quote|words)):\s*/i, ''), by: p.label ? `(${p.label})` : undefined });
+  for (const p of k.proof) if (p.kind === 'quote' && /customer quote|customer words/i.test(`${p.label} ${p.text}`) && /\b(?:we|our|us|my|I)\b/.test(p.text.replace(/^[^:]{0,60}:\s*/, '')) && p.text.length <= 180) out.push({ text: p.text.replace(/^(?:customer (?:quote|words)):\s*/i, ''), by: p.label ? `(${p.label})` : undefined });
   for (const m of k.content.match(/"[^"]{20,180}"/g) || []) out.push({ text: m.replace(/"/g, '') });
-  const short = k.points.filter((p) => p.length <= 180);
+  const short = k.points.filter((p) => p.length <= 180 && !/^(?:The problem|The obstacle|What [\w&.\s-]+ built):/.test(p));
   for (const p of short) out.push({ text: p });
   return out.filter((x, i, a) => a.findIndex((y) => y.text === x.text) === i).slice(0, 5);
 }

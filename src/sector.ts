@@ -3,7 +3,7 @@
 // text instead of pasting it into fixed sentences, split typed lists, and pick whole sentences from a source text.
 // Rule B82: nothing here adds a statistic, a benchmark or a named-company fact.
 
-import { detectVertical, detectModel, explainSector, profileFor, MODEL_NAME, type Vertical, type BusinessModel, type ReaderInput } from './verticals.ts';
+import { detectVertical, detectModel, explainSector, profileFor, VERTICALS, MODEL_NAME, type Vertical, type BusinessModel, type ReaderInput } from './verticals.ts';
 
 export type { Vertical, BusinessModel, ReaderInput };
 
@@ -42,6 +42,8 @@ export function qs(s: string): string {
 // The reader decides alone; there is no second rule here.
 // "security" in the sense of a financial instrument ("per security", "50,000 securities") is not the security sector: the reader
 // is shown the text with those words changed to "instrument".
+const FINANCE_ROLE = /\b(?:cfo|chief financial|finance|controller|treasur\w*|accounts? (?:payable|receivable)|fp&a)\b/i;
+const IT_ROLE = /\b(?:gm[- ]it|cio|chief information|head of it|it head|it (?:manager|director|infrastructure|lead)|information technology)\b/i;
 function scrub(list: unknown[] | undefined): unknown[] | undefined {
   return list?.map((x) => typeof x === 'string' ? x.replace(/\b(?:per|each|every|single|individual)\s+securit(?:y|ies)\b/gi, 'instrument').replace(/\bsecurities\b/gi, 'instruments').replace(/\bSOC ?[123]\b/gi, 'audit report').replace(/\b([A-Z][A-Za-z0-9]+) Software\b/g, '$1') : x);
 }
@@ -58,8 +60,32 @@ export function readContext(explicitModel: unknown, raw: ReaderInput): { v: Vert
   const withheld = !!v && v.id === 'fintech' && m.model !== 'investment' && investorBuyer;
   if (withheld) v = null;
   else v = profileFor(v, m.model, input);
+  // The persona's function decides the measures when the sector's own are another function's: a finance buyer of a billing product
+  // reads finance measures, an IT buyer of a sales app reads integration and access measures. Existing words only; no figure.
+  let lens = '';
+  if (v && !withheld && v.id !== 'fintech' && m.model !== 'investment') {
+    const roleText = (Array.isArray(input.role) ? input.role : []).filter((x): x is string => typeof x === 'string').join(' ');
+    const billing = v.id === 'saas' && /\b(?:billing|invoic\w*|dunning|prorat\w*|revenue recognition)\b/i.test((Array.isArray(input.seller) ? input.seller : []).filter((x): x is string => typeof x === 'string').join(' '));
+    if (FINANCE_ROLE.test(roleText) || billing) {
+      const fin = VERTICALS.find((x) => x.id === 'fintech');
+      if (fin) { v = { ...v, metrics: fin.metrics, buyerRoles: fin.buyerRoles, discovery: fin.discovery, vocabulary: [...v.vocabulary.filter((x) => !/activation|time to value|net revenue retention|onboarding|customer success/i.test(x)), ...fin.vocabulary], proofShape: fin.proofShape }; lens = 'finance'; }
+    } else if (IT_ROLE.test(roleText) && ['vertical-saas', 'saas', 'logistics-tech'].includes(v.id)) {
+      v = {
+        ...v,
+        metrics: ['integration effort with the systems already in place', 'security and access review outcome', 'time to go live', 'support effort after go-live'],
+        buyerRoles: ['Head of IT', 'IT Manager', 'Security Lead', ...v.buyerRoles.slice(0, 1)],
+        discovery: v.discovery.filter((d) => /system|erp|dms|tms|wms|integrat|data/i.test(d)),
+      };
+      lens = 'IT';
+    }
+  }
+  // The ITeS notes are written around a service desk; without a service desk word in the inputs those items are left out of the view.
+  if (v && v.id === 'ites' && !/\b(?:service desk|help ?desk|tickets?|contact cent(?:re|er)s?|call cent(?:re|er)s?|bpo|support|first-contact)\b/i.test(allText)) {
+    v = { ...v, metrics: v.metrics.filter((x) => !/resolve|first-contact|backlog|ticket/i.test(x)), vocabulary: v.vocabulary.filter((x) => !/ticket/i.test(x)) };
+  }
   const from = source === 'role' ? ' (the job titles name it)' : source === 'buyer' ? ' (the buyer\'s industry names it; your own description names no sector)' : '';
-  const sector = withheld ? 'not named by your own description; the buyer is an investor. No sector notes are shown, because the built-in notes cover the corporate finance office (the close, reconciliation, spend), not investing (name what you sell to get sector notes)' : v ? `read from your inputs as ${v.name}${from}` : 'not clear from your inputs (name the industry for sector notes)';
+  const lensNote = lens ? ` (measures and questions follow the ${lens} buyer)` : '';
+  const sector = withheld ? 'not named by your own description; the buyer is an investor. No sector notes are shown, because the built-in notes cover the corporate finance office (the close, reconciliation, spend), not investing (name what you sell to get sector notes)' : v ? `read from your inputs as ${v.name}${from}${lensNote}` : 'not clear from your inputs (name the industry for sector notes)';
   const model = m.model
     ? `${MODEL_NAME[m.model]} (${m.how === 'input' ? 'from business_model' : m.how === 'sector' ? 'the usual model in this sector, assumed; set business_model to change it' : 'read from your inputs; set business_model to change it'})`
     : 'not clear from your inputs; set business_model (saas, services, connectivity, transactions, marketplace, hardware_software or investment) for advice that fits it';
@@ -125,7 +151,7 @@ const KIND_PROOF: Record<ObjectionKind, RegExp> = {
   existing: /\balongside|\bintegrat|\bcompar|\bswitch|\breplac|\bmigrat|\bmissed|\bunlike/i,
   adoption: /\badopt|\busage|\bused by|\breps?\b|\bdrivers?\b|\busers?\b|\boffline|\bsimple|\beasy|\bweekly/i,
   implementation: /\blive in|\bgo-live|\bin \w+ (?:days|weeks|months)|\bdays\b|\bweeks\b|\bsetup|\bset-up|\bonboard|\bmigrat|\bcut-?over|\bwave|\brollout|\bminutes\b|\bintegrat/i,
-  security: /\bsoc\b|\biso\b|\bencrypt|\baudit|\bcertif|\bcompliance|\bresidency|\baccess control|\bprivacy|\bsecur/i,
+  security: /\bsoc\b|\bsoc ?\d|\biso\b|\biso ?\d|\bpci\b|cert-in|\bencrypt|\baudit|\bcertif|\bcompliance|\bresidency|\baccess control|\bprivacy|\bsecur/i,
   bundle: /\bone system|\bsingle|\bunified|\ball in one|\bintegrat|\bbundle/i,
   timing: /\bin \w+ (?:days|weeks|months)|\bquarter|\bfast|\bquick|\bwithin|\blive in|\bdays\b|\bweeks\b/i,
   accuracy: /\bapprov|\breview|\baudit|\bevaluat|\baccura|\bcheck|\btrail|\bhuman[- ]in|\bguardrail|\bverif/i,

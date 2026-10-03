@@ -1,6 +1,6 @@
 import { generateHook, lowerFirstIfCommon, cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { readContext, audienceLine, isClause, type Vertical } from './sector.ts';
-import { splitList, tidyPoint, unpackTopic, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, clipAtWord } from './draft.ts';
+import { splitList, tidyPoint, roleOf, FIGURE, unpackTopic, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, clipAtWord } from './draft.ts';
 
 export function generateNewsletter(args: {
   topic: string;
@@ -38,7 +38,7 @@ export function generateNewsletter(args: {
     keyPoints = generateKeyPointsFromTopic(label, type, segment, ctx.v);
     keyPointsNote = '*(Suggested from the topic: replace with your own)*';
   }
-  const figures = keyPoints.filter((p) => /\d/.test(p));
+  const figures = keyPoints.filter((p) => FIGURE.test(p));
   const v = ctx.v;
 
   // Generate multiple subject line options
@@ -135,7 +135,7 @@ ${hooks.map((h, i) => `### Hook ${i + 1}: ${h.name}\n> ${h.text}`).join('\n\n')}
 
 ${hooks[0].text}
 
-${keyPointsNote ? keyPointsNote + '\n\n' : ''}${generateBodyContent(keyPoints, config, args.key_points ? '' : type, v, type, label)}
+${keyPointsNote ? keyPointsNote + '\n\n' : ''}${generateBodyContent(keyPoints, config, args.key_points ? '' : type, v, type, label, (() => { const f = roleOf(parts.audience).field; return f && f.length <= 40 && !/\d|;/.test(f) ? f : ''; })())}
 ${product ? `*Where ${product} fits: one sentence on how it helps with this topic, only where it fits the story and only with a result you can prove.*
 
 ` : ''}${generateCtaSection(ctaGoal)}
@@ -216,7 +216,7 @@ function subjectLineLabel(type: string, index: number): string {
 // Run 19 (D80, problem 2): every subject line places the topic after a colon, after "about" or after "on", where a phrase, a clause
 // or a question all read correctly. Run 20 (round 1b): a label that holds a verb is placed before a colon only.
 function generateSubjectLines(label: string, clause: boolean, type: string, nPoints: number, v: Vertical | null, fullTopic: string): string[] {
-  const short = label.length > 90 ? clipAtWord(label, 90) : label;
+  const short = label;
   // Text only (run 10, R10-28): the topic placed after leading words follows the first-word rule
   // (names and acronyms keep their capitals). Product updates keep it as typed.
   const mid = lowerFirstIfCommon(short);
@@ -246,8 +246,8 @@ function generateSubjectLines(label: string, clause: boolean, type: string, nPoi
     thought_leadership: [
       `${head}: what most people get wrong`,
       clause ? `${head}: my view, and where I disagree` : `Unpopular opinion on ${mid}`,
-      `${head}: my prediction`,
-      `${head}: what I learned the hard way (only if true)`
+      `${head}: ${n} points to put to your team`,
+      `${head}: the question I would ask first`
     ],
     curated_links: [
       `${head}: best reads this week`,
@@ -260,15 +260,14 @@ function generateSubjectLines(label: string, clause: boolean, type: string, nPoi
   return templates[type] || templates.educational;
 }
 
-// Preview text: one line per option, built from the key points (the same input always gives the same answer).
+// Preview text: one line per option, built from key points that fit whole (never cut in a word or a phrase).
 function previewText(index: number, points: string[]): string {
-  const a = points[index % Math.max(1, points.length)] || '';
-  const b = points[(index + 1) % Math.max(1, points.length)] || '';
-  const sa = shortenClauses(a, 70);
-  const sb = shortenClauses(b, 70);
-  if (!a) return 'Add key_points to get preview text built from them.';
+  const fits = points.map((p) => shortenClauses(p, 90)).filter((p) => p.length <= 95 && !/\.\.\.$/.test(p));
+  if (!fits.length) return 'Add key_points of a few words each to get preview text built from them.';
+  const a = fits[index % fits.length];
+  const b = fits[(index + 1) % fits.length];
   const lead = ['Inside', 'Plus', 'In this issue', 'Also'][index % 4];
-  return a === b ? `${lead}: ${sa}` : `${lead}: ${sa}; ${sb}`;
+  return a === b || a.length + b.length > 120 ? `${lead}: ${a}` : `${lead}: ${a}; ${b}`;
 }
 
 // Hooks. The question is the sector's own discovery question when the sector is known; the statistic uses a figure the user gave,
@@ -278,7 +277,7 @@ function generateHooks(label: string, clause: boolean, v: Vertical | null, figur
   const fig = figures[0];
   return [
     { name: 'Question', text: v ? v.discovery[0] : clause ? `What if ${t}?` : `What if everything you knew about ${t} was wrong?` },
-    { name: 'Statistic', text: fig ? `${endSentence(capFirst(fig))} Use it as the opening line, and name where the figure comes from.` : 'No figure was given in key_points, so there is no statistic hook. Add one figure you can source to key_points to get it.' },
+    { name: 'Statistic', text: fig ? `${endSentence(capFirst(shortenClauses(fig, 150)))} Use it as the opening line, and name where the figure comes from.` : 'No figure was given in key_points, so there is no statistic hook. Add one figure you can source to key_points to get it.' },
     { name: 'Story', text: v ? `Open with a week in the life of ${aRole(v.buyerRoles[0])}: what they check first, and what goes wrong. Give one real moment in key_points to have it written out.` : 'Open with one real moment from a customer or from your own week. Give it in key_points to have it written out.' },
     { name: 'Bold Statement', text: clause ? `Here is what most teams get wrong, and what to do instead: ${t}.` : `Here is what most teams get wrong about ${t}, and what to do instead.` }
   ];
@@ -335,21 +334,48 @@ const SECTION_FINISH: Record<string, string[]> = {
 };
 
 const MAX_SECTIONS = 6;
-function generateBodyContent(keyPoints: string[], config: { depth: string; length: string; focus: string }, suggestedType: string, v: Vertical | null, type: string, label: string): string {
-  const finish = SECTION_FINISH[type] || SECTION_FINISH.educational;
-  let content = `*Writing note: ${DEPTH_NOTE[config.depth] || DEPTH_NOTE.accessible}*
+// What the reader is asked to do at the end of a section, by newsletter type.
+const ACTION: Record<string, ((metric: string) => string)[]> = {
+  educational: [
+    (m) => `This week: check how your team answers it, and write down where you stand${m ? ` on ${m}` : ''}.`,
+    (m) => `Next step: ask the person closest to the work for their answer, and compare it with yours${m ? ` on ${m}` : ''}.`,
+    (m) => `Before you move on: pick one example from last month that shows it${m ? `, and note what it did to ${m}` : ''}.`
+  ],
+  product_update: [
+    (m) => `Try it this week and see what changes${m ? ` in ${m}` : ''}.`,
+    (m) => `Start with one team and compare before and after${m ? ` on ${m}` : ''}.`
+  ],
+  industry_news: [
+    (m) => `What to do: decide whether this changes your plan${m ? ` for ${m}` : ''}.`,
+    (m) => `Watch for it next quarter${m ? ` in ${m}` : ''}, and note who in your team owns the answer.`
+  ],
+  thought_leadership: [
+    (m) => `What to do differently: take it to your next review${m ? ` and put ${m} next to it` : ''}.`,
+    (m) => `A challenge for this week: argue the opposite view in your team meeting${m ? `, and see what it does to ${m}` : ''}.`,
+    (m) => `Test it on one live case${m ? `, and write down what happens to ${m}` : ''}.`
+  ],
+  curated_links: [
+    (m) => `Why it is worth your time: it speaks to${m ? ` ${m}` : ' your own work'}.`,
+    (m) => `Read it with${m ? ` ${m}` : ' one live problem'} in mind.`
+  ]
+};
+function generateBodyContent(keyPoints: string[], config: { depth: string; length: string; focus: string }, suggestedType: string, v: Vertical | null, type: string, label: string, field: string): string {
+  const acts = ACTION[type] || ACTION.educational;
+  const shown = keyPoints.slice(0, MAX_SECTIONS);
+  let content = `This issue looks at ${shown.length} ${shown.length === 1 ? 'point' : 'points'} on ${label}. Each point ends with something you can do this week.
 
 `;
-  const shown = keyPoints.slice(0, MAX_SECTIONS);
   shown.forEach((point, index) => {
-    const figure = /\d/.test(point);
+    const figure = FIGURE.test(point);
     const heading = shortenClauses(point, 110);
     const full = endSentence(capFirst(point));
+    const metric = v ? v.metrics[index % v.metrics.length] : '';
+    const where = field || 'this field';
     content += `### ${index + 1}. ${cap(heading)}
 
-${full === `${cap(heading)}.` ? '' : `${full}\n\n`}${v ? `Ask your reader: "${v.discovery[index % v.discovery.length]}"\n\n` : ''}${figure ? `*This point holds a figure. Name where it comes from before the issue goes out.*\n\n` : ''}*To finish this section: ${finish[index % finish.length]}.*
+${full === `${cap(heading)}.` ? '' : `${full} `}${v ? `For readers in ${where}, this shows up in ${metric}. A fair test: "${v.discovery[index % v.discovery.length]}" ` : 'Put your own numbers next to this point before you decide what to do about it. '}${acts[index % acts.length](metric)}
 
-`;
+${figure ? `*This point holds a figure. Name where it comes from before the issue goes out.*\n\n` : ''}`;
   });
   if (keyPoints.length > shown.length) {
     content += `### More points from your list

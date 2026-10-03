@@ -73,7 +73,7 @@ export function splitList(raw: unknown): string[] {
   for (const p of parts) {
     const prevLast = merged.length ? (merged[merged.length - 1].split(/\s+/).pop() || '') : '';
     // a short capitalised fragment after an item that ends in an acronym or place ("across the US; UK; EU") continues that list
-    const placeList = merged.length > 0 && p.split(/\s+/).length <= 3 && /^[A-Z]/.test(p) && !/\d/.test(p) && /^[A-Z]{2,5}[,.]?$/.test(prevLast);
+    const placeList = merged.length > 0 && p.split(/\s+/).length <= 3 && /^[A-Z]/.test(p) && !/\d/.test(p) && (/^[A-Z]{2,5}[,.]?$/.test(prevLast) || /^[A-Z][a-z]+$/.test(prevLast));
     if (merged.length && (JOINER.test(p) || placeList)) merged[merged.length - 1] += ', ' + p;
     else merged.push(p);
   }
@@ -84,7 +84,17 @@ export function splitList(raw: unknown): string[] {
     while (i < merged.length - 1 && !/\d/.test(cur) && ((cur.split(/\s+/).length <= 2 && /^[a-z]/.test(cur)) || /^[A-Z]{2,5}$/.test(cur))) { i++; cur += ', ' + merged[i]; }
     out.push(cur);
   }
-  return out;
+  // A list that was broken at both commas and semicolons ("a, b; c, d; with e") shows it by a fragment that opens with a joining word.
+  // Then a short fragment that starts with a small letter continues the item before it, up to 260 characters, so no heading is a stump.
+  const broken = parts.slice(1).some((x) => JOINER.test(x));
+  if (!broken) return out;
+  const welded: string[] = [];
+  for (const cur of out) {
+    const prev = welded[welded.length - 1];
+    if (prev !== undefined && /^[a-z]/.test(cur) && cur.split(/\s+/).length < 8 && !/[.!?]$/.test(prev) && prev.length + cur.length < 260) welded[welded.length - 1] = `${prev}, ${cur}`;
+    else welded.push(cur);
+  }
+  return welded;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------------
@@ -118,7 +128,7 @@ export function splitProof(raw: unknown): string[] {
     const marks = [...line.matchAll(LABEL_CLOSE)];
     if (marks.length === 0) {
       // an item that opens with a known opener ("Customer quote:", "Recognition", "Named a") starts a new item after a comma or a semicolon
-      const pieces = splitOutsideParens(line, /[,;]\s+(?=(?:Customer (?:quote|words)|Recognition|Named (?:a|as)|Featured in|Success story)\b)/);
+      const pieces = splitOutsideParens(line, /[,;]\s+(?=(?:Customer (?:quote|words)|Recognition|Named (?:a|as)|Featured in|Success story|[A-Z][A-Za-z]+ Market Recognition|[A-Z][A-Za-z-]+ Excellence Award|[A-Z][a-z]+(?:'s|’s) [A-Z]{2,})\b)/);
       for (const piece of pieces) out.push(...(pieces.length > 1 ? [piece.replace(/[,;]\s*$/, '')] : splitList(piece)));
       continue;
     }
@@ -134,11 +144,12 @@ export function splitProof(raw: unknown): string[] {
   // inside one chunk, "; Capital" outside brackets starts another item; "; 2,000+ man hours" continues the one before
   const items: string[] = [];
   for (const chunk of out) {
-    const raw = splitOutsideParens(chunk, /;\s+(?=[A-Z0-9$₹€£"“])/);
+    const raw = splitOutsideParens(chunk, /(?:;\s+(?=[A-Z0-9$₹€£"“])|[,;]\s+(?=(?:Customer (?:quote|words)|Recognition|Named (?:a|as)|Featured in|Success story|[A-Z][A-Za-z]+ Market Recognition|[A-Z][A-Za-z-]+ Excellence Award|[A-Z][a-z]+(?:'s|’s) [A-Z]{2,})\b)|,\s+(?=[A-Z][a-z]+(?:\s[A-Z][a-z]+){0,3}\s(?:automates|cuts|reduced|reduces|saved|saves|achieved|launched|expanded|improves|boosts|grew|consolidated|digiti[sz]ed|validates|optimi[sz]es|secured|helps|delivers|moved)\b))/);
     // a piece shorter than 60 characters is the start of the item that follows ("Success story: sensitive credentials exposed; Acme secured ...")
     const pieces: string[] = [];
     for (const piece of raw) {
-      if (pieces.length && pieces[pieces.length - 1].length < 60) pieces[pieces.length - 1] += ', ' + piece;
+      const bare = piece.replace(/\([^)]*\)\s*$/, '').trim();
+      if (pieces.length && (pieces[pieces.length - 1].length < 60 || (/^\d/.test(piece) && bare.split(/\s+/).length < 5))) pieces[pieces.length - 1] += ', ' + piece;
       else pieces.push(piece);
     }
     for (const piece of pieces.length ? pieces : [chunk]) items.push(piece.replace(/;\s+(?=[\d a-z])/g, ', '));
@@ -154,7 +165,7 @@ export function parseProof(raw: unknown): ProofItem[] {
   return splitProof(raw).map((item) => {
     const m = LABEL_END.exec(item);
     const label = m ? m[1].trim() : '';
-    const text = (m ? item.slice(0, m.index) : item).trim().replace(/[;,.\s]+$/, '');
+    const text = (m ? item.slice(0, m.index) : item).trim().replace(/[;,.\s]+$/, '').replace(/\s+on the (?:home|about|pricing|product|customers?) page\b/gi, '').replace(/^Recognition listed:?\s*/i, 'Recognition: ');
     const l = label.toLowerCase();
     const figure = FIGURE.test(text);
     let kind: ProofKind;
@@ -191,11 +202,16 @@ export function unpackTopic(topic: string): TopicParts {
   let company = '';
   if (m) { audience = m[1].trim(); problem = m[2].trim(); company = (m[3] || '').trim(); }
   const source = problem || t;
-  const short = t.length <= 80;
+  const short = t.length <= 90;
   let label = short ? t : '';
   if (!label) {
-    const first = source.split(/[,;:]| \(| while | with /i)[0].trim();
-    label = first.split(/\s+/).length >= 2 && first.length <= 90 ? first : clipAtWord(source, 80);
+    // the first clause of the problem, whole; a long one is cut before its verb ("... means", "... is like") when what stays is a phrase
+    const first = source.split(/[,;:]| \(/)[0].trim();
+    const head = first.split(/\s+(?:means|is like|are|is|combine|combines|run|runs|rely|relies|chain|chains)\s+/i)[0].trim();
+    if (first.split(/\s+/).length >= 2 && first.length <= 70) label = first;
+    else if (head.split(/\s+/).length >= 3 && head.length <= 90) label = head;
+    else if (first.length <= 110) label = first;
+    else label = shortenClauses(source, 110);
   }
   return { audience, problem, company, label: label.replace(/[.!?]+$/, ''), short };
 }
@@ -235,7 +251,7 @@ export function shortenClauses(sentence: string, max: number): string {
     const c = t[i];
     if (c === '(') depth++; else if (c === ')') depth = Math.max(0, depth - 1);
     if (depth > 0) continue;
-    if ((c === ';' || (c === ':' && /\s/.test(t[i + 1] || ''))) ) cuts.push(i);
+    if (c === ';' || (c === ':' && /\s/.test(t[i + 1] || '') && t.slice(0, i).split(/\s+/).length >= 6)) cuts.push(i);
     else if (c === ',' && /\s/.test(t[i + 1] || '') && !/\d$/.test(t.slice(0, i))) {
       const prevSep = Math.max(t.lastIndexOf(',', i - 1), t.lastIndexOf(';', i - 1), t.lastIndexOf(': ', i - 1));
       const before = t.slice(prevSep + 1, i).split(/\s+/).filter(Boolean).length;
@@ -246,9 +262,9 @@ export function shortenClauses(sentence: string, max: number): string {
   }
   let best = -1;
   for (const c of cuts) if (c <= max) best = c;
-  if (best < 0) best = cuts.length ? cuts[0] : Math.min(t.length, max);
-  // a first clause that is far too long is cut at a word boundary and marked with "..." (a pasted document without punctuation)
-  if (best > max * 1.5) return clipAtWord(t, max) + '...';
+  if (best < 0 && cuts.length && cuts[0] <= max * 1.5) best = cuts[0];
+  // no clause boundary within reach: cut at a word and say so with "..." (a pasted text without punctuation)
+  if (best < 0) return clipAtWord(t, max) + '...';
   return t.slice(0, best).replace(/[,;:\s]+$/, '');
 }
 
@@ -299,7 +315,8 @@ export function headlineSubject(topic: string, max = 90): string {
   if (t.length <= max) return t;
   const cut = splitOutsideParens(t, /,\s+(?:described as|which|that|with|including|for|so|where)\b|[;:]\s+/)[0];
   if (cut && cut.split(/\s+/).length >= 3 && cut.length <= max) return cut;
-  return shortenClauses(t, max);
+  const sc = shortenClauses(t, max);
+  return /\.\.\.$/.test(sc) ? clipAtWord(t, max) : sc;
 }
 
 // A customer or company name that names nobody ("a Lanehop customer (Retail)", "contact at a Branchwire customer (name not given)").
@@ -325,19 +342,31 @@ export function splitObjections(raw: unknown): string[] {
 export function productParts(product: string): { name: string; facts: string[]; description: string } {
   const text = fixNumbers(product.trim().replace(/\s+/g, ' '));
   const segs = splitOutsideParens(text, /,\s+|:\s+|;\s+/);
-  const first = segs[0] || text;
-  const short = first.split(/\s+/).length <= 5 && first.length <= 60;
-  const name = short ? first : 'the product';
-  const rest = short ? text.slice(first.length).replace(/^[,:;\s]+/, '') : text;
-  const facts = splitOutsideParens(rest, /,\s+|:\s+|;\s+/).map((x) => x.replace(/^(?:and|an?|the)\s+/i, '').trim()).filter((x) => x.length >= 3);
-  return { name, facts, description: rest };
+  let first = segs[0] || text;
+  // "Sonata managed services from Sonata Software" is named by what comes before "from"
+  const from = /^(.+?)\s+(?:from|by|of)\s+[A-Z]/.exec(first);
+  if (first.split(/\s+/).length > 5 && from) first = from[1];
+  const words = first.split(/\s+/);
+  const name = words.length <= 5 && first.length <= 60 ? first : words.slice(0, 4).join(' ');
+  const rest = text.slice(text.indexOf(segs[0]) + segs[0].length).replace(/^[,:;\s]+/, '');
+  const facts = splitOutsideParens(rest || text, /,\s+|:\s+|;\s+/).map((x) => x.replace(/^(?:and|an?|the)\s+/i, '').trim()).filter((x) => x.length >= 3);
+  return { name, facts, description: rest || text };
 }
 
 // "the page claims X" is a note about where the point came from. In a point for a reader it becomes the claim with its source label:
 // "X (page claim)". A point that already carries the label is left as it is.
 export function tidyPoint(p: string): string {
   const m = /^the (?:page|site|website) claims\s+(?:that\s+)?(.+)$/i.exec(p.trim());
-  if (!m) return p.trim();
-  const rest = m[1].trim();
+  if (!m) return p.trim().replace(/\s+on the (?:home|about|pricing|product) page\b/gi, '');
+  const rest = m[1].trim().replace(/\s+on the (?:home|about|pricing|product) page\b/gi, '');
   return /\(page claim\)/i.test(rest) ? rest : `${rest.charAt(0).toUpperCase()}${rest.slice(1)} (page claim)`;
+}
+
+// A sector answer pattern is advice written as an instruction ("Show the gap between ..."). In a script or an article it reads as
+// "The answer is to show the gap between ..." — the same words, in a sentence the author can say.
+export function asAnswer(response: string): string {
+  const r = response.trim();
+  const first = r.split(/\s+/)[0] || '';
+  const body = /^(?:Show|Ask|Offer|Compare|Name|Plan|Map|Tie|Propose|Prepare|Align|Start|Agree|State|Bring|Use|Give|Explain|Walk)$/.test(first) ? `The answer is to ${r.charAt(0).toLowerCase()}${r.slice(1)}` : r;
+  return /[.!?]$/.test(body) ? body : `${body}.`;
 }

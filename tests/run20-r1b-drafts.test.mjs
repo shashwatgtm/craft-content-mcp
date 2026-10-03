@@ -62,7 +62,7 @@ test("case_study_generator: results are sorted, recognition and company-wide cou
   assert.match(t, /Recognition, kept out of the outcomes/);
   assert.match(t, /Company-wide claims, kept out of the outcomes/);
   assert.match(t, /Whose results these are/, "a generic customer name is named as such");
-  assert.match(t, /^## Northfield Stores cut outage hours by 40%/m, "the headline is the first result with a figure");
+  assert.match(t, /^## Branchwire managed SD-WAN in Retail: what customers report$/m, "an unnamed customer gets no one company's result as its headline");
   noBrackets(t, "case study");
   assert.doesNotMatch(t, /\[Add|\[CTA/);
   assert.doesNotMatch(t, /a Branchwire customer \(Retail\) \(Retail\)/);
@@ -185,7 +185,7 @@ test("testimonial_capture: a generic company gets no one else's result in the em
   assert.doesNotMatch(email, /Northfield|40%|Leader|1 million/);
   assert.match(email, /Branchwire/);
   assert.doesNotMatch(t, /your your|share your \w+ experience\?\n\nHello/);
-  assert.match(t, /### Questions for a Head of Product/);
+  assert.match(t, /### Questions for this role \(Head of Product\)/);
   assert.match(t, /pricing and packaging/);
   noBrackets(t, "testimonial");
 });
@@ -194,7 +194,7 @@ test("testimonial_capture: a named company's own results go in the email, each w
   const email = t.split("## Request Email")[1].split("## Interview Questions")[0];
   assert.match(email, /Hi Asha,/);
   assert.match(email, /- Harbor Retail cut open critical exposures from 48 to 9 in six weeks \(customer quote\)\./);
-  assert.match(t, /### Questions for a Head of Security Operations\n\n1\. What did your team see in the first weeks/);
+  assert.match(t, /### Questions for this role \(Head of Security Operations\)\n\n1\. What did your team see in the first weeks/);
 });
 
 // ---------------------------------------------------------------------------------------------------------------------------
@@ -304,4 +304,101 @@ test("AI native notes: neutral for a quant product, the investment profile for a
   assert.doesNotMatch(money, /resolution|month-end|close the books|handling time/i);
   const support = await call("thought_leadership_series", { topic: "AI agents that resolve support tickets", your_take: "Measure the resolution rate on your own tickets", target_reader: "Heads of customer support", num_articles: 1 });
   assert.match(support, /automated resolution rate/);
+});
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// Round 2 (fresh judges, 72 answers at 2.93): the causes they named
+// ---------------------------------------------------------------------------------------------------------------------------
+test("round 2, newsletter: a list broken at commas and semicolons is welded into whole points, a label is never cut, a preview is never cut, a figure-less point gives no statistic hook", async () => {
+  const t = await call("newsletter_builder", {
+    topic: "How asset teams can tackle finding the best opportunities means analyzing datasets larger than most can handle, while static factors rely on numeric only inputs, from Lanehop",
+    key_points: "most teams run the lifecycle as disconnected projects with separate tools; teams and sources of truth, so specs; collections and docs drift apart; governance sits outside the workflow; and discovery happens in a thread, high productivity for developers; great quality for APIs",
+    cta_goal: "book a conversation about Lanehop", newsletter_type: "thought_leadership",
+  });
+  assert.doesNotMatch(t, /larger than:|larger than most can:/);
+  assert.doesNotMatch(t, /### \d\. (?:Teams and sources of truth, so specs|Collections and docs drift apart)\n/);
+  assert.match(t, /Most teams run the lifecycle as disconnected projects with separate tools, teams and sources of truth, so specs, collections and docs drift apart\./);
+  for (const m of t.matchAll(/- Preview text: (.+)/g)) assert.doesNotMatch(m[1], /\b\w{1,2}$/, m[1]);
+  assert.match(t, /### Hook 2: Statistic\n> No figure was given/);
+  assert.doesNotMatch(t, /To finish this section|Ask your reader/);
+  assert.match(t, /This issue looks at \d points on /);
+});
+test("round 2, webinar: every content block teaches something, a CFO of a billing product reads finance measures, the pasted source note is dropped", async () => {
+  const t = await call("webinar_script", {
+    topic: "How finance teams can address billing that breaks when pricing changes deal by deal, with Spendrill Billing", target_audience: "CFO at B2B SaaS and software", webinar_type: "educational", duration: "45_min",
+    key_takeaways: "launch and change pricing in hours; customers on the home page say they cut unpaid invoices (customer words); quoting and revenue recognition on one system; proration that does not break",
+  });
+  const blocks = [...t.matchAll(/### Main Content Block \d \(\d+ min\)[\s\S]*?(?=### )/g)].map((m) => m[0]);
+  assert.equal(blocks.length, 3);
+  for (const b of blocks) assert.doesNotMatch(b, /no takeaway of its own/);
+  assert.doesNotMatch(t, /activation rate|time to value|net revenue retention/);
+  assert.match(t, /days to close the books|reconciliation effort|approval cycle time/);
+  assert.doesNotMatch(t, /on the home page/);
+  assert.match(t, /The answer is to /);
+});
+test("round 2, repurposer: no scaffolding, no cut subject lines, a story title is not called a result, quote cards hold real quotes", async () => {
+  const src = `routing software for retailers: what to do about slow dispatch planning
+Planners are asked to deliver: plan routes faster and keep every delivery promise.
+At Lanehop we built Lanehop around this: route planning across 180 variables, dispatch, hub operations and track and trace, with an API for the planner's own tools.
+Proof: Harbor Retail cut dispatch planning time by 66% (case study title); Customer quote: launched Lanehop in 24 of our depots in under two months (customer quote)`;
+  const t = await call("content_repurposer", { source_content: src, source_type: "blog_post", key_message: "Lanehop: plan routes faster" });
+  assert.doesNotMatch(t, /The audience is asked to deliver|At Lanehop we built Lanehop around this/);
+  assert.match(t, /What Lanehop built: route planning across 180 variables/);
+  assert.doesNotMatch(t, /Result: Harbor Retail cut dispatch planning time by 66% \(case study title\)/);
+  const subjects = t.split("**Subject Line Options:**")[1].split("**Email Body:**")[0];
+  assert.doesNotMatch(subjects, /\b(?:and|the|of|to|a)$/m);
+  const cards = t.split("**Quote Card ").slice(1).map((c) => c.split("- Background")[0]);
+  for (const c of cards) assert.doesNotMatch(c, /What Lanehop built|The problem/);
+});
+test("round 2, thought leadership: unlabeled proof is split, no bare story title is a worked example, headlines are whole, sections are sentences", async () => {
+  const t = await call("thought_leadership_series", {
+    topic: "sales force automation and distributor management software for consumer goods route to market", your_take: "Lanehop's view on field sales: AI layered over sales force automation, predictive execution and integration with ERPs",
+    target_reader: "Heads of sales operations", proof_points: "Customer quote: expanded from 500 to 4,000 trucks while improving fleet efficiency by 24%, Customer quote: launched Lanehop in 24 depots in two months, Lanehop Market Recognition From Example Analyst For 7 Years (home page)",
+    num_articles: 3, article_type: "framework",
+  });
+  assert.match(t, /\n1\. Customer quote: expanded from 500 to 4,000 trucks/);
+  assert.match(t, /\n2\. Customer quote: launched Lanehop in 24 depots in two months/);
+  assert.match(t, /\n3\. Lanehop Market Recognition From Example Analyst For 7 Years/);
+  for (const m of t.matchAll(/\*\*Headline:\*\* ([^\n]+)/g)) assert.doesNotMatch(m[1], /\.\.\.|\bTo$|Marke\b/);
+  assert.doesNotMatch(t, /Say what|Set the idea out|Turn the position into steps|Open with|Close with/);
+  assert.match(t, /The argument of this piece is that "/);
+});
+test("round 2, case study: an unnamed customer gets no one company's result as its headline or snippet, and a narrative line is not offered as a customer quote", async () => {
+  const t = await call("case_study_generator", { ...CS, results: "Northfield Stores cut outage hours by 40% across 400 branches (case study); Harbor Retail consolidated its network under one partner (customer quote); Harbor Retail CIO: it changed how we run every site (customer quote)" });
+  assert.match(t, /^## Branchwire managed SD-WAN in Retail: what customers report$/m);
+  assert.doesNotMatch(t.split("## Distribution Formats")[1], /^Quick success story/m);
+  const pull = t.split("## In Their Words")[1].split("---")[0];
+  assert.doesNotMatch(pull, /consolidated its network/);
+  assert.match(pull, /it changed how we run every site/);
+});
+test("round 2, testimonial: the tool's own notes are not inside the email, the role is not woven into a sentence, a missing sector gets questions", async () => {
+  const t = await call("testimonial_capture", { customer_name: "contact at a Cloudmoat customer (name not given)", customer_company: "a Cloudmoat customer (Financial services)", customer_role: "analysts in SOC and security operations", success_story: "Harbor Retail cut open critical exposures from 48 to 9 (customer quote)", testimonial_type: "written_quote" });
+  const email = t.split("## Request Email")[1].split("*Notes for you")[0];
+  assert.doesNotMatch(email, /assumed|Example figure|analysts in SOC/);
+  assert.match(t, /\*Notes for you, not part of the email/);
+});
+test("round 2, sales: a value proposition answers the objection it fits, the product keeps its name, a certification answers a security objection", async () => {
+  const t = await call("sales_enablement_content", {
+    product: "Lanehop managed routing from Lanehop Software, modernization services: planning, dispatch, hub operations", target_persona: "CIO at BFSI",
+    proof_points: "Harbor Retail cut dispatch time by 66% (case study)", common_objections: "Will it work without a mobile network in remote areas?, Is it secure?",
+    value_props: "works offline and syncs when connected; ISO27001 and SOC2 certified (page claims)", sales_stage: "discovery",
+  });
+  assert.doesNotMatch(t, /Subject: the product/);
+  assert.match(t, /Subject: Lanehop managed routing next steps/);
+  assert.match(t, /your value proposition does: "works offline and syncs when connected"/);
+  assert.match(t, /your value proposition does: "ISO27001 and SOC2 certified \(page claims\)"/);
+});
+test("round 2, improver: a story title is not the strongest proof, two buzzwords do not get the same replacement, an unsourced ranking is a finding, the CTA count is exact", async () => {
+  const email = "Subject: Quick question about dispatch\nHi,\nTeams at retailers lose hours to manual route planning every week and every outage turns into a long call.\nLanehop simplifies each step of dispatch and streamlines collaboration between planners and drivers across all regions we serve today.\nHarbor Retail cuts planning time by half (case study title); Named a Leader in the 2026 Example Wave for routing.\nWould you be open to a 20-minute call? Or reply with a time that suits you.\nThanks,\nThe Lanehop team";
+  const t = await call("craft_content_improver", { content: email, content_type: "sales_email", audience: "COO at retailers" });
+  assert.doesNotMatch(t, /Your strongest proof is "Harbor Retail cuts planning time by half \(case study title\)"/);
+  assert.doesNotMatch(t, /simplifies each step of dispatch and simplifies collaboration/);
+  assert.match(t, /A ranking or award is stated without a source/);
+  assert.match(t, /- \[ \] Single clear CTA: 2 asks found, keep one/);
+});
+test("round 2, investment seller: the investment profile replaces the AI support notes", async () => {
+  const t = await call("thought_leadership_series", { topic: "AI-driven investment strategies for asset allocators", your_take: "Allocators should ask how a signal is explained", target_reader: "CIOs at pension funds", num_articles: 1 });
+  assert.match(t, /investment management/);
+  assert.match(t, /tracking error|drawdown/);
+  assert.doesNotMatch(t, /resolution|workflow being automated|Head of Customer Experience/);
 });

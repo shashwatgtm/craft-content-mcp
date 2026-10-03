@@ -437,6 +437,11 @@ export function analyzeContent(content: string, contentType: string, goal: strin
     note('structure', 'merge-field', 2, `Unfilled merge field or placeholder: ${merge.slice(0, 4).join(', ')}`, 'Fill every merge field and placeholder before sending, or check that your email tool fills it.', true);
   }
 
+  const recog = distinct(content, /\b(?:Best [A-Za-z&\- ]{3,40}(?:platform|solution|tool)|Leader in [A-Za-z&\- ]{3,50}|Named a [A-Za-z ]{3,30}|Gartner[A-Za-z ]{0,30}|Forrester[A-Za-z ]{0,30}|award(?:ed)? [A-Za-z ]{3,30})/g);
+  if (recog.length > 0 && !/\((?:[^()]*(?:report|source|analyst)[^()]*)\)/i.test(content)) {
+    note('engagement', 'recognition-claim', 1, `A ranking or award is stated without a source a reader can check: "${clipEcho(recog[0], 100)}"${recog.length > 1 ? ` and ${recog.length - 1} more` : ''}`, 'Name the report and the year, or take the line out.', true);
+  }
+
   // ENGAGEMENT: question, "you" language, a figure, superlatives, claims about the reader, the opening sentence
   const questionCount = (content.match(/\?/g) || []).length;
   if (questionCount === 0 && contentType !== 'press_release') {
@@ -553,16 +558,21 @@ const NOUN_EDITS: [RegExp, string, string][] = [
   [/\bsynerg(y|ies)\b/gi, 'collaboration', 'collaboration'],
   [/\bparadigms?\b/gi, 'approach', 'approaches'],
 ];
+const ALT: Record<string, [string, string, string, string]> = { simplify: ['ease', 'eases', 'eased', 'easing'], improve: ['raise', 'raises', 'raised', 'raising'], use: ['apply', 'applies', 'applied', 'applying'] };
 function keepCase(from: string, to: string): string {
   return from[0] === from[0].toUpperCase() && from[0] !== from[0].toLowerCase() ? to.charAt(0).toUpperCase() + to.slice(1) : to;
 }
-function editSentence(s: string): string {
+export function editSentence(s: string): string {
   let t = s;
   t = t.replace(new RegExp(`(^|[.!?]\\s+)${HYPE_ADJ}\\s+(\\w)`, 'gi'), (_m, pre: string, ch: string) => pre + ch.toUpperCase());
   t = t.replace(new RegExp(`\\b${HYPE_ADJ}\\s+`, 'gi'), '');
   for (const [re, forms] of VERB_EDITS) {
+    let used = 0;
     t = t.replace(re, (m: string, suffix: string | undefined) => {
-      const f = suffix === 'ing' ? forms[3] : suffix === 'ed' ? forms[2] : suffix === 's' || suffix === 'es' ? forms[1] : forms[0];
+      // a plain word is never used twice in one sentence for two different buzzwords: the second one gets the alternative verb
+      let f = suffix === 'ing' ? forms[3] : suffix === 'ed' ? forms[2] : suffix === 's' || suffix === 'es' ? forms[1] : forms[0];
+      if (new RegExp('\\b' + f + '\\b', 'i').test(t.replace(m, '')) && ALT[forms[0]]) { const alt = ALT[forms[0]]; f = suffix === 'ing' ? alt[3] : suffix === 'ed' ? alt[2] : suffix === 's' || suffix === 'es' ? alt[1] : alt[0]; }
+      used++;
       return keepCase(m, f);
     });
   }
@@ -580,7 +590,7 @@ export function generateImprovedVersion(content: string, _analysis?: ContentAnal
   const text = content.split('\n').map((line) => {
     if (!line.trim() || /^\s*subject:/i.test(line)) return line;
     return sentencesOf(line).map((sentence) => {
-      const after = editSentence(sentence);
+      const after = /\((?:[^()]*\btitle|customer quote|page claim|case study)[^()]*\)/i.test(sentence) ? sentence : editSentence(sentence);
       if (after !== sentence) edits.push({ before: sentence.trim(), after: after.trim() });
       return after;
     }).join(' ');

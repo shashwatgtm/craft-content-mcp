@@ -33,17 +33,29 @@ const PROOF_THAT_WOULD: Record<ObjectionKind, string> = {
   other: 'a result from a similar customer, stated with its figure and period'
 };
 
-const GENERIC = new Set(['platform', 'management', 'system', 'systems', 'solution', 'solutions', 'services', 'service', 'software', 'business', 'digital', 'enterprise', 'enterprises', 'tools', 'based', 'using', 'across', 'their', 'which', 'where', 'these', 'those', 'about', 'customer', 'customers', 'companies', 'company', 'teams', 'product', 'would', 'should', 'could', 'other', 'there', 'support']);
+const GENERIC = new Set(['platform', 'management', 'system', 'systems', 'solution', 'solutions', 'services', 'service', 'software', 'business', 'digital', 'enterprise', 'enterprises', 'tools', 'based', 'using', 'across', 'their', 'which', 'where', 'these', 'those', 'about', 'customer', 'customers', 'companies', 'company', 'teams', 'product', 'would', 'should', 'could', 'other', 'there', 'support', 'trade', 'types']);
 const stem = (w: string) => w.replace(/(?:ing|ed|es|s)$/, '');
 const SHORT_STOP = new Set(['that', 'with', 'from', 'have', 'this', 'what', 'does', 'they', 'your', 'will', 'take', 'long', 'time', 'when', 'than', 'then', 'them', 'each', 'into', 'over', 'such', 'only', 'also', 'more', 'most', 'much', 'many', 'very', 'been', 'were', 'whom', 'whose', 'work', 'works', 'help', 'helps', 'just', 'like', 'make', 'made', 'need', 'needs', 'want', 'wants', 'real', 'full', 'ever', 'both', 'same', 'some', 'tool', 'ours', 'used', 'uses', 'user']);
+// Groups of words that mean the same thing in an objection and in a value proposition ("without a mobile network" and "works offline").
+const SYNONYMS: [string, RegExp][] = [
+  ['#offline', /offline|without (?:a )?(?:mobile )?network|no network|network coverage|syncs? when connected|remote areas?|low connectivity/i],
+  ['#trade', /types? of trade|trade types?|general trade|modern trade|rural|van sales|hybrid sales/i],
+  ['#integration', /integrat|\berp\b|\bdms\b|\bapi\b|plugs? into|connects? to|\bsync/i],
+  ['#setup', /set ?up|implement|go[- ]live|live in|onboard|how long|few days|few weeks|in weeks/i],
+  ['#security', /secur|complian|certif|iso ?\d|soc ?\d|pci|cert-in|audit|privacy|encrypt/i],
+  ['#price', /\bpric|\bcost|cheap|budget|expensive/i],
+  ['#uptime', /uptime|availab|\bsla\b|outage/i]
+];
 function wordSet(s: string): Set<string> {
-  return new Set((s.toLowerCase().match(/[a-z0-9]{4,}/g) || []).filter((w) => !GENERIC.has(w) && !SHORT_STOP.has(w)).map(stem));
+  const out = new Set((s.toLowerCase().match(/[a-z0-9]{4,}/g) || []).filter((w) => !GENERIC.has(w) && !SHORT_STOP.has(w)).map(stem));
+  for (const [tag, re] of SYNONYMS) if (re.test(s)) out.add(tag);
+  return out;
 }
-// The candidates that share at least one distinctive word with the objection, best first.
+// The candidates that share at least one distinctive word, or one meaning, with the objection, best first.
 function relevant(objection: string, candidates: string[]): string[] {
   const a = wordSet(objection);
   return candidates
-    .map((c) => ({ c, n: [...wordSet(c)].filter((w) => a.has(w)).length }))
+    .map((c) => ({ c, n: [...wordSet(c)].reduce((t, w) => t + (a.has(w) ? (w.startsWith('#') ? 2 : 1) : 0), 0) }))
     .filter((x) => x.n > 0)
     .sort((x, y) => y.n - x.n)
     .map((x) => x.c);
@@ -365,7 +377,8 @@ function generateObjectionHandler(
   if (valueMatch && valueMatch !== proof) usedValue.add(valueMatch);
   const proofSentence = proof ? asSentence(proof) : '';
   const factText = relevant(objection, facts).slice(0, 3);
-  const pattern = kind === 'other' && isQuestion && !(v && v.objections.some((o) => relevant(objection, [o.objection]).length > 0))
+  const differs = /\bdiffer|\bvs\.?\b|compared? (?:to|with)|better than/i.test(objection);
+  const pattern = differs && kind === 'other' ? 'Answer on the one point where the two differ, using the facts from your product description above, then ask what the other option covers for this buyer today.' : kind === 'other' && isQuestion && !(v && v.objections.some((o) => relevant(objection, [o.objection]).length > 0))
     ? 'Answer the question directly in one or two sentences, using the facts from your product description above; then ask what is behind it for this buyer.'
     : answerFor(objection, v);
 
@@ -423,13 +436,13 @@ function generateObjectionHandler(
   };
   const k = kinds[kind];
   const factSentence = factText.length ? `From what we offer: ${factText.join('; ')}.` : '';
-  const valueSentence = valueMatch && valueMatch !== proof ? asSentence(valueMatch) : '';
+  const valueSentence = valueMatch && valueMatch !== proof ? `Our answer: ${asSentence(valueMatch.charAt(0).toUpperCase() + valueMatch.slice(1))}` : '';
   const fullScript = `I hear you: ${qs(objection)}. ${k.ack} ${k.reframe} ${factSentence} ${valueSentence} ${proofSentence} ${k.close}`.replace(/\s+/g, ' ').trim();
   return {
     label: KIND_LABEL[kind],
     acknowledge: k.ack,
     reframe: k.reframe,
-    proof: proof || `None of your proof points answers this objection. The proof that would: ${PROOF_THAT_WOULD[kind]}.`,
+    proof: proof || (valueMatch ? `None of your proof points answers this objection; your value proposition does: "${valueMatch}". Lead with it.` : `None of your proof points answers this objection. The proof that would: ${PROOF_THAT_WOULD[kind]}.`),
     facts: factText.join('; '),
     pattern,
     bridge: valueMatch && valueMatch !== proof ? valueMatch : '',

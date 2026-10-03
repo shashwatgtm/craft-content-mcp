@@ -1,4 +1,4 @@
-import { analyzeContent, generateImprovedVersion, toneCheck, annotateText, bodyOf, countWords, avgWordsPerSentence, calculateReadability, ContentAnalysis, SUGGESTION_FOOTER, clipEcho, ASK } from './utils.js';
+import { analyzeContent, generateImprovedVersion, editSentence, toneCheck, annotateText, bodyOf, countWords, avgWordsPerSentence, calculateReadability, ContentAnalysis, SUGGESTION_FOOTER, clipEcho, ASK } from './utils.js';
 import { readContext, audienceLine, sentencesOf } from './sector.ts';
 import { shortenClauses, clipAtWord, endSentence, fixNumbers, FIGURE } from './draft.ts';
 
@@ -40,7 +40,7 @@ export function generateContentImprover(args: {
   const tone = toneCheck(content, args.tone_preference);
   const emailLike = contentType === 'sales_email' || contentType === 'email';
   const shorter = emailLike && (wordCount > 120 || analysis.findings.some((f) => f.rule === 'subject-length' || f.rule === 'sentence-length' || f.rule === 'run-on')) ? shorterEmail(content) : null;
-  const ctx = readContext(undefined, { seller: [(content.split('\n').find((l) => l.trim()) || '').replace(/^\s*subject:\s*/i, '').slice(0, 250)], context: [content, args.goal], buyer: [args.audience] });
+  const ctx = readContext(undefined, { seller: [(content.split('\n').find((l) => l.trim()) || '').replace(/^\s*subject:\s*/i, '').slice(0, 250)], context: [content, args.goal], role: [args.audience], buyer: [args.audience] });
 
   // Create specific recommendations based on analysis: the findings that cost the most points first
   const priorityFixes = [...analysis.findings].sort((a, b) => b.penalty - a.penalty).slice(0, 6).map((f) => {
@@ -200,8 +200,9 @@ ${SUGGESTION_FOOTER}
 
 // Which of the sector's measures the text already names (a measure counts when one of its long words appears).
 function measuresNamed(content: string, metrics: string[]): string {
-  const lower = content.toLowerCase();
-  const named = metrics.filter((m) => m.toLowerCase().split(/\s+/).filter((w) => w.length >= 6).some((w) => lower.includes(w)));
+  // a measure counts as named only when every long word of it is in the text as a whole word
+  const words = new Set((content.toLowerCase().match(/[a-z]{3,}/g) || []));
+  const named = metrics.filter((m) => { const long = m.toLowerCase().split(/\s+/).filter((w) => w.length >= 5); return long.length > 0 && long.every((w) => words.has(w)); });
   return named.length
     ? `Your text already speaks to: ${named.join(', ')}.`
     : 'Your text names none of these measures. If you have a figure you can prove for one of them, put it in the first two sentences.';
@@ -215,7 +216,7 @@ function suggestOpening(content: string): string {
   const pieces = body.flatMap((s) => s.split(/;\s+/)).map((x) => x.trim()).filter(Boolean);
   const outcome = /\b(?:reduc\w+|cut|cuts|saved?|saves|improv\w+|increas\w+|grew|grow|boost\w*|achiev\w+|automat\w+|consolidat\w+|expanded|faster|from \d[\d.,]*%? to|resolved|fell|rose)\b/i;
   const fig = (x: string) => FIGURE.test(x) && !/\?\s*$/.test(x) && x.split(/\s+/).length >= 4;
-  const sc = (x: string) => (fig(x) ? 2 : -9) + (outcome.test(x) ? 1 : 0) + (/from \d[\d.,]*%? to|\d%|[$₹€£]\s?\d|lakhs?/i.test(x) ? 3 : 0) + (/customer|quote|case study/i.test(x) ? 2 : 0) + (/^(?:recognition|named|leader|featured)\b/i.test(x) ? -9 : 0);
+  const sc = (x: string) => (fig(x) ? 2 : -9) + (outcome.test(x) ? 1 : -9) + (/title\)\s*$/i.test(x) ? -9 : 0) + (/from \d[\d.,]*%? to|\d%|[$₹€£]\s?\d|lakhs?/i.test(x) ? 3 : 0) + (/customer|quote|case study/i.test(x) ? 2 : 0) + (/^(?:recognition|named|leader|featured)\b/i.test(x) ? -9 : 0);
   const proof = pieces.filter((x) => sc(x) > 0).sort((a, b) => sc(b) - sc(a))[0];
   if (!proof) return 'No opening can be built from this text without a fact from you. Add one specific result or one sourced observation about the reader\'s work, then lead with it and run this tool again.';
   const clean = shortenClauses(proof.replace(/[.!?]+$/, ''), 220);
@@ -240,7 +241,7 @@ function shorterEmail(content: string): { text: string; left: string[] } | null 
   const rest = sentences.filter((s) => s !== ask);
   const pieces = rest.flatMap((s) => s.split(/;\s+/)).map((x) => x.trim());
   const outcome = /\b(?:reduc\w+|cut|cuts|saved?|saves|improv\w+|increas\w+|grew|grow|boost\w*|achiev\w+|automat\w+|consolidat\w+|expanded|faster|resolved|fell|rose|from \d[\d.,]*%? to)\b/i;
-  const score = (x: string) => (FIGURE.test(x) ? 2 : -9) + (outcome.test(x) ? 1 : -9) + (/from \d[\d.,]*%? to|\d%|[$₹€£]\s?\d|lakhs?/i.test(x) ? 3 : 0) + (/customer|quote|case study/i.test(x) ? 2 : 0) + (/^(?:recognition|named|leader|featured)\b/i.test(x) ? -9 : 0);
+  const score = (x: string) => (FIGURE.test(x) ? 2 : -9) + (outcome.test(x) ? 1 : -9) + (/title\)\s*$/i.test(x) ? -9 : 0) + (/from \d[\d.,]*%? to|\d%|[$₹€£]\s?\d|lakhs?/i.test(x) ? 3 : 0) + (/customer|quote|case study/i.test(x) ? 2 : 0) + (/^(?:recognition|named|leader|featured)\b/i.test(x) ? -9 : 0);
   const proof = pieces.filter((x) => score(x) > 0).sort((a, b) => score(b) - score(a))[0];
   const opening = rest[0];
   const product = rest.find((s, i) => i > 0 && s !== proof && !(proof && s.includes(proof)));
@@ -265,7 +266,7 @@ function shorterEmail(content: string): { text: string; left: string[] } | null 
   out.push(...sign);
   for (const s of rest) if (!kept.includes(s)) for (const piece of s.split(/;\s+/)) if (piece !== proof && !kept.includes(piece)) left.push(`${clipAtWord(piece.replace(/\s+/g, ' '), 45)}${piece.length > 45 ? '...' : ''}`);
   if (proof && opening && !kept.includes(opening)) return null;
-  const text = out.join('\n');
+  const text = out.map((l, i) => (/^subject:/i.test(l) || l === greeting || sign.includes(l) ? l : editSentence(l))).join('\n');
   return countWords(text) < countWords(content) ? { text, left: left.slice(0, 6) } : null;
 }
 
@@ -355,7 +356,7 @@ function generateChecklist(contentType: string, goal: string, analysis: ContentA
     const sw = subject ? countWords(subject.replace(/^subject:\s*/i, '')) : 0;
     checks.push(!subject ? '[ ] Subject line: none found in the text' : sw <= 12 ? `Yes: Subject line short (${sw} words)` : `[ ] Subject line optimized: it is ${sw} words`);
     const asks = sentencesOf(bodyOf(content)).filter((s) => ASK.test(s)).length;
-    checks.push(asks === 0 ? '[ ] Single clear CTA: no ask was found' : asks <= 2 ? `Yes: Single clear CTA (${asks} ask found)` : `[ ] Single clear CTA: ${asks} asks found, keep one`);
+    checks.push(asks === 0 ? '[ ] Single clear CTA: no ask was found' : asks === 1 ? 'Yes: Single clear CTA (1 ask found)' : `[ ] Single clear CTA: ${asks} asks found, keep one`);
     const longPara = content.split(/\n\n+/).some((p) => countWords(p) > 100);
     checks.push(!longPara && avgWordsPerSentence(content) <= 25 ? 'Yes: Mobile-friendly format (short paragraphs and sentences)' : '[ ] Mobile-friendly format: long paragraphs or sentences');
   }

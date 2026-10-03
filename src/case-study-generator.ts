@@ -364,8 +364,13 @@ function generateFullCaseStudy(
     `industry: ${industryText ? 'given' : 'not given'}`
   ].join('; ');
 
-  const headline = lead ? capFirst(lead.text.replace(/^customer (?:quote|words):\s*/i, '')) : `${customerName} and ${product}`;
-  const headlineOk = lead && headline.length <= 160;
+  // An unnamed customer with results from several sources has no single story yet: the headline is about what customers report, and
+  // no one company's result is shown as the story's own.
+  const label = generic ? customerName.replace(/\s*\([^)]*\)/g, '').replace(/^contact at /i, '').trim() : customerName;
+  const manySources = generic && (outcomes.length + quotes.length + titles.length) >= 1;
+  const headline = manySources ? `${product}${industryText ? ` in ${industryText}` : ''}: what customers report` : lead ? capFirst(lead.text.replace(/^customer (?:quote|words):\s*/i, '')) : `${label} and ${product}`;
+  const headlineOk = (lead && headline.length <= 160) || manySources;
+  const reported = (outcomes.length ? outcomes : quotes.length ? quotes : titles).slice(0, 2);
 
   const genericNote = generic && items.length > 1 ? `
 > **Whose results these are.** customer_name is ${q(customerName)}, which does not name a company, and the results name their own sources. A case study tells one customer's story, so each result below stays with the company or source that reported it, and none is presented as this customer's own. To write the single story, pick one customer from the list and run this tool again with that name and only its results.
@@ -384,15 +389,16 @@ function generateFullCaseStudy(
 
   const cta = v ? `Close with one action for the reader. Deals in ${sectorName} usually start like this: ${lowerFirstWord(v.salesMotion)} Write the reader's next step to match, for example a pilot request.` : `Suggested closing line for readers: say what the reader does next (a call, a pilot, a visit) and keep it to one action.`;
 
+  const pullable = quotes.filter((x) => /customer quote/i.test(x.label) && /\b(?:we|our|us|my|I)\b/.test(x.text.replace(/^[^:]{0,60}:\s*/, '')));
   const pull = quote
     ? `> "${quote.replace(/^"|"$/g, '')}"\n>\n> ${customerName}`
-    : quotes.length
-      ? `No customer_quote was given. A quote in your results can serve as the pull quote once the customer has approved it:\n\n${bullets(quotes.slice(0, 2))}`
+    : pullable.length
+      ? `No customer_quote was given. A quote in your results can serve as the pull quote once the customer has approved it:\n\n${bullets(pullable.slice(0, 2))}`
       : `No customer_quote was given. Ask for one line the customer would say aloud about what changed${v ? ` in ${v.metrics[0]}` : ''}, and get written approval before you print it.`;
 
   return `# Case Study: ${customerName}
 
-## ${headlineOk ? headline : `${customerName} and ${product}`}
+## ${headlineOk ? headline : `${label} and ${product}`}
 
 ${ctx.line}
 
@@ -407,7 +413,7 @@ ${ctx.line}
 | **Customer** | ${customerName} |
 | **Industry** | ${industryText || 'not given (add customer_industry)'} |
 | **Product** | ${product} |
-| **Lead result** | ${lead ? endSentence(lead.shown) : 'none given'} |
+| **Lead result** | ${manySources ? 'none for one customer: see The Results' : lead ? endSentence(lead.shown) : 'none given'} |
 ${genericNote}
 ---
 
@@ -454,17 +460,25 @@ ${cta}
 ${v ? sectorBlock(v, results) : ''}${notUsed}
 ## Distribution Formats
 
-### One-line version (testimonial pages)
-${lead ? `${lead.text.replace(/[.!?]+$/, '')} (${product}).` : `${customerName} uses ${product}. Add the lead result when you have one.`}
+${manySources ? `### Until one customer is chosen
+Use each result with its own source, never as one customer's story:
+${reported.map((r) => `- ${endSentence(capFirst(clipEcho(r.shown, 260)))}`).join('\n')}
+${reported.length ? '' : '- No result was given.'}
+Read the full story: add the link when the case study is published.
+` : lead ? `### One-line version (testimonial pages)
+${lead.text.replace(/[.!?]+$/, '')} (${product}).
 
 ### Social media version
-${lead ? `${endSentence(lead.shown)}\n\nProduct: ${product}.` : `Story in progress: ${customerName} and ${product}.`}
+${endSentence(lead.shown)}
+
+Product: ${product}.
 ${quote ? `\n> "${(quote.length <= 160 ? quote : firstSentence(quote) + '.').replace(/^"|"$/g, '')}"\n` : ''}
 Read the full story: add the link when the case study is published.
 
 ### Email snippet
-Quick success story: ${headlineOk ? headline.replace(/[.!?]+$/, '') : `${customerName} and ${product}`}. Add the link to the full story when it is published.
-
+Quick success story: ${headline.replace(/[.!?]+$/, '')}. Add the link to the full story when it is published.
+` : `No distribution copy is written: there is no customer outcome to put in it yet. Collect one result (see The Results) and run this tool again.
+`}
 ---
 
 ## Check Before You Publish

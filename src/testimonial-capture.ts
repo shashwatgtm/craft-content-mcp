@@ -77,9 +77,11 @@ ${items.length > 1 || (items.length === 1 && own.length === 0) ? `**What each pa
 
 `;
 
-  output += generateRequestEmail(greeting, co, own, type, useCase, incentive, P, ctx.model, role);
+  output += generateRequestEmail(greeting, co, own, type, args.use_case || '', incentive, P, ctx.model, role);
 
   output += `
+
+*Notes for you, not part of the email: the time in the email (5 minutes to write, 15-20 minutes for a call) is an example, so change it to what you will really ask for.${args.use_case ? '' : ' use_case was not given, so the email names no usage; add it if the customer should know where the quote will appear.'} Review sites suit software products; for other businesses a named reference call or a case study is the usual proof.*
 
 ---
 
@@ -198,7 +200,7 @@ function generateRequestEmail(
 *Note: review sites suit software products, where buyers read them before they buy. For this kind of business a named reference call or a case study is the more usual proof. Send this email only if your buyers do read a review site.*
 `
     : '';
-  const about = own.length ? `${seenBlock(company, own)}` : `\nI would like to hear how ${P} has worked for you${role ? ` as ${aOrAn(role)} ${role}` : ''} and for your team at ${company}.\n`;
+  const about = own.length ? `${seenBlock(company, own)}` : `\nI would like to hear how ${P} has worked for youand for your team at ${company}.\n`;
   const templates: Record<string, string> = {
     written_quote: `
 **Subject:** Quick favor: share your experience with ${P}?
@@ -210,10 +212,9 @@ ${about}
 Would you be willing to share a brief quote about your experience? Just 2-3 sentences about what ${P} has meant for your team.
 
 Here's what it involves:
-- **Time:** 5 minutes to write (or I can draft it for you) (Example figure: replace with your own)
+- **Time:** 5 minutes to write (or I can draft it for you)
 - **Approval:** You'll see and approve anything before it's used
-- **Usage:** ${useCase}
-${incentive ? `- **Thank you:** ${incentive}` : ''}
+${useCase ? `- **Usage:** ${useCase}\n` : ''}${incentive ? `- **Thank you:** ${incentive}` : ''}
 
 I can even draft something based on what you've shared, and you just edit/approve. Would that work?
 
@@ -234,8 +235,7 @@ Would you be open to a brief video interview? Here's what it looks like:
 - **Time:** 20-30 minute video call at your convenience
 - **Topics:** Your challenges before, experience with ${P}, results you've seen
 - **Format:** Casual conversation, not scripted
-- **Usage:** ${useCase}
-- **Your review:** You'll approve the final edit before anything goes live
+${useCase ? `- **Usage:** ${useCase}\n` : ''}- **Your review:** You'll approve the final edit before anything goes live
 ${incentive ? `- **Thank you:** ${incentive}` : ''}
 
 If you say yes, tell me whether you want us to handle the production so you only have to show up and share your story.
@@ -292,7 +292,7 @@ A prospect who is evaluating ${P} would like to hear directly from someone who h
 
 Would you be open to a brief reference call? Here's what it involves:
 
-- **Time:** 15-20 minutes at your convenience (Example figure: replace with your own)
+- **Time:** 15-20 minutes at your convenience
 - **Topics:** Your experience with ${P} and results you've seen
 - **When:** We'll coordinate with your availability
 ${incentive ? `- **Thank you:** ${incentive}` : ''}
@@ -351,13 +351,13 @@ const ROLE_QUESTIONS: [RegExp, string, string[]][] = [
 ];
 
 function roleBlock(role: string | undefined): string {
-  if (!role) return `### Questions for Their Role\n\n(customer_role was not given: add it to get questions written for their role.)\n`;
+  if (!role) return `### Questions for Their Role\n\n1. What was your own part in choosing and rolling it out?\n2. What did you have to explain to your own leadership, and what convinced them?\n3. What would you tell another leader in your position?\n`;
   const hit = ROLE_QUESTIONS.find(([re]) => re.test(role));
   const qs = hit ? hit[2] : [
     'What was your own part in choosing and rolling it out?',
     'What did you have to explain to your own leadership, and what convinced them?',
     'What would you tell another leader in your position?'];
-  return `### Questions for ${aOrAn(role)} ${role}\n\n${qs.map((x, i) => `${i + 1}. ${x}`).join('\n')}\n`;
+  return `### Questions for this role (${role})\n\n${qs.map((x, i) => `${i + 1}. ${x}`).join('\n')}\n`;
 }
 
 function generateInterviewQuestions(type: string, P: string, company: string, role: string | undefined, v: Vertical | null, model: BusinessModel | null, w: { rollout: string; value: string; reach: string }, own: ProofItem[]): string {
@@ -399,13 +399,15 @@ ${v.metrics.slice(0, 3).map((m, i) => `${i + 1}. How did ${m} change after the $
 ### Context Questions in the Language of ${cap(v.name)}
 Ask these in the past tense, about the time before ${P}:
 
-${v.discovery.slice(0, 3).map((d, i) => `${i + 1}. ${d}`).join('\n')}
+${v.discovery.filter((d) => !/\bwill\b/i.test(d)).slice(0, 3).map((d, i) => `${i + 1}. ${d}`).join('\n')}
 
 *A strong proof point here: ${v.proofShape}*
 *Terms this sector's buyers use, to listen for in the answers: ${v.vocabulary.slice(0, 6).join(', ')}.*
 ` : `### Questions on Measures
 
-(No sector could be read from what you typed. Name the customer's industry or your product category to get questions on the measures that sector watches.)
+1. Which one measure did the customer's leadership watch before, and what is it now? Ask for the value before, the value after and the period.
+2. What did the work cost them in time, money or risk before ${P}, and what does it cost now?
+3. Which part of the result would the customer's own manager or committee stand behind in writing?
 `}
 ### Approval and Sign-Off
 - Who at ${company === 'your company' ? 'your company' : company} needs to approve a named quote or a logo (legal, communications, the customer's own manager)?

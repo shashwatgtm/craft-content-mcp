@@ -1,6 +1,6 @@
 import { cap, lowerFirstIfCommon, titleWords, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { q, readContext, isClause, clipWords, type Vertical } from './sector.ts';
-import { parseProof, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, roleOf, makeHashtags, brandFrom, claimsToSource, headlineSubject, KIND_NOTE, type ProofItem } from './draft.ts';
+import { parseProof, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, roleOf, makeHashtags, brandFrom, asAnswer, claimsToSource, headlineSubject, KIND_NOTE, type ProofItem } from './draft.ts';
 
 export function generateThoughtLeadership(args: {
   topic: string;
@@ -28,11 +28,14 @@ export function generateThoughtLeadership(args: {
   // Proof points: sorted by what they are. Customer results and quotes carry the argument; recognition and company-wide counts do not.
   const suggested = !args.proof_points;
   const items: ProofItem[] = args.proof_points ? parseProof(args.proof_points) : [];
-  const evidence = items.filter((i) => i.kind === 'result' || i.kind === 'quote' || (i.kind === 'title' && i.figure));
+  const evidence = items.filter((i) => i.kind === 'result' || i.kind === 'quote');
   const others = items.filter((i) => !evidence.includes(i));
   const suggestedProofs = suggested ? generateSuggestedProofPoints(topic, articleType, v) : [];
 
-  const takeParts = splitTake(yourTake).map((t) => clipEcho(t));
+  const topicNorm = topic.toLowerCase().replace(/\W+/g, ' ').trim();
+  const takeAll = splitTake(yourTake);
+  const takeNew = takeAll.filter((t) => { const n = t.toLowerCase().replace(/\W+/g, ' ').trim(); return !(topicNorm.includes(n) || n.includes(topicNorm)); });
+  const takeParts = (takeNew.length ? takeNew : takeAll).map((t) => clipEcho(t));
   const brand = brandFrom(yourTake, args.author_background || '', topic);
   const tags = makeHashtags(`${topic} ${yourTake} ${args.proof_points || ''}`, brand, v);
   const claims = claimsToSource([yourTake, ...items.map((i) => i.text)]);
@@ -72,10 +75,10 @@ ${sectorBlock(v)}
 
   // Generate the articles: each from its own angle, its own part of the take, its own proof point and its own objection
   for (let i = 0; i < numArticles; i++) {
-    const articleAngle = getArticleAngle(i, numArticles, articleType, headlineSubject(topic));
+    const articleAngle = getArticleAngle(i, numArticles, articleType, headlineSubject(topic, 120));
     output += generateFullArticle({
-      topic: headlineSubject(topic), take: yourTake, thesis: takeParts[i % takeParts.length], reader, authorBackground, angle: articleAngle, index: i, total: numArticles,
-      parts: takeParts, countLabel, suggested, v, evidence, others, suggestedProofs, tags
+      topic: headlineSubject(topic, 120), take: yourTake, thesis: takeParts[i % takeParts.length], reader, authorBackground, angle: articleAngle, index: i, total: numArticles,
+      parts: takeParts, readerNoun: /[;]/.test(targetReader) || targetReader.length > 60 ? 'your readers' : lowerFirstIfCommon(targetReader), stories: items.filter((i) => i.kind === 'title'), countLabel, suggested, v, evidence, others, suggestedProofs, tags
     });
   }
 
@@ -106,7 +109,7 @@ ${Array.from({ length: numArticles }, (_, i) => i + 1).map(n => `| Week ${n} | A
 - Your company blog (an owned asset)
 
 **Tier 2: industry publications**
-- Publications and newsletters that ${lowerFirstIfCommon(targetReader)} read
+- Publications and newsletters that ${/[;]/.test(targetReader) || targetReader.length > 60 ? 'your readers' : lowerFirstIfCommon(targetReader)} read
 - Trade magazines and websites in your space
 
 **Tier 3: major business outlets (pitch required)**
@@ -298,46 +301,56 @@ function getArticleAngle(index: number, total: number, articleType: string, topi
 
 interface Art {
   topic: string; take: string; thesis: string; reader: { full: string; role: string }; authorBackground: string; angle: Angle; index: number; total: number;
-  parts: string[]; countLabel: string; suggested: boolean; v: Vertical | null; evidence: ProofItem[]; others: ProofItem[]; suggestedProofs: string[]; tags: string;
+  parts: string[]; readerNoun: string; stories: ProofItem[]; countLabel: string; suggested: boolean; v: Vertical | null; evidence: ProofItem[]; others: ProofItem[]; suggestedProofs: string[]; tags: string;
 }
 
-// The body of one section, written from the take, the proof point, the objection and the measures of this article. A section whose
-// content only the author has says plainly what to add.
-function sectionBody(step: string, a: Art, k: number, proof: ProofItem | undefined, objection: { objection: string; response: string } | null): string[] {
+// The body of one section, written from the take, the proof point, the objection and the measures of this article as sentences the
+// author can use. Nothing is added that the inputs or the sector file do not hold: no figure, no quote, no customer.
+function sectionBody(step: string, a: Art, k: number, proof: ProofItem | undefined, objection: { objection: string; response: string } | null, story: ProofItem | undefined): string[] {
   const s = step.toLowerCase();
   const v = a.v;
+  const who = a.readerNoun;
+  const measures = v ? proseJoin(v.metrics.slice(0, 3)) : '';
+  const argument = k === 0 ? `The argument of this piece is that "${a.thesis}".` : 'That argument has a test.';
+  const test = v ? `For ${who}, the test of that argument is ${measures}.` : '';
+  const evidence = proof
+    ? `The evidence: ${endSentence(capFirst(clipEcho(proof.shown, 300)))}`
+    : story
+      ? `The evidence to build on is the story behind "${clipEcho(story.text, 160)}": take its starting value, end value and period before you cite it.`
+      : v ? `No customer result was given for this section. The proof that carries it in this field: ${lowerFirst(v.proofShape)}` : 'No customer result was given for this section.';
+  const counter = objection ? `The objection ${who} will raise is "${objection.objection}".` : '';
+  const answer = objection ? asAnswer(objection.response) : '';
+  const question = v ? `The question to take into the next meeting: "${v.discovery[(a.index + k) % v.discovery.length]}"` : '';
   const lines: string[] = [];
-  const evidenceLine = proof
-    ? `Evidence for this section: ${endSentence(capFirst(clipEcho(proof.shown, 300)))} Say what was done, what changed and over what period.`
-    : a.suggested
-      ? `Evidence for this section: ${v ? `a proof point of this shape: ${lowerFirst(v.proofShape)}` : 'one result with its figure and period'} (none was given).`
-      : 'Evidence for this section: none of your proof points is a customer result. Add one with its figure and period.';
   if (/cost|consequence|saved|what it cost/.test(s)) {
-    lines.push(`Put a cost on it in the measures your readers watch${v ? `: ${proseJoin(v.metrics.slice(0, 3))}` : ''}. Use the reader's own figures, or yours from the proof below; this draft gives none.`);
-    lines.push(evidenceLine);
-  } else if (/evidence|proof|result|stories|signals|journey|parallel|show the/.test(s) && !/what was done/.test(s)) {
-    lines.push(evidenceLine);
-  } else if (/what was done|step|method|how to|implementation|replicate|action plan|prepare|switch|face it|guide|actionable|applying|advice|new path|better alternative|new approach|what to do next/.test(s)) {
-    lines.push(`Turn the position into steps readers can follow, one sentence each, in order. The position, in your words: "${a.thesis}"`);
-    if (proof) lines.push(`Use this as the worked example: ${endSentence(capFirst(clipEcho(proof.shown, 300)))}`);
-  } else if (/objection|truth|reveal|pitfall|mistake|avoid|persists|why people|why existing|existing approaches fail|buying group|question to ask/.test(s) && objection) {
-    lines.push(`The counter-argument readers will raise: "${objection.objection}". A good answer: ${lowerFirst(objection.response)}`);
-  } else if (/components|breakdown/.test(s)) {
-    lines.push(`Break the position into its parts and give each one a line:`);
+    lines.push(`${argument} ${v ? `Put a cost on it in the measures ${who} watch: ${measures}. ` : ''}${evidence}`);
+  } else if (/components|breakdown/.test(s) && a.parts.length >= 2) {
+    lines.push(`The position has ${a.parts.length} ${a.parts.length === 1 ? 'part' : 'parts'}:`);
     for (const t of a.parts) lines.push(`- ${endSentence(capFirst(clipEcho(t)))}`);
-    if (v) lines.push(`Name the measures it moves: ${proseJoin(v.metrics.slice(0, 3))}.`);
+    if (v) lines.push(`Each one shows up in ${measures}.`);
+  } else if (/evidence|proof|result|stories|signals|journey|parallel|show the|the result/.test(s) && !/what was done/.test(s)) {
+    lines.push(`${argument} ${evidence}`);
+    if (v) lines.push(`The measure to read it against is ${v.metrics[a.index % v.metrics.length]}.`);
+  } else if (/what was done|step|method|how to|implementation|replicate|action plan|prepare|switch|face it|guide|actionable|applying|advice|new path|better alternative|new approach|what to do next/.test(s)) {
+    lines.push(`If the argument holds, the next step for ${who} is concrete. ${proof ? `The worked example: ${endSentence(capFirst(clipEcho(proof.shown, 300)))} ` : ''}${question}`);
+  } else if (/objection|truth|reveal|pitfall|mistake|avoid|persists|why people|why existing|existing approaches fail|buying group|question to ask/.test(s) && objection) {
+    lines.push(`${argument} ${counter} ${answer}`);
   } else if (/framework|model|forces|predictions|lesson|learning|synthesis|discovery|breakthrough|simple/.test(s)) {
-    lines.push(`Set the idea out as a short list a reader could copy, built from this position, in your words: "${a.thesis}"`);
-    if (v) lines.push(`Name the measures it moves: ${proseJoin(v.metrics.slice(0, 3))}.`);
+    lines.push(`${argument} ${test}`);
+    if (objection) lines.push(`${counter} ${answer}`);
   } else if (/winners|implications/.test(s)) {
-    lines.push(`Say who gains and who loses if the position holds, and what each should do now.${v ? ` The people who decide in ${v.name}: ${proseJoin(v.buyerRoles.slice(0, 3))}.` : ''}`);
+    lines.push(`If the argument holds, ${v ? `${proseJoin(v.buyerRoles.slice(0, 3))} gain or lose on ${measures}` : 'some readers gain and some lose'}. ${question}`);
   } else {
-    lines.push(`The position of this piece, in your words: "${a.thesis}"`);
-    if (objection) lines.push(`Say what readers believe or do today, then why that falls short: they often say "${objection.objection}".`);
+    lines.push(`${argument} ${counter} ${test}`.trim());
   }
   return lines;
 }
 const lowerFirst = (s: string) => (/[A-Z0-9]/.test(s.slice(1, 3)) ? s : s.charAt(0).toLowerCase() + s.slice(1));
+
+function closingProse(a: Art): string {
+  const q1 = a.v ? ` If you take one question into your next meeting, make it this one: "${a.v.discovery[(a.index + 2) % a.v.discovery.length]}"` : '';
+  return `The point to leave with: "${a.thesis}".${q1} Where do you disagree? Say so, because the best insights come from the conversation.`;
+}
 
 function generateFullArticle(a: Art): string {
   const { angle, index, total, v } = a;
@@ -351,7 +364,7 @@ function generateFullArticle(a: Art): string {
 
   const sections = angle.structure.map((step, k) => {
     const lines: string[] = [`## ${step}`, ''];
-    const body = sectionBody(step, a, k, k === 0 ? undefined : proofAt(k - 1), k === Math.min(2, angle.structure.length - 1) ? objection : k === 0 ? objection : null);
+    const body = sectionBody(step, a, k, k === 0 ? undefined : proofAt(k - 1), k === Math.min(2, angle.structure.length - 1) ? objection : k === 0 ? objection : null, a.stories.length ? a.stories[(index + k) % a.stories.length] : undefined);
     lines.push(...body);
     return lines.join('\n');
   }).join('\n\n');
@@ -379,7 +392,7 @@ ${sections}
 
 ---
 
-${angle.closing}
+${closingProse(a)}
 
 ${index === total - 1 ? `*About the author: ${/^author background not given/.test(a.authorBackground) ? 'add the author\'s name and role here.' : clipEcho(a.authorBackground.replace(/[.!?]+\s*$/, ''), 200) + '.'}*
 
@@ -391,29 +404,30 @@ ${a.others.filter((o) => o.kind === 'recognition')[0] ? `**Credibility line** (r
 // Hooks. Run 19 (D80, problem 2): the user's take is quoted, never joined into a sentence of ours. Run 20 (round 1b): each article
 // quotes its own part of the take, once, and the opening says what the article does with it.
 function generateHook(hookType: string, a: Art, objection: { objection: string; response: string } | null): string {
-  const take = `> "${a.thesis}"`;
+  const th = `"${a.thesis}"`;
   const t = q(a.topic);
-  const them = objection ? `Name the answer readers usually give: "${objection.objection}".` : `Name the answer readers usually give.`;
+  const them = objection ? `The usual answer is "${objection.objection}", and it deserves a straight reply.` : '';
+  const ev = a.evidence.length ? endSentence(capFirst(clipEcho(a.evidence[a.index % a.evidence.length].shown, 300))) : '';
   const hooks: Record<string, string> = {
-    controversy: `Open with your position on ${t}, in your own words:\n\n${take}\n\n${them}`,
-    revelation: `Open with the view you hold on ${t}:\n\n${take}\n\nThen say why it is rarely said aloud.`,
-    direct_challenge: `Open by asking the reader to stop before the next article on ${t}:\n\n${take}\n\n${them}`,
-    promise_of_value: `Open with the promise: ${t} is simpler than the usual advice makes it. Then give your position:\n\n${take}`,
-    proof_of_results: `Open with a result, then give your position:\n\n${take}\n\n${a.evidence[0] ? `The result to open with: ${endSentence(capFirst(clipEcho(a.evidence[a.index % a.evidence.length].shown, 300)))}` : 'No customer result was given to open with.'}`,
-    transformation: `Open with where the reader is now, then what shifts:\n\n${take}\n\n${them}`,
-    experience_credibility: `Open with your experience on ${t}, then the one thing you wish someone had told you:\n\n${take}`,
-    vulnerability: `Open with a mistake you made on ${t} (add it, since only you know it), then what it taught you:\n\n${take}`,
-    numbered_wisdom: `Open by saying success on ${t} comes down to a few non-obvious insights. The first one:\n\n${take}`,
-    future_vision: `Open with your prediction on ${t}:\n\n${take}\n\n${them}`,
-    change_warning: `Open with what is changing:\n\n${take}\n\n${them}`,
-    urgency: `Open with why now:\n\n${take}\n\n${them}`,
-    new_model: `Open with what is wrong in the way most people think about ${t}:\n\n${take}\n\n${them}`,
-    best_practice: `Open with the pattern you studied on ${t}:\n\n${take}`,
-    simplification: `Open with how complicated ${t} has become, then the simpler view:\n\n${take}`,
-    sector_question: `Open with the question to ask first:\n\n${a.v ? `> "${a.v.discovery[a.index % a.v.discovery.length]}"` : take}\n\nThen give your position:\n\n${take}`,
-    evidence_first: `Open with the evidence, then your position:\n\n${a.evidence[0] ? endSentence(capFirst(clipEcho(a.evidence[a.index % a.evidence.length].shown, 300))) : 'No customer result was given to open with.'}\n\n${take}`
+    controversy: `Most of what is said about ${t} points one way. This piece argues something different: ${th}. ${them}`,
+    revelation: `There is a view on ${t} that people hold but rarely say aloud: ${th}. ${them}`,
+    direct_challenge: `Before the next article on ${t}, one claim to weigh: ${th}. ${them}`,
+    promise_of_value: `${cap(t)} is simpler than the usual advice makes it. The position: ${th}.`,
+    proof_of_results: `${ev ? `Start from a result. ${ev} ` : ''}That is what this piece builds on: ${th}.`,
+    transformation: `Where most readers are now, and where this piece takes them: ${th}. ${them}`,
+    experience_credibility: `The first thing worth saying about ${t}: ${th}.`,
+    vulnerability: `This piece puts one claim on the table about ${t}: ${th}. ${them}`,
+    numbered_wisdom: `Success on ${t} comes down to a few insights that are not obvious. The first: ${th}.`,
+    future_vision: `The prediction on ${t}: ${th}. ${them}`,
+    change_warning: `Something is changing in ${t}: ${th}. ${them}`,
+    urgency: `Why now, on ${t}: ${th}. ${them}`,
+    new_model: `The way most people think about ${t} is incomplete: ${th}. ${them}`,
+    best_practice: `A pattern worth studying on ${t}: ${th}.`,
+    simplification: `${cap(t)} has become more complicated than it needs to be: ${th}.`,
+    sector_question: `${a.v ? `The question to ask first: "${a.v.discovery[a.index % a.v.discovery.length]}" ` : ''}Then the position: ${th}.`,
+    evidence_first: `${ev || 'No customer result was given to open with.'} The position that follows from it: ${th}.`
   };
-  return hooks[hookType] || hooks.controversy;
+  return (hooks[hookType] || hooks.controversy).replace(/\s+/g, ' ').trim();
 }
 
 function generatePromotionalPosts(takeParts: string[], evidence: ProofItem[], suggestedProofs: string[], numArticles: number, suggested: boolean, v: Vertical | null, tags: string): string {

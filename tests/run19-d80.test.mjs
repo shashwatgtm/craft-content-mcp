@@ -245,7 +245,7 @@ test("testimonial_capture: the product is used, role and sector questions are ad
   assert.equal(r.isError, false);
   shared(r.text, { names: ["Answerloop", "Example Food Delivery Co", "Sam Example (fictional)"], sector: AI_SECTOR, label: "testimonial" });
   assert.doesNotMatch(r.text, /\[Product\]|aha moment/i);
-  assert.match(r.text, /### Questions for a Head of Support Operations/);
+  assert.match(r.text, /### Questions for this role \(Head of Support Operations\)/);
   assert.match(r.text, /customer for 18 months, renewed last quarter/);
   assert.match(r.text, /Who at Example Food Delivery Co needs to approve/);
 });

@@ -86,6 +86,8 @@ function checkValue(schema: SchemaNode, holder: Record<string, unknown> | unknow
     v = n;
   }
   if (typeof v !== "number" || !Number.isFinite(v)) { problems.push(`${path} must be a number`); return; }
+  // Run 20 (A17-O25): an integer input is a whole number; 2.5 articles is refused, not rounded or printed as "2.5 pieces".
+  if (schema.type === "integer" && !Number.isInteger(v)) { problems.push(`${path} must be a whole number`); return; }
   if (typeof schema.minimum === "number" && v < schema.minimum) problems.push(`${path} must be ${schema.minimum} or more`);
   if (typeof schema.exclusiveMinimum === "number" && v <= schema.exclusiveMinimum) problems.push(`${path} must be more than ${schema.exclusiveMinimum}`);
   if (typeof schema.maximum === "number" && v > schema.maximum) problems.push(`${path} must be ${schema.maximum} or less`);

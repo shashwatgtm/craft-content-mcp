@@ -54,14 +54,14 @@ Generated on 27 September 2026 from the server's own tool list and checked again
 
 | # | Tool | Title | What it does |
 |---|---|---|---|
-| 1 | `case_study_generator` | Case Study Generator | Build a customer case study from the challenge, solution and results you give (mode full), or an interview kit to collect them (mode discovery). Every result you list is kept, sector notes and questions are added when the sector can be read from your text, and a bracket marks anything you did not give. |
-| 2 | `newsletter_builder` | Newsletter Builder | Build a newsletter draft: subject lines that use your full topic, hooks, key points, your own call to action as the button, and sector notes. Without key points it suggests five from the topic and sector. Statistics and stories are bracket prompts, never invented. |
-| 3 | `webinar_script` | Webinar Script | Write a webinar run of show and script for your topic, audience, type and duration: speakers as you list them, polls with answer options, content blocks with sector points, anticipated questions and follow-up emails. Without key takeaways it suggests them from the topic and type. |
-| 4 | `content_repurposer` | Content Repurposer | Turn a source text into formats such as a LinkedIn post, an X thread, an email, a blog summary and quote cards (five by default). Key points are whole sentences chosen from your source by a stated rule and kept in its order; quote cards are never cut mid-sentence; the brand voice sets the closing line. |
-| 5 | `thought_leadership_series` | Thought Leadership Series | Write outlines of thought leadership articles (600 to 800 words each once expanded) from your topic, your take (quoted as you wrote it), the reader and your proof points. Each article follows its own angle and leads with a different proof point. Without proof points it suggests evidence to gather. Brackets mark what only you can supply. |
-| 6 | `testimonial_capture` | Testimonial Capture | Prepare a testimonial request: the request email, interview questions for the customer's role and sector, quote drafts for the customer to edit, and a sign-off checklist. Uses your product name when you give it, and says so when you do not. |
-| 7 | `sales_enablement_content` | Sales Enablement Content | Build a sales kit: pitch order, a script for each objection (each answered with the sector's pattern and the proof point that fits it), competitor responses, discovery questions and follow-up templates. Without objections it suggests the ones your sector raises. |
-| 8 | `craft_content_improver` | CRAFT Content Improver | Check pasted copy against listed rules (buzzwords, claims that need proof, fragments, unfilled merge fields, claims about the reader, a missing figure or ask), score each area with every deduction quoted from your text, and return the edits it made. If it finds no edit to make, it says so and prints no improved version. |
+| 1 | `case_study_generator` | Case Study Generator | Builds a customer case study from the customer name, your product and the challenge, solution and results you give (mode full), or an interview kit for collecting them (mode discovery). Optional customer industry, quote, interview notes and business model fit the wording to the customer. Returns a headline, the story with each result you list, a customer quote, social and email copy and sector notes when the sector can be read from your text. A bracket marks anything you did not give. |
+| 2 | `newsletter_builder` | Newsletter Builder | Builds a newsletter draft from your topic and the action you want readers to take. Optional key points, audience segment, newsletter type, tone, earlier topics and your product fit it to the reader. Returns subject lines that use your full topic, hooks, key points, your own call to action as the button and sector notes. Without key points it suggests some from the topic and sector. Statistics and stories appear as bracket prompts for you to fill. |
+| 3 | `webinar_script` | Webinar Script | Writes a webinar run of show and script from your topic, target audience and webinar type. Optional duration, key takeaways, speakers, polls, product mention level, your product and business model shape it. Returns the run of show, speakers as you list them, polls with answer options, content blocks with sector points, anticipated questions and follow-up emails. Without key takeaways it suggests them from the topic and type. |
+| 4 | `content_repurposer` | Content Repurposer | Turns a source text into other formats such as a LinkedIn post, an X thread, an email, a blog summary and quote cards. Needs the source text and its type. Optional target formats, brand voice and a key message steer the result. Returns each format built from whole sentences of your source, with key points chosen by a stated rule and kept in the source order, and names any requested format it does not know. |
+| 5 | `thought_leadership_series` | Thought Leadership Series | Writes outlines of thought leadership articles from your topic, your take and the reader you write for. Optional proof points, author background, number of articles and article style shape them. Returns an outline for each article on its own angle, your take quoted as you wrote it, your proof points used across the articles and bracket prompts for what only you can supply. Without proof points it suggests evidence to gather. |
+| 6 | `testimonial_capture` | Testimonial Capture | Prepares a testimonial request from the customer's name, company, success story and the type of testimonial you want. Optional role, relationship, intended use, incentive, your product and business model fit it to the customer. Returns a request email, interview questions for the customer's role and sector, quote drafts for the customer to edit and a sign-off checklist. It uses your product name when you give it and says so when you do not. |
+| 7 | `sales_enablement_content` | Sales Enablement Content | Builds a sales kit from your product, the persona you sell to and your proof points. Optional objections, value propositions, competitor objections, price context, sales stage and business model shape it. Returns a pitch order, a script for each objection answered with the sector's pattern and the proof point that fits it, competitor responses, discovery questions and follow-up templates. Without objections it suggests the ones your sector raises. |
+| 8 | `craft_content_improver` | CRAFT Content Improver | Reviews pasted copy and its content type against listed rules: buzzwords, claims that need proof, fragments, unfilled merge fields, claims about the reader and a missing figure or ask. Optional goal, audience and tone preference refine the review. Returns a score for each area with each deduction quoted from your text, and the edits it made. If it finds no edit to make, it says so and prints no improved version. |
 
 ### Inputs of each tool
 
@@ -69,41 +69,41 @@ Generated on 27 September 2026 from the server's own tool list and checked again
 
 | Input | Required | Type | Description |
 |---|---|---|---|
-| `customer_name` | Yes | string | Customer/company name |
-| `your_product` | Yes | string | Your product/service name |
-| `customer_industry` | No | string | Customer's industry for context |
-| `mode` | No | one of: `full`, `discovery` | full = generate case study (requires challenge/solution/results), discovery = generate interview questions to gather story |
-| `interview_notes` | No | string | Optional: Raw interview notes or transcript. Used for a missing challenge, solution or results when mode is 'full'; named as not used when you gave all three |
-| `challenge` | No | string | The customer's challenge/problem (required for full mode) |
-| `solution` | No | string | How your product solved it (required for full mode) |
-| `results` | No | string | Quantifiable outcomes, one per line or per semicolon (required for full mode) |
-| `customer_quote` | No | string | Optional: Direct quote from customer |
+| `customer_name` | Yes | string | Customer or company name |
+| `your_product` | Yes | string | Your product or service name |
+| `customer_industry` | No | string | The customer's industry, used for context |
+| `mode` | No | one of: `full`, `discovery` | full builds the case study and needs the challenge, solution and results; discovery returns interview questions for collecting them |
+| `interview_notes` | No | string | Optional: raw interview notes or a transcript. In full mode they fill a missing challenge, solution or results; the answer says they were not used when you gave all three |
+| `challenge` | No | string | The customer's challenge or problem (needed in full mode) |
+| `solution` | No | string | How your product solved it (needed in full mode) |
+| `results` | No | string | Measurable outcomes, one per line or per semicolon (needed in full mode) |
+| `customer_quote` | No | string | Optional: a direct quote from the customer |
 | `business_model` | No | one of: `saas`, `services`, `connectivity`, `transactions`, `marketplace`, `hardware_software`, `investment` | Optional: how you charge, so the advice fits it. If omitted, it is read from your text and the answer says how. |
 
 #### 2. Newsletter Builder (`newsletter_builder`)
 
 | Input | Required | Type | Description |
 |---|---|---|---|
-| `topic` | Yes | string | Main topic/theme of the newsletter |
-| `cta_goal` | Yes | string | What action should readers take? (e.g., 'register for the webinar', 'book a 20-minute call', 'read the guide') |
-| `key_points` | No | string | Optional: key points to cover, one per line, per semicolon or comma-separated. If not provided, the tool suggests 5 points based on the topic and newsletter type |
-| `audience_segment` | No | one of: `executives`, `practitioners`, `technical`, `general`, `prospects`, `customers` | Audience segment affects tone and depth |
-| `newsletter_type` | No | one of: `educational`, `product_update`, `industry_news`, `thought_leadership`, `curated_links` | Type of newsletter |
-| `tone` | No | one of: `professional`, `conversational`, `authoritative`, `friendly`, `urgent` | Writing tone |
-| `previous_topics` | No | string | Optional: Recent newsletter topics to avoid repetition and suggest connections |
+| `topic` | Yes | string | The main topic or theme of the newsletter |
+| `cta_goal` | Yes | string | The action readers should take, in your own words (for example 'register for the webinar', 'book a call', 'read the guide'); it becomes the button |
+| `key_points` | No | string | Optional: key points to cover, one per line, per semicolon or comma-separated. If not provided, points are suggested from the topic and newsletter type |
+| `audience_segment` | No | one of: `executives`, `practitioners`, `technical`, `general`, `prospects`, `customers` | Who the newsletter is for; sets tone and depth |
+| `newsletter_type` | No | one of: `educational`, `product_update`, `industry_news`, `thought_leadership`, `curated_links` | The kind of newsletter |
+| `tone` | No | one of: `professional`, `conversational`, `authoritative`, `friendly`, `urgent` | The writing tone |
+| `previous_topics` | No | string | Optional: recent newsletter topics, to avoid repetition and suggest connections |
 | `your_product` | No | string | Optional: your product or service name, used in the answer. Without it the answer says so and shows a placeholder. |
 
 #### 3. Webinar Script (`webinar_script`)
 
 | Input | Required | Type | Description |
 |---|---|---|---|
-| `topic` | Yes | string | Webinar topic/title |
-| `target_audience` | Yes | string | Who will attend (e.g., 'Support leaders at consumer apps') |
-| `webinar_type` | Yes | one of: `educational`, `product_demo`, `panel_discussion`, `customer_story`, `workshop`, `ama` | Type of webinar determines structure |
-| `duration` | No | one of: `30_min`, `45_min`, `60_min`, `90_min` | Webinar length |
-| `key_takeaways` | No | string | Optional: 3-5 things attendees should learn, one per line, per semicolon or comma-separated. If not provided, they are suggested from the topic |
+| `topic` | Yes | string | The webinar topic or title |
+| `target_audience` | Yes | string | Who will attend (for example 'Support leaders at consumer apps') |
+| `webinar_type` | Yes | one of: `educational`, `product_demo`, `panel_discussion`, `customer_story`, `workshop`, `ama` | The kind of webinar; sets the structure |
+| `duration` | No | one of: `30_min`, `45_min`, `60_min`, `90_min` | The webinar length |
+| `key_takeaways` | No | string | Optional: what attendees should learn, one per line, per semicolon or comma-separated. If not provided, takeaways are suggested from the topic |
 | `speakers` | No | string | Optional: speakers as you want them listed. Separate speakers with semicolons or line breaks ('Name, Title; Name, Title'), or with commas if each is one phrase |
-| `include_polls` | No | boolean | Include interactive poll suggestions |
+| `include_polls` | No | boolean | Include poll suggestions with answer options |
 | `product_mention_level` | No | one of: `none`, `subtle`, `moderate`, `heavy` | Whether to add product tie-in placeholders to the script ('none' leaves them out) |
 | `your_product` | No | string | Optional: your product or service name, used in the answer. Without it the answer says so and shows a placeholder. |
 | `business_model` | No | one of: `saas`, `services`, `connectivity`, `transactions`, `marketplace`, `hardware_software`, `investment` | Optional: how you charge, so the advice fits it. If omitted, it is read from your text and the answer says how. |
@@ -112,36 +112,36 @@ Generated on 27 September 2026 from the server's own tool list and checked again
 
 | Input | Required | Type | Description |
 |---|---|---|---|
-| `source_content` | Yes | string | Original content to repurpose (blog post, article, transcript, etc.) |
-| `source_type` | Yes | one of: `blog_post`, `webinar_transcript`, `podcast_transcript`, `whitepaper`, `case_study`, `research_report`, `presentation` | What type of content is the source |
+| `source_content` | Yes | string | The original content to repurpose (a blog post, article or transcript, for example) |
+| `source_type` | Yes | one of: `blog_post`, `webinar_transcript`, `podcast_transcript`, `whitepaper`, `case_study`, `research_report`, `presentation` | The kind of content the source is |
 | `target_formats` | No | string | Optional: formats to generate, comma-separated. Defaults to: linkedin_post, twitter_thread, email, blog_summary, quote_cards. Other options: infographic_outline, video_script, podcast_talking_points, slide_deck_outline, newsletter_section. A name outside this list is reported, not written |
-| `brand_voice` | No | one of: `professional`, `casual`, `authoritative`, `friendly`, `bold` | Brand voice to maintain |
-| `key_message` | No | string | Optional: Core message to emphasize across all formats |
+| `brand_voice` | No | one of: `professional`, `casual`, `authoritative`, `friendly`, `bold` | The brand voice to keep |
+| `key_message` | No | string | Optional: the core message to emphasize in every format |
 
 #### 5. Thought Leadership Series (`thought_leadership_series`)
 
 | Input | Required | Type | Description |
 |---|---|---|---|
-| `topic` | Yes | string | The topic you want to establish authority on |
-| `your_take` | Yes | string | Your unique perspective or opinion on this topic. What do you believe that others don't? What's your contrarian view? |
-| `target_reader` | Yes | string | Who should read this? Be specific (e.g., 'Heads of IT at companies with many branches' not just 'managers') |
+| `topic` | Yes | string | The topic you want to build authority on |
+| `your_take` | Yes | string | Your own view on this topic: what you believe that others do not, or your contrarian view |
+| `target_reader` | Yes | string | Who should read this, named specifically (for example 'Heads of IT at companies with many branches' rather than 'managers') |
 | `proof_points` | No | string | Optional: evidence supporting your take: personal stories, client examples, data or stats, one per line, per semicolon or comma-separated. If not provided, proof points to gather are suggested |
-| `author_background` | No | string | Optional: Your role and why you're credible (e.g., '15 years in enterprise sales') |
-| `num_articles` | No | number (1 or more) | Number of articles to generate (1-5) |
-| `article_type` | No | one of: `contrarian`, `how_to`, `lessons_learned`, `prediction`, `framework` | Style of articles |
+| `author_background` | No | string | Optional: your role and why you are credible (for example 'a long career in enterprise sales') |
+| `num_articles` | No | integer (1 to 5) | How many articles to outline, a whole number from 1 to 5. If left out, the series has three articles |
+| `article_type` | No | one of: `contrarian`, `how_to`, `lessons_learned`, `prediction`, `framework` | The style of the articles |
 
 #### 6. Testimonial Capture (`testimonial_capture`)
 
 | Input | Required | Type | Description |
 |---|---|---|---|
-| `customer_name` | Yes | string | Customer name |
-| `customer_company` | Yes | string | Customer's company |
-| `success_story` | Yes | string | Brief description of their success with your product |
-| `testimonial_type` | Yes | one of: `written_quote`, `video_interview`, `case_study_interview`, `g2_review`, `reference_call` | Type of testimonial needed |
-| `customer_role` | No | string | Customer's job title |
-| `relationship_context` | No | string | How long they've been a customer, key interactions |
-| `use_case` | No | string | Where will this testimonial be used? (website, sales deck, etc.) |
-| `incentive` | No | string | Optional: What you're offering in return |
+| `customer_name` | Yes | string | The customer's name |
+| `customer_company` | Yes | string | The customer's company |
+| `success_story` | Yes | string | A short description of their success with your product |
+| `testimonial_type` | Yes | one of: `written_quote`, `video_interview`, `case_study_interview`, `g2_review`, `reference_call` | The kind of testimonial you need |
+| `customer_role` | No | string | The customer's job title |
+| `relationship_context` | No | string | How long they have been a customer and the key interactions |
+| `use_case` | No | string | Where the testimonial will be used (the website or a sales deck, for example) |
+| `incentive` | No | string | Optional: what you are offering in return |
 | `your_product` | No | string | Optional: your product or service name, used in the answer. Without it the answer says so and shows a placeholder. |
 | `business_model` | No | one of: `saas`, `services`, `connectivity`, `transactions`, `marketplace`, `hardware_software`, `investment` | Optional: how you charge, so the advice fits it. If omitted, it is read from your text and the answer says how. |
 
@@ -149,25 +149,25 @@ Generated on 27 September 2026 from the server's own tool list and checked again
 
 | Input | Required | Type | Description |
 |---|---|---|---|
-| `product` | Yes | string | Product name and what it does |
-| `target_persona` | Yes | string | Who sales is pitching to (role, company type) |
-| `proof_points` | Yes | string | Evidence for claims: case studies, metrics, quotes, one per line, per semicolon or comma-separated |
+| `product` | Yes | string | The product name and what it does |
+| `target_persona` | Yes | string | Who sales is pitching to (role and company type) |
+| `proof_points` | Yes | string | Evidence for your claims: case studies, metrics and quotes, one per line, per semicolon or comma-separated |
 | `common_objections` | No | string | Optional: sales objections you hear, one per line, per semicolon or comma-separated. If not provided, likely objections for your sector are suggested |
 | `value_props` | No | string | Optional: key value propositions, one per line, per semicolon or comma-separated. Taken from the proof points if not provided |
-| `competitor_objections` | No | string | Optional: 'Why not [competitor]' objections |
-| `price_context` | No | string | Optional: Your pricing vs market (e.g., 'Premium, 20% above market', 'Budget option', 'Mid-market') |
-| `sales_stage` | No | one of: `prospecting`, `discovery`, `demo`, `negotiation`, `closing` | What stage of sales funnel |
+| `competitor_objections` | No | string | Optional: 'why not [competitor]' objections |
+| `price_context` | No | string | Optional: your pricing against the market (for example 'Premium, above market', 'Budget option' or 'Mid-market') |
+| `sales_stage` | No | one of: `prospecting`, `discovery`, `demo`, `negotiation`, `closing` | The stage of the sales funnel |
 | `business_model` | No | one of: `saas`, `services`, `connectivity`, `transactions`, `marketplace`, `hardware_software`, `investment` | Optional: how you charge, so the advice fits it. If omitted, it is read from your text and the answer says how. |
 
 #### 8. CRAFT Content Improver (`craft_content_improver`)
 
 | Input | Required | Type | Description |
 |---|---|---|---|
-| `content` | Yes | string | Content to analyze |
-| `content_type` | Yes | one of: `blog_post`, `email`, `landing_page`, `social_post`, `sales_email`, `product_description`, `press_release`, `case_study` | Type of content affects evaluation criteria |
-| `goal` | No | string | Optional: what should this content achieve? (e.g., 'book a first meeting', 'educate readers'). If not given, a goal is chosen from the content type (for example 'Get meetings booked' for a sales email) |
-| `audience` | No | string | Optional: who is this content for? The check reports when the text never mentions them. |
-| `tone_preference` | No | one of: `more_formal`, `more_casual`, `more_urgent`, `more_friendly`, `more_authoritative`, `keep_same` | Desired tone. Only more_formal and more_casual are checked in the text; any other value is named in the answer as not used |
+| `content` | Yes | string | The content to review |
+| `content_type` | Yes | one of: `blog_post`, `email`, `landing_page`, `social_post`, `sales_email`, `product_description`, `press_release`, `case_study` | The kind of content; it changes which checks apply |
+| `goal` | No | string | Optional: what the content should achieve (for example 'book a first meeting' or 'educate readers'). If not given, a goal is chosen from the content type |
+| `audience` | No | string | Optional: who the content is for. The review reports when the text never mentions them |
+| `tone_preference` | No | one of: `more_formal`, `more_casual`, `more_urgent`, `more_friendly`, `more_authoritative`, `keep_same` | The tone you want. Only more_formal and more_casual are checked in the text; any other value is named in the answer as not used |
 
 ## Input Design Principles
 

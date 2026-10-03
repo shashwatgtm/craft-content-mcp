@@ -155,7 +155,7 @@ test("webinar_script: speakers are listed as typed, never pasted after 'I'm'; po
   shared(r.text, { names: ["Answerloop", "Head of Support Operations from a customer", "Head of Marketing at Answerloop"], sector: AI_SECTOR, label: "webinar" });
   assert.doesNotMatch(r.text, /I'm Head of|I'm \[?Speaker/);
   assert.match(r.text, /Poll options:\n(- [^\n]+\n){3,}/);
-  assert.match(r.text, /Product line \(subtle\): one sentence on how Answerloop helps/i);
+  assert.match(r.text, /A word on Answerloop, kept short: it is built to address/i);
   assert.doesNotMatch(r.text, /^- We're recording today's session/m);
   assert.match(r.text, /If you are recording, say: "We're recording today's session/i);
   assert.doesNotMatch(r.text, /free trial|plans or trial/i);

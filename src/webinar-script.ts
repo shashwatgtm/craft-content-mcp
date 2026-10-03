@@ -1,11 +1,12 @@
 import { lowerFirstIfCommon, cap, SUGGESTION_FOOTER } from './utils.js';
 import { q, readContext, startWords, audienceLine, isClause, type Vertical, type BusinessModel } from './sector.ts';
-import { splitList, asAnswer, tidyPoint, unpackTopic, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, roleOf, clipAtWord } from './draft.ts';
+import { splitList, asAnswer, tidyPoint, softenClaims, bestQuestion, toYou, STAT, unpackTopic, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, roleOf, clipAtWord } from './draft.ts';
 
 type Ctx = { v: Vertical | null; model: BusinessModel | null; line: string };
 
 // Everything a section of the script needs, read once from the inputs.
 interface W {
+  usedQ: Set<string>;
   topic: string; label: string; clause: boolean; problem: string; audience: string; role: string; field: string;
   takeaways: string[]; speakers: string[]; product: string; productLevel: string; includePolls: boolean; ctx: Ctx;
 }
@@ -51,12 +52,12 @@ export function generateWebinarScript(args: {
   let takeaways: string[];
   let takeawaysNote = '';
   if (args.key_takeaways) {
-    takeaways = splitList(args.key_takeaways).map(tidyPoint);
+    takeaways = splitList(args.key_takeaways).map(tidyPoint).map((p) => softenClaims(p).text);
   } else {
     takeaways = generateTakeawaysFromTopic(label, type, audience, ctx.v);
     takeawaysNote = '*(Suggested from the topic and type: replace with your own)*';
   }
-  const w: W = { topic, label, clause, problem: parts.problem || '', audience, role, field, takeaways, speakers, product, productLevel, includePolls, ctx };
+  const w: W = { usedQ: new Set<string>(), topic, label, clause, problem: parts.problem || '', audience, role, field, takeaways, speakers, product, productLevel, includePolls, ctx };
 
   // Duration in minutes
   const durationMap: Record<string, number> = {
@@ -388,7 +389,8 @@ function named(w: W): string {
 
 function productLine(w: W, what: string): string {
   if (w.productLevel === 'none') return '';
-  return `\n*Product line (${w.productLevel}): one sentence on how ${w.product || 'your product'} helps with ${what}. Use only what you can show.*\n`;
+  const name = w.product || 'your product';
+  return w.productLevel === 'subtle' ? `\nA word on ${name}, kept short: it is built to address exactly this problem.\n` : `\nHere is where ${name} comes in: it is built to address ${what}. Show it in one screen, then return to the point.\n`;
 }
 
 // The pain point of this audience: the problem the topic names, the role it falls on, and what the sector's buyers measure.
@@ -517,7 +519,7 @@ function blockScript(section: { name: string; duration: number }, w: W, mine: st
   const who = w.role ? `a ${w.role}` : 'this audience';
   const teach = mine.length ? mine.map((t) => endSentence(capFirst(t))).join(' ') : 'This block has no takeaway of its own, so use it for a worked example or a customer story.';
   const measure = v ? v.metrics[(k * 2) % v.metrics.length] : '';
-  const question = v ? v.discovery[(k + 1) % v.discovery.length] : '';
+  const question = v ? bestQuestion(mine.join(' '), v.discovery.filter((d) => !/current provider|client's own words|signs off each|governed/i.test(d)), w.usedQ) : '';
   const objection = v && k >= 1 ? v.objections[(k - 1) % v.objections.length] : null;
   const next = k < blocks - 1 ? 'Hold that thought, because the next part builds on it.' : 'Put those three parts together and you have the plan.';
   return `${opening(section.name)}
@@ -526,7 +528,7 @@ function blockScript(section: { name: string; duration: number }, w: W, mine: st
 **SPEAKER:**
 "${lead} ${teach}
 
-${v ? `For ${who}, this comes down to ${measure}. Before we go on, think of your own number for it, because the examples only help if you can compare them with yours.\n\nQuestion for the chat: "${question}"\n` : ''}${objection ? `\nYou may be thinking: "${objection.objection}." ${asAnswer(objection.response)}\n` : ''}${productLine(w, mine[0] ? `"${shortenClauses(mine[0], 110)}"` : 'this block')}
+${v ? `For ${who}, this comes down to ${toYou(measure)}. Before we go on, think of your own number for it, because the examples only help if you can compare them with yours.\n\nQuestion for the chat: "${toYou(question)}"\n` : ''}${objection ? `\nYou may be thinking: "${objection.objection}." ${asAnswer(objection.response)}\n` : ''}${productLine(w, mine[0] ? `"${shortenClauses(mine[0], 110)}"` : 'this block')}
 ${next} Any questions before we move on? Drop them in chat."
 
 `;

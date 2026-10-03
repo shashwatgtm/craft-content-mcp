@@ -1,6 +1,6 @@
 import { generateHook, lowerFirstIfCommon, cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { readContext, audienceLine, isClause, type Vertical } from './sector.ts';
-import { splitList, tidyPoint, roleOf, FIGURE, unpackTopic, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, clipAtWord } from './draft.ts';
+import { splitList, tidyPoint, roleOf, FIGURE, STAT, softenClaims, bestQuestion, toYou, dropTail, unpackTopic, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, clipAtWord } from './draft.ts';
 
 export function generateNewsletter(args: {
   topic: string;
@@ -24,6 +24,7 @@ export function generateNewsletter(args: {
   // Run 20 (round 1b): a long topic typed as "How <readers> can tackle <problem>, from <company>" is read into its parts; every
   // repeat of the topic uses a short label (the problem's first clause), and the full topic is printed once, in the table.
   const parts = unpackTopic(topic);
+  const ctaProduct = /\babout\s+(.+)$/i.exec(ctaGoal)?.[1]?.trim() || '';
   const label = parts.short ? topic.replace(/ +/g, ' ') : parts.label;
   const clause = !parts.short || isClause(topic) || LABEL_CLAUSE.test(label);
   // Run 19 (D80, problems 4 and 8): the sector is read from every text the user gave.
@@ -33,12 +34,12 @@ export function generateNewsletter(args: {
   let keyPoints: string[];
   let keyPointsNote = '';
   if (args.key_points) {
-    keyPoints = splitList(args.key_points).map(tidyPoint);
+    keyPoints = splitList(args.key_points).map(tidyPoint).map((p) => softenClaims(p).text);
   } else {
     keyPoints = generateKeyPointsFromTopic(label, type, segment, ctx.v);
     keyPointsNote = '*(Suggested from the topic: replace with your own)*';
   }
-  const figures = keyPoints.filter((p) => FIGURE.test(p));
+  const figures = keyPoints.filter((p) => STAT.test(p));
   const v = ctx.v;
 
   // Generate multiple subject line options
@@ -87,7 +88,7 @@ ${ctx.line}
 | Setting | Value |
 |---------|-------|
 | **Topic** | ${topic} |
-| **Product** | ${product || (parts.company ? `${parts.company} (read from the topic)` : 'not given (add your_product to name it in the notes below)')} |
+| **Product** | ${product || (ctaProduct ? `${ctaProduct} (read from the call to action)` : parts.company ? `${parts.company} (read from the topic)` : 'not given (add your_product to name it in the notes below)')} |
 | **Segment** | ${segment} |
 | **Type** | ${type.replace(/_/g, ' ')} |
 | **Tone** | ${tone} |
@@ -99,19 +100,19 @@ ${ctx.line}
 ${readers}
 ### Option A: Curiosity-Driven
 **${subjectLines[0]}**${subjectLineLabel(type, 0)}
-- Preview text: ${previewText(0, keyPoints)}
+- Preview text: ${previewText(0, keyPoints, subjectLines[0])}
 
 ### Option B: Benefit-Focused
 **${subjectLines[1]}**${subjectLineLabel(type, 1)}
-- Preview text: ${previewText(1, keyPoints)}
+- Preview text: ${previewText(1, keyPoints, subjectLines[1])}
 
 ### Option C: Number/List Style
 **${subjectLines[2]}**${subjectLineLabel(type, 2)}
-- Preview text: ${previewText(2, keyPoints)}
+- Preview text: ${previewText(2, keyPoints, subjectLines[2])}
 
 ### Option D: Personal/Direct
 **${subjectLines[3]}**${subjectLineLabel(type, 3)}
-- Preview text: ${previewText(3, keyPoints)}
+- Preview text: ${previewText(3, keyPoints, subjectLines[3])}
 
 ---
 
@@ -129,7 +130,7 @@ ${hooks.map((h, i) => `### Hook ${i + 1}: ${h.name}\n> ${h.text}`).join('\n\n')}
 
 **Subject:** ${subjectLines[0]}
 
-**Preview:** ${previewText(0, keyPoints)}
+**Preview:** ${previewText(0, keyPoints, subjectLines[0])}
 
 ---
 
@@ -261,8 +262,8 @@ function generateSubjectLines(label: string, clause: boolean, type: string, nPoi
 }
 
 // Preview text: one line per option, built from key points that fit whole (never cut in a word or a phrase).
-function previewText(index: number, points: string[]): string {
-  const fits = points.map((p) => shortenClauses(p, 90)).filter((p) => p.length <= 95 && !/\.\.\.$/.test(p));
+function previewText(index: number, points: string[], subject = ''): string {
+  const fits = points.map((p) => shortenClauses(p, 90)).filter((p) => p.length <= 95 && !/\.\.\.$/.test(p) && !subject.toLowerCase().includes(p.toLowerCase().slice(0, 40)));
   if (!fits.length) return 'Add key_points of a few words each to get preview text built from them.';
   const a = fits[index % fits.length];
   const b = fits[(index + 1) % fits.length];
@@ -276,7 +277,7 @@ function generateHooks(label: string, clause: boolean, v: Vertical | null, figur
   const t = lowerFirstIfCommon(label);
   const fig = figures[0];
   return [
-    { name: 'Question', text: v ? v.discovery[0] : clause ? `What if ${t}?` : `What if everything you knew about ${t} was wrong?` },
+    { name: 'Question', text: v ? v.discovery[0] : `How are you handling this today: ${t}?` },
     { name: 'Statistic', text: fig ? `${endSentence(capFirst(shortenClauses(fig, 150)))} Use it as the opening line, and name where the figure comes from.` : 'No figure was given in key_points, so there is no statistic hook. Add one figure you can source to key_points to get it.' },
     { name: 'Story', text: v ? `Open with a week in the life of ${aRole(v.buyerRoles[0])}: what they check first, and what goes wrong. Give one real moment in key_points to have it written out.` : 'Open with one real moment from a customer or from your own week. Give it in key_points to have it written out.' },
     { name: 'Bold Statement', text: clause ? `Here is what most teams get wrong, and what to do instead: ${t}.` : `Here is what most teams get wrong about ${t}, and what to do instead.` }
@@ -362,18 +363,19 @@ const ACTION: Record<string, ((metric: string) => string)[]> = {
 function generateBodyContent(keyPoints: string[], config: { depth: string; length: string; focus: string }, suggestedType: string, v: Vertical | null, type: string, label: string, field: string): string {
   const acts = ACTION[type] || ACTION.educational;
   const shown = keyPoints.slice(0, MAX_SECTIONS);
+  const usedQ = new Set<string>();
   let content = `This issue looks at ${shown.length} ${shown.length === 1 ? 'point' : 'points'} on ${label}. Each point ends with something you can do this week.
 
 `;
   shown.forEach((point, index) => {
     const figure = FIGURE.test(point);
-    const heading = shortenClauses(point, 110);
+    const heading0 = shortenClauses(point, 110); const heading = /\.\.\.$/.test(heading0) ? dropTail(point.split(/\s+/).slice(0, 12).join(' ')) : heading0;
     const full = endSentence(capFirst(point));
     const metric = v ? v.metrics[index % v.metrics.length] : '';
     const where = field || 'this field';
     content += `### ${index + 1}. ${cap(heading)}
 
-${full === `${cap(heading)}.` ? '' : `${full} `}${v ? `For readers in ${where}, this shows up in ${metric}. A fair test: "${v.discovery[index % v.discovery.length]}" ` : 'Put your own numbers next to this point before you decide what to do about it. '}${acts[index % acts.length](metric)}
+${full === `${cap(heading)}.` ? '' : `${full} `}${v ? `For readers in ${where}, this shows up in ${toYou(metric)}. A fair test: "${toYou(bestQuestion(point, v.discovery, usedQ))}" ` : 'Put your own numbers next to this point before you decide what to do about it. '}${acts[index % acts.length](metric)}
 
 ${figure ? `*This point holds a figure. Name where it comes from before the issue goes out.*\n\n` : ''}`;
   });

@@ -366,7 +366,7 @@ function generateFullCaseStudy(
 
   // An unnamed customer with results from several sources has no single story yet: the headline is about what customers report, and
   // no one company's result is shown as the story's own.
-  const label = generic ? customerName.replace(/\s*\([^)]*\)/g, '').replace(/^contact at /i, '').trim() : customerName;
+  const label = generic ? (() => { let x = customerName; for (let i = 0; i < 4; i++) x = x.replace(/\s*\([^()]*\)/g, ''); return x.replace(/\)+/g, '').replace(/^contact at /i, '').trim(); })() : customerName;
   const manySources = generic && (outcomes.length + quotes.length + titles.length) >= 1;
   const headline = manySources ? `${product}${industryText ? ` in ${industryText}` : ''}: what customers report` : lead ? capFirst(lead.text.replace(/^customer (?:quote|words):\s*/i, '')) : `${label} and ${product}`;
   const headlineOk = (lead && headline.length <= 160) || manySources;

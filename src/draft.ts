@@ -394,3 +394,25 @@ export function softenClaims(text: string): { text: string; removed: string[] } 
   t = t.replace(/\b(a|an) ([aeiou])/gi, (m, a, c) => (a.toLowerCase() === 'a' ? `an ${c}` : m)).replace(/\ban ([b-df-hj-np-tv-z])/gi, (m, c) => `a ${c}`).replace(/\s{2,}/g, ' ');
   return { text: t, removed: [...new Set(removed)] };
 }
+
+// The question (from a list) that shares most words with a point; questions already used are skipped; none shared means the next unused one.
+export function bestQuestion(point: string, questions: string[], used: Set<string>): string {
+  const words = (x: string) => new Set((x.toLowerCase().match(/[a-z]{5,}/g) || []).map((w) => w.replace(/(?:ing|ed|es|s)$/, '')));
+  const pw = words(point);
+  const free = questions.filter((x) => !used.has(x));
+  const pool = free.length ? free : questions;
+  let best = pool[0];
+  let bestN = -1;
+  for (const qn of pool) { const n = [...words(qn)].filter((w) => pw.has(w)).length; if (n > bestN) { best = qn; bestN = n; } }
+  if (best) used.add(best);
+  return best || '';
+}
+// Template wording written for the author ("the buyer uses") said to the audience ("you use").
+export function toYou(s: string): string {
+  return s.replace(/\bthe buyer'?s own\b/gi, 'your own').replace(/\bthe buyer uses\b/gi, 'you use').replace(/\bthe buyer'?s\b/gi, 'your').replace(/\bthe buyer\b/gi, 'you');
+}
+// Source labels in brackets ("(page claim)", "(customer quote)") are bookkeeping for the author; a text to publish does not carry them.
+export function publishable(s: string): string {
+  return s.replace(/\s*\((?:page claims?|customer quote|customer words|partner quote|case study(?: title)?|customer story title|story title|success story title|ebook title[^)]*|home page)\)/gi, '').replace(/\s{2,}/g, ' ').trim();
+}
+export const STAT = /\d[\d.,]*\s?(?:%|x\b|\+)|[$₹€£]\s?\d|\b\d[\d,]*\s?(?:million|billion|lakhs?|crore|M\+|k\+)/i;

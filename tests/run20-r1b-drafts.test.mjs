@@ -117,7 +117,7 @@ test("newsletter_builder: a long topic gives short subject lines, hooks and sect
   for (const s of subjects) { assert.ok(s.length < 150, s); assert.doesNotMatch(s, /\[/, s); assert.doesNotMatch(s, /how multi-branch retailers/i, s); }
   noBrackets(t, "newsletter");
   assert.match(t, /### Hook 1: Question\n> How many sites do you run, and which ones suffer the most outages\?/);
-  assert.match(t, /\| \*\*Product\*\* \| Branchwire \(read from the topic\)/);
+  assert.match(t, /\| \*\*Product\*\* \| Branchwire managed SD-WAN \(read from the call to action\)/);
   assert.match(t, /### 1\. Branch outages are costly/);
 });
 test("newsletter_builder: a statistic hook uses a figure the user gave and never invents one", async () => {
@@ -138,7 +138,7 @@ test("webinar_script: the topic is printed once, the pain point is written from 
   assert.match(t, /The problem this session takes on: slow month-end close because receipts, cards and approvals live in different tools\./);
   assert.match(t, /For a CFO in mid-size manufacturers the usual yardsticks are days to close the books, reconciliation effort and policy breach rate\./);
   for (const k of ["close faster by posting card spend to the ledger daily", "keep one approval policy for cards and claims", "give audit one trail per transaction"]) {
-    assert.ok(t.split("Main Content Block 1")[2].includes(k) || t.includes(`- ${k.charAt(0).toUpperCase()}${k.slice(1)}.`), k);
+    assert.ok(t.split("Main Content Block 1")[2].toLowerCase().includes(k), k);
   }
   assert.match(t, /Spendrill is read from the topic|CFO should be able to say where they stand/);
 });

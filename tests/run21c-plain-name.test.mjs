@@ -19,10 +19,13 @@ test("a long plain description gives a short name that does not end mid clause",
     "Freight visibility software for shippers that tracks every load across carriers and modes",
     "Messaging platform for SMS and WhatsApp with templates, routing and delivery reports",
     "Route planning software that cuts empty miles for last mile delivery fleets",
+    "Observability for cloud native engineering teams with traces, metrics and logs in one place",
+    "Payments that settle in minutes for marketplaces and platforms across several countries",
   ]) {
     const n = productParts(d).name;
     assert.ok(n.split(/\s+/).length >= 1 && n.length > 0, d);
     assert.doesNotMatch(n, ENDS_MID_CLAUSE, `${d} -> ${n}`);
+    assert.ok(n.split(/\s+/).length >= 2, `a one word name from a description: ${d} -> ${n}`);
   }
   assert.equal(productParts("Lanehop, a route planning platform for delivery fleets").name, "Lanehop");
 });

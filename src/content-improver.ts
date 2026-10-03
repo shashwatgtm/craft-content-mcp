@@ -247,7 +247,13 @@ function shorterEmail(content: string): { text: string; left: string[] } | null 
   const product = rest.find((s, i) => i > 0 && s !== proof && !(proof && s.includes(proof)));
   const kept: string[] = [];
   const left: string[] = [];
-  const note = (orig: string, shown: string) => { const gone = orig.replace(/[.!?]+$/, '').slice(shown.length).replace(/^[,;:\s]+/, ''); if (gone.length > 12) left.push(`${clipAtWord(gone, 45)}...`); };
+  const note = (orig: string, shown: string) => {
+    const o = orig.replace(/[.!?]+$/, '');
+    const sh = shown.replace(/(?:\.\.\.|…)\s*$/, '').replace(/[.!?]+$/, '');
+    // the text that is left out is what is not in the shown version: the tail when the shown text is the start, else the clauses it dropped
+    const gone = o.startsWith(sh) ? o.slice(sh.length).replace(/^[,;:\s]+/, '') : o.split(/,\s+/).filter((c) => c.length > 12 && !sh.includes(c.trim())).join(', ');
+    if (gone.length > 12) left.push(`${clipAtWord(gone, 45)}${gone.length > 45 ? '...' : ''}`);
+  };
   const out: string[] = [];
   if (subjectLine) {
     const full = subjectLine.replace(/^subject:\s*/i, '');

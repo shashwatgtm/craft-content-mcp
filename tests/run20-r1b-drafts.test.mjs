@@ -403,3 +403,14 @@ test("round 2, investment seller: the investment profile replaces the AI support
   assert.match(t, /tracking error|drawdown/);
   assert.doesNotMatch(t, /resolution|workflow being automated|Head of Customer Experience/);
 });
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// Round 3: craft_content_improver keeps domain terms and does not split at ", so"
+// ---------------------------------------------------------------------------------------------------------------------------
+test("craft_content_improver: 'optimize routes' is a domain term and is not rewritten or called a buzzword; ', so' is not split", async () => {
+  const text = "Subject: Fewer empty miles for Lanehop\n\nHi Priya,\n\nLanehop dispatchers spend the morning re-planning loads by hand, and our software helps fleets optimize routes and cut empty miles on every lane they run each week, so your team can plan the day in one pass without calling every driver.\n\nWould a 15 minute call on Tuesday work?\n\nThanks,\nSam";
+  const t = await call("craft_content_improver", { content: text, content_type: "email", goals: "clarity" });
+  assert.doesNotMatch(t, /improve routes/i);
+  assert.doesNotMatch(t, /"optimize" in/i);
+  assert.doesNotMatch(t, /\n\s*So your team can plan/);
+});

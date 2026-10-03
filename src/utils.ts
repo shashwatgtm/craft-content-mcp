@@ -382,7 +382,7 @@ export function analyzeContent(content: string, contentType: string, goal: strin
   if (passiveMatches.length > sentences * 0.3) {
     note('clarity', 'passive', 2, `High passive voice usage (${passiveMatches.length} instances)`, 'Convert to active voice: "X did Y" instead of "Y was done by X"');
   }
-  const buzz = distinct(content, BUZZ);
+  const buzz = distinct(content, BUZZ).filter((b) => !(/^optimi[sz]/i.test(b) && DOMAIN_OPT.test(sentenceWith(content, b))));
   if (buzz.length > 0) {
     const shown = buzz.slice(0, 4).map((b) => `"${b}" in "${sentenceWith(content, b)}"`).join('; ');
     note('clarity', 'buzzwords', Math.min(4, buzz.length), `Buzzwords (${buzz.length}): ${shown}${buzz.length > 4 ? `; and ${buzz.length - 4} more: ${buzz.slice(4).join(', ')}` : ''}`, 'Say what the product does in plain words: "use" instead of "leverage" or "utilize", "help" instead of "empower", "improve" instead of "optimize".', true);
@@ -558,6 +558,7 @@ const NOUN_EDITS: [RegExp, string, string][] = [
   [/\bsynerg(y|ies)\b/gi, 'collaboration', 'collaboration'],
   [/\bparadigms?\b/gi, 'approach', 'approaches'],
 ];
+const DOMAIN_OPT = /\boptimi[sz]\w*\s+(?:the\s+|our\s+|your\s+|their\s+)?(?:routes?|routing|delivery|dispatch|fleet|inventory|pricing|price|spend|spending|cloud|costs?|queries|query|bids?|bidding|schedul\w+|supply|warehouse|portfolio|yield|conversion|SEO|search|ad|ads|campaigns?|load|loads|capacity|staffing|working capital|cash|tax|freight|network|energy|storage|images?|code|performance)\b|\b(?:SEO|search|route|cost|spend|inventory|price|query|bid|conversion|cloud)[- ]optimi[sz]\w*/i;
 const ALT: Record<string, [string, string, string, string]> = { simplify: ['ease', 'eases', 'eased', 'easing'], improve: ['raise', 'raises', 'raised', 'raising'], use: ['apply', 'applies', 'applied', 'applying'] };
 function keepCase(from: string, to: string): string {
   return from[0] === from[0].toUpperCase() && from[0] !== from[0].toLowerCase() ? to.charAt(0).toUpperCase() + to.slice(1) : to;
@@ -567,6 +568,7 @@ export function editSentence(s: string): string {
   t = t.replace(new RegExp(`(^|[.!?]\\s+)${HYPE_ADJ}\\s+(\\w)`, 'gi'), (_m, pre: string, ch: string) => pre + ch.toUpperCase());
   t = t.replace(new RegExp(`\\b${HYPE_ADJ}\\s+`, 'gi'), '');
   for (const [re, forms] of VERB_EDITS) {
+    if (forms[0] === 'improve' && DOMAIN_OPT.test(t)) continue; // "optimize routes / queries / spend" is the domain term, not filler
     let used = 0;
     t = t.replace(re, (m: string, suffix: string | undefined) => {
       // a plain word is never used twice in one sentence for two different buzzwords: the second one gets the alternative verb
@@ -578,9 +580,9 @@ export function editSentence(s: string): string {
   }
   for (const [re, one, many] of NOUN_EDITS) t = t.replace(re, (m: string, suffix: string | undefined) => keepCase(m, suffix === 'ies' ? many : one));
   if (countWords(t) > 30) {
-    // Run 20 (round 1b): a long sentence is split only at ", but" or ", so" followed by its own subject (a pronoun, "the", "our" ...) with
+    // Run 20 (round 1b): a long sentence is split only at ", but" followed by its own subject (a pronoun, "the", "our" ...) with
     // eight or more words on each side, and the joining word is kept. A list ("A, B, C and D") is never split, and a fragment is never made.
-    const m = /^(.{40,}?),\s+(but|so)\s+((?:we|you|they|it|this|that|these|those|our|your|their|the|I)\s.{25,})$/i.exec(t);
+    const m = /^(.{40,}?),\s+(but)\s+((?:we|you|they|it|this|that|these|those|our|your|their|the|I)\s.{25,})$/i.exec(t);
     if (m && countWords(m[1]) >= 8 && countWords(m[3]) >= 8) t = `${m[1]}.\n${m[2].charAt(0).toUpperCase()}${m[2].slice(1)} ${m[3]}`;
   }
   return t;

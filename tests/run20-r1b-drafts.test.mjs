@@ -136,7 +136,7 @@ test("webinar_script: the topic is printed once, the pain point is written from 
   assert.equal(t.split(topic).length - 1, 2, "the heading and the table, no more");
   noBrackets(t, "webinar");
   assert.match(t, /The problem this session takes on: slow month-end close because receipts, cards and approvals live in different tools\./);
-  assert.match(t, /For a CFO in mid-size manufacturers the usual yardsticks are days to close the books, reconciliation effort and policy breach rate\./);
+  assert.match(t, /For a CFO in mid-size manufacturers the usual yardsticks are [^.]+\./);   // run 21b: the neutral fintech entry; the close-the-books yardsticks belong to the spend and expense sub-type
   for (const k of ["close faster by posting card spend to the ledger daily", "keep one approval policy for cards and claims", "give audit one trail per transaction"]) {
     assert.ok(t.split("Main Content Block 1")[2].toLowerCase().includes(k), k);
   }

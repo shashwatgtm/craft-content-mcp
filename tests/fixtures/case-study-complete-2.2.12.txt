@@ -24,8 +24,8 @@
 What the team was dealing with: Dispatchers spent four hours a day planning routes by hand and late deliveries hit 18 percent.
 
 **To finish this section** (ask the customer, and use their words):
-- What the problem cost them, with the starting value of one of: cost per delivery, first-attempt delivery rate and on-time delivery.
-- Interview question in the sector's language: "How do you plan routes today, and how often does a dispatcher re-plan during the day?"
+- What the problem cost them, with the starting value of one of: on time delivery, cost per shipment or per order and order cycle time.
+- Interview question in the sector's language: "Which systems hold your orders, shipments and stock today, and who owns the data in them?"
 
 ---
 
@@ -34,9 +34,9 @@ What the team was dealing with: Dispatchers spent four hours a day planning rout
 What was put in place: RouteIQ planned routes automatically and sent drivers live updates.
 
 **To finish this section:**
-- Why FlowOps chose RouteIQ, and which alternative it weighed (a common reaction in logistics tech: "We already have a TMS").
+- Why FlowOps chose RouteIQ, and which alternative it weighed (a common reaction in logistics tech: "We already have a system for this").
 - How the implementation went, and how long it took to see value. Use only a duration the customer confirms.
-- Words to use as the customer says them: dispatch, fleet, last-mile, route plan, first-attempt delivery.
+- Words to use as the customer says them: shipment, carrier, consignment, lead time, exception.
 
 ---
 
@@ -48,7 +48,7 @@ What was put in place: RouteIQ planned routes automatically and sent drivers liv
 - Planning time cut from 4 hours to 30 minutes.
 - 12% lower fuel cost.
 
-**To finish this section:** for each figure, give the value before, the value after and the period it was measured over. A strong proof point here: A before and after of cost per delivery or first-attempt delivery at one hub, measured over a full cycle of busy and quiet weeks. Measures of this sector that the results do not yet show: cost per delivery, first-attempt delivery rate, on-time delivery and vehicle utilisation. Add one if the customer tracks it.
+**To finish this section:** for each figure, give the value before, the value after and the period it was measured over. A strong proof point here: A before and after of on time delivery or cost per shipment on one lane, site or region, measured over a full cycle of busy and quiet weeks. Measures of this sector that the results do not yet show: on time delivery, cost per shipment or per order, order cycle time and exception rate. Add one if the customer tracks it.
 
 ---
 
@@ -62,15 +62,15 @@ What was put in place: RouteIQ planned routes automatically and sent drivers liv
 
 ## Where This Goes Next
 
-Close with one action for the reader. Deals in logistics tech usually start like this: enterprise sales with a pilot at one hub or city, often timed around peak-season planning. Write the reader's next step to match, for example a pilot request.
+Close with one action for the reader. Deals in logistics tech usually start like this: enterprise sales with a pilot at one site, lane or region, often timed around peak season planning. Write the reader's next step to match, for example a pilot request.
 
 ---
 
 ## Sector Notes: Logistics tech
 
-- **A strong proof point here:** A before and after of cost per delivery or first-attempt delivery at one hub, measured over a full cycle of busy and quiet weeks.
-- **What readers in this sector measure:** cost per delivery, first-attempt delivery rate, on-time delivery, deliveries per vehicle per day, vehicle utilisation, failed delivery and return rate, dispatch planning time.
-- **Terms this sector's buyers use:** dispatch, fleet, last-mile, route plan, first-attempt delivery, proof of delivery, 3PL, cost per delivery, delivery SLA, TMS.
+- **A strong proof point here:** A before and after of on time delivery or cost per shipment on one lane, site or region, measured over a full cycle of busy and quiet weeks.
+- **What readers in this sector measure:** on time delivery, cost per shipment or per order, order cycle time, exception rate, delay and damage claims, service level attainment, manual planning time.
+- **Terms this sector's buyers use:** shipment, carrier, consignment, lead time, exception, service level, proof of delivery, third party logistics provider, transport management system, warehouse management system.
 - **Your results:** they carry a figure.
 
 ---

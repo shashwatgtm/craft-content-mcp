@@ -46,7 +46,7 @@ export function generateWebinarScript(args: {
   const given = (args.your_product || '').trim();
   const product = given || (productLevel === 'none' ? '' : parts.company);
   // Run 19 (D80, problems 4 and 8): the sector and the business model are read from every text the user gave.
-  const ctx: Ctx = readContext(args.business_model, { seller: [given || parts.company, topic], context: [args.key_takeaways, args.speakers], role: [audience], buyer: [audience] });
+  const ctx: Ctx = readContext(args.business_model, { seller: [given || parts.company, parts.problem || topic], context: [args.key_takeaways, args.speakers], role: [audience], buyer: [parts.audience, audience] });
 
   // DERIVE key takeaways from topic if not provided
   let takeaways: string[];

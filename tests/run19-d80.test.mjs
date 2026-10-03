@@ -136,7 +136,7 @@ test("newsletter_builder: a topic that is a clause is never pasted into a verb s
   assert.doesNotMatch(r.text, /Why how|how heads is|is broken/i);
   assert.match(r.text, /book a 20-minute call/i);
   assert.doesNotMatch(r.text, /15-minute demo/);
-  shared(r.text, { names: ["Lanehop"], sector: /dispatch|fleet|last-mile|proof of delivery|cost per delivery/i, label: "newsletter 2" });
+  shared(r.text, { names: ["Lanehop"], sector: /dispatch|fleet|last-mile|proof of delivery|cost per delivery|shipment|carrier|consignment|on time delivery/i, label: "newsletter 2" });
 });
 
 test("newsletter_builder: a topic of up to 90 characters is used whole in every subject line, never clipped to three words", async () => {

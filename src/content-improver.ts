@@ -40,7 +40,7 @@ export function generateContentImprover(args: {
   const tone = toneCheck(content, args.tone_preference);
   const emailLike = contentType === 'sales_email' || contentType === 'email';
   const shorter = emailLike && (wordCount > 120 || analysis.findings.some((f) => f.rule === 'subject-length' || f.rule === 'sentence-length' || f.rule === 'run-on')) ? shorterEmail(content) : null;
-  const ctx = readContext(undefined, { seller: [(content.split('\n').find((l) => l.trim()) || '').replace(/^\s*subject:\s*/i, '').slice(0, 250)], context: [content, args.goal], role: [args.audience], buyer: [args.audience] });
+  const ctx = readContext(undefined, { seller: [sellerWords(content, contentType)], context: [content, args.goal], role: [args.audience], buyer: [args.audience] });
 
   // Create specific recommendations based on analysis: the findings that cost the most points first
   const priorityFixes = [...analysis.findings].sort((a, b) => b.penalty - a.penalty).slice(0, 6).map((f) => {
@@ -381,4 +381,15 @@ function generateChecklist(contentType: string, goal: string, analysis: ContentA
 
   // Run 12 (R12-20b): one list item per check, now that no symbol starts the line.
   return checks.map((c) => `- ${c}`).join('\n');
+}
+
+// The words the author uses for what the company sells. In copy written in the seller's own voice (an email, a landing page, a product
+// description, a press release) these are the lines that are not the subject, the greeting, the sign-off, the ask or the line about the
+// reader's problem ("Teams at ... often deal with ..."). In a blog post, a social post or a case study the title and the body are about a
+// subject, not necessarily about what the author sells, so they stay free text for the reader.
+const SELLER_VOICE = new Set(['sales_email', 'email', 'landing_page', 'product_description', 'press_release']);
+const NOT_SELLER_LINE = /^(?:subject:|(?:hi|hello|dear|hey)\b|(?:thanks|thank you|best|regards|kind regards|cheers|sincerely)\b|teams? at\b|would you be open|are you open|can we (?:talk|book|schedule)|reply\b)|\boften deal with\b/i;
+function sellerWords(content: string, contentType: string): string {
+  if (!SELLER_VOICE.has(contentType)) return '';
+  return content.split('\n').map((l) => l.trim()).filter((l) => l && !NOT_SELLER_LINE.test(l))[0]?.slice(0, 300) || '';
 }

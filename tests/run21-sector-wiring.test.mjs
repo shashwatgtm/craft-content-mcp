@@ -31,8 +31,8 @@ const COMPANIES = [
   },
   {
     key: "messaging", sector: "telecom", name: "Pelora",
-    sells: "Pelora is a business messaging platform that sends SMS, RCS and WhatsApp messages through one API and blocks spam and phishing messages",
-    does: "a messaging platform that sends SMS, RCS and WhatsApp messages through one API, with delivery reporting, sender reputation checks and anti phishing filters",
+    sells: "Pelora is a business messaging platform that sends SMS, RCS and WhatsApp messages through one API",
+    does: "a messaging platform that sends SMS, RCS and WhatsApp messages through one API, with delivery reporting and sender reputation checks",
     customer: "Banking", persona: "developers who integrate the messaging API into existing applications at Banking",
     problem: "scam messages travel over SMS under the names of legitimate brands and customers rarely report them",
     result: "a bank cut reported scam messages after switching its sender checks on (hypothetical)",

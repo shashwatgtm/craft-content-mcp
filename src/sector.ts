@@ -97,7 +97,7 @@ export function objectionKind(text: string): ObjectionKind {
   if (/\bprice|\bpricing|\bcost|\bbudget|expensive|cheaper|discount|margin|\brates?\b/.test(t)) return 'price';
   if (/already have|already has|already does|already use|existing|incumbent|current (?:vendor|tool|system|provider|operator)|in-house|built|free .*app|\bopen[- ]source\b/.test(t)) return 'existing';
   if (/adopt|use a new|will not use|won't use|wont use|resist|change management|training|another app|new app/.test(t)) return 'adoption';
-  if (/integrat|migrat|cut-?over|disrupt|\bsetup\b|set-up|implementation|rollout|transition|too long|long to|takes? too|onboarding/.test(t)) return 'implementation';
+  if (/integrat|migrat|cut-?over|disrupt|\bsetup\b|set-up|\bset up\b|implementation|rollout|transition|too long|long to|takes? too|onboarding|how long (?:does|will|would|do) it take/.test(t)) return 'implementation';
   if (/security|privacy|compliance|audit|regulat|legal|\brisk\b|data residency/.test(t)) return 'security';
   if (/bundle|one vendor|single vendor|suite/.test(t)) return 'bundle';
   if (/timing|not now|next year|\blater\b|priority|priorities|right time/.test(t)) return 'timing';

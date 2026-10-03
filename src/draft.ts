@@ -71,14 +71,17 @@ export function splitList(raw: unknown): string[] {
   }
   const merged: string[] = [];
   for (const p of parts) {
-    if (merged.length && JOINER.test(p)) merged[merged.length - 1] += ', ' + p;
+    const prevLast = merged.length ? (merged[merged.length - 1].split(/\s+/).pop() || '') : '';
+    // a short capitalised fragment after an item that ends in an acronym or place ("across the US; UK; EU") continues that list
+    const placeList = merged.length > 0 && p.split(/\s+/).length <= 3 && /^[A-Z]/.test(p) && !/\d/.test(p) && /^[A-Z]{2,5}[,.]?$/.test(prevLast);
+    if (merged.length && (JOINER.test(p) || placeList)) merged[merged.length - 1] += ', ' + p;
     else merged.push(p);
   }
   // short fragments: "fast; transparent; compliant and error free travel" is one run of adjectives
   const out: string[] = [];
   for (let i = 0; i < merged.length; i++) {
     let cur = merged[i];
-    while (i < merged.length - 1 && cur.split(/\s+/).length <= 2 && /^[a-z]/.test(cur) && !/\d/.test(cur)) { i++; cur += ', ' + merged[i]; }
+    while (i < merged.length - 1 && !/\d/.test(cur) && ((cur.split(/\s+/).length <= 2 && /^[a-z]/.test(cur)) || /^[A-Z]{2,5}$/.test(cur))) { i++; cur += ', ' + merged[i]; }
     out.push(cur);
   }
   return out;
@@ -291,4 +294,30 @@ export function headlineSubject(topic: string, max = 90): string {
 // A customer or company name that names nobody ("a Locus customer (Retail)", "contact at a Happay customer (name not given)").
 export function isGenericName(name: string): boolean {
   return /^(?:an?|the|one of (?:our|the))\s+.{0,60}\bcustomers?\b|\bname not given\b|\bnot given\b|^customer\b|^client\b|^anonymous|^unnamed|^contact at\b/i.test(name.trim());
+}
+
+// Objections typed by the user. Lines and semicolons separate them; a comma separates them only when the next part opens with a capital
+// letter ("Setup will take too long, Our agents will make mistakes"), so one objection with commas inside it stays whole
+// ("Why not disconnected tools for design, build, test and release").
+export function splitObjections(raw: unknown): string[] {
+  if (typeof raw !== 'string') return [];
+  const text = fixNumbers(raw);
+  const out: string[] = [];
+  for (const line of text.split(/\n|;/).map((x) => x.trim().replace(/^[-*•]\s*/, '')).filter(Boolean)) {
+    out.push(...splitOutsideParens(line, /(?<=[A-Za-z0-9?)"'])\s*,\s+(?=[A-Z])/));
+  }
+  return out;
+}
+
+// The name of a product typed as "Name, a description: feature, feature (detail)", and the features it lists. A first segment of up to
+// five words is the name; otherwise the product has no short name and "the product" is used.
+export function productParts(product: string): { name: string; facts: string[]; description: string } {
+  const text = fixNumbers(product.trim().replace(/\s+/g, ' '));
+  const segs = splitOutsideParens(text, /,\s+|:\s+|;\s+/);
+  const first = segs[0] || text;
+  const short = first.split(/\s+/).length <= 5 && first.length <= 60;
+  const name = short ? first : 'the product';
+  const rest = short ? text.slice(first.length).replace(/^[,:;\s]+/, '') : text;
+  const facts = splitOutsideParens(rest, /,\s+|:\s+|;\s+/).map((x) => x.replace(/^(?:and|an?|the)\s+/i, '').trim()).filter((x) => x.length >= 3);
+  return { name, facts, description: rest };
 }

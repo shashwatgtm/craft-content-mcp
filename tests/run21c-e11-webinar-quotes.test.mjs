@@ -30,3 +30,13 @@ test("the script does not say who hosts the session unless that was given", asyn
     assert.doesNotMatch(out, /hosted by/i, webinar_type);
   }
 });
+
+// Run 21c round 4 (test first): a point cut for a heading kept its opening bracket ("### 1. Modernization of legacy applications (architecture review, cloud migration"). A heading or subject
+// line with an unclosed bracket now ends before the bracket.
+test("no heading or subject line holds an unclosed bracket", async () => {
+  const r = await handler(new Request("https://x.gtmhelix.com/mcp", { method: "POST", headers: { "content-type": "application/json", accept: "application/json, text/event-stream" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "newsletter_builder", arguments: { topic: "Why application modernization stalls and how to restart it", key_points: "Modernization of legacy applications (architecture review, cloud migration, testing and release automation for large estates); Second point is short; Third point also short", cta_goal: "book a call" } } }) }));
+  const out = (await r.json()).result.content.map((c) => c.text).join("\n");
+  for (const line of out.split("\n").filter((l) => /^(?:#{1,6} |\*\*Headline:\*\* |\*\*Subject:\*\* |Subject: )/.test(l))) {
+    assert.equal((line.match(/\(/g) || []).length, (line.match(/\)/g) || []).length, line);
+  }
+});

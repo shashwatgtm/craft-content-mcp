@@ -209,7 +209,7 @@ export function createServer(): Server {
         content: [
           {
             type: "text",
-            text: result,
+            text: closeDanglingBrackets(result),
           },
         ],
       };
@@ -228,4 +228,15 @@ export function createServer(): Server {
   });
 
   return server;
+}
+
+/** Run 21c round 4: a heading or subject line cut inside a bracket note ends before the bracket (no unclosed bracket in a headline). */
+export function closeDanglingBrackets(text: string): string {
+  return text.replace(/^((?:#{1,6} |\*\*Headline:\*\* |\*\*Subject:\*\* |Subject: )[^\n]*)$/gm, (line) => {
+    const open = (line.match(/\(/g) || []).length;
+    const close = (line.match(/\)/g) || []).length;
+    if (open <= close) return line;
+    const at = line.lastIndexOf('(');
+    return line.slice(0, at).replace(/[\s,;:\-]+$/, '');
+  });
 }

@@ -59,6 +59,16 @@ export function readContext(explicitModel: unknown, raw: ReaderInput): { v: Vert
     && !/\b(?:reconcil\w*|expenses?|month-end|close the books|payroll|invoic\w*|accounts (?:payable|receivable)|spend management|corporate cards?|prepaid cards?|reimburse\w*)\b/i.test(allText);
   const investmentFintech = !!v && v.id === 'fintech' && (m.model === 'investment' || investorBuyer);
   if (investmentFintech) v = null;
+  // The AI native notes in src/verticals.ts are written around a support desk (resolution rate, escalation, handling time). When nothing in
+  // the inputs is about support, those items are left out of the view of the sector that the tool prints; nothing is added.
+  if (v && v.id === 'ai-native' && !/\b(?:support|tickets?|customer service|help ?desk|contact cent(?:re|er)s?|chat(?:bots?)?|cx|customer experience|agents? assist)\b/i.test(allText)) {
+    v = {
+      ...v,
+      metrics: v.metrics.filter((x) => !/resolution|escalation|handling time|satisfaction/i.test(x)),
+      vocabulary: v.vocabulary.filter((x) => !/resolution|automation rate/i.test(x)),
+      buyerRoles: v.buyerRoles.filter((x) => !/customer experience/i.test(x)),
+    };
+  }
   const from = source === 'role' ? ' (the job titles name it)' : source === 'buyer' ? ' (the buyer\'s industry names it; your own description names no sector)' : '';
   const sector = investmentFintech ? (m.model === 'investment' ? 'read from your inputs as an investment business. No sector notes are shown, because the built-in notes cover the corporate finance office (the close, reconciliation, spend), not investing' : 'not named by your own description; the buyer is an investor. No sector notes are shown, because the built-in notes cover the corporate finance office (the close, reconciliation, spend), not investing (name what you sell to get sector notes)') : v ? `read from your inputs as ${v.name}${from}` : 'not clear from your inputs (name the industry for sector notes)';
   const model = m.model

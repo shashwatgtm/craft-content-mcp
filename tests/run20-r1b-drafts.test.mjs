@@ -293,3 +293,12 @@ test("no tool prints a bracket placeholder for a full input", async () => {
     assert.doesNotMatch(t, /\[(?:Add|Only if)/, tool);
   }
 });
+
+test("AI native notes are cut to what fits: no support-desk measures for a quant product, all of them for a support product", async () => {
+  const quant = await call("thought_leadership_series", { topic: "AI agents that screen securities for pension funds", your_take: "Allocators should ask for the evaluation set before the demo", target_reader: "CIOs at pension funds", num_articles: 1 });
+  assert.match(quant, /Sector: read from your inputs as AI native/);
+  assert.doesNotMatch(quant, /automated resolution rate|escalation rate|handling time|cost per resolution|Head of Customer Experience/);
+  assert.match(quant, /accuracy on an evaluation set/);
+  const support = await call("thought_leadership_series", { topic: "AI agents that resolve support tickets", your_take: "Measure the resolution rate on your own tickets", target_reader: "Heads of customer support", num_articles: 1 });
+  assert.match(support, /automated resolution rate/);
+});

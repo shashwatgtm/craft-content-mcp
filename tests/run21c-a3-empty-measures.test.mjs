@@ -39,3 +39,14 @@ test("the measure list is checked for items before it is indexed", async () => {
   const before = src.slice(Math.max(0, at - 160), at);
   assert.match(before, /if \(ranked\.length\)/);
 });
+
+// Run 21c round 3 (test first): a topic with a bracket note was cut inside the bracket in the headlines ("A Framework for X (customer Operations").
+test("no headline holds an unclosed bracket", async () => {
+  for (const article_type of TYPES) {
+    const out = await call({ topic: "AI-native business services (customer operations, collections, intelligent back office, technology services and marketing services for banks)", your_take: "One team under one contract should own the outcome", target_reader: "heads of operations at banks", num_articles: 3, article_type });
+    for (const m of out.matchAll(/^(?:\*\*Headline:\*\* |# )(.+)$/gm)) {
+      const open = (m[1].match(/\(/g) || []).length, close = (m[1].match(/\)/g) || []).length;
+      assert.equal(open, close, `${article_type}: ${m[1]}`);
+    }
+  }
+});

@@ -260,7 +260,8 @@ const TITLES: Record<string, [(t: string) => string, string][]> = {
 
 // Run 19 (D80, problem 2): no headline holds an unfilled bracket. A topic that is a clause or a question goes before a colon.
 function getArticleAngle(index: number, articleType: string, topic: string): Angle {
-  const T = titleWords(clipWords(topic, 120));
+  // run 21c round 3: a cut inside a bracket note drops the open bracket and what follows it
+  const T = titleWords(clipWords(topic, 120)).replace(/\s*\([^)]*$/, '').trim();
   const clause = isClause(topic);
   const list = TITLES[articleType] || TITLES.contrarian;
   const [phrase, suffix] = list[index % list.length];

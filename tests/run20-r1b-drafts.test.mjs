@@ -345,9 +345,11 @@ Proof: Harbor Retail cut dispatch planning time by 66% (case study title); Custo
   assert.doesNotMatch(t, /The audience is asked to deliver|At Lanehop we built Lanehop around this/);
   assert.match(t, /What Lanehop built: route planning across 180 variables/);
   assert.doesNotMatch(t, /Result: Harbor Retail cut dispatch planning time by 66% \(case study title\)/);
-  const subjects = t.split("**Subject Line Options:**")[1].split("**Email Body:**")[0];
+  // run 21c: draft rewrite. The email now has one "Subject:" line and one line of other subject lines to test.
+  const subjects = t.split("### Email Version")[1].split("### ")[0].split("\n").filter((l) => /^Subject: |^Other subject lines/.test(l)).join("\n");
   assert.doesNotMatch(subjects, /\b(?:and|the|of|to|a)$/m);
-  const cards = t.split("**Quote Card ").slice(1).map((c) => c.split("- Background")[0]);
+  // run 21c: draft rewrite. A card ends at the blank line (the "- Background" design lines are gone).
+  const cards = t.split("**Quote Card ").slice(1).map((c) => c.split(/\n\n|---/)[0]);
   for (const c of cards) assert.doesNotMatch(c, /What Lanehop built|The problem/);
 });
 test("round 2, thought leadership: unlabeled proof is split, no bare story title is a worked example, headlines are whole, sections are sentences", async () => {
@@ -361,7 +363,8 @@ test("round 2, thought leadership: unlabeled proof is split, no bare story title
   assert.match(t, /\n3\. Lanehop Market Recognition From Example Analyst For 7 Years/);
   for (const m of t.matchAll(/\*\*Headline:\*\* ([^\n]+)/g)) assert.doesNotMatch(m[1], /\.\.\.|\bTo$|Marke\b/);
   assert.doesNotMatch(t, /Say what|Set the idea out|Turn the position into steps|Open with|Close with/);
-  assert.match(t, /This piece argues something different|is incomplete: "|The position: "|There is a view on/);
+  // run 21c: draft rewrite. The opening of a framework article says what the article does with the take.
+  assert.match(t, /This article sets it out as a framework/);
   assert.doesNotMatch(t, /That argument has a test/);
 });
 test("round 2, case study: an unnamed customer gets no one company's result as its headline or snippet, and a narrative line is not offered as a customer quote", async () => {

@@ -227,17 +227,21 @@ test("thought_leadership_series: three different articles, every proof point use
     assert.ok(shared_ / Math.min(A.size, B.size) < 0.4, `articles ${i + 1} and ${j + 1} share ${shared_} of ${Math.min(A.size, B.size)} lines`);
   }
   for (const p of ["Secondary sales up 12% at a regional brand", "Offline order capture live in three weeks", "Rep adoption measured weekly in one region"]) assert.ok(r.text.includes(p), p);
-  assert.ok(r.text.includes(`"${take}"`), "the take is quoted");
-  assert.doesNotMatch(r.text, /accept that most|Let me tell you about|buy for for|win buy for secondary sales growth of 12%\./);
+  // run 21c: draft rewrite. The take is printed whole once, in the overview; the articles open with its parts as the author's own sentences.
+  assert.ok(r.text.includes(take), "the take is printed whole");
+  // run 21c: draft rewrite. The part of the take after the semicolon is now its own whole sentence ("The ones who win buy ..."); it must still never be joined into a sentence of ours.
+  assert.doesNotMatch(r.text, /accept that most|Let me tell you about|buy for for|(?<!The ones who )win buy for secondary sales growth of 12%\./);
   assert.doesNotMatch(r.text, /\[Common Practice\]|\[Topic\]|\[Name\]|\[X Years\]|\[Number\]|\[Year\]/);
   assert.doesNotMatch(r.text, /Forbes|Entrepreneur|Harvard|Word Count: ~750/);
-  assert.match(r.text, /Target length:\*\* 600 to 800 words/);
+  // run 21c: draft rewrite. Each article states the length of the draft it is, not a target.
+  assert.match(r.text, /Draft length:\*\* about \d+ words/);
 });
 
 test("thought_leadership_series: without proof points the drafts name suggested evidence and the sector's proof shape", async () => {
   const r = await call("thought_leadership_series", { topic: "managed SD-WAN for branch networks", your_take: "Branch uptime is bought, not hoped for", target_reader: "Heads of IT infrastructure at companies with many branches", num_articles: 1, article_type: "how_to" });
   shared(r.text, { sector: /uptime|mean time to repair|cost per site|wave plan|site survey/i, label: "thought leadership 2" });
-  assert.match(r.text, /Suggested Proof Points/);
+  // run 21c: draft rewrite. The generic list of proof to gather is gone; the missing proof is named once, with the sector's proof shape.
+  assert.match(r.text, /Not given: proof_points/);
 });
 
 // ---- testimonial_capture ----

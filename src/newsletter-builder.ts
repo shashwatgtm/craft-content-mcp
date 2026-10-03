@@ -25,7 +25,9 @@ export function generateNewsletter(args: {
   // repeat of the topic uses a short label (the problem's first clause), and the full topic is printed once, in the table.
   const parts = unpackTopic(topic);
   const ctaProduct = /\babout\s+(.+)$/i.exec(ctaGoal)?.[1]?.trim() || '';
-  const label = parts.short ? topic.replace(/ +/g, ' ') : parts.label;
+  // the first clause of the problem is the label when the shared cut stopped inside it ("... because testing")
+  const firstClause = (parts.problem || '').split(/[,;:]| \(/)[0].trim();
+  const label = parts.short ? topic.replace(/ +/g, ' ') : (firstClause && firstClause.length <= 110 && firstClause.length > parts.label.length && firstClause.toLowerCase().startsWith(parts.label.toLowerCase()) ? firstClause : parts.label);
   const clause = !parts.short || isClause(topic) || LABEL_CLAUSE.test(label);
   // Run 19 (D80, problems 4 and 8): the sector is read from every text the user gave.
   const ctx = readContext(undefined, { seller: [product, args.cta_goal], context: [topic, args.key_points, args.previous_topics] });
@@ -35,17 +37,18 @@ export function generateNewsletter(args: {
   // Run 21c (draft rewrite): the key points are the sections of the issue. Without them, the sector's own objection, measures and proof
   // shape make the sections (only when a sector is read); nothing else is invented.
   const given = !!args.key_points;
-  const secs: Pt[] = given
-    ? splitList(args.key_points).map(tidyPoint).map((p) => softenClaims(p).text).map((point) => ({ point }))
-    : sectorSections(v);
-  const keyPoints = secs.map((s) => s.point);
-  const figures = keyPoints.filter((p) => STAT.test(p));
-  const unsourced = given ? figures.filter((p) => !/\([^)]*[A-Za-z][^)]*\)\s*[.;]?\s*$/.test(p)) : [];
+  const rawPoints = given ? splitList(args.key_points).map(tidyPoint).map((p) => softenClaims(p).text) : [];
+  const shaped = given ? shapeSections(rawPoints, label, v) : { secs: sectorSections(v), problem: [] as string[] };
+  const secs: Pt[] = shaped.secs;
+  const nShown = Math.min(secs.length, MAX_SECTIONS);
+  const keyPoints = secs.filter((s) => !s.run && !s.heading).map((s) => s.point);
+  const figures = rawPoints.filter((p) => STAT.test(p));
+  const unsourced = given ? figures.filter((p) => !LABELLED.test(p)) : [];
 
   const productName = product ? productParts(product).name : '';
   const productDescription = product ? productParts(product).description : '';
   const named = productName || ctaProduct || parts.company;
-  const subjectLines = generateSubjectLines(label, clause, type, keyPoints, figures, v, topic, ctaGoal);
+  const subjectLines = generateSubjectLines(label, clause, type, keyPoints, [], v, topic, ctaGoal, nShown);
   const preview = (i: number) => previewText(i, keyPoints, subjectLines[i], label);
 
   const missing: string[] = [];
@@ -99,7 +102,7 @@ ${notGiven}${figureNote}${readers}
 
 ---
 
-${openingBlock(label, clause, v, hooks.question, previousTopics, casual, secs)}
+${openingBlock(label, clause, v, hooks.question, previousTopics, casual, secs, shaped.problem)}
 
 ${generateSections(secs, v, segment, label)}
 ${closingBlock(ctaGoal, named, productName, productDescription, secs)}
@@ -129,7 +132,33 @@ const q2 = (s: string) => `"${s}"`;
 const LABEL_CLAUSE = /\b(?:is|are|was|were|run|runs|combine|combines|means|rely|relies|chain|chains|sits|happens|hand|hands|can|will|must|should|have|has|do|does|break|breaks|fragments|drift|drifts)\b/i;
 
 // One section of the issue: the key point it is built from, and its own body when the section does not come from a point.
-interface Pt { point: string; body?: string; }
+interface Pt { point: string; body?: string; heading?: string; run?: boolean; }
+
+const norm = (x: string) => x.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const LABELLED = /\([^)]*[A-Za-z][^)]*\)\s*[.;]?\s*$/;
+// A point that reads as one clause is written as it is. A long point, one with several commas, or one that opens on a joining word is a
+// fragment that cannot be spliced into a sentence of ours: it is quoted.
+const OPENS_ON_JOINER = /^(?:so|while|with|from|and|but|which|that|because|instead|plus|then|yet|rather|not|including|without)\b/i;
+function isRun(point: string): boolean {
+  const commas = (point.replace(/\([^)]*\)/g, '').match(/,(?!\d)/g) || []).length;
+  return point.length > 120 || commas >= 2 || OPENS_ON_JOINER.test(point.trim()) || /,\s+(?:so|which|while|because|instead of|and so)\b/i.test(point);
+}
+// The key points shaped into sections: the topic's own problem goes to the opening, every figure goes into one section of numbers (a
+// heading is never a figure), a fragment is quoted, a clean point is a section of its own.
+function shapeSections(points: string[], label: string, v: Vertical | null): { secs: Pt[]; problem: string[] } {
+  const problem: string[] = []; const numbers: string[] = []; const secs: Pt[] = [];
+  const head = norm(label).slice(0, 40);
+  for (const p of points) {
+    if (head.length >= 15 && norm(p).startsWith(head)) problem.push(p);
+    else if (STAT.test(p) || FIGURE.test(p)) numbers.push(p);
+    else secs.push({ point: p, run: isRun(p) });
+  }
+  if (numbers.length) {
+    const proof = v ? ` A proof point readers in ${kindOf(v)} trust: ${lowerFirstIfCommon(endSentence(v.proofShape))}` : '';
+    secs.push({ point: numbers[0], heading: 'The numbers behind this', body: `${numbers.map((n) => endSentence(capFirst(n))).join(' ')}${proof}` });
+  }
+  return { secs, problem };
+}
 
 // The name of the kind of company or field, for "for teams in ...": the sub-type when the reader found one, else the sector's name.
 function kindOf(v: Vertical): string {
@@ -162,7 +191,7 @@ function related(point: string, items: string[], used: Set<string>, min = 1): st
 }
 
 // Subject lines: each one holds the topic, then a point, a figure or the call to action the user gave. The first one is the subject of the draft.
-function generateSubjectLines(label: string, clause: boolean, type: string, points: string[], figures: string[], v: Vertical | null, fullTopic: string, ctaGoal: string): string[] {
+function generateSubjectLines(label: string, clause: boolean, type: string, points: string[], figures: string[], v: Vertical | null, fullTopic: string, ctaGoal: string, nShown: number): string[] {
   const short = label;
   // Text only (run 10, R10-28): the topic placed after leading words follows the first-word rule
   // (names and acronyms keep their capitals). Product updates keep it as typed.
@@ -171,12 +200,12 @@ function generateSubjectLines(label: string, clause: boolean, type: string, poin
   const cut = (p: string, max: number) => { const c = shortenClauses(p, max); return /\.\.\.$/.test(c) ? clipAtWord(p, max) : c; };
   // A point that only repeats the topic ("Supply chains break in the gaps: supply chains break in the gaps") makes no second subject line.
   const same = (a: string) => { const x = a.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(), y = head.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); return x.length > 0 && (y.startsWith(x.slice(0, 24)) || x.startsWith(y.slice(0, 24))); };
-  const withHead = (pt: string | undefined) => (pt && !same(cut(pt, 60)) ? `${head}: ${cut(pt, 60)}` : '');
+  const withHead = (pt: string | undefined) => (pt && pt.length <= 70 && head.length + pt.length <= 120 && !same(pt) ? `${head}: ${pt.replace(/[.;,\s]+$/, '')}` : '');
   const p0 = withHead(points[0]);
   const p1 = withHead(points[1]);
   const fig = figures[0] && !same(cut(figures[0], 60)) ? `${head}: ${cut(figures[0], 60)}` : '';
   const measure = v ? `${head}: where you stand on ${v.metrics[0]}` : '';
-  const n = points.length;
+  const n = nShown;
   const count = n >= 2 ? (clause ? `${head}: ${n} points` : `${n} points on ${mid}`) : '';
   const cta = `${head}: ${lowerFirstIfCommon(ctaGoal)}`;
   const isNew = `New: ${short}`;
@@ -208,11 +237,11 @@ function previewText(index: number, points: string[], subject = '', label = ''):
 // user gave, never an invented one; the plain statement is the first key point as typed.
 function generateHooks(label: string, v: Vertical | null, figures: string[], points: string[], given: boolean): { question: string; list: { name: string; text: string }[] } {
   const t = lowerFirstIfCommon(label);
-  const fig = figures[0];
+  const fig = figures.find((f) => LABELLED.test(f)) || figures[0];
   const question = v ? v.discovery[0] : `How are you handling this today: ${t}?`;
   const list = [
     { name: 'Question', text: question },
-    { name: 'Statistic', text: fig ? endSentence(capFirst(shortenClauses(fig, 150))) : 'No figure was given in key_points, so there is no statistic hook. Add one figure you can source to key_points to get it.' }
+    { name: 'Statistic', text: fig ? `${endSentence(capFirst(shortenClauses(fig, 150)))}${LABELLED.test(fig) ? '' : ' Source needed before you use it.'}` : 'No figure was given in key_points, so there is no statistic hook. Add one figure you can source to key_points to get it.' }
   ];
   if (given && points[0]) list.push({ name: 'Plain Statement', text: endSentence(capFirst(points[0])) });
   return { question, list };
@@ -221,15 +250,17 @@ function generateHooks(label: string, v: Vertical | null, figures: string[], poi
 const MAX_SECTIONS = 6;
 
 // The opening of the issue: the sector's own question when the sector is read, the link to the recent issues the user named, and what the issue covers.
-function openingBlock(label: string, clause: boolean, v: Vertical | null, question: string, previous: string[], casual: boolean, secs: Pt[]): string {
+function openingBlock(label: string, clause: boolean, v: Vertical | null, question: string, previous: string[], casual: boolean, secs: Pt[], problem: string[]): string {
   const lines: string[] = [];
   if (v) lines.push(question);
   if (previous.length) {
     const list = proseJoin(previous.map((x) => lowerFirstIfCommon(x)));
-    lines.push(casual ? `We have been through ${list} lately. This time: ${label}.` : `Recent issues covered ${list}. This issue moves to ${clause ? 'a new question' : 'a new topic'}: ${label}.`);
+    lines.push(casual ? `We have been through ${list} lately. This time: ${clause ? `"${label}"` : label}.` : `Recent issues covered ${list}. This issue moves to ${clause ? 'a new question' : 'a new topic'}: ${clause ? `"${label}"` : label}.`);
   }
+  for (const pr of problem) lines.push(isRun(pr) ? `The problem this issue takes on, in the words of the brief: "${pr}"` : `The problem this issue takes on: ${endSentence(pr)}`);
   const n = Math.min(secs.length, MAX_SECTIONS);
-  lines.push(n ? `This issue looks at ${n} ${n === 1 ? 'point' : 'points'} on ${label}.` : `This issue is about ${label}.`);
+  const on = clause ? `this topic: "${label}".` : `${label}.`;
+  lines.push(n ? `This issue looks at ${n} ${n === 1 ? 'point' : 'points'} on ${on}` : `This issue is about ${on}`);
   return lines.join('\n\n');
 }
 
@@ -250,11 +281,12 @@ function generateSections(secs: Pt[], v: Vertical | null, segment: string, label
   let content = '';
   shown.forEach((sec, index) => {
     const point = sec.point;
-    const heading0 = shortenClauses(point, 110); const heading = (/\.\.\.$/.test(heading0) ? dropTail(point.split(/\s+/).slice(0, 12).join(' ')) : heading0).replace(/\s+(?:\$|US\$)?\d[\d,.%+]*$/, '');   // a heading never ends on a bare number ("closing out projects 15")
+    if (sec.run) { /* a fragment: the heading is its opening words, the body quotes it whole */ }
+    const heading0 = sec.run ? shortenClauses(point, 60) : shortenClauses(point, 110); const heading = sec.heading || (/\.\.\.$/.test(heading0) ? dropTail(point.split(/\s+/).slice(0, 12).join(' ')) : heading0).replace(/\s+(?:\$|US\$)?\d[\d,.%+]*$/, '');   // a heading never ends on a bare number ("closing out projects 15")
     let body: string;
     if (sec.body) body = sec.body;
     else {
-      const full = endSentence(capFirst(point));
+      const full = sec.run ? `In the words of the brief: "${point.replace(/[.;,\s]+$/, '')}".` : endSentence(capFirst(point));
       const bits: string[] = [full === `${cap(heading)}.` ? '' : full];
       if (v) {
         const metric = related(point, v.metrics, usedM) || v.metrics.find((m) => !usedM.has(m)) || v.metrics[index % v.metrics.length];

@@ -317,7 +317,7 @@ test("round 2, newsletter: a list broken at commas and semicolons is welded into
   });
   assert.doesNotMatch(t, /larger than:|larger than most can:/);
   assert.doesNotMatch(t, /### \d\. (?:Teams and sources of truth, so specs|Collections and docs drift apart)\n/);
-  assert.match(t, /Most teams run the lifecycle as disconnected projects with separate tools, teams and sources of truth, so specs, collections and docs drift apart\./);
+  assert.match(t, /most teams run the lifecycle as disconnected projects with separate tools, teams and sources of truth, so specs, collections and docs drift apart/i);   // run 21c: draft rewrite (a long run-on point is quoted whole, in the opening)
   for (const m of t.matchAll(/- Preview text: (.+)/g)) assert.doesNotMatch(m[1], /\b\w{1,2}$/, m[1]);
   assert.match(t, /### Hook 2: Statistic\n> No figure was given/);
   assert.doesNotMatch(t, /To finish this section|Ask your reader/);

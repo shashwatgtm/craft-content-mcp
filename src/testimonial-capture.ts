@@ -32,7 +32,7 @@ export function generateTestimonialCapture(args: {
   const P = product || fromCompany || 'the product';
   const co = genericCo ? 'your company' : company;
   // The success story tells what the customer's result was, in the customer's words and industry ("at a payments API company"): when no product is given it is not evidence of what the seller sells, so the sector stays unread.
-  const ctx = readContext(args.business_model, { seller: [product], context: [product ? storyFull : '', args.use_case, args.relationship_context], role: [args.customer_role], buyer: [args.customer_company] });
+  const ctx = readContext(args.business_model, { seller: [product], context: [product ? storyFull : '', args.use_case, args.relationship_context], role: [/^\s*(?:the\s+)?(?:developers?|engineers?|engineering teams?|developers? and engineering teams?)\s*$/i.test(args.customer_role || '') && args.customer_company ? '' : args.customer_role], buyer: [args.customer_company] });   // run 21c round 5: a plain developer title says who uses the product, not what the seller sells, when the customer's own industry is given
   const w = startWords(ctx.model);
 
   // The success story is sorted: only a result, a quote or a story with a figure can be said to belong to this company, and only when

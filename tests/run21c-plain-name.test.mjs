@@ -43,3 +43,10 @@ test("sales_enablement_content does not print a clause fragment as the product n
   const out = await call("sales_enablement_content", { content_type: "sales_email", product: "Enterprise AI platform that connects to company tools and data: search, an assistant and agents", target_persona: "CIO at a bank", sales_stage: "discovery" });
   assert.doesNotMatch(out, /Enterprise AI platform that[ ,.]|about Enterprise AI platform that/);
 });
+
+// Run 21c round 5 (test first, a judge's wrong sector finding): a testimonial kit for "developers and engineering teams" at a bank, with no product named, was read as
+// software and asked DevOps questions (release frequency, build time). A plain "developers" job title says who uses a product, not what the seller sells.
+test("testimonial_capture: developers at a bank are not asked DevOps questions", async () => {
+  const out = await call("testimonial_capture", { customer_name: "contact at a customer (name not given)", customer_company: "a customer (banking and payments)", customer_role: "developers and engineering teams", success_story: "A bank sends order and appointment messages to its customers over SMS and WhatsApp through one API (page claim)", testimonial_type: "written_quote" });
+  assert.doesNotMatch(out, /release frequency|build time|lead time for changes/i);
+});

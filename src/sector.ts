@@ -43,7 +43,7 @@ export function qs(s: string): string {
 // "security" in the sense of a financial instrument ("per security", "50,000 securities") is not the security sector: the reader
 // is shown the text with those words changed to "instrument".
 function scrub(list: unknown[] | undefined): unknown[] | undefined {
-  return list?.map((x) => typeof x === 'string' ? x.replace(/\b(?:per|each|every|single|individual)\s+securit(?:y|ies)\b/gi, 'instrument').replace(/\bsecurities\b/gi, 'instruments') : x);
+  return list?.map((x) => typeof x === 'string' ? x.replace(/\b(?:per|each|every|single|individual)\s+securit(?:y|ies)\b/gi, 'instrument').replace(/\bsecurities\b/gi, 'instruments').replace(/\bSOC ?[123]\b/gi, 'audit report').replace(/\b([A-Z][A-Za-z0-9]+) Software\b/g, '$1') : x);
 }
 export function readContext(explicitModel: unknown, raw: ReaderInput): { v: Vertical | null; model: BusinessModel | null; how: string; line: string; source: string | null } {
   const input: ReaderInput = { seller: scrub(raw.seller), context: scrub(raw.context), role: scrub(raw.role), buyer: scrub(raw.buyer) };
@@ -54,12 +54,13 @@ export function readContext(explicitModel: unknown, raw: ReaderInput): { v: Vert
   // business, so for that business they are not shown (a wrong-sector note is worse than none). Reported to the lead.
   // The same holds when the seller's own words name no sector and only the buyer's industry points to fintech while that buyer is an
   // investor (an asset allocator, a pension fund, an insurer's investment desk): the seller's product may be anything.
-  const buyerText = [...(Array.isArray(input.buyer) ? input.buyer : [])].filter((x): x is string => typeof x === 'string').join(' ');
-  const investorBuyer = source === 'buyer' && /\b(?:asset (?:allocators?|managers?)|pensions?|endowments?|wealth|investment (?:managers?|banks?)|hedge funds?|family offices?|sovereign)\b/i.test(buyerText);
+  const allText = [input.seller, input.context, input.role, input.buyer].flatMap((g) => (Array.isArray(g) ? g : [])).filter((x): x is string => typeof x === 'string').join(' \n ');
+  const investorBuyer = /\b(?:asset (?:allocators?|managers?)|pension (?:funds?|schemes?)|endowments?|wealth managers?|investment (?:managers?|banks?|strateg\w+)|hedge funds?|family offices?|sovereign|quant(?:itative)? (?:strateg\w+|investing))\b/i.test(allText)
+    && !/\b(?:reconcil\w*|expenses?|month-end|close the books|payroll|invoic\w*|accounts (?:payable|receivable)|spend management|corporate cards?|prepaid cards?|reimburse\w*)\b/i.test(allText);
   const investmentFintech = !!v && v.id === 'fintech' && (m.model === 'investment' || investorBuyer);
   if (investmentFintech) v = null;
   const from = source === 'role' ? ' (the job titles name it)' : source === 'buyer' ? ' (the buyer\'s industry names it; your own description names no sector)' : '';
-  const sector = investmentFintech ? (m.model === 'investment' ? 'read from your inputs as fintech, and the business as investment management. The built-in fintech notes cover finance operations, not investment, so none are shown' : 'not named by your own description; the buyer is an investor. The built-in fintech notes cover finance operations, not investment, so none are shown (name what you sell to get sector notes)') : v ? `read from your inputs as ${v.name}${from}` : 'not clear from your inputs (name the industry for sector notes)';
+  const sector = investmentFintech ? (m.model === 'investment' ? 'read from your inputs as an investment business. No sector notes are shown, because the built-in notes cover the corporate finance office (the close, reconciliation, spend), not investing' : 'not named by your own description; the buyer is an investor. No sector notes are shown, because the built-in notes cover the corporate finance office (the close, reconciliation, spend), not investing (name what you sell to get sector notes)') : v ? `read from your inputs as ${v.name}${from}` : 'not clear from your inputs (name the industry for sector notes)';
   const model = m.model
     ? `${MODEL_NAME[m.model]} (${m.how === 'input' ? 'from business_model' : m.how === 'sector' ? 'the usual model in this sector, assumed; set business_model to change it' : 'read from your inputs; set business_model to change it'})`
     : 'not clear from your inputs; set business_model (saas, services, connectivity, transactions, marketplace, hardware_software or investment) for advice that fits it';

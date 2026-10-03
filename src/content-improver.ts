@@ -40,7 +40,7 @@ export function generateContentImprover(args: {
   const tone = toneCheck(content, args.tone_preference);
   const emailLike = contentType === 'sales_email' || contentType === 'email';
   const shorter = emailLike && (wordCount > 120 || analysis.findings.some((f) => f.rule === 'subject-length' || f.rule === 'sentence-length' || f.rule === 'run-on')) ? shorterEmail(content) : null;
-  const ctx = readContext(undefined, { context: [content, args.goal], buyer: [args.audience] });
+  const ctx = readContext(undefined, { seller: [(content.split('\n').find((l) => l.trim()) || '').replace(/^\s*subject:\s*/i, '').slice(0, 250)], context: [content, args.goal], buyer: [args.audience] });
 
   // Create specific recommendations based on analysis: the findings that cost the most points first
   const priorityFixes = [...analysis.findings].sort((a, b) => b.penalty - a.penalty).slice(0, 6).map((f) => {
@@ -245,18 +245,28 @@ function shorterEmail(content: string): { text: string; left: string[] } | null 
   const opening = rest[0];
   const product = rest.find((s, i) => i > 0 && s !== proof && !(proof && s.includes(proof)));
   const kept: string[] = [];
+  const left: string[] = [];
+  const note = (orig: string, shown: string) => { const gone = orig.replace(/[.!?]+$/, '').slice(shown.length).replace(/^[,;:\s]+/, ''); if (gone.length > 12) left.push(`${clipAtWord(gone, 45)}...`); };
   const out: string[] = [];
-  if (subjectLine) out.push(`Subject: ${shortenClauses(subjectLine.replace(/^subject:\s*/i, ''), 60)}`);
+  if (subjectLine) {
+    const full = subjectLine.replace(/^subject:\s*/i, '');
+    const sub = shortenClauses(full, 60);
+    out.push(`Subject: ${sub}`);
+    note(full, sub);
+  }
   if (greeting) out.push(greeting);
-  if (opening) { out.push(endSentence(shortenClauses(opening, 170))); kept.push(opening); }
-  if (product) { out.push(endSentence(shortenClauses(product, 170))); kept.push(product); }
+  for (const s of [opening, product]) {
+    if (!s) continue;
+    const sh = shortenClauses(s, 170);
+    out.push(endSentence(sh)); kept.push(s); note(s, sh);
+  }
   if (proof) { out.push(endSentence(shortenClauses(proof, 200))); kept.push(proof); }
   if (ask) { out.push(ask); kept.push(ask); }
   out.push(...sign);
-  const left = rest.filter((s) => !kept.includes(s) && !(proof && s.includes(proof) && kept.includes(proof))).map((s) => clipAtWord(s.replace(/\s+/g, ' '), 50) + (s.length > 50 ? '...' : ''));
+  for (const s of rest) if (!kept.includes(s)) for (const piece of s.split(/;\s+/)) if (piece !== proof && !kept.includes(piece)) left.push(`${clipAtWord(piece.replace(/\s+/g, ' '), 45)}${piece.length > 45 ? '...' : ''}`);
   if (proof && opening && !kept.includes(opening)) return null;
   const text = out.join('\n');
-  return countWords(text) < countWords(content) ? { text, left: left.slice(0, 4) } : null;
+  return countWords(text) < countWords(content) ? { text, left: left.slice(0, 6) } : null;
 }
 
 function getContentTypeTips(contentType: string, goal: string): string {

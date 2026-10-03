@@ -45,7 +45,7 @@ export function generateContentRepurposer(args: {
   const pointsFull = dedupe(pickKeyPoints(body, keyMessage, titleInfo.fromSource ? title : '', 5)).map(cleanPoint);
   const points = pointsFull.map((p) => shortenClauses(p, 260));
   const wordCount = countWords(content);
-  const ctx = readContext(undefined, { context: [keyMessage, content, title] });
+  const ctx = readContext(undefined, { seller: [(paras[0] || '').split(/:\s*what to do about\b/i)[0].slice(0, 150)], context: [keyMessage, content, title] });
   const hook = titleInfo.fromSource ? title : keyMessage ? shortenClauses(keyMessage, 160) : shortenClauses(firstSentence(body), 160);
   const unknown = targetFormats.map((f) => f.toLowerCase().replace(/\s+/g, '_')).filter((f) => !KNOWN_FORMATS.includes(f));
   const customerProof = proof.filter((p) => p.kind === 'result' || p.kind === 'quote' || (p.kind === 'title' && p.figure));

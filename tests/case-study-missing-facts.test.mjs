@@ -1,6 +1,6 @@
 // Run 15 (R15-11, D35): Case Study Generator, mode "full" with no interview_notes and a fact left out.
 // The answer is the existing discovery interview kit, with a first line that names the missing facts.
-// A complete input returns exactly the saved case study (tests/fixtures/). The fixture is the 2.2.12 case study regenerated in run 19 (R19-35, D80), because the answer changed on purpose: results split into items, no cut text, sector notes.
+// A complete input returns exactly the saved case study (tests/fixtures/). The fixture was regenerated in run 19 (R19-35, D80) and again in run 20 round 1b (the case study is now a draft with sorted results, no bracket placeholders and sector questions), because the answer changed on purpose; the file name keeps its old number.
 // In-process through the Netlify function handlers (no network, no deploy): /mcp (mcp.mjs) and the web form endpoint (api.mjs).
 // Run: npm run build, then node --test tests/case-study-missing-facts.test.mjs
 import { test } from "node:test";
@@ -81,7 +81,7 @@ test("full mode, a fact that is only spaces counts as missing (the web form trim
   assert.equal(await viaForm(args), out);
 });
 
-test("full mode, a complete input returns exactly the case study of 2.2.12, on /mcp and on the web form", async () => {
+test("full mode, a complete input returns exactly the saved case study (regenerated in run 20 round 1b), on /mcp and on the web form", async () => {
   const out = await viaMcp(FIXTURE_ARGS);
   assert.equal(out, FIXTURE_TEXT);
   assert.equal(await viaForm(FIXTURE_ARGS), FIXTURE_TEXT);

@@ -1,55 +1,54 @@
 # Case Study: FlowOps
 
-## FlowOps and RouteIQ: Late deliveries down 60%
+## Late deliveries down 60%
 
 *Sector: read from your inputs as logistics tech. Business model: software subscription (the usual model in this sector, assumed; set business_model to change it).*
+
+*Built from: challenge: given; solution: given; results: 3 items (3 outcomes); customer quote: given; industry: given.*
 
 ---
 
 ### About FlowOps
 
-**Industry:** Logistics
-**Challenge:** Dispatchers spent four hours a day planning routes by hand and late deliveries hit 18 percent.
-**Solution:** RouteIQ
-**Key Result:** Late deliveries down 60%
+| | |
+|---|---|
+| **Customer** | FlowOps |
+| **Industry** | Logistics |
+| **Product** | RouteIQ |
+| **Lead result** | Late deliveries down 60%. |
 
 ---
 
 ## The Challenge
 
-Dispatchers spent four hours a day planning routes by hand and late deliveries hit 18 percent.
+What the team was dealing with: Dispatchers spent four hours a day planning routes by hand and late deliveries hit 18 percent.
 
-[Add what the problem cost them, in their words]
+**To finish this section** (ask the customer, and use their words):
+- What the problem cost them, with the starting value of one of: cost per delivery, first-attempt delivery rate and on-time delivery.
+- Interview question in the sector's language: "How do you plan routes today, and how often does a dispatcher re-plan during the day?"
 
 ---
 
 ## The Solution
 
-RouteIQ planned routes automatically and sent drivers live updates.
+What was put in place: RouteIQ planned routes automatically and sent drivers live updates.
 
-### Why FlowOps Chose RouteIQ
-
-[Add why they chose RouteIQ, in their words]
-
-### Implementation
-
-[Add how the implementation went, in their words]
+**To finish this section:**
+- Why FlowOps chose RouteIQ, and which alternative it weighed (a common reaction in logistics tech: "We already have a TMS").
+- How the implementation went, and how long it took to see value. Use only a duration the customer confirms.
+- Words to use as the customer says them: dispatch, fleet, last-mile, route plan, first-attempt delivery.
 
 ---
 
 ## The Results
 
-### 1. Late deliveries down 60%
+**Outcomes**
 
-[Add what this result changed for them, in their words]
+- Late deliveries down 60%.
+- Planning time cut from 4 hours to 30 minutes.
+- 12% lower fuel cost.
 
-### 2. Planning time cut from 4 hours to 30 minutes
-
-[Add what this result changed for them, in their words]
-
-### 3. 12% lower fuel cost
-
-[Add what this result changed for them, in their words]
+**To finish this section:** for each figure, give the value before, the value after and the period it was measured over. A strong proof point here: A before and after of cost per delivery or first-attempt delivery at one hub, measured over a full cycle of busy and quiet weeks. Measures of this sector that the results do not yet show: cost per delivery, first-attempt delivery rate, on-time delivery and vehicle utilisation. Add one if the customer tracks it.
 
 ---
 
@@ -61,17 +60,9 @@ RouteIQ planned routes automatically and sent drivers live updates.
 
 ---
 
-## Key Takeaways
+## Where This Goes Next
 
-1. **Challenge:** Dispatchers spent four hours a day planning routes by hand and late deliveries hit 18 percent.
-2. **Solution:** RouteIQ planned routes automatically and sent drivers live updates.
-3. **Impact:** Late deliveries down 60%; Planning time cut from 4 hours to 30 minutes; 12% lower fuel cost
-
----
-
-## Ready to Achieve Similar Results?
-
-[CTA: say what the reader should do next, for example book a call or read a related story]
+Close with one action for the reader. Deals in logistics tech usually start like this: enterprise sales with a pilot at one hub or city, often timed around peak-season planning. Write the reader's next step to match, for example a pilot request.
 
 ---
 
@@ -80,28 +71,32 @@ RouteIQ planned routes automatically and sent drivers live updates.
 - **A strong proof point here:** A before and after of cost per delivery or first-attempt delivery at one hub, measured over a full cycle of busy and quiet weeks.
 - **What readers in this sector measure:** cost per delivery, first-attempt delivery rate, on-time delivery, deliveries per vehicle per day, vehicle utilisation, failed delivery and return rate, dispatch planning time.
 - **Terms this sector's buyers use:** dispatch, fleet, last-mile, route plan, first-attempt delivery, proof of delivery, 3PL, cost per delivery, delivery SLA, TMS.
-- **Your results:** they carry a figure. Not yet shown: cost per delivery, first-attempt delivery rate, on-time delivery, vehicle utilisation. If the customer tracks any of these, add one.
+- **Your results:** they carry a figure.
 
 ---
 
 ## Distribution Formats
 
-### One-Line Version (for testimonial pages):
-"FlowOps with RouteIQ: Late deliveries down 60%."
+### One-line version (testimonial pages)
+Late deliveries down 60% (RouteIQ).
 
-### Social Media Version:
-Challenge at FlowOps: Dispatchers spent four hours a day planning routes by hand and late deliveries hit 18 percent.
-What changed with RouteIQ: RouteIQ planned routes automatically and sent drivers live updates.
+### Social media version
+Late deliveries down 60%.
 
-Results:
-- Late deliveries down 60%
-- Planning time cut from 4 hours to 30 minutes
-- 12% lower fuel cost
+Product: RouteIQ.
 
 > "We got our afternoons back."
 
-Read the full story: [Add the link]
+Read the full story: add the link when the case study is published.
 
-### Email Snippet:
-Quick success story: FlowOps (Logistics). Challenge: Dispatchers spent four hours a day planning routes by hand and late deliveries hit 18 percent. Result: Late deliveries down 60%; Planning time cut from 4 hours to 30 minutes. [Add the link to the full story]
+### Email snippet
+Quick success story: Late deliveries down 60%. Add the link to the full story when it is published.
+
+---
+
+## Check Before You Publish
+
+- The customer has approved the story, every figure and the quote in writing.
+- Every figure comes from the customer or a page you can cite; page claims stay labelled as the vendor's own claims.
+- Nothing in the recognition or company-wide claims is shown as this customer's result.
 

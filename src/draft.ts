@@ -134,7 +134,7 @@ export function splitProof(raw: unknown): string[] {
   // inside one chunk, "; Capital" outside brackets starts another item; "; 2,000+ man hours" continues the one before
   const items: string[] = [];
   for (const chunk of out) {
-    const raw = splitOutsideParens(chunk, /;\s+(?=[A-Z"“])/);
+    const raw = splitOutsideParens(chunk, /;\s+(?=[A-Z0-9$₹€£"“])/);
     // a piece shorter than 60 characters is the start of the item that follows ("Success story: sensitive credentials exposed; Acme secured ...")
     const pieces: string[] = [];
     for (const piece of raw) {
@@ -237,7 +237,8 @@ export function shortenClauses(sentence: string, max: number): string {
     if (depth > 0) continue;
     if ((c === ';' || (c === ':' && /\s/.test(t[i + 1] || ''))) ) cuts.push(i);
     else if (c === ',' && /\s/.test(t[i + 1] || '') && !/\d$/.test(t.slice(0, i))) {
-      const before = t.slice(cuts.length ? cuts[cuts.length - 1] + 1 : 0, i).split(/\s+/).filter(Boolean).length;
+      const prevSep = Math.max(t.lastIndexOf(',', i - 1), t.lastIndexOf(';', i - 1), t.lastIndexOf(': ', i - 1));
+      const before = t.slice(prevSep + 1, i).split(/\s+/).filter(Boolean).length;
       const nextEnd = t.slice(i + 1).search(/[,;:]/);
       const after = (nextEnd < 0 ? t.slice(i + 1) : t.slice(i + 1, i + 1 + nextEnd)).split(/\s+/).filter(Boolean).length;
       if (before >= 3 && after >= 4) cuts.push(i);

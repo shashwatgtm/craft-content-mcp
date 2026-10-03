@@ -35,8 +35,9 @@ const PROOF_THAT_WOULD: Record<ObjectionKind, string> = {
 
 const GENERIC = new Set(['platform', 'management', 'system', 'systems', 'solution', 'solutions', 'services', 'service', 'software', 'business', 'digital', 'enterprise', 'enterprises', 'tools', 'based', 'using', 'across', 'their', 'which', 'where', 'these', 'those', 'about', 'customer', 'customers', 'companies', 'company', 'teams', 'product', 'would', 'should', 'could', 'other', 'there', 'support']);
 const stem = (w: string) => w.replace(/(?:ing|ed|es|s)$/, '');
+const SHORT_STOP = new Set(['that', 'with', 'from', 'have', 'this', 'what', 'does', 'they', 'your', 'will', 'take', 'long', 'time', 'when', 'than', 'then', 'them', 'each', 'into', 'over', 'such', 'only', 'also', 'more', 'most', 'much', 'many', 'very', 'been', 'were', 'whom', 'whose', 'work', 'works', 'help', 'helps', 'just', 'like', 'make', 'made', 'need', 'needs', 'want', 'wants', 'real', 'full', 'ever', 'both', 'same', 'some', 'tool', 'ours', 'used', 'uses', 'user']);
 function wordSet(s: string): Set<string> {
-  return new Set((s.toLowerCase().match(/[a-z0-9]{5,}/g) || []).filter((w) => !GENERIC.has(w)).map(stem));
+  return new Set((s.toLowerCase().match(/[a-z0-9]{4,}/g) || []).filter((w) => !GENERIC.has(w) && !SHORT_STOP.has(w)).map(stem));
 }
 // The candidates that share at least one distinctive word with the objection, best first.
 function relevant(objection: string, candidates: string[]): string[] {

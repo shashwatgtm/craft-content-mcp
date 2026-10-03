@@ -31,7 +31,7 @@ export function generateTestimonialCapture(args: {
   const fromCompany = genericCo ? (/^(?:an?|the)\s+(.+?)\s+customer\b/i.exec(company)?.[1] || '') : '';
   const P = product || fromCompany || 'the product';
   const co = genericCo ? 'your company' : company;
-  const ctx = readContext(args.business_model, { seller: [product], context: [storyFull, args.use_case, args.relationship_context], role: [args.customer_role], buyer: [args.customer_company] });
+  const ctx = readContext(args.business_model, { seller: [product, args.use_case], context: [storyFull, args.relationship_context], role: [args.customer_role], buyer: [args.customer_company] });
   const w = startWords(ctx.model);
 
   // The success story is sorted: only a result, a quote or a story with a figure can be said to belong to this company, and only when

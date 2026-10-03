@@ -28,7 +28,7 @@ export function generateNewsletter(args: {
   const label = parts.short ? topic.replace(/ +/g, ' ') : parts.label;
   const clause = !parts.short || isClause(topic) || LABEL_CLAUSE.test(label);
   // Run 19 (D80, problems 4 and 8): the sector is read from every text the user gave.
-  const ctx = readContext(undefined, { seller: [product, parts.problem || topic], context: [args.key_points, args.previous_topics, args.cta_goal], buyer: [parts.audience] });
+  const ctx = readContext(undefined, { seller: [product, args.cta_goal], context: [topic, args.key_points, args.previous_topics] });
 
   // DERIVE key points from topic if not provided
   let keyPoints: string[];

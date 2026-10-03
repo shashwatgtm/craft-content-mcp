@@ -338,7 +338,10 @@ function sectionBody(step: string, a: Art, k: number, proof: ProofItem | undefin
   } else if (/evidence|proof|result|stories|signals|journey|parallel|show the|the result/.test(s) && !/what was done/.test(s)) {
     lines.push(`${evidence}${v ? ` ${pick([`Read it against ${mx(0)}.`, `The measure that matters here is ${mx(0)}.`, `Set it beside ${mx(0)} and ${mx(1)}.`])}` : ''}`);
   } else if (/what was done|step|method|how to|implementation|replicate|action plan|prepare|switch|face it|guide|actionable|applying|advice|new path|better alternative|new approach|what to do next/.test(s)) {
-    lines.push(`${pick([`Start with one live case and read it against ${mx(0)}.`, `Pick the team closest to the problem and measure ${mx(0)} before you change anything.`, `Change one thing first, and watch ${mx(0)} for a full cycle.`])} ${proof ? `The worked example: ${endSentence(capFirst(clipEcho(proof.shown, 300)))} ` : ''}${question}`);
+    const action = v
+      ? pick([`Start with one live case and read it against ${mx(0)}.`, `Pick the team closest to the problem and measure ${mx(0)} before you change anything.`, `Change one thing first, and watch ${mx(0)} for a full cycle.`])
+      : pick(['Start with one live case. Write down its starting value, end value and period.', 'Pick the team closest to the problem and write down its result today before you change anything.', 'Change one thing first, and watch the same agreed measure for a full cycle.']);
+    lines.push(`${action} ${proof ? `The worked example: ${endSentence(capFirst(clipEcho(proof.shown, 300)))} ` : ''}${question}`);
   } else if (/objection|truth|reveal|pitfall|mistake|avoid|persists|why people|why existing|existing approaches fail|buying group|question to ask|challenge|common/.test(s) && objection) {
     lines.push(`${counter} ${answer} ${v ? pick([`The measure that settles it is ${mx(0)}.`, `Readers settle it by looking at ${mx(0)} and ${mx(1)}.`, `Put ${mx(0)} next to it and the answer is visible.`]) : ''}`);
   } else if (/framework|model|forces|predictions|lesson|learning|synthesis|discovery|breakthrough|simple/.test(s)) {
@@ -520,4 +523,3 @@ function generateSuggestedProofPoints(topic: string, articleType: string, v: Ver
   // The sector's own proof shape comes first when the sector is known.
   return v ? [`Evidence in ${v.name}: ${v.proofShape.replace(/\.$/, '').replace(/^A /, 'a ')}`, ...list.slice(0, 4)] : list;
 }
-

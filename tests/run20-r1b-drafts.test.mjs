@@ -174,6 +174,11 @@ test("thought_leadership_series: five articles have five different headlines", a
   assert.equal(heads.length, 5);
   assert.equal(new Set(heads).size, 5);
 });
+test("thought_leadership_series: a topic with no recognised sector never prints a blank metric", async () => {
+  const t = await call("thought_leadership_series", { topic: "decision making under uncertainty", your_take: "Leaders should test assumptions before scaling", target_reader: "Founders", num_articles: 1, article_type: "contrarian" });
+  assert.match(t, /Start with one live case\. Write down its starting value, end value and period\./);
+  assert.doesNotMatch(t, /(?:against|measure|watch)\s+\./);
+});
 
 // ---------------------------------------------------------------------------------------------------------------------------
 // testimonial_capture

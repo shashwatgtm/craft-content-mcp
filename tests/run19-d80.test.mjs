@@ -157,7 +157,7 @@ test("webinar_script: speakers are listed as typed, never pasted after 'I'm'; po
   assert.match(r.text, /Poll options:\n(- [^\n]+\n){3,}/);
   assert.match(r.text, /Product line \(subtle\): one sentence on how Answerloop helps/i);
   assert.doesNotMatch(r.text, /^- We're recording today's session/m);
-  assert.match(r.text, /recording today's session[^\n]*say this only if it is true/i);
+  assert.match(r.text, /If you are recording, say: "We're recording today's session/i);
   assert.doesNotMatch(r.text, /free trial|plans or trial/i);
 });
 

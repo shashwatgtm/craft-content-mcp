@@ -410,7 +410,7 @@ function generateScriptSection(section: { name: string; duration: number; purpos
 "Good morning, afternoon or evening, everyone, and welcome to ${named(w)}. I'm thrilled to have you here.
 
 Before we dive in, a few quick housekeeping items:
-- We're recording today's session and will send you the link within 24 hours (say this only if it is true)
+- If you are recording, say: "We're recording today's session and will send you the link within 24 hours"
 - Your audio is muted, but we want this to be interactive
 - Use the chat for questions anytime: we'll address them throughout and have dedicated Q&A time
 ${w.includePolls ? '- You\'ll see some polls pop up: please participate, it makes this better for everyone\n' : ''}

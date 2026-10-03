@@ -343,7 +343,7 @@ ${sections}
 
 ${angle.closing}
 
-*[Your name] is ${authorBackground}. Connect on LinkedIn or reach out at [Add your email].*
+*[Your name] is ${authorBackground.replace(/[.!?]+\s*$/, "")}. Connect on LinkedIn or reach out at [Add your email].*
 
 ---
 

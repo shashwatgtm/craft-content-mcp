@@ -1,5 +1,5 @@
 // Utility functions for content analysis and generation
-import { pickKeyPoints, sentencesOf } from './sector.ts';
+import { pickKeyPoints, sentencesOf, LIST_COMMA } from './sector.ts';
 
 // Last line of any output that suggests timings, lengths or counts (lengths in words, time boxes, cadences).
 export const SUGGESTION_FOOTER = 'Suggested timings, lengths and counts: adjust them to your own.';
@@ -212,7 +212,7 @@ export function titleWords(phrase: string): string {
 }
 export function parseListItems(text: string): string[] {
   return text
-    .split(/\n|,(?!\d{3}(?!\d))/)
+    .split(/\n/).flatMap((l) => l.split(LIST_COMMA))
     .map(item => item.replace(/^[-•*]\s*/, '').trim())
     .filter(item => item.length > 0);
 }
@@ -222,7 +222,7 @@ export function countWords(text: string): number {
 }
 
 export function countSentences(text: string): number {
-  return text.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
+  return sentencesOf(text.replace(/\s*\n+\s*/g, ' ')).length;
 }
 
 export function avgWordsPerSentence(text: string): number {
@@ -339,7 +339,7 @@ function distinct(text: string, re: RegExp): string[] {
   return [...seen.values()];
 }
 function sentenceWith(content: string, needle: string): string {
-  const s = content.split(/(?<=[.!?])\s+|\n+/).find((x) => x.toLowerCase().includes(needle.toLowerCase()));
+  const s = sentencesOf(content).find((x) => x.toLowerCase().includes(needle.toLowerCase()));
   return clipEcho((s || needle).trim(), 160);
 }
 // The body of an email or a post without its Subject line and greeting, for the opening-sentence check.
@@ -434,7 +434,7 @@ export function analyzeContent(content: string, contentType: string, goal: strin
     }
   }
   const body = bodyOf(content);
-  const firstSentence = body.split(/[.!?]/)[0] || '';
+  const firstSentence = (sentencesOf(body)[0] || '').replace(/[.!?]+$/, '');
   if (countWords(firstSentence) > 20) {
     note('engagement', 'hook', 2, `Opening sentence too long (${countWords(firstSentence)} words): may lose readers`, 'Start with a hook of 15 words or fewer');
   }
@@ -483,7 +483,7 @@ export function annotateText(content: string): string {
   const shown = content.length > 4000 ? content.slice(0, 4000) : content;
   const lines = shown.split('\n').map((line) => {
     if (!line.trim()) return '';
-    return line.split(/(?<=[.!?])\s+/).map((s) => {
+    return sentencesOf(line).map((s) => {
       const flags: string[] = [];
       if (new RegExp(BUZZ.source, 'i').test(s)) flags.push('buzzword');
       if (new RegExp(SUPERLATIVE.source, 'i').test(s)) flags.push('claim needs proof');
@@ -552,7 +552,7 @@ export function generateImprovedVersion(content: string, _analysis?: ContentAnal
   const edits: { before: string; after: string }[] = [];
   const text = content.split('\n').map((line) => {
     if (!line.trim()) return line;
-    return line.split(/(?<=[.!?])\s+/).map((sentence) => {
+    return sentencesOf(line).map((sentence) => {
       const after = editSentence(sentence);
       if (after !== sentence) edits.push({ before: sentence.trim(), after: after.trim() });
       return after;

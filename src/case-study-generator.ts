@@ -1,5 +1,5 @@
 import { SUGGESTION_FOOTER, clipEcho, cap } from './utils.js';
-import { splitItems, q, readContext, startWords, firstSentence, sentencesOf, type Vertical, type BusinessModel } from './sector.ts';
+import { splitItems, q, readContext, startWords, firstSentence, sentencesOf, fromIndicator, type Vertical, type BusinessModel } from './sector.ts';
 
 type Ctx = { v: Vertical | null; model: BusinessModel | null; line: string };
 
@@ -261,18 +261,16 @@ function generateFromNotes(notes: string, customerName: string, industry: string
   const keyPoints = sentencesOf(notes).filter((s) => s.length > 10).slice(0, 5).map((p) => clipEcho(p.replace(/[.!?]+$/, '')));
 
   // Look for challenge indicators
-  const challengePatterns = /(?:problem|struggle|challenge|issue|pain|before|difficult|hard|couldn't|wasn't|weren't)[^.]*[.!?]/gi;
-  const challengeMatches = notes.match(challengePatterns) || [];
+  const challengeMatches = fromIndicator(notes, /(?:problem|struggle|challenge|issue|pain|before|difficult|hard|couldn't|wasn't|weren't)/i);
   const challenge = given.challenge?.trim() || challengeMatches.slice(0, 2).join(' ') || '[Challenge: not found in the notes]';
 
   // Look for solution indicators
-  const solutionPatterns = /(?:implemented|started using|switched to|chose|selected|adopted|began|onboard)[^.]*[.!?]/gi;
-  const solutionMatches = notes.match(solutionPatterns) || [];
+  const solutionMatches = fromIndicator(notes, /(?:implemented|started using|switched to|chose|selected|adopted|began|onboard)/i);
   const solution = given.solution?.trim() || solutionMatches.slice(0, 2).join(' ') || '[Solution: not found in the notes]';
 
   // Look for results indicators
-  const resultsPatterns = /(?:\d+%|\$\d+|\d+x|reduced|increased|improved|saved|grew|achieved)[^.]*[.!?]/gi;
-  const resultsMatches = notes.match(resultsPatterns) || [];
+  // a figure starts at its first digit: "99.5%" is never read from its "5%"
+  const resultsMatches = fromIndicator(notes, /(?<![\d.,])\d+(?:[.,]\d+)*%|\$\d+|(?<![\d.,])\d+x\b|reduced|increased|improved|saved|grew|achieved/i);
   const results = given.results?.trim() || resultsMatches.slice(0, 3).join(' ') || '[Results: not found in the notes]';
 
   // Look for quotes

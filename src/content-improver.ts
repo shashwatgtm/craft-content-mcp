@@ -142,7 +142,7 @@ ${improved.text}`
 ## Before/After Comparison
 
 ### Original First Sentence:
-> ${clipEcho(bodyOf(content).split(/[.!?]/)[0]?.trim() || 'N/A')}
+> ${clipEcho((sentencesOf(bodyOf(content))[0] || '').replace(/[.!?]+$/, '').trim() || 'N/A')}
 
 ### Suggested Opening:
 > ${suggestOpening(content)}

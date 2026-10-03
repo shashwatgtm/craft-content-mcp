@@ -10,13 +10,15 @@ export type { Vertical, BusinessModel };
 // A list typed by the user: one item per line or per semicolon, or a comma list. A comma fragment that starts with a joining
 // word ("not overnight", "which ...") stays with the item before it, so "Routes re-planned in under a minute, not overnight"
 // is one item. A comma inside a number ("1,200") never splits.
-const JOINER = /^(?:not|but|and|or|so|which|that|because|while|with|without|including|plus|then|yet|rather)\b/i;
+const JOINER = /^(?:(?:not|but|and|or|so|which|that|because|while|with|without|including|plus|then|yet|rather)\b|i\.e\.|e\.g\.|vs\.|etc\.)/i;
+// Run 20: a comma between digits that opens a group of two or three digits ("1,200", "80,000", "1,00,000") is part of a number, never a list break.
+export const LIST_COMMA = /(?<!\d),|,(?!\d{2,3}(?!\d))/;
 export function splitItems(s: unknown): string[] {
   if (typeof s !== 'string') return [];
   const lines = s.split(/\n|;/).map((x) => x.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
   const out: string[] = [];
   for (const line of lines) {
-    const parts = line.split(/,(?!\d{3}(?!\d))/).map((x) => x.trim()).filter(Boolean);
+    const parts = line.split(LIST_COMMA).map((x) => x.trim()).filter(Boolean);
     parts.forEach((p, i) => {
       if (i > 0 && JOINER.test(p)) out[out.length - 1] += ', ' + p;
       else out.push(p);
@@ -149,8 +151,8 @@ export function startWords(model: BusinessModel | null): { rollout: string; valu
 }
 
 // Sentences of a text, in order. A sentence ends at . ! or ? followed by a space and a capital, a digit or a quote; a decimal
-// ("1.5%") and common abbreviations ("e.g.", "Co.") do not end one. A line break also ends one.
-const ABBREV = /\b(?:e\.g|i\.e|vs|Mr|Mrs|Ms|Dr|Inc|Ltd|Co|approx|etc|No)\.$/;
+// ("99.5%"), a grouped number ("1,200") and common abbreviations ("e.g.", "i.e.", "vs.", "Rs.", "Sr.", "Mr.", "Dr.", "Inc.", "Co.") do not end one. A line break also ends one.
+const ABBREV = /(?<![A-Za-z])(?:e\.g|i\.e|vs|Mr|Mrs|Ms|Dr|Prof|Sr|Jr|Rs|St|Mt|Inc|Ltd|Pvt|Corp|Co|approx|etc|No)\.$/;
 export function sentencesOf(text: string): string[] {
   const out: string[] = [];
   for (const line of text.replace(/\r/g, '').split(/\n+/)) {
@@ -159,6 +161,17 @@ export function sentencesOf(text: string): string[] {
       if (out.length > 0 && ABBREV.test(out[out.length - 1]) && !/\n/.test(p)) out[out.length - 1] += ' ' + p;
       else out.push(p);
     }
+  }
+  return out;
+}
+
+// Run 20: for each sentence that holds the indicator, the text from the indicator to the end of that sentence (a decimal or an
+// abbreviation does not end it). Used to read the challenge, the solution and the results out of interview notes.
+export function fromIndicator(text: string, indicator: RegExp): string[] {
+  const out: string[] = [];
+  for (const s of sentencesOf(text)) {
+    const m = indicator.exec(s);
+    if (m) out.push(s.slice(m.index));
   }
   return out;
 }

@@ -1,5 +1,6 @@
 import { SUGGESTION_FOOTER, clipEcho, cap } from './utils.js';
-import { splitItems, q, readContext, startWords, firstSentence, sentencesOf, fromIndicator, type Vertical, type BusinessModel } from './sector.ts';
+import { q, readContext, startWords, firstSentence, sentencesOf, fromIndicator, type Vertical, type BusinessModel } from './sector.ts';
+import { parseProof, fixNumbers, endSentence, lowerFirstWord, proseJoin, plural, type ProofItem, type ProofKind } from './draft.ts';
 
 type Ctx = { v: Vertical | null; model: BusinessModel | null; line: string };
 
@@ -181,9 +182,9 @@ Use this structure to capture responses:
 
 \`\`\`
 CUSTOMER: ${customerName}
-INDUSTRY: ${industry || '[not supplied]'}
-DATE: [Interview date]
-INTERVIEWER: [Your name]
+INDUSTRY: ${industry || 'not given'}
+DATE:
+INTERVIEWER:
 
 CHALLENGE:
 - Main problem:
@@ -220,7 +221,7 @@ Subject: Quick favor: share your ${product} success story?
 
 ---
 
-Hi [First Name],
+Hello,
 
 I hope this finds you well!
 
@@ -231,11 +232,9 @@ Would you be open to a 20-minute call where I ask a few questions about your exp
 - **Time:** 20-minute video call at your convenience
 - **Topics:** Your challenges before, how you use ${product}, results you've seen
 - **Approval:** You'll review the final case study before it goes live
-- **Benefit:** [Only if true: what ${customerName} gains from being featured, for example links to their site]
+- **Benefit:** add what ${customerName} gains from being featured, only if it is true (for example a link to their site)
 
-[Only if true and provable: We'd also love to feature you in our customer spotlight and share your story with our newsletter readers.]
-
-Would next [Day] at [Time] work for a quick call?
+Would a time next week work for a quick call?
 
 Thanks,
 [Your name]
@@ -262,28 +261,29 @@ function generateFromNotes(notes: string, customerName: string, industry: string
 
   // Look for challenge indicators
   const challengeMatches = fromIndicator(notes, /(?:problem|struggle|challenge|issue|pain|before|difficult|hard|couldn't|wasn't|weren't)/i);
-  const challenge = given.challenge?.trim() || challengeMatches.slice(0, 2).join(' ') || '[Challenge: not found in the notes]';
+  const challenge = given.challenge?.trim() || challengeMatches.slice(0, 2).join(' ') || '';
 
   // Look for solution indicators
   const solutionMatches = fromIndicator(notes, /(?:implemented|started using|switched to|chose|selected|adopted|began|onboard)/i);
-  const solution = given.solution?.trim() || solutionMatches.slice(0, 2).join(' ') || '[Solution: not found in the notes]';
+  const solution = given.solution?.trim() || solutionMatches.slice(0, 2).join(' ') || '';
 
   // Look for results indicators
   // a figure starts at its first digit: "99.5%" is never read from its "5%"
   const resultsMatches = fromIndicator(notes, /(?<![\d.,])\d+(?:[.,]\d+)*%|\$\d+|(?<![\d.,])\d+x\b|reduced|increased|improved|saved|grew|achieved/i);
-  const results = given.results?.trim() || resultsMatches.slice(0, 3).join(' ') || '[Results: not found in the notes]';
+  const results = given.results?.trim() || resultsMatches.slice(0, 3).join('; ') || '';
 
   // Look for quotes
   const quotePatterns = /"[^"]+"/g;
   const foundQuotes = notes.match(quotePatterns) || [];
   const bestQuote = quote || foundQuotes[0]?.replace(/"/g, '') || '';
 
-  const usedFromNotes = [!given.challenge?.trim() && 'the challenge', !given.solution?.trim() && 'the solution', !given.results?.trim() && 'the results'].filter(Boolean) as string[];
+  const usedFromNotes = [!given.challenge?.trim() && challenge && 'the challenge', !given.solution?.trim() && solution && 'the solution', !given.results?.trim() && results && 'the results'].filter(Boolean) as string[];
+  const notFound = [!challenge && 'the challenge', !solution && 'the solution', !results && 'the results'].filter(Boolean) as string[];
 
   return `# Case Study Draft (Parsed from Notes)
 ## ${customerName} + ${product}
 
-**Note:** The facts you typed are kept as typed. ${usedFromNotes.length ? `${capFirst(usedFromNotes.join(' and '))} came from the interview notes, so review ${usedFromNotes.length === 1 ? 'it' : 'them'} and enhance with specific details.` : ''}
+**Note:** The facts you typed are kept as typed. ${usedFromNotes.length ? `${capFirst(usedFromNotes.join(' and '))} came from the interview notes, so review ${usedFromNotes.length === 1 ? 'it' : 'them'} and enhance with specific details. ` : ''}${notFound.length ? `The notes do not state ${notFound.join(' or ')}; the draft says so where it is missing.` : ''}
 
 ---
 
@@ -308,10 +308,19 @@ ${keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 `;
 }
 
+// A customer name that names no company ("a Locus customer (Retail)", "a customer", "name not given").
+function genericCustomer(name: string): boolean {
+  return /^(?:an?|the|one of (?:our|the))\s+.{0,60}\bcustomers?\b|name not given|not given|^customer\b|^client\b|^anonymous|^unnamed/i.test(name.trim());
+}
+
 // The sector's measures that the results do not mention: ask the customer for one of them.
 function missingMeasures(v: Vertical, results: string): string[] {
   const lower = results.toLowerCase();
   return v.metrics.filter((m) => !m.toLowerCase().split(/\s+/).filter((w) => w.length >= 6).some((w) => lower.includes(w)));
+}
+
+function bullets(items: ProofItem[]): string {
+  return items.map((p) => `- ${endSentence(capFirst(p.shown))}`).join('\n');
 }
 
 function generateFullCaseStudy(
@@ -325,18 +334,24 @@ function generateFullCaseStudy(
   ctx: Ctx,
   extra?: { notes: string }
 ): string {
+  const v = ctx.v;
   const w = startWords(ctx.model);
-  // Run 19 (D80, problem 3): results split on lines and semicolons, so every result the user gave is its own item.
-  const resultPoints = splitItems(results).length ? splitItems(results) : [results];
-  const headlineResult = clipEcho(resultPoints[0] || results, 200);
-  // Run 19 (B15-L1): the whole challenge, solution and results are printed once, in their own sections; every repeat of them
-  // (the summary box, the takeaways, the social copy, the email) is cut at 280 characters, so a long pasted text cannot fill the answer.
-  const challengeShort = clipEcho(challenge);
-  const solutionShort = clipEcho(solution);
-  const impactShort = clipEcho(resultPoints.map((r) => cap(r)).join('; '));
-  // A long quote is cut only at the end of a sentence; a short one is used whole.
-  const shortQuote = quote ? (quote.length <= 160 ? quote : firstSentence(quote) + '.') : '';
-  const sector = ctx.v ? sectorBlock(ctx.v, results) : '';
+  const generic = genericCustomer(customerName);
+  const items = results.trim() && results !== 'not supplied' ? parseProof(results) : [];
+  const grp = (k: ProofKind[]) => items.filter((i) => k.includes(i.kind));
+  const outcomes = grp(['result']);
+  const quotes = grp(['quote']);
+  const titles = grp(['title']);
+  const claims = grp(['scale', 'claim']);
+  const recognition = grp(['recognition']);
+  // the lead result: a result with a figure, else a customer quote, else a story title that states an outcome
+  const lead = outcomes.find((i) => i.figure) || quotes.find((i) => i.figure) || titles.find((i) => i.figure) || outcomes[0] || quotes[0] || titles[0];
+  const hasCustomerOutcome = !!lead;
+  const challengeText = challenge && challenge !== 'not supplied' ? fixNumbers(challenge.trim()) : '';
+  const solutionText = solution && solution !== 'not supplied' ? fixNumbers(solution.trim()) : '';
+  const industryText = industry || '';
+  const sectorName = v ? v.name : '';
+  const askMetrics = v ? proseJoin(v.metrics.slice(0, 3)) : 'one measure the customer tracks';
   const notUsed = extra?.notes ? `
 ## Inputs Not Used
 
@@ -345,99 +360,128 @@ function generateFullCaseStudy(
 ---
 ` : '';
 
+  // what the draft is built from, so nothing given goes unused without being said
+  const built = [
+    `challenge: ${challengeText ? 'given' : 'not found'}`,
+    `solution: ${solutionText ? 'given' : 'not found'}`,
+    `results: ${items.length ? `${items.length} ${plural(items.length, 'item')}${items.length > 1 ? ` (${[outcomes.length && `${outcomes.length} ${plural(outcomes.length, 'outcome')}`, quotes.length && `${quotes.length} ${plural(quotes.length, 'quote')}`, titles.length && `${titles.length} story ${plural(titles.length, 'title')}`, claims.length && `${claims.length} company-wide ${plural(claims.length, 'claim')}`, recognition.length && `${recognition.length} ${plural(recognition.length, 'recognition item')}`].filter(Boolean).join(', ')})` : ''}` : 'not found'}`,
+    `customer quote: ${quote ? 'given' : quotes.length ? 'taken from the results' : 'not given'}`,
+    `industry: ${industryText ? 'given' : 'not given'}`
+  ].join('; ');
+
+  const headline = lead ? capFirst(lead.text.replace(/^customer (?:quote|words):\s*/i, '')) : `${customerName} and ${product}`;
+  const headlineOk = lead && headline.length <= 160;
+
+  const genericNote = generic && items.length > 1 ? `
+> **Whose results these are.** customer_name is ${q(customerName)}, which does not name a company, and the results name their own sources. A case study tells one customer's story, so each result below stays with the company or source that reported it, and none is presented as this customer's own. To write the single story, pick one customer from the list and run this tool again with that name and only its results.
+` : '';
+
+  const outcomeBlocks: string[] = [];
+  if (outcomes.length) outcomeBlocks.push(`**Outcomes**\n\n${bullets(outcomes)}`);
+  if (quotes.length) outcomeBlocks.push(`**Customer quotes in your results**\n\n${bullets(quotes)}`);
+  if (titles.length) outcomeBlocks.push(`**Customer stories known by their title only.** The title states an outcome. Read the story and take its detail before you print it as a result.\n\n${bullets(titles)}`);
+  if (claims.length) outcomeBlocks.push(`**Company-wide claims, kept out of the outcomes.** These describe the vendor, not one customer. Use them in a "who uses ${product}" line, not as this story's result.\n\n${bullets(claims)}`);
+  if (recognition.length) outcomeBlocks.push(`**Recognition, kept out of the outcomes.** A ranking or an award is not something the customer achieved. Use it as a "Recognised by" line beside the story.\n\n${bullets(recognition)}`);
+
+  const noOutcome = !hasCustomerOutcome ? `
+**No customer outcome was given.** Every item above is a company-wide claim or a recognition, so there is no result to build this story on yet. Ask the customer for ${v ? askMetrics : 'one measure it tracks'}: the value before, the value after and the period. ${v ? `A strong proof point here: ${v.proofShape}` : ''}
+` : '';
+
+  const cta = v ? `Close with one action for the reader. Deals in ${sectorName} usually start like this: ${lowerFirstWord(v.salesMotion)} Write the reader's next step to match, for example a pilot request.` : `Suggested closing line for readers: say what the reader does next (a call, a pilot, a visit) and keep it to one action.`;
+
+  const pull = quote
+    ? `> "${quote.replace(/^"|"$/g, '')}"\n>\n> ${customerName}`
+    : quotes.length
+      ? `No customer_quote was given. A quote in your results can serve as the pull quote once the customer has approved it:\n\n${bullets(quotes.slice(0, 2))}`
+      : `No customer_quote was given. Ask for one line the customer would say aloud about what changed${v ? ` in ${v.metrics[0]}` : ''}, and get written approval before you print it.`;
+
   return `# Case Study: ${customerName}
 
-## ${customerName} and ${product}: ${headlineResult}
+## ${headlineOk ? headline : `${customerName} and ${product}`}
 
 ${ctx.line}
+
+*Built from: ${built}.*
 
 ---
 
 ### About ${customerName}
 
-**Industry:** ${industry || '[not supplied]'}
-**Challenge:** ${challengeShort}
-**Solution:** ${product}
-**Key Result:** ${headlineResult}
-
+| | |
+|---|---|
+| **Customer** | ${customerName} |
+| **Industry** | ${industryText || 'not given (add customer_industry)'} |
+| **Product** | ${product} |
+| **Lead result** | ${lead ? endSentence(lead.shown) : 'none given'} |
+${genericNote}
 ---
 
 ## The Challenge
 
-${challenge}
+What the team was dealing with: ${challengeText ? challengeText : 'not found. Ask the customer what was happening before they started.'}
 
-[Add what the problem cost them, in their words]
+**To finish this section** (ask the customer, and use their words):
+- What the problem cost them, with the starting value of ${v ? `one of: ${askMetrics}` : askMetrics}.
+${v ? `- Interview question in the sector's language: "${v.discovery[0]}"` : '- What had they tried before, and why did it not work?'}
 
 ---
 
 ## The Solution
 
-${solution}
+What was put in place: ${solutionText ? solutionText : 'not found. Ask what was set up, by whom and in what order.'}
 
-### Why ${customerName} Chose ${product}
-
-[Add why they chose ${product}, in their words]
-
-### ${capFirst(w.rollout)}
-
-[Add how the ${w.rollout} went, in their words]
+**To finish this section:**
+- Why ${customerName} chose ${product}${v ? `, and which alternative it weighed (a common reaction in ${sectorName}: "${v.objections[0].objection}")` : ''}.
+- How the ${w.rollout} went, and how long it took to ${w.reach}. Use only a duration the customer confirms.
+${v ? `- Words to use as the customer says them: ${v.vocabulary.slice(0, 5).join(', ')}.` : ''}
 
 ---
 
 ## The Results
 
-${resultPoints.map((r, i) => `### ${i + 1}. ${cap(r)}
-
-[Add what this result changed for them, in their words]`).join('\n\n')}
-
----
-
-${quote ? `## In Their Words
-
-> "${quote.replace(/^"|"$/g, '')}"
->
-> ${customerName}
-
----` : ''}
-
-## Key Takeaways
-
-1. **Challenge:** ${challengeShort}
-2. **Solution:** ${solutionShort}
-3. **Impact:** ${impactShort}
+${items.length ? outcomeBlocks.join('\n\n') : 'No results were given.'}
+${noOutcome}
+**To finish this section:** for each figure, give the value before, the value after and the period it was measured over. ${v ? `A strong proof point here: ${v.proofShape}` : ''}${hasCustomerOutcome && v && missingMeasures(v, results).length < v.metrics.length ? ` Measures of this sector that the results do not yet show: ${proseJoin(missingMeasures(v, results).slice(0, 4))}. Add one if the customer tracks it.` : ''}
 
 ---
 
-## Ready to Achieve Similar Results?
+## In Their Words
 
-[CTA: say what the reader should do next, for example book a call or read a related story]
+${pull}
 
 ---
-${sector}${notUsed}
+
+## Where This Goes Next
+
+${cta}
+
+---
+${v ? sectorBlock(v, results) : ''}${notUsed}
 ## Distribution Formats
 
-### One-Line Version (for testimonial pages):
-"${customerName} with ${product}: ${headlineResult.replace(/[.]$/, '')}."
+### One-line version (testimonial pages)
+${lead ? `${lead.text.replace(/[.!?]+$/, '')} (${product}).` : `${customerName} uses ${product}. Add the lead result when you have one.`}
 
-### Social Media Version:
-Challenge at ${customerName}: ${sentence(challengeShort)}
-What changed with ${product}: ${sentence(solutionShort)}
+### Social media version
+${lead ? `${endSentence(lead.shown)}\n\nProduct: ${product}.` : `Story in progress: ${customerName} and ${product}.`}
+${quote ? `\n> "${(quote.length <= 160 ? quote : firstSentence(quote) + '.').replace(/^"|"$/g, '')}"\n` : ''}
+Read the full story: add the link when the case study is published.
 
-Results:
-${resultPoints.slice(0, 3).map(r => `- ${clipEcho(cap(r))}`).join('\n')}
+### Email snippet
+Quick success story: ${headlineOk ? headline.replace(/[.!?]+$/, '') : `${customerName} and ${product}`}. Add the link to the full story when it is published.
 
-${quote ? `> "${shortQuote.replace(/^"|"$/g, '')}"` : ''}
+---
 
-Read the full story: [Add the link]
+## Check Before You Publish
 
-### Email Snippet:
-Quick success story: ${customerName}${industry ? ` (${industry})` : ''}. Challenge: ${sentence(challengeShort)} Result: ${resultPoints.slice(0, 2).map((r) => clipEcho(cap(r), 140)).join('; ')}. [Add the link to the full story]
+- The customer has approved the story, every figure and the quote in writing.
+- Every figure comes from the customer or a page you can cite; page claims stay labelled as the vendor's own claims.
+- Nothing in the recognition or company-wide claims is shown as this customer's result.
 
 `;
 }
 
 function sectorBlock(v: Vertical, results: string): string {
-  const missing = missingMeasures(v, results);
   const hasNumber = /\d/.test(results);
   return `
 ## Sector Notes: ${capFirst(v.name)}
@@ -445,7 +489,7 @@ function sectorBlock(v: Vertical, results: string): string {
 - **A strong proof point here:** ${v.proofShape}
 - **What readers in this sector measure:** ${v.metrics.join(', ')}.
 - **Terms this sector's buyers use:** ${v.vocabulary.join(', ')}.
-- **Your results:** ${hasNumber ? 'they carry a figure.' : 'they carry no figure. A case study without a number is easy to ignore: ask the customer for the starting value, the end value and the timeframe of one measure.'}${missing.length && missing.length < v.metrics.length ? ` Not yet shown: ${missing.slice(0, 4).join(', ')}. If the customer tracks any of these, add one.` : missing.length === v.metrics.length ? ` None of the sector's usual measures appears in them (${v.metrics.slice(0, 4).join(', ')}); if the customer tracks one, add it.` : ''}
+- **Your results:** ${hasNumber ? 'they carry a figure.' : 'they carry no figure. A case study without a number is easy to ignore: ask the customer for the starting value, the end value and the timeframe of one measure.'}
 
 ---
 `;

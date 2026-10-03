@@ -89,8 +89,8 @@ test("case_study_generator: every result kept, the whole quote and challenge, no
   const r = await call("case_study_generator", ANSWERLOOP_CASE);
   assert.equal(r.isError, false);
   shared(r.text, { names: ["Answerloop", "Example Food Delivery Co"], sector: AI_SECTOR, label: "case study" });
-  assert.match(r.text, /### 1\. 45% of tickets resolved without a human in 60 days/);
-  assert.match(r.text, /### 2\. First response time down from 6 hours to 2 minutes/);
+  assert.match(r.text, /^- 45% of tickets resolved without a human in 60 days/m);
+  assert.match(r.text, /^- First response time down from 6 hours to 2 minutes/m);
   assert.ok(r.text.includes(ANSWERLOOP_CASE.customer_quote), "the whole quote");
   assert.ok(!/so our team trusts it\.?\.\.\./.test(r.text) && !/human a\.\.\./.test(r.text), "no quote cut");
   assert.ok(r.text.includes("A ticket backlog growing faster than the support team could hire"), "the whole challenge");
@@ -114,7 +114,7 @@ test("case_study_generator: discovery kit for a connectivity business follows th
 test("case_study_generator: a missing industry and a short quote are handled in the customer's own words", async () => {
   const r = await call("case_study_generator", { customer_name: "Example IT Services Co", your_product: "Lanehop", mode: "full", challenge: "Dispatchers re-plan routes by hand", solution: "Live re-routing", results: "Cost per delivery down 12% in a quarter", customer_quote: "It saved our mornings." });
   assert.match(r.text, /It saved our mornings\./);
-  assert.match(r.text, /\*\*Industry:\*\* \[not supplied\]/);
+  assert.match(r.text, /\*\*Industry\*\* \| not given \(add customer_industry\)/);
 });
 
 // ---- newsletter_builder ----

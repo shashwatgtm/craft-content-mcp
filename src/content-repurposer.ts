@@ -1,5 +1,6 @@
-import { countWords, SUGGESTION_FOOTER, clipEcho, topicWords, aOrAn, cap } from './utils.js';
+import { countWords, SUGGESTION_FOOTER, aOrAn } from './utils.js';
 import { splitItems, pickKeyPoints, readContext, audienceLine, firstSentence, sentencesOf, q, type Vertical } from './sector.ts';
+import { parseProof, fixNumbers, endSentence, shortenClauses, proseJoin, KIND_NOTE, type ProofItem } from './draft.ts';
 
 // Default formats when user doesn't specify
 const DEFAULT_FORMATS = ['linkedin_post', 'twitter_thread', 'email', 'blog_summary', 'quote_cards'];
@@ -7,11 +8,11 @@ const KNOWN_FORMATS = ['linkedin_post', 'twitter_thread', 'email', 'blog_summary
 
 // Run 19 (D80, problem 3): brand_voice changes the closing line of the posts and the thread, and is named here.
 const VOICE_NOTE: Record<string, string> = {
-  professional: 'the closing question and the calls to action below are written plainly and formally; the sentences taken from your source are kept as you wrote them.',
-  casual: 'the closing question and the calls to action below are written in a relaxed tone; the sentences taken from your source are kept as you wrote them.',
-  authoritative: 'the closing line below states a position instead of asking a question; the sentences taken from your source are kept as you wrote them.',
-  friendly: 'the closing question and the calls to action below are written warmly; the sentences taken from your source are kept as you wrote them.',
-  bold: 'the closing line below takes a side and asks the reader to agree or disagree; the sentences taken from your source are kept as you wrote them.'
+  professional: 'the closing question and the calls to action below are written plainly and formally; the sentences taken from your source are kept as you wrote them (a long one is shortened at a clause boundary in posts and tweets only).',
+  casual: 'the closing question and the calls to action below are written in a relaxed tone; the sentences taken from your source are kept as you wrote them (a long one is shortened at a clause boundary in posts and tweets only).',
+  authoritative: 'the closing line below states a position instead of asking a question; the sentences taken from your source are kept as you wrote them (a long one is shortened at a clause boundary in posts and tweets only).',
+  friendly: 'the closing question and the calls to action below are written warmly; the sentences taken from your source are kept as you wrote them (a long one is shortened at a clause boundary in posts and tweets only).',
+  bold: 'the closing line below takes a side and asks the reader to agree or disagree; the sentences taken from your source are kept as you wrote them (a long one is shortened at a clause boundary in posts and tweets only).'
 };
 const VOICE_CLOSE: Record<string, string> = {
   professional: 'What is your view?',
@@ -28,20 +29,30 @@ export function generateContentRepurposer(args: {
   brand_voice?: string;
   key_message?: string;
 }): string {
-  const content = args.source_content;
+  const content = fixNumbers(args.source_content);
   const sourceType = args.source_type;
   const targetFormats = args.target_formats ? splitItems(args.target_formats) : DEFAULT_FORMATS;
   const voice = args.brand_voice || 'professional';
-  const keyMessage = args.key_message || '';
+  const keyMessage = fixNumbers(args.key_message || '').trim();
 
-  // Run 19 (D80, problem 3): key points are whole sentences chosen by a stated rule (see pickKeyPoints in sector.ts), in the source's order.
-  const titleInfo = extractTitle(content, keyMessage);
+  // Proof paragraphs ("Proof: ..." or "Results: ...") are read as proof items; the rest of the source gives the key points.
+  const paras = content.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+  const proofParas = paras.filter((l) => /^(?:proof|results?|evidence|customer results?)\s*:/i.test(l));
+  const proof = parseProof(proofParas.map((l) => l.replace(/^[A-Za-z ]+:\s*/, '')).join('\n'));
+  const body = paras.filter((l) => !proofParas.includes(l)).join('\n');
+  const titleInfo = extractTitle(body, keyMessage);
   const title = titleInfo.title;
-  const keyPoints = pickKeyPoints(content, keyMessage, titleInfo.fromSource ? title : '').map((p) => clipEcho(p));
+  const pointsFull = dedupe(pickKeyPoints(body, keyMessage, titleInfo.fromSource ? title : '', 5)).map(cleanPoint);
+  const points = pointsFull.map((p) => shortenClauses(p, 260));
   const wordCount = countWords(content);
-  const ctx = readContext(undefined, { seller: [keyMessage], context: [content, title] });
-  const hook = titleInfo.fromSource ? title : firstSentence(content);
+  const ctx = readContext(undefined, { context: [keyMessage, content, title] });
+  const hook = titleInfo.fromSource ? title : keyMessage ? shortenClauses(keyMessage, 160) : shortenClauses(firstSentence(body), 160);
   const unknown = targetFormats.map((f) => f.toLowerCase().replace(/\s+/g, '_')).filter((f) => !KNOWN_FORMATS.includes(f));
+  const customerProof = proof.filter((p) => p.kind === 'result' || p.kind === 'quote' || (p.kind === 'title' && p.figure));
+  const bestProof = ['result', 'quote', 'title'].map((kind) => customerProof.find((p) => p.kind === kind && p.figure)).find(Boolean) || customerProof[0];
+  const otherProof = proof.filter((p) => !customerProof.includes(p));
+  const tags = hashtags(content, keyMessage, ctx.v);
+  const k: Kit = { points, pointsFull, proof, bestProof, hook, title, voice, keyMessage, kind: sourceType.replace(/_/g, ' '), v: ctx.v, tags, content };
 
   let output = `# Content Repurposing Kit
 
@@ -51,17 +62,21 @@ export function generateContentRepurposer(args: {
 |-----------|-------|
 | **Source Type** | ${sourceType.replace(/_/g, ' ')} |
 | **Word Count** | ${wordCount} |
-| **Key Points Found** | ${keyPoints.length} |
+| **Key Points Found** | ${points.length} |
+| **Proof Items Found** | ${proof.length}${proof.length ? ` (${customerProof.length} usable as results or quotes, ${otherProof.length} kept out: ${otherProof.map((p) => KIND_NOTE[p.kind]).filter((x, i, a) => a.indexOf(x) === i).join('; ') || 'none'})` : ''} |
 | **Brand Voice** | ${voice}${args.brand_voice ? '' : ' (default)'} |
-| **Core Message** | ${keyMessage || 'Extracted from content'} |
+| **Core Message** | ${keyMessage || points[0] || 'not found'} |
 | **Formats** | ${args.target_formats ? 'Custom selection' : 'Default top 5'} |
 
 ### Key Points Extracted
-${keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
+${points.length ? pointsFull.map((p, i) => `${i + 1}. ${shortenClauses(p, 400)}`).join('\n') : 'No full sentence of 25 characters or more was found in the source, so there are no key points. Paste the finished text or add a key_message.'}
 
-*Chosen as whole sentences from your source, in its order: a point scores for an opener such as First or Second, a name, a figure, a result word and the words of your key message.*
+*Chosen as whole sentences from your source, in its order: a point scores for an opener such as First or Second, a name, a figure, a result word and the words of your key message. In the posts and tweets a sentence over 260 characters is shortened at a clause boundary (never in the middle of a phrase); the lines above and the blog summary keep the longer form.*
 
 **Brand voice (${voice}):** ${VOICE_NOTE[voice] || VOICE_NOTE.professional}
+
+### Proof Used
+${proof.length ? proof.map((p) => `- ${endSentence(capFirstChar(p.shown))} *(${KIND_NOTE[p.kind]}${customerProof.includes(p) ? '' : '; not used as a result'})*`).join('\n') : '- The source holds no proof line (a line that starts "Proof:" or "Results:"), so the posts carry no result. Add one customer result with its figure to make the posts stronger.'}
 
 ### Audience Notes
 
@@ -77,11 +92,10 @@ ${unknown.length ? `\n${unknown.map((f) => `- ${f.replace(/_/g, ' ')} is not a f
 
 `;
 
-  // Generate each requested format
   for (const format of targetFormats) {
     const key = format.toLowerCase().replace(/\s+/g, '_');
     if (!KNOWN_FORMATS.includes(key)) continue; // named above as not a format this tool writes
-    output += generateFormat(key, content, keyPoints, title, voice, keyMessage, sourceType, hook, ctx.v);
+    output += generateFormat(key, k);
   }
 
   output += `
@@ -114,19 +128,49 @@ ${SUGGESTION_FOOTER}
   return output;
 }
 
+function capFirstChar(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// Sentences built as "<audience> are asked to deliver: <what>" and "<topic>: what to do about <problem>" are kept as the part that
+// says something; "The obstacle is <x>" becomes "The obstacle: <x>".
+function cleanPoint(p: string): string {
+  const t = p.trim();
+  const deliver = /^.{3,400}?\b(?:are|is) asked to deliver:\s*(.+)$/i.exec(t);
+  if (deliver) return `The audience is asked to deliver: ${deliver[1]}`;
+  const todo = /^.{3,300}?:\s*what to do about\s+(.+)$/i.exec(t);
+  if (todo) return `The problem: ${todo[1]}`;
+  return t.replace(/^The obstacle is\s+/i, 'The obstacle: ');
+}
+
+// Two key points that say the same thing (more than half of their long words shared) are one point; the earlier stays.
+function dedupe(points: string[]): string[] {
+  const words = (s: string) => new Set((s.toLowerCase().match(/[a-z]{4,}/g) || []));
+  const out: string[] = [];
+  for (const p of points) {
+    const a = words(p);
+    const same = out.some((o) => { const b = words(o); const shared = [...a].filter((w) => b.has(w)).length; return shared / Math.max(1, Math.min(a.size, b.size)) > 0.6; });
+    if (!same) out.push(p);
+  }
+  return out;
+}
+
 function extractTitle(content: string, keyMessage: string): { title: string; fromSource: boolean } {
   // Try to extract title from headers or a short first line that stands apart from the text
   const headerMatch = content.match(/^#\s+(.+)$/m);
-  if (headerMatch) return { title: clipEcho(headerMatch[1]), fromSource: true };
+  if (headerMatch) return { title: shortenClauses(headerMatch[1], 100), fromSource: true };
 
   const lines = content.split('\n').filter((l) => l.trim());
   const firstLine = (lines[0] || '').trim();
   if (firstLine.length < 100 && lines.length > 1) return { title: firstLine.replace(/[.!?]+\s*$/, ''), fromSource: true };
 
   // Run 12 (R12-20): never the word "Content" as a title: the key message, or else the source's first sentence.
-  if (keyMessage) return { title: clipEcho(keyMessage.trim().replace(/[.!?]+$/, ''), 100), fromSource: false };
+  if (keyMessage) return { title: shortenClauses(keyMessage.trim(), 100), fromSource: false };
   const first = sentencesOf(content)[0] || '';
-  return { title: clipEcho(first.replace(/[.!?]+$/, ''), 100), fromSource: false };
+  return { title: shortenClauses(first, 100), fromSource: false };
+}
+
+interface Kit {
+  points: string[]; pointsFull: string[]; proof: ProofItem[]; bestProof: ProofItem | undefined; hook: string; title: string; voice: string;
+  keyMessage: string; kind: string; v: Vertical | null; tags: string; content: string;
 }
 
 // Run 12 (R12-20): channel names written out in the distribution table.
@@ -147,62 +191,83 @@ function formatName(format: string): string {
   return names[key] || format.replace(/_/g, ' ');
 }
 
-function generateFormat(
-  format: string,
-  content: string,
-  keyPoints: string[],
-  title: string,
-  voice: string,
-  keyMessage: string,
-  sourceType: string,
-  hook: string,
-  v: Vertical | null
-): string {
-  const kind = sourceType.replace(/_/g, ' ');
+const proofLine = (k: Kit, label = 'Result'): string => k.bestProof ? (/^customer (?:quote|words):/i.test(k.bestProof.text) ? endSentence(k.bestProof.shown) : `${label}: ${endSentence(k.bestProof.shown)}`) : '';
+const pointLines = (ps: string[], mark: (p: string, i: number) => string): string => ps.map(mark).join('\n');
+// A line for a tweet: complete, at most 270 characters, ending at a clause boundary.
+const tweet = (s: string): string => endSentence(shortenClauses(s, 270));
+
+function generateFormat(format: string, k: Kit): string {
+  const kind = k.kind;
+  const close = VOICE_CLOSE[k.voice] || VOICE_CLOSE.professional;
+  const lead = capFirstChar(k.hook);
+  const rest = dedupe([k.hook, ...k.points]).slice(1);
+  const msg = k.keyMessage ? endSentence(capFirstChar(shortenClauses(k.keyMessage, 200))) : '';
   const generators: Record<string, () => string> = {
     linkedin_post: () => `
 ### LinkedIn Post
 
 ---
 
-${generateLinkedInPost(content, keyPoints, voice, keyMessage, hook, v)}
+${endSentence(lead)}
+
+${rest.length ? `Here's what stands out:\n\n${pointLines(rest.slice(0, 4), (p, i) => `${i + 1}. ${endSentence(p)}`)}\n` : ''}${k.bestProof ? `\n${proofLine(k)}\n` : ''}${msg && msg.replace(/[.!?]+$/, '') !== lead.replace(/[.!?]+$/, '') ? `\n${msg}\n` : ''}
+${close}
+
+${k.tags}
 
 ---
 
 **Posting Notes:**
 - Post when your own audience is online: test two slots and keep what your own data shows
 - Engage with comments in the first hour
-- Add a few hashtags that your readers follow
+- The hashtags are the sector's terms your source uses and the brand name; keep three or four
 
 `,
-    twitter_thread: () => `
+    twitter_thread: () => {
+      const tweets = [`${tweet(k.hook)} A thread.`, ...rest.slice(0, 5).map((p, i) => `${i + 1}/ ${tweet(p)}`)];
+      if (k.bestProof) tweets.push(`${tweets.length}/ ${tweet(proofLine(k))}`);
+      tweets.push(`${tweets.length}/ ${close} Full post: add the link.`);
+      return `
 ### Twitter/X Thread
 
 ---
 
-${generateTwitterThread(content, keyPoints, title, voice)}
+${tweets.map((t, i) => `**Tweet ${i + 1}${i === 0 ? ' (Hook)' : ''}:**\n${t}${t.length > 280 ? '\n*(Over 280 characters: split it into two posts.)*' : ''}`).join('\n\n')}
 
 ---
 
 **Posting Notes:**
-- Keep the thread to the points above: one point per post
-- The first post carries the thread: lead with the strongest line
-- Add a closing post that points to the full piece
+- One point per post; the first post carries the thread
+- Each post above is a whole clause or sentence from your source, shortened at a clause boundary when it was long
 
-`,
+`;
+    },
     email: () => `
 ### Email Version
 
 ---
 
 **Subject Line Options:**
-1. ${title}: the key points
-2. ${subjectPoint(keyPoints[0]) ? `What we learned: ${subjectPoint(keyPoints[0])}` : 'What we learned: [Add the lesson, in a few words]'}
-3. [First Name], don't miss this ${kind} summary
+1. ${k.title}${/[?!]$/.test(k.title) ? '' : ': the key points'}
+2. ${subjectPoint(rest[0]) ? `What we learned: ${subjectPoint(rest[0])}` : subjectPoint(k.hook) ? `What to know: ${subjectPoint(k.hook)}` : `A short ${kind} summary`}
+3. ${k.bestProof ? `Proof inside: ${shortenClauses(k.bestProof.text, 70)}` : `A short ${kind} summary for you`}
 
 **Email Body:**
 
-${generateEmailVersion(content, keyPoints, keyMessage)}
+Hello,
+
+A short summary of something worth your time:
+
+${(rest.length ? rest : k.points).slice(0, 3).map((p) => `→ ${endSentence(p)}`).join('\n')}
+${k.bestProof ? `\n${proofLine(k)}\n` : ''}
+${msg}
+
+Worth a read when you have a few minutes.
+
+Read the full version: add the link here.
+
+Best,
+[Your name]
 
 ---
 
@@ -212,7 +277,15 @@ ${generateEmailVersion(content, keyPoints, keyMessage)}
 
 ---
 
-${generateBlogSummary(content, keyPoints, title, v)}
+## ${k.title}: Key Takeaways
+
+In this ${k.content.length > 5000 ? 'comprehensive' : 'focused'} piece, we cover:
+
+${k.pointsFull.length ? k.pointsFull.map((p) => `- ${endSentence(shortenClauses(p, 400))}`).join('\n') : '- The main points of your piece (none found in the source: paste the finished text).'}
+${k.bestProof ? `\n**Proof:** ${endSentence(k.bestProof.shown)}\n` : ''}
+${k.v ? `This is written for readers such as ${proseJoin(k.v.buyerRoles.slice(0, 2).map((r) => r.toLowerCase().replace(/^chief /, 'chief ')))}, who watch ${proseJoin(k.v.metrics.slice(0, 3))}.\n` : ''}
+${msg ? `**The bottom line:** ${msg}\n` : ''}
+Read the full version for examples, data and implementation details.
 
 ---
 
@@ -222,23 +295,23 @@ ${generateBlogSummary(content, keyPoints, title, v)}
 
 ---
 
-**Title:** ${title}
+**Title:** ${k.title}
 
 **Header Section:**
-- Lead with the figure or finding that matters most in your source
-- Visual: [Add an icon that represents the topic]
+- Lead with the figure or finding that matters most: ${k.bestProof ? shortenClauses(k.bestProof.shown, 160) : 'your source holds no proof line, so lead with the key message'}
+- Visual: an icon for the topic
 
 **Body Sections:**
 
-${keyPoints.slice(0, 5).map((p, i) => `
+${k.points.slice(0, 5).map((p, i) => `
 **Section ${i + 1}**
-- Key stat/visual: [Add the number from this point, or choose an icon]
-- Supporting point: ${p}
+- Key stat or visual: ${/\d/.test(p) ? 'the number in this point' : 'an icon that matches the point'}
+- Supporting point: ${endSentence(p)}
 `).join('\n')}
 
 **Footer:**
-- CTA: [Add the action you want viewers to take]
-- Branding: Logo + website
+- CTA: the one action you want viewers to take
+- Branding: logo and website
 
 ---
 
@@ -248,20 +321,19 @@ ${keyPoints.slice(0, 5).map((p, i) => `
 
 ---
 
-**[HOOK: 5 seconds]**
-"${keyPoints[0] ? `Here's the point: ${keyPoints[0]}.` : `Here's something important about ${q(title)}.`}"
+**HOOK: 5 seconds**
+"${k.hook ? `${endSentence(capFirstChar(k.hook))}` : `Here's something important about ${q(k.title)}.`}"
 
-**[INTRO: 10 seconds]**
-"I just shared ${aOrAn(kind)} ${kind} titled ${q(title)}. Here are the key takeaways you need to know."
+**INTRO: 10 seconds**
+"I just shared ${aOrAn(kind)} ${kind} on ${q(k.title)}. Here are the key takeaways."
 
-**[BODY: 45-60 seconds]**
-${keyPoints.slice(0, 3).map((p, i) => `
-"Point ${i + 1}: ${p}"
-[VISUAL: Supporting image/graphic]
-`).join('\n')}
-
-**[CTA: 10 seconds]**
-"${keyMessage || 'Full version: [Add the link]. Follow for more insights like this.'}"
+**BODY: 45-60 seconds**
+${rest.slice(0, 3).map((p, i) => `
+"Point ${i + 1}: ${endSentence(p)}"
+Visual: the supporting image or graphic for this point
+`).join('\n')}${k.bestProof ? `\n"${proofLine(k)}"\n` : ''}
+**CTA: 10 seconds**
+"${msg || 'Follow for more insights like this.'} Full version: add the link."
 
 ---
 
@@ -271,25 +343,24 @@ ${keyPoints.slice(0, 3).map((p, i) => `
 
 ---
 
-**Episode Title:** ${title}: A Deep Dive
+**Episode Title:** ${k.title}: A Deep Dive
 
 **Intro (1-2 min):**
-- Hook: Why this matters now
-- Context: Where this ${kind} came from
+- Hook: ${endSentence(k.hook)}
+- Context: where this ${kind} came from
 
 **Main Discussion Points:**
 
-${keyPoints.map((p, i) => `
-**Point ${i + 1}:** ${p}
-- Story/example to illustrate
-- Implications for listeners
-- Practical application
-`).join('\n')}
-
+${k.points.map((p, i) => `
+**Point ${i + 1}:** ${endSentence(p)}
+- A story or example from your own work that shows it
+- What it means for listeners${k.v ? ` (they watch ${k.v.metrics[i % k.v.metrics.length]})` : ''}
+- One thing they can do this week
+`).join('\n')}${k.bestProof ? `\n**Proof to mention:** ${endSentence(k.bestProof.shown)}\n` : ''}
 **Wrap-up:**
 - Key takeaway summary
 - CTA for listeners
-- Tease next episode
+- Tease the next episode
 
 ---
 
@@ -300,27 +371,21 @@ ${keyPoints.map((p, i) => `
 ---
 
 **Slide 1: Title**
-- ${title}
-- [Add the presenter name and date]
+- ${k.title}
+- Presenter name and date
 
 **Slide 2: Why This Matters**
-- Context for the content
-- Key problem being addressed
+- ${endSentence(k.hook)}${k.v ? `\n- What this audience watches: ${proseJoin(k.v.metrics.slice(0, 3))}` : ''}
 
-${keyPoints.map((p, i) => `
+${k.points.map((p, i) => `
 **Slide ${i + 3}**
-- Main point: ${p}
+- Main point: ${endSentence(p)}
 - Supporting visual
-- Key statistic (if your source gives one)
-`).join('\n')}
-
-**Slide ${keyPoints.length + 3}: Summary**
-- ${keyPoints.length} key takeaways
-- One-line for each
-
-**Slide ${keyPoints.length + 4}: Next Steps/CTA**
+- Key statistic: ${/\d/.test(p) ? 'the figure in this point' : 'only if your source gives one'}
+`).join('\n')}${k.bestProof ? `\n**Slide ${k.points.length + 3}: Proof**\n- ${endSentence(k.bestProof.shown)}\n` : ''}
+**Slide ${k.points.length + (k.bestProof ? 4 : 3)}: Summary and next step**
+- ${k.points.length} key takeaways, one line each
 - What to do with this information
-- Contact/follow-up details
 
 ---
 
@@ -330,21 +395,19 @@ ${keyPoints.map((p, i) => `
 
 ---
 
-${extractQuotes(content, keyPoints).map((qt, i) => `
+${extractQuotes(k).map((qt, i) => `
 **Quote Card ${i + 1}:**
-> "${qt}"
+> "${qt.text}"${qt.by ? `\n>\n> ${qt.by}` : ''}
 
-- Background: [Add a solid color or subtle pattern]
-- Font: Bold, readable
-- Branding: Logo bottom corner
+- Background: a solid colour or a subtle pattern
+- Font: bold and readable
 
-`).join('\n')}
-
+`).join('\n')}${extractQuotes(k).length === 0 ? 'No sentence of 180 characters or less was found, so there is no card text. Add a short line to the source or a key_message.\n' : ''}
 **Design Notes:**
 - Keep text readable on mobile
 - Use brand colors
 - Pick the image size each platform asks for
-- Add visual hierarchy with font sizes
+- Each card holds one whole sentence from your source; none is cut
 
 ---
 
@@ -354,11 +417,17 @@ ${extractQuotes(content, keyPoints).map((qt, i) => `
 
 ---
 
-**Section Header:** ${title}
+**Section Header:** ${k.title}
 
-${generateNewsletterSection(content, keyPoints, keyMessage)}
+${endSentence(rest[0] || k.points[0] || k.hook)}
 
-**[Read the full ${kind} →]**
+Here's the quick version:
+
+${(rest.length ? rest : k.points).slice(1, 4).map((p) => `• ${endSentence(p)}`).join('\n')}
+${k.bestProof ? `\n${proofLine(k)}\n` : ''}
+${msg}
+
+Read the full ${kind}: add the link.
 
 ---
 
@@ -368,96 +437,15 @@ ${generateNewsletterSection(content, keyPoints, keyMessage)}
   return generators[format] ? generators[format]() : '';
 }
 
-function generateLinkedInPost(content: string, keyPoints: string[], voice: string, keyMessage: string, hook: string, v: Vertical | null): string {
-  const lead = hook ? `${hook.charAt(0).toUpperCase() + hook.slice(1)}` : '[Add your hook]';
-  const close = VOICE_CLOSE[voice] || VOICE_CLOSE.professional;
-  const points = keyPoints.filter((p) => p.replace(/[.!?]+$/, '') !== hook.replace(/[.!?]+$/, ''));
-
-  return `${lead}
-
-${points.length > 0 ? `Here's what stands out:
-
-${points.slice(0, 4).map((p, i) => `${i + 1}. ${p}`).join('\n')}` : ''}
-
-${keyMessage ? cap(keyMessage) : '[Add your one-line takeaway]'}
-
-${close}
-
-${hashtags(content, keyMessage, v)}`;
-}
-
-function generateTwitterThread(content: string, keyPoints: string[], title: string, voice: string): string {
-  let thread = `**Tweet 1 (Hook):**
-${title}: a thread
-
-Here's what you need to know:\n\n`;
-
-  keyPoints.slice(0, 6).forEach((p, i) => {
-    thread += `**Tweet ${i + 2}:**
-${i + 1}/ ${p}
-
-`;
-  });
-
-  thread += `**Final Tweet:**
-${Math.min(keyPoints.length, 6) + 1}/ ${VOICE_CLOSE[voice] || VOICE_CLOSE.professional}
-
-Full post: [Add the link]`;
-
-  return thread;
-}
-
-function generateEmailVersion(content: string, keyPoints: string[], keyMessage: string): string {
-  return `Hi [First Name],
-
-Quick summary of something important:
-
-${keyPoints.slice(0, 3).map(p => `→ ${p}`).join('\n')}
-
-${keyMessage ? cap(keyMessage) : 'This matters because [Add the reason].'}
-
-Worth a read when you have a few minutes.
-
-[CTA Button: Read the Full Version]
-
-Best,
-[Your name]`;
-}
-
-function generateBlogSummary(content: string, keyPoints: string[], title: string, v: Vertical | null): string {
-  // Run 15 R15-32 (edge-case matrix): each key point is listed once, without a label cut from its first words (the first point
-  // used to print three times: the opening line, a bullet and the bottom line).
-  return `## ${title}: Key Takeaways
-
-In this ${content.length > 5000 ? 'comprehensive' : 'focused'} piece, we cover:
-
-${keyPoints.length ? keyPoints.map(p => `- ${p}`).join('\n') : '- [Add the main points of your piece]'}
-
-[Add who this is for${v ? `, for example ${v.buyerRoles.slice(0, 2).join(' or ')}` : ''}]: these insights apply to their work.
-
-**The bottom line:** [Add one sentence your readers should remember, in your words]
-
-[Read the full version for examples, data, and implementation details →]`;
-}
-
-function generateNewsletterSection(content: string, keyPoints: string[], keyMessage: string): string {
-  return `${keyPoints[0] || 'Key insight from this content.'}
-
-Here's the quick version:
-
-${keyPoints.slice(1, 4).map(p => `• ${p}`).join('\n')}
-
-${keyMessage ? cap(keyMessage) : ''}`;
-}
-
-// Quote cards: sentences already in quotation marks in the source, then whole key points. Run 19 (D80, problem 2): a card is never
-// cut mid-sentence; a sentence over 180 characters is left out unless nothing shorter exists.
-function extractQuotes(content: string, keyPoints: string[]): string[] {
-  // Look for actual quotes in content
-  const quotesInContent = (content.match(/"[^"]{20,150}"/g) || []).map((x) => x.replace(/"/g, ''));
-  const short = keyPoints.filter((p) => p.length <= 180);
-  const generated = short.length ? short.slice(0, 3) : keyPoints.slice(0, 1);
-  return [...quotesInContent, ...generated].slice(0, 5);
+// Quote cards: customer quotes in your proof, sentences already in quotation marks in the source, then whole key points that fit
+// on a card (180 characters). A card is never cut mid-sentence.
+function extractQuotes(k: Kit): { text: string; by?: string }[] {
+  const out: { text: string; by?: string }[] = [];
+  for (const p of k.proof) if (p.kind === 'quote' && p.text.length <= 180) out.push({ text: p.text.replace(/^(?:customer (?:quote|words)):\s*/i, ''), by: p.label ? `(${p.label})` : undefined });
+  for (const m of k.content.match(/"[^"]{20,180}"/g) || []) out.push({ text: m.replace(/"/g, '') });
+  const short = k.points.filter((p) => p.length <= 180);
+  for (const p of short) out.push({ text: p });
+  return out.filter((x, i, a) => a.findIndex((y) => y.text === x.text) === i).slice(0, 5);
 }
 
 function getPlatform(format: string): string {
@@ -499,18 +487,16 @@ function subjectPoint(point: string | undefined): string {
   return p.length <= 60 ? p : '';
 }
 
-// Words that make a poor hashtag.
-const HASHTAG_GENERIC = new Set(['changing', 'change', 'buyers', 'buyer', 'decide', 'decision', 'things', 'thing', 'accept', 'expect', 'compare', 'measure', 'measuring', 'inside', 'outside', 'quarter', 'fixed', 'teams', 'people', 'companies', 'company', 'every', 'start', 'today', 'result', 'results', 'customer', 'customers', 'which', 'there', 'would', 'could']);
-const camel = (t: string) => t.split(/[\s-]+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join('');
-// Run 19: hashtags are the sector's own terms that the source uses, then the longest topic words of the key message or the source's
-// first sentence that are not generic. With neither, a prompt: never filler words.
+const camel = (t: string) => t.split(/[\s-]+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join('').replace(/[^A-Za-z0-9]/g, '');
+// Hashtags: the brand named in the key message or in "At X we built" (never a random word of the text), the sector's own terms that the
+// source uses, then the sector's name. With none of them, no hashtag is invented.
 function hashtags(content: string, keyMessage: string, v: Vertical | null): string {
   const lower = `${content} ${keyMessage}`.toLowerCase();
   const tags: string[] = [];
-  if (v) for (const term of v.vocabulary) if (tags.length < 3 && lower.includes(term.toLowerCase())) tags.push(camel(term));
-  if (tags.length < 3) {
-    const base = keyMessage || (sentencesOf(content)[0] || '');
-    for (const w of topicWords(base, 6)) if (tags.length < 3 && !HASHTAG_GENERIC.has(w) && !tags.some((t) => t.toLowerCase() === w)) tags.push(camel(w));
-  }
-  return tags.length ? tags.map((t) => `#${t}`).join(' ') : '[Add three hashtags: one for the topic, one for the sector]';
+  const brand = /^([A-Z][A-Za-z0-9]+(?:\s[A-Z][A-Za-z0-9]+)?)\s*:/.exec(keyMessage.trim()) || /\bAt ([A-Z][A-Za-z0-9]+(?:\s[A-Z][A-Za-z0-9]+)?) we\b/.exec(content);
+  if (brand) tags.push(camel(brand[1]));
+  if (v) for (const term of v.vocabulary) if (tags.length < 4 && lower.includes(term.toLowerCase())) tags.push(camel(term));
+  if (v && tags.length < 4) tags.push(camel(v.name));
+  const uniq = tags.filter((t, i) => t && tags.findIndex((x) => x.toLowerCase() === t.toLowerCase()) === i);
+  return uniq.length ? uniq.map((t) => `#${t}`).join(' ') : 'Hashtags: none are suggested because the source names no brand and no sector term. Add the brand name and one term your readers search for.';
 }

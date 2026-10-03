@@ -20,7 +20,8 @@ test("content_repurposer: the Blog Summary lists each key point once, with no la
   const blog = r.text.split("### Blog Summary")[1].split("### Quote Cards")[0];
   assert.equal(count(blog, "Map that moment, remove every step before it, and measure time to value"), 1);
   assert.doesNotMatch(blog, /- \*\*[^*]+:\*\* /);
-  assert.match(blog, /\*\*The bottom line:\*\* \[/);
+  assert.match(blog, /\*\*The bottom line:\*\* Map the first success moment and remove every step before it\./);
+  assert.doesNotMatch(blog, /\[Add/);
 });
 
 test("sales_enablement_content: the demo script points to the objection handlers without a wrong direction; a default stage is labelled", async () => {

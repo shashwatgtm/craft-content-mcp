@@ -1,6 +1,6 @@
 import { countWords, aOrAn } from './utils.js';
 import { splitItems, pickKeyPoints, readContext, audienceLine, firstSentence, sentencesOf, q, type Vertical } from './sector.ts';
-import { parseProof, fixNumbers, endSentence, shortenClauses, proseJoin, makeHashtags, brandFrom, KIND_NOTE, FIGURE, type ProofItem } from './draft.ts';
+import { parseProof, fixNumbers, endSentence, shortenClauses, proseJoin, brandFrom, softenClaims, dropTail, KIND_NOTE, FIGURE, type ProofItem } from './draft.ts';
 
 // Run 21c (draft rewrite): the kit is a set of finished pieces, one per channel, built from the source, the key message, the proof and the
 // voice. Each piece uses whole sentences of the source (a long one is shortened at a clause boundary in posts and tweets only). Nothing is
@@ -27,6 +27,46 @@ const VOICE_NOTE: Record<string, string> = {
   bold: 'a closing line that asks the reader to agree or disagree',
 };
 
+// Run 21c (k2): a superlative claim ("the world's first", "the world's largest") is taken out of text that is meant to be published, and the grammar
+// is repaired where the removal or the user's typing left it garbled: "one of a ... companies" becomes "one of the ... companies", "an unique" becomes
+// "a unique", "an US" becomes "a US". The claims removed are returned so the tool names them once, as claims to prove before they are put back.
+export function cleanClaims(text: string): { text: string; removed: string[] } {
+  const r = softenClaims(text);
+  const t = r.text
+    .replace(/(^|(?<=[A-Za-z]{3,}[.!?]\s+)|(?<=\n))(an?) /g, (m, pre, art) => `${pre}${art.charAt(0).toUpperCase()}${art.slice(1)} `)
+    .replace(/\b(one|some|most|many|each|any|several|all|none) of (?:a|an) /gi, (m, w) => `${w} of the `)
+    .replace(/\b(a|an)(\s+)([A-Za-z]+)\b/g, (m, art, sp, word) => {
+      // only a plain word or the acronyms that start with a vowel letter and a consonant sound ("a US", "a UK") are changed; other acronyms stay as typed
+      if (/^[A-Z]{2,}$/.test(word) && !/^(?:US|UK|UN|UI|UX|EU)$/.test(word)) return m;
+      const vowel = /^[aeiou]/i.test(word) && !/^(?:uni|use|usu|uti|eu|one|once|ubiq|ura|US$|UK$|UN$|UI$|UX$)/i.test(word) || /^(?:hour|honest|heir)/i.test(word);
+      const want = vowel ? 'an' : 'a';
+      return want === art.toLowerCase() ? m : `${art[0] === 'A' ? want.charAt(0).toUpperCase() + want.slice(1) : want}${sp}${word}`;
+    });
+  return { text: t, removed: r.removed };
+}
+
+// Hashtags: the brand, then terms of the sector that the text uses and that are real terms (two or more words, or an acronym), then the first part
+// of the sector's name. Never one common word (#Carrier) and never a run-together phrase longer than 24 characters.
+export function tagsFor(text: string, brand: string, v: Vertical | null): string {
+  const camel = (t: string) => t.split(/[\s-]+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join('').replace(/[^A-Za-z0-9]/g, '');
+  const lower = text.toLowerCase();
+  const tags: string[] = [];
+  if (brand) tags.push(camel(brand));
+  if (v) {
+    for (const term of v.vocabulary) {
+      if (tags.length >= 4) break;
+      if (!lower.includes(term.toLowerCase())) continue;
+      const real = term.trim().split(/\s+/).length >= 2 || /^[A-Z]{3,}$/.test(term.trim());
+      const tag = camel(term);
+      if (real && tag.length <= 24) tags.push(tag);
+    }
+    const first = camel(v.name.split(',')[0]);
+    if (tags.length < 4 && first && first.length <= 24) tags.push(first);
+  }
+  const uniq = tags.filter((x, i) => x && tags.findIndex((y) => y.toLowerCase() === x.toLowerCase()) === i);
+  return uniq.map((x) => `#${x}`).join(' ');
+}
+
 const VENDOR_SENTENCE = /^(?:[A-Z][\w&.-]*(?:\s[A-Z][\w&.-]*)?\s+(?:is|are|helps?|gives|lets|makes|provides|offers|builds|sells|runs|sends|turns|connects|automates)\b|At [A-Z][\w&.-]*(?:\s[A-Z][\w&.-]*)? we (?:built|build|make|made|offer|sell))/;
 
 export function generateContentRepurposer(args: {
@@ -36,11 +76,13 @@ export function generateContentRepurposer(args: {
   brand_voice?: string;
   key_message?: string;
 }): string {
-  const content = fixNumbers(args.source_content);
+  const claimsRemoved: string[] = [];
+  const clean = (t: string) => { const r = cleanClaims(t); claimsRemoved.push(...r.removed); return r.text; };
+  const content = clean(fixNumbers(args.source_content));
   const sourceType = args.source_type;
   const targetFormats = args.target_formats ? splitItems(args.target_formats) : DEFAULT_FORMATS;
   const voice = args.brand_voice && VOICE[args.brand_voice] ? args.brand_voice : 'professional';
-  const keyMessage = fixNumbers(args.key_message || '').trim();
+  const keyMessage = clean(fixNumbers(args.key_message || '').trim());
 
   // Proof paragraphs ("Proof: ..." or "Results: ...") are read as proof items; the rest of the source gives the key points.
   const paras = content.split(/\n+/).map((l) => l.trim()).filter(Boolean);
@@ -49,8 +91,9 @@ export function generateContentRepurposer(args: {
   const body = paras.filter((l) => !proofParas.includes(l)).join('\n');
   const titleInfo = extractTitle(body, keyMessage);
   const title = titleInfo.title;
-  const pointsFull = dedupe(pickKeyPoints(body, keyMessage, titleInfo.fromSource ? title : '', 5)).map(cleanPoint);
-  const points = pointsFull.map((p) => shortenClauses(p, 260));
+  // a point is kept whole (a very long one is shortened at a clause boundary at 600 characters); a source label without a figure ("(page words)") is not left in public copy
+  const pointsFull = dedupe(pickKeyPoints(body, keyMessage, titleInfo.fromSource ? title : '', 5)).map(cleanPoint).map(tidyLabel).map((p) => (p.length > 600 ? shortenClauses(p, 600) : p));
+  const points = pointsFull;
   const wordCount = countWords(content);
   // The sentence that says what the company is or sells ("X is ...", "X helps ...", "At X we built ...") is the seller's own description and is read first.
   const vendorSentence = sentencesOf(body).find((x) => VENDOR_SENTENCE.test(x)) || '';
@@ -59,12 +102,12 @@ export function generateContentRepurposer(args: {
   const keys = targetFormats.map((f) => f.toLowerCase().replace(/\s+/g, '_'));
   const unknown = keys.filter((f) => !KNOWN_FORMATS.includes(f));
   const known = keys.filter((f) => KNOWN_FORMATS.includes(f));
-  const customerProof = proof.filter((p) => p.kind === 'result' || p.kind === 'quote' || (p.kind === 'title' && p.figure));
+  const customerProof = proof.filter((p) => !isPartnerItem(p) && (p.kind === 'result' || p.kind === 'quote' || (p.kind === 'title' && p.figure)));
   const bestProof = ['result', 'quote', 'title'].map((kind) => customerProof.find((p) => p.kind === kind && p.figure)).find(Boolean) || customerProof[0];
   const otherProof = proof.filter((p) => !customerProof.includes(p));
   const tags = hashtags(content, keyMessage, ctx.v);
   const kind = sourceType.replace(/_/g, ' ');
-  const k: Kit = { points, pointsFull, proof, bestProof, hook, title, voice, keyMessage, kind, v: ctx.v, tags: /^Hashtags:/.test(tags) ? '' : tags, content };
+  const k: Kit = { points, pointsFull, proof, bestProof, hook, title, voice, keyMessage, kind, v: ctx.v, tags, content };
 
   // What the user must supply or add by hand, once.
   const notGiven: string[] = [];
@@ -77,6 +120,7 @@ export function generateContentRepurposer(args: {
   if (known.includes('twitter_thread')) places.push('the last tweet');
   if (known.includes('video_script')) places.push('the video description');
   const toDo = [places.length ? `link ${proseJoin(places)} to the full ${kind}` : '', known.includes('email') ? 'add the sender\'s name under the email sign-off' : ''].filter(Boolean);
+  const claimsLine = claimsRemoved.length ? `**Claims to source before you publish:** your source or key message used ${proseJoin([...new Set(claimsRemoved)].map((c) => `"${c}"`))}. The pieces leave it out; add it back once, in one place, and only if you can prove it with a source a reader can check.` : '';
   const beforeUse = toDo.length ? `Before you use it: ${proseJoin(toDo)}.` : '';
 
   // Sentences of the source that no piece carries: the key points are the five the rule chose; the others are named in one line.
@@ -87,7 +131,7 @@ export function generateContentRepurposer(args: {
 
   let output = `# Content Repurposing Kit
 
-${[...notGiven, beforeUse, notUsed].filter(Boolean).join('\n')}
+${[...notGiven, beforeUse, notUsed, claimsLine].filter(Boolean).join('\n')}
 ${unknown.length ? `\n${unknown.map((f) => `${f.replace(/_/g, ' ')} is not a format this tool writes. Choose from: ${KNOWN_FORMATS.join(', ')}.`).join('\n')}\n` : ''}
 ## Repurposed Content
 
@@ -111,15 +155,15 @@ ${unknown.length ? `\n${unknown.map((f) => `${f.replace(/_/g, ' ')} is not a for
 | **Formats** | ${args.target_formats ? 'Custom selection' : 'Default top 5'} |
 
 ### Key Points Extracted
-${points.length ? pointsFull.map((p, i) => `${i + 1}. ${shortenClauses(p, 400)}`).join('\n') : 'None found.'}
+${points.length ? pointsFull.map((p, i) => `${i + 1}. ${p}`).join('\n') : 'None found.'}
 
 *Chosen as whole sentences from your source, in its order. In the posts and tweets a sentence over 260 characters is shortened at a clause boundary; the list above and the blog summary keep the longer form.*
 
 **Brand voice (${voice}):** ${VOICE_NOTE[voice]}; the sentences taken from your source are kept as you wrote them.
 
 ### Proof Used
-${proof.length ? proof.map((p) => `- ${endSentence(capFirstChar(p.shown))} *(${KIND_NOTE[p.kind]}${customerProof.includes(p) ? '' : '; not used as a result'})*`).join('\n') : '- None: the source holds no proof line.'}
-${/^Hashtags:/.test(tags) ? `\n${tags}\n` : ''}
+${proof.length ? proof.map((p) => `- ${endSentence(capFirstChar(p.shown))} *(${isPartnerItem(p) ? 'a partner statement, not a customer\'s words' : KIND_NOTE[p.kind]}${customerProof.includes(p) ? '' : '; not used as a result'})*`).join('\n') : '- None: the source holds no proof line.'}
+${tags ? '' : '\nNo hashtag is suggested: the text names no brand and no sector term. Add the brand name and one term your readers search for.\n'}
 ---
 
 ## Sector Notes
@@ -136,6 +180,22 @@ ${ctx.v ? `- ${audienceLine(ctx.v)}
   return output;
 }
 
+const isPartnerItem = (p: ProofItem) => /partner/i.test(p.label);
+// A label of the source without a figure ("(page words)", "(a customer's words)") is bookkeeping for the author; a sentence with no figure does not carry it into public copy.
+function tidyLabel(p: string): string {
+  return /\d/.test(p) ? p : p.replace(/\s*\((?:page (?:words|claims?)|a customer's words|customer quote|customer words)[^)]*\)\s*$/i, '');
+}
+// A subject line cut at a clause boundary: the longest start of the text that ends before a comma, a semicolon, a colon (after three words) or a joining word.
+function subjectCut(text: string, max: number): string {
+  const t = text.trim().replace(/[.!?]+$/, '');
+  if (t.length <= max) return t;
+  let best = '';
+  for (const m of t.matchAll(/[,;:]\s|\s(?=(?:that|from which|from|with|so|and|which|where|for|to)\s)/g)) {
+    const cut = dropTail(t.slice(0, m.index).trim());
+    if (cut.length <= max && cut.split(/\s+/).length >= 4) best = cut;
+  }
+  return best;
+}
 function capFirstChar(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1); }
 
 // Sentences built as "<audience> are asked to deliver: <what>" and "<topic>: what to do about <problem>" are kept as the part that
@@ -202,6 +262,24 @@ const proofLine = (k: Kit, label = 'Result'): string => {
 };
 // A line for a tweet: complete, at most 270 characters, ending at a clause boundary.
 const tweet = (s: string): string => endSentence(shortenClauses(s, 270));
+// A line for the thread that may be longer than one post: it is split at list boundaries (commas, semicolons) into posts of at most 270 characters, so no list is cut.
+function tweetParts(s: string): string[] {
+  const t = endSentence(s.trim());
+  if (t.length <= 270) return [t];
+  const out: string[] = [];
+  let rest = t;
+  while (rest.length > 270) {
+    const room = rest.slice(0, 240);
+    const cut = Math.max(room.lastIndexOf(', '), room.lastIndexOf('; '));
+    const sp = room.lastIndexOf(' ');
+    const at = cut > 60 ? cut : sp > 20 ? sp : 240;
+    out.push(`${rest.slice(0, at).replace(/[,;:\s]+$/, '')} (continued in the next post)`);
+    rest = rest.slice(at + 1).trim();
+    rest = rest.charAt(0).toUpperCase() + rest.slice(1);
+  }
+  out.push(rest);
+  return out;
+}
 const stemSet = (s: string) => new Set((s.toLowerCase().match(/[a-z]{4,}/g) || []).map((w) => w.slice(0, 5)));
 // The sector measure a sentence shares words with, or nothing: a point is tied to a measure only when it names it.
 function metricFor(k: Kit, text: string): string {
@@ -238,8 +316,9 @@ ${[endSentence(lead), ...rest.slice(0, 4).map((p) => endSentence(p)), proof, msg
 
 `,
     twitter_thread: () => {
-      const tweets = [`${tweet(k.hook)} A thread.`, ...rest.slice(0, 5).map((p, i) => `${i + 1}/ ${tweet(p)}`)];
-      if (k.bestProof) tweets.push(`${tweets.length}/ ${tweet(proof)}`);
+      const tweets: string[] = [`${tweet(k.hook)} A thread.`];
+      for (const p of rest.slice(0, 5)) for (const part of tweetParts(p)) tweets.push(`${tweets.length}/ ${part}`);
+      if (k.bestProof) for (const part of tweetParts(proof)) tweets.push(`${tweets.length}/ ${part}`);
       tweets.push(`${tweets.length}/ ${[msg ? tweet(msg) : '', close].filter(Boolean).join(' ')}`);
       return `
 ### Twitter/X Thread
@@ -253,7 +332,7 @@ ${tweets.map((t, i) => `**Tweet ${i + 1}${i === 0 ? ' (Hook)' : ''}:**\n${t}${t.
 `;
     },
     email: () => {
-      const s1 = subjectSafe(k.title, 70) ? subjectSafe(k.title, 70) : subjectSafe(k.hook, 70) ? subjectSafe(k.hook, 70) : `A short ${kind} summary`;
+      const s1 = subjectSafe(k.title, 70) ? subjectSafe(k.title, 70) : subjectSafe(k.hook, 70) ? subjectSafe(k.hook, 70) : subjectCut(k.hook, 70) || subjectCut(k.title, 70) || `A short ${kind} summary`;
       const alts = [
         subjectSafe(rest[0], 60) ? `What we learned: ${subjectSafe(rest[0], 60)}` : '',
         k.bestProof && subjectSafe(k.bestProof.text.replace(/^Customer (?:quote|words)(?: from [^:]*)?:\s*/i, '').replace(/^["“]|["”]$/g, ''), 60) ? `${k.bestProof.kind === 'title' ? 'A customer story' : 'Proof inside'}: ${subjectSafe(k.bestProof.text.replace(/^Customer (?:quote|words)(?: from [^:]*)?:\s*/i, '').replace(/^["“]|["”]$/g, ''), 60)}` : '',
@@ -284,7 +363,7 @@ ${alts.length ? `Other subject lines to test: ${alts.join('; ')}\n\n` : ''}---
 
 ${endSentence(lead)}
 
-${k.pointsFull.length ? k.pointsFull.map((p) => `- ${endSentence(shortenClauses(p, 400))}`).join('\n') : 'No key point was found in the source: paste the finished text.'}
+${k.pointsFull.length ? k.pointsFull.map((p) => `- ${endSentence(p)}`).join('\n') : 'No key point was found in the source: paste the finished text.'}
 ${k.bestProof ? `\n**Proof:** ${endSentence(k.bestProof.shown)}\n` : ''}
 ${k.v ? `This is written for readers such as ${roles}, who watch ${proseJoin(k.v.metrics.slice(0, 3))}.\n` : ''}
 ${msg || msgRaw ? `**The bottom line:** ${msgRaw}\n` : ''}
@@ -371,9 +450,7 @@ ${k.v ? `- Measures this audience watches: ${proseJoin(k.v.metrics.slice(0, 3))}
 
 ---
 
-${cards.length ? cards.map((qt, i) => `**Quote Card ${i + 1}:**
-> "${qt.text}"${qt.by ? `\n>\n> ${qt.by}` : ''}
-`).join('\n') : 'No sentence of 180 characters or less was found, so there is no card text. Add a short line to the source or a key_message.\n'}
+${cards.length ? cards.map((qt, i) => qt.stat ? `**Stat Card ${i + 1}:**\n> ${qt.text}\n` : `**Quote Card ${i + 1}:**\n> "${qt.text}"${qt.by ? `\n>\n> ${qt.by}` : ''}\n`).join('\n') : 'No sentence of 180 characters or less was found, so there is no card text. Add a short line to the source or a key_message.\n'}
 ---
 
 `;
@@ -401,17 +478,31 @@ ${[proof, msg, `Read the full ${kind}`].filter(Boolean).join('\n\n')}
 
 // Quote cards: customer quotes in your proof, sentences already in quotation marks in the source, then whole key points that fit
 // on a card (180 characters). A card is never cut mid-sentence.
-function extractQuotes(k: Kit): { text: string; by?: string }[] {
-  const out: { text: string; by?: string }[] = [];
-  for (const p of k.proof) if (p.kind === 'quote' && /customer quote|customer words/i.test(`${p.label} ${p.text}`) && /\b(?:we|our|us|my|I)\b/.test(p.text.replace(/^[^:]{0,60}:\s*/, '')) && p.text.length <= 180) out.push({ text: p.text.replace(/^(?:customer (?:quote|words)):\s*/i, ''), by: p.label ? `(${p.label})` : undefined });
+function extractQuotes(k: Kit): { text: string; by?: string; stat?: boolean }[] {
+  const out: { text: string; by?: string; stat?: boolean }[] = [];
+  for (const p of k.proof) {
+    if (isPartnerItem(p)) continue;
+    const prefixed = /^customer (?:quote|words)\b/i.test(p.text);
+    const marked = /^(?:customer|partner) (?:quote|words)(?: from)?\s*(.*?):\s*["“](.+?)["”]\.?$/i.exec(p.text);
+    const labelled = p.kind === 'quote' && /customer quote|customer words/i.test(p.label);
+    if (!(prefixed || (labelled && /\b(?:we|our|us|my|I)\b/.test(p.text.replace(/^[^:]{0,60}:\s*/, ''))))) continue;
+    if (marked) { if (marked[2].length <= 220) out.push({ text: marked[2], by: [marked[1].replace(/^from\s+/i, '').trim(), p.label ? `(${p.label})` : ''].filter(Boolean).join(' ') || undefined }); continue; }
+    const bare = p.text.replace(/^customer (?:quote|words):\s*/i, '');
+    const sp = /^([^:"]{3,90}):\s+(.+)$/.exec(bare);
+    const text = (sp ? sp[2] : bare).trim();
+    if (text.length > 220) continue;
+    out.push({ text: text.charAt(0).toUpperCase() + text.slice(1), by: [sp ? sp[1].trim() : 'customer quote', p.label && sp ? `(${p.label})` : ''].filter(Boolean).join(' ') });
+  }
   for (const m of k.content.match(/"[^"]{20,180}"/g) || []) out.push({ text: m.replace(/"/g, '') });
   const short = k.points.filter((p) => p.length <= 180 && !/^(?:The problem|The obstacle|What [\w&.\s-]+ built):/.test(p));
   for (const p of short) out.push({ text: p });
+  // a result with a figure is a stat card when the source gives fewer than three quotes
+  if (out.length < 3) for (const p of k.proof) if (!isPartnerItem(p) && p.kind === 'result' && p.figure && !/^customer (?:quote|words)\b/i.test(p.text) && p.shown.length <= 220) out.push({ text: endSentence(p.shown), stat: true });
   return out.filter((x, i, a) => a.findIndex((y) => y.text === x.text) === i).slice(0, 5);
 }
 
 // Hashtags: the brand named in the key message or in "At X we built" (never a random word of the text), the sector's own terms that the
 // source uses, then the sector's name. With none of them, no hashtag is invented.
 function hashtags(content: string, keyMessage: string, v: Vertical | null): string {
-  return makeHashtags(`${content} ${keyMessage}`, brandFrom(keyMessage, content), v);
+  return tagsFor(`${content} ${keyMessage}`, brandFrom(keyMessage, content), v);
 }

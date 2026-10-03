@@ -1,6 +1,7 @@
 import { cap, lowerFirstIfCommon, titleWords, clipEcho } from './utils.js';
+import { cleanClaims, tagsFor } from './content-repurposer.ts';
 import { readContext, isClause, clipWords, type Vertical } from './sector.ts';
-import { parseProof, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, makeHashtags, brandFrom, asAnswer, claimsToSource, softenClaims, headlineSubject, KIND_NOTE, bestQuestion, type ProofItem } from './draft.ts';
+import { parseProof, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, brandFrom, asAnswer, claimsToSource, headlineSubject, KIND_NOTE, bestQuestion, type ProofItem } from './draft.ts';
 
 // Run 21c (draft rewrite): the series is a first draft built from the inputs. Each article is written out in full sentences: an opening
 // that states one part of the take, sections built from the proof points, the sector's objections and measures, and a closing line.
@@ -32,9 +33,9 @@ export function generateThoughtLeadership(args: {
   // Proof points: sorted by what they are. Customer results, quotes and story titles carry the argument; recognition, company-wide counts and page claims are credibility lines.
   const suggested = !args.proof_points;
   const removedClaims: string[] = [];
-  const soft = (t: string) => { const r = softenClaims(t); removedClaims.push(...r.removed); return r.text; };
+  const soft = (t: string) => { const r = cleanClaims(t); removedClaims.push(...r.removed); return r.text; };
   const items: ProofItem[] = args.proof_points ? parseProof(args.proof_points).map((i) => ({ ...i, text: soft(i.text), shown: soft(i.shown) })) : [];
-  const evidence = items.filter((i) => i.kind === 'result' || i.kind === 'quote');
+  const evidence = items.filter((i) => (i.kind === 'result' || i.kind === 'quote') && !isPartner(i));
   const stories = items.filter((i) => i.kind === 'title');
   const credibility = items.filter((i) => !evidence.includes(i) && !stories.includes(i));
 
@@ -46,8 +47,9 @@ export function generateThoughtLeadership(args: {
   const viewMatch = /^([A-Z][\w&.-]*(?:\s[A-Z][\w&.-]*)?(?:'s|’s)\s+(?:view|take|position)\s+on\s+[^:]+?):\s+\S/.exec(soft(yourTake));
   const view = viewMatch ? viewMatch[1] : '';
   const brand = brandFrom(yourTake, args.author_background || '', topic);
-  const tags = makeHashtags(`${topic} ${yourTake} ${args.proof_points || ''}`, brand, v);
-  const claims = [...new Set([...claimsToSource([yourTake, args.proof_points || '']), ...removedClaims])];
+  const tags = tagsFor(`${topic} ${yourTake} ${args.proof_points || ''}`, brand, v);
+  const allClaims = [...new Set([...claimsToSource([yourTake, args.proof_points || '']), ...removedClaims])];
+  const claims = allClaims.filter((c) => !allClaims.includes(`the ${c}`));
   const readerNoun = readerPhrase(targetReader);
   const topicLabel = shortTopic(topic);
   const takeText = [...parts, ...evidence.map((e) => e.text)].join(' ');
@@ -80,7 +82,7 @@ ${claims.length ? `\n**Claims to source before you publish:** your take or proof
 | Element | Detail |
 |---------|--------|
 | **Topic** | ${topic} |
-| **Your Take** | ${yourTake} |
+| **Your Take** | ${soft(yourTake)} |
 | **Target Reader** | ${targetReader} |
 | **Author** | ${hasAuthor ? authorBackground : 'not given'} |
 | **Articles** | ${numArticles} in the ${articleType.replace(/_/g, ' ')} style |
@@ -101,17 +103,21 @@ ${generatePromotionalPosts(parts, evidence, arts.map((x) => x.head.title), reade
 
 ${Array.from({ length: numArticles }, (_, i) => `${i + 1}. Article ${i + 1}, "${arts[i].head.title}", then its promo post.`).join('\n')}
 
-Link each promo post to its article. ${/^Hashtags: none/.test(tags) ? tags : `Hashtags for the posts: ${tags}.`}
+Link each promo post to its article. ${tags ? `Hashtags for the posts: ${tags}.` : ''}
 
 ---
 
 ## Proof Points Used
 
-${items.length ? items.map((p, i) => `${i + 1}. ${endSentence(capFirst(clipEcho(p.shown, 600)))} *(${KIND_NOTE[p.kind]}; ${credibility.includes(p) ? 'used as a credibility line, not as an example' : used.has(p) ? `used in article ${(used.get(p) as number[]).join(' and ')}` : 'not used as an example'})*`).join('\n') : 'None were given.'}
+${items.length ? items.map((p, i) => `${i + 1}. ${endSentence(capFirst(clipEcho(p.shown, 600)))} *(${noteOf(p)}; ${credibility.includes(p) ? 'used as a credibility line, not as an example' : used.has(p) ? `used in article ${(used.get(p) as number[]).join(' and ')}` : 'not used as an example'})*`).join('\n') : 'None were given.'}
 ${sectorBlock(v)}`;
 
   return output;
 }
+
+// A statement from a partner (a label such as "partner quote") is not a customer's word and is never used as customer proof.
+const isPartner = (p: ProofItem) => /partner/i.test(p.label);
+const noteOf = (p: ProofItem) => (isPartner(p) ? 'a partner statement, not a customer\'s words' : KIND_NOTE[p.kind]);
 
 const OPENS: Record<string, string> = {
   contrarian: 'This article makes the case for it.',
@@ -140,9 +146,10 @@ function shortTopic(topic: string): string {
 // The reader as a phrase inside a sentence: the whole description when it is short, else its first part.
 function readerPhrase(target: string): string {
   const first = target.split(/;/)[0].trim();
-  if (first.length <= 110) return lowerFirstIfCommon(first);
+  const keep = /^[A-Z][a-z]+ \d/.test(first); // a name with a number ("Fortune 500 companies") keeps its capital
+  if (first.length <= 110) return keep ? first : lowerFirstIfCommon(first);
   const short = shortenClauses(first, 110);
-  return /\.\.\.$/.test(short) ? 'these readers' : lowerFirstIfCommon(short);
+  return /\.\.\.$/.test(short) ? 'these readers' : keep ? short : lowerFirstIfCommon(short);
 }
 
 // The take, cut into the parts each article can lead with: sentences first, then the parts after a colon or a semicolon. A short
@@ -197,6 +204,13 @@ const FOCUS: Record<Kind, string> = {
   evidence: 'It starts from the evidence.',
   question: 'It starts from the question to ask.',
   test: 'It starts from how to check it.',
+};
+const PARTS_HEADINGS: Record<string, string[]> = {
+  contrarian: ['The position in parts', 'What else the position holds', 'The rest of the case'],
+  how_to: ['The steps', 'The next steps', 'What follows'],
+  lessons_learned: ['The lessons', 'More lessons', 'What else it teaches'],
+  prediction: ['The predictions', 'What else to expect', 'Further forecasts'],
+  framework: ['The components', 'The other components', 'What else the framework holds'],
 };
 const HEADINGS: Record<string, Record<Kind, string>> = {
   contrarian: { objection: 'The objection, and the answer', evidence: 'What the evidence shows', parts: 'The position in parts', test: 'How to test it', quote: 'In a customer\'s words', story: 'One customer story', question: 'The question to ask' },
@@ -268,16 +282,23 @@ const stems = (s: string) => new Set((s.toLowerCase().match(/[a-z]{4,}/g) || [])
 function quoteLine(p: ProofItem): string {
   const m = /^(?:customer|partner) (?:quote|words)(?: from)?\s*(.*?):\s*["“](.+?)["”]\.?$/i.exec(p.text);
   const label = p.label ? ` (${p.label})` : '';
-  if (!m) return endSentence(`A customer says: ${clipEcho(p.text.replace(/^(?:customer|partner) (?:quote|words):\s*/i, ''), ECHO)}${label}`);
-  const who = m[1].trim().replace(/^from\s+/i, '');
-  return endSentence(`A customer${who ? `, ${who},` : ''} puts it this way: "${clipEcho(m[2], ECHO)}"${label}`);
+  if (m) {
+    const who = m[1].trim().replace(/^from\s+/i, '');
+    return endSentence(`A customer${who ? `, ${who},` : ''} puts it this way: "${clipEcho(m[2], ECHO)}"${label}`);
+  }
+  // typed as "<who>: <what was said>" (the label says it is a customer quote): the speaker is named and the words are quoted
+  const bare = p.text.replace(/^(?:customer|partner) (?:quote|words):\s*/i, '');
+  const sp = /^([^:"]{3,90}):\s+(.+)$/.exec(bare);
+  if (sp) return endSentence(`A customer, ${sp[1].trim()}, puts it this way: "${capFirst(clipEcho(sp[2], ECHO))}"${label}`);
+  return endSentence(`A customer puts it this way: "${capFirst(clipEcho(bare, ECHO))}"${label}`);
 }
 
 // The sector's measures ranked by the words they share with a text (stems of five letters); a measure that shares none ranks last, in file order.
-function rankMetrics(v: Vertical | null, text: string): { m: string; n: number }[] {
+// A measure counts as related to a text only when the text shares two of its words (one, for a measure of a single word): a shared common word is not enough.
+function rankMetrics(v: Vertical | null, text: string): { m: string; n: number; ok: boolean }[] {
   if (!v) return [];
   const t = stems(text);
-  return v.metrics.map((m, i) => ({ m, i, n: [...stems(m)].filter((x) => t.has(x)).length })).sort((x, y) => y.n - x.n || x.i - y.i).map(({ m, n }) => ({ m, n }));
+  return v.metrics.map((m, i) => ({ m, i, n: [...stems(m)].filter((x) => t.has(x)).length, size: stems(m).size })).sort((x, y) => y.n - x.n || x.i - y.i).map(({ m, n, size }) => ({ m, n, ok: n >= Math.min(2, size) && n > 0 }));
 }
 function questionsFor(a: Art): string[] {
   return a.v ? a.v.discovery.filter((d) => !/\bclient'?s?\b|current provider/i.test(d)) : [];
@@ -306,7 +327,7 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
   const lead = leadPool.length ? leadPool[a.index % leadPool.length] : undefined;
   const metricsUsed = new Set<string>();
   const relevantMetric = (text: string, skipIfNamed = true): string => {
-    const top = rankMetrics(v, text).find((x) => x.n > 0 && !metricsUsed.has(x.m));
+    const top = rankMetrics(v, text).find((x) => x.ok && !metricsUsed.has(x.m));
     if (!top) return '';
     if (skipIfNamed && [...stems(top.m)].every((x) => stems(text).has(x))) return '';
     metricsUsed.add(top.m);
@@ -328,25 +349,25 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
         body.push(frames[(a.index + k) % frames.length]);
         const m = relevantMetric(`${objection.objection} ${objection.response}`);
         if (m) body.push(`The measure to read it by is ${m}.`);
+        heading = `The objection: ${lowerFirst(objection.objection.replace(/[.?!]+$/, ''))}`;
       }
     } else if (kind === 'evidence' || kind === 'quote' || kind === 'story') {
       const item = kind === 'story' && a.stories.length ? nextProof(a.stories) : nextProof(a.evidence, kind === 'quote' ? 'quote' : undefined) || nextProof(a.stories);
       if (item) {
         a.mark(item, a.index + 1);
         const hh = (HEADINGS[a.type] || HEADINGS.contrarian)[item.kind === 'quote' ? 'quote' : item.kind === 'title' ? 'story' : 'evidence'];
-        heading = hh;
+        heading = item.kind === 'result' ? [hh, 'A result on record', 'More evidence'][a.index % 3] : hh;
         if (item.kind === 'quote') body.push(quoteLine(item));
         else if (item.kind === 'title') body.push(`One customer story points the same way. ${endSentence(clipEcho(item.shown, ECHO))} Its headline carries no result, so none is claimed for it here.`);
         else {
           const frames = [`The evidence: ${endSentence(capFirst(clipEcho(item.shown, ECHO)))}`, `Here is a result: ${endSentence(capFirst(clipEcho(item.shown, ECHO)))}`, `One result on record: ${endSentence(capFirst(clipEcho(item.shown, ECHO)))}`];
           body.push(frames[(a.index + k) % frames.length]);
-          const m = relevantMetric(item.text);
-          if (m) body.push(`It bears on ${m}.`);
         }
       }
     } else if (kind === 'parts') {
       const others = listOthers(a, thesis);
       if (others.length) {
+        heading = (PARTS_HEADINGS[a.type] || PARTS_HEADINGS.contrarian)[a.index % 3];
         const n = others.length;
         const intro = a.type === 'how_to' ? `${n === 1 ? 'The next step' : `The ${n} steps that follow`}:`
           : a.type === 'lessons_learned' ? `${n === 1 ? 'The lesson that goes with it' : 'The lessons that go with it'}:`
@@ -355,13 +376,10 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
                 : `${n === 1 ? 'The rest of the position' : `The other ${n} parts of the position`}:`;
         body.push(intro);
         others.forEach((p, i) => body.push(a.type === 'how_to' ? `${i + 1}. ${sentence(clipEcho(p, ECHO))}` : `- ${sentence(clipEcho(p, ECHO))}`));
-        const m = relevantMetric(others.join(' '), false);
-        if (m) body.push(`The measure that fits ${n === 1 ? 'it' : 'these'}: ${m}.`);
       }
     } else if (kind === 'test') {
-      if (v) {
-        const all = rankMetrics(v, a.takeText);
-        const ranked = all.filter((x) => x.n > 0).length >= 2 ? all.filter((x) => x.n > 0) : all;
+      const ranked = rankMetrics(v, a.takeText).filter((x) => x.ok);
+      if (ranked.length) {
         const m0 = ranked[(a.index * 2) % ranked.length].m;
         const m1 = ranked[(a.index * 2 + 1) % ranked.length].m;
         const two = m1 !== m0;
@@ -371,28 +389,30 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
           two ? `Two measures show whether it holds: ${m0} and ${m1}.` : `The measure that shows whether it holds is ${m0}.`,
         ];
         body.push(frames[(a.index + k) % frames.length]);
+        heading = `${h}: ${m0}`;
       }
     } else if (kind === 'question') {
       const qs = questionsFor(a);
       if (qs.length) {
         const qn = bestQuestion(`${thesis} ${a.takeText}`, qs, a.askedQuestions);
         body.push(`The question to take into the next meeting: "${qn}"`);
-        const m = relevantMetric(qn, false);
-        if (m) body.push(`The answer shows up in ${m}.`);
       }
     }
     if (body.length) { if (!firstKind) firstKind = kind; sections.push(`## ${heading}\n\n${body.join('\n')}`); }
   });
 
-  const writtenFor = a.index === 0 ? lowerFirstIfCommon(clipEcho(targetReader, ECHO)) : a.readerNoun;
+  const writtenFor = clipEcho(targetReader, ECHO);
   const byline = `*By ${authorBackground ? clipEcho(authorBackground.replace(/[.!?]+\s*$/, ''), 200) : 'the author'}. Written for ${writtenFor}.*`;
-  const first = a.view && a.index % a.parts.length === 0 ? `${a.view} is this: ${lowerFirst(clipEcho(thesis, ECHO))}.` : sentence(clipEcho(thesis, ECHO));
+  const repeat = a.index >= a.parts.length;
+  const brief = shortenClauses(thesis, 120);
+  const remind = repeat && !/\.\.\.$/.test(brief) && brief.length < thesis.length ? `${a.view ? `${a.view} is set out in "${a.heads[0].title}", in short: ` : `The position, set out in "${a.heads[0].title}", in short: `}${lowerFirst(brief)}.` : repeat ? `The position is set out in "${a.heads[0].title}".` : '';
+  const first = repeat ? remind : a.view && a.index % a.parts.length === 0 ? `${a.view} is this: ${lowerFirst(clipEcho(thesis, ECHO))}.` : sentence(clipEcho(thesis, ECHO));
   const opener = `${first} ${OPENS[a.type] || OPENS.contrarian}${firstKind ? ` ${FOCUS[firstKind]}` : ''}`;
   const isLast = a.index === a.total - 1;
   const next = !isLast ? `Next in the series: ${a.heads[a.index + 1].title}.` : '';
   const about = isLast
     ? [authorBackground ? `*About the author: ${endSentence(clipEcho(authorBackground.replace(/[.!?]+\s*$/, ''), 200))}*` : '',
-      ...credibility.map((c) => `**Credibility line** (${KIND_NOTE[c.kind]}, for the byline or the footer): ${endSentence(capFirst(clipEcho(c.shown, 300)))}`)].filter(Boolean).join('\n\n')
+      ...credibility.map((c) => `**Credibility line** (${noteOf(c)}, for the byline or the footer): ${endSentence(capFirst(clipEcho(c.shown, 300)))}`)].filter(Boolean).join('\n\n')
     : '';
   const bodyText = [opener, ...sections].join('\n\n');
   const wordCount = bodyText.split(/\s+/).length;
@@ -442,7 +462,9 @@ function generatePromotionalPosts(parts: string[], evidence: ProofItem[], titles
     const part = parts[i % parts.length];
     const question = qs.length ? `A question for ${readerNoun}: "${bestQuestion(`${part} ${takeText}`, qs, asked)}"` : '';
     // when the take has fewer parts than the series has articles, the posts do not all open on the same sentence: the lead rotates
-    const blocks = [sentence(clipEcho(part, 300)), proofLine, question].filter(Boolean);
+    const brief = shortenClauses(part, 160);
+    const lead = i >= parts.length && !/\.\.\.$/.test(brief) ? brief : part;
+    const blocks = [sentence(clipEcho(lead, 300)), proofLine, question].filter(Boolean);
     const rot = parts.length < titles.length ? i % blocks.length : 0;
     const ordered = [...blocks.slice(rot), ...blocks.slice(0, rot)];
     posts += `### Promo Post ${i + 1} (for Article ${i + 1})

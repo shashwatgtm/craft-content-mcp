@@ -22,3 +22,11 @@ test("a fragment takeaway does not leave nested or doubled quotes in the speaker
   assert.ok(blocks.length >= 5);
   for (const b of blocks) assert.doesNotMatch(b, /"/, b.slice(0, 120));
 });
+
+// Run 21c round 3 (test first): with a product name but no host or product sentence, the script said "this session is hosted by <product>", a fact nobody gave.
+test("the script does not say who hosts the session unless that was given", async () => {
+  for (const webinar_type of ["educational", "product_demo"]) {
+    const out = await call({ webinar_type, topic: "Keeping change orders and the job budget in step", target_audience: "general contractors", your_product: "Gridbeam", product_mention_level: webinar_type === "product_demo" ? "heavy" : "subtle", key_takeaways: "post change orders the day they are signed; read cost to budget each week" });
+    assert.doesNotMatch(out, /hosted by/i, webinar_type);
+  }
+});

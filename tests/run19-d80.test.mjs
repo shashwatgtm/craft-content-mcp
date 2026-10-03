@@ -156,7 +156,7 @@ test("webinar_script: speakers are listed as typed, never pasted after 'I'm'; po
   assert.doesNotMatch(r.text, /I'm Head of|I'm \[?Speaker/);
   assert.match(r.text, /Poll options:\n(- [^\n]+\n){3,}/);
   // run 21c: draft rewrite (the subtle product line is the user's own description; the recording line is one stage direction, conditional)
-  assert.match(r.text, /A word on Answerloop, kept short: /i);
+  assert.doesNotMatch(r.text, /hosted by/i); // run 21c round 3: a name with no description gives no product line (no invented host)
   assert.doesNotMatch(r.text, /^- We're recording today's session/m);
   assert.match(r.text, /add the line "This session is recorded and the link will follow" only if you record it/i);
   assert.doesNotMatch(r.text, /free trial|plans or trial/i);

@@ -69,7 +69,7 @@ test("newsletter: a figure with no source label is not a hook, a subject line or
 test("webinar: a services firm is never called a product, and the mention is not hollow", async () => {
   const t = await call("webinar_script", { ...WB, business_model: "services" });
   assert.doesNotMatch(t.split("## Sector Notes")[0], /product behind|see it on your own case|the product\b/i);
-  assert.match(t, /hosted by Brightwork|Brightwork's own work|how Brightwork works/i);
+  assert.doesNotMatch(t, /hosted by/i); // run 21c round 3: no invented host; the name alone gives no product line
   assert.doesNotMatch(t, /kept short: it is/i);
 });
 

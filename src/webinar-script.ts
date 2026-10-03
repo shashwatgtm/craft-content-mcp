@@ -384,7 +384,7 @@ function painPoint(w: W): string {
 function productLine(w: W, k: number, blocks: number, mine: string[]): string {
   if (w.productLevel === 'none' || !w.productName) return '';
   const name = w.productName;
-  if (w.productLevel === 'subtle') return k === 0 ? `\nA word on ${name}, kept short: ${productSentence(w) || `this session is hosted by ${name}.`}\n` : '';
+  if (w.productLevel === 'subtle') return k === 0 && productSentence(w) ? `\nA word on ${name}, kept short: ${productSentence(w)}\n` : '';
   const on = mine[0] && !isRun(mine[0]) ? ` on "${short(mine[0], 110)}"` : '';
   const desc = k === 0 && productSentence(w) ? ` ${productSentence(w)}` : '';
   return w.productLevel === 'heavy'
@@ -480,7 +480,7 @@ function generateScriptSection(section: { name: string; duration: number; purpos
     case 'Problem Context':
       return seg(section, 'Problem slide', [painPoint(w), v ? `${places(w, v)}, the people who decide this are usually ${proseJoin(v.buyerRoles.slice(0, 3))}.` : '', w.includePolls ? pollBlock('Which of these is closest to your situation today?', pollOptions(w.ctx)) : '']);
     case 'Product Overview':
-      return seg(section, name ? `${name} on one screen` : 'The demo screen', [name ? (productSentence(w) || `This session is hosted by ${name}.`) : 'Here is what we show today, on one screen.', t[0] ? `It is here for one reason today: ${lowerFirst(tk(t[0]))}` : '']);
+      return seg(section, name ? `${name} on one screen` : 'The demo screen', [name ? (productSentence(w) || `Here is ${name} on one screen.`) : 'Here is what we show today, on one screen.', t[0] ? `It is here for one reason today: ${lowerFirst(tk(t[0]))}` : '']);
     case 'Feature Demo 1': case 'Feature Demo 2': case 'Feature Demo 3': {
       const i = Number(section.name.slice(-1)) - 1;
       return seg(section, t[i] ? `The screen that shows: ${short(t[i], 90)}` : 'The working screen', [

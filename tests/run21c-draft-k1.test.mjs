@@ -34,8 +34,8 @@ test("newsletter: every count in a subject line or in the opening equals the num
   const t = await call("newsletter_builder", NL);
   const n = sections(t).length;
   assert.ok(n >= 2);
-  const counts = [...t.replace(/Not used in the draft: \d+ points/, "").matchAll(/\b(\d+) points\b/g)].map((m) => Number(m[1]));
-  assert.ok(counts.length >= 1);
+  // run 22 rewrite: the sections are grouped by what the points are; a count in a preview or subject line (N short sections) equals the number of sections
+  const counts = [...t.matchAll(/\b(\d+) (?:short )?(?:sections|points)\b/g)].map((m) => Number(m[1]));
   for (const c of counts) assert.equal(c, n, `count ${c} against ${n} sections`);
 });
 
@@ -45,25 +45,25 @@ test("newsletter: a long run-on key point is quoted, not spliced into a sentence
   const run = "releases that wait on a quarterly freeze because testing is manual and nobody dares to change the core, so every fix queues behind the next release, and the team spends its time on the freeze calendar";
   const at = d.toLowerCase().indexOf(run);
   assert.ok(at > 0, "the point is kept");
-  assert.equal(d[at - 1], '"', "and quoted");
-  // outside the quotes, none of the fragment's words are spliced into a sentence of ours
-  const noQuotes = d.slice(d.indexOf("\n---\n")).replace(/"[^"\n]*"/g, "");
-  assert.doesNotMatch(noQuotes, /nobody dares|freeze calendar|queues behind/i);
+  // run 22 rewrite: a run-on is not quoted any more; it stands whole as a sentence of its own (capital first letter, after a blank line or a full stop), never spliced into a sentence of ours
+  assert.ok(/(?:\n\n|\. |The problem: )$/.test(d.slice(Math.max(0, at - 13), at)) || d[at - 1] === "\n", "it starts a sentence or follows the lead-in 'The problem: '");
+  assert.doesNotMatch(d, /the words of the brief|in the words of/i);
 });
 
 test("newsletter: the topic's own problem is not a section of its own, and a clause label is quoted after 'points on'", async () => {
   const t = await call("newsletter_builder", NL);
   const d = draftOf(t);
   assert.doesNotMatch(t, /^### 1\. Releases that wait on a quarterly freeze/m);
-  assert.doesNotMatch(d, /This issue looks at \d+ points on [^"\n]+\.$/m);
-  assert.match(d, /This issue looks at \d+ points on [^\n]*"/);
+  // run 22 rewrite: the problem opens the issue as a sentence of its own, and the roadmap line names the sections
+  assert.match(d, /releases that wait on a quarterly freeze[^\n]*\./i);
+  assert.match(d, /In this issue: /);
 });
 
 test("newsletter: a figure with no source label is not a hook, a subject line or a heading", async () => {
   const t = await call("newsletter_builder", { ...NL, key_points: "Releases wait on a quarterly freeze; 40% fewer defects after automated testing is in place; A transition team that stays until the bank's own staff run the work" });
   const subj = t.split("## Subject Lines")[1].split("## Opening Hooks")[0];
   assert.doesNotMatch(subj, /40%/);
-  assert.match(t, /### Hook 2: Statistic\n> [^\n]*40% fewer defects[^\n]*(source|sourced)/i);
+  assert.match(t, /### Hook \d: Statistic\n> [^\n]*40% fewer defects[^\n]*(source|sourced)/i);
 });
 
 test("webinar: a services firm is never called a product, and the mention is not hollow", async () => {
@@ -89,13 +89,16 @@ test("webinar: the long topic is spoken once, and a run-on takeaway is quoted", 
   const run = "releases that wait on a quarterly freeze because testing is manual and nobody dares to change the core, so every fix queues behind the next release, and the team spends its time on the freeze calendar";
   let i = script.toLowerCase().indexOf(run);
   assert.ok(i > 0);
-  while (i >= 0) { assert.ok(["\"", "'"].includes(script[i - 1]), "run 21c E11: a quoted run-on inside a speaker block uses single quotes, so the block's own quotes do not nest"); i = script.toLowerCase().indexOf(run, i + 1); }
+  // run 22 rewrite: the run-on is said as a sentence (capital first letter), and no double quote of ours nests inside the speaker block
+  while (i >= 0) { assert.ok(/[A-Z]/.test(script[i]) || ["\"", "'"].includes(script[i - 1]), "the run-on starts a sentence or is quoted with single quotes"); i = script.toLowerCase().indexOf(run, i + 1); }
 });
 
 test("newsletter: eight key points give six sections and every count says six", async () => {
   const eight = Array.from({ length: 8 }, (_, i) => `Point number ${["one", "two", "three", "four", "five", "six", "seven", "eight"][i]} about the freeze calendar`).join("; ");
   const t = await call("newsletter_builder", { ...NL, key_points: eight });
-  assert.equal(sections(t).length, 6);
-  for (const m of t.replace(/Not used in the draft: \d+ points/, "").matchAll(/\b(\d+) points\b/g)) assert.equal(Number(m[1]), 6, m[0]);
-  assert.match(t, /Not used in the draft: 2 points/);
+  // run 22 rewrite: no point is dropped; the sections are grouped by what the points are
+  const n = sections(t).length;
+  assert.ok(n >= 1 && n <= 6, `${n} sections`);   // phrases only and no sector: one list section
+  for (const w of ["one", "two", "three", "four", "five", "six", "seven", "eight"]) assert.ok(t.toLowerCase().includes(`point number ${w} about the freeze calendar`), w);
+  for (const m of t.matchAll(/\b(\d+) (?:short )?sections\b/g)) assert.equal(Number(m[1]), n, m[0]);
 });

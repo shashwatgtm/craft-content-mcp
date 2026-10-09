@@ -100,7 +100,8 @@ export function generateNewsletter(args: {
   // the reader's own check: the sector's questions, said to the reader
   if (v) {
     const free = v.discovery.filter((d) => !/\bclient'?s?\b|current provider|signs off each|governed|\bme\b|\bour\b|\bwe\b/i.test(d));
-    const used = new Set<string>();
+    const hookFirst = free[0] || '';
+    const used = new Set<string>(hookFirst ? [hookFirst] : []);
     const n = segment === 'executives' ? 1 : 2;
     const asked: string[] = [];
     for (let i = 0; i < n; i++) { const q = bestQuestion(`${label} ${pts.map((p) => p.text).join(' ')}`, free, used); if (q) asked.push(toYou(q)); }
@@ -128,7 +129,8 @@ export function generateNewsletter(args: {
 
   // ---- subject, preview, opening ------------------------------------------------------------------------------------
   const headSource = parts.problem ? parts.problem.split(/;\s+/)[0] : label;
-  const head = shorten(headSource, 66, true) || (v ? cap(proseJoin(v.metrics.slice(0, 2))) : shorten(label, 66));
+  const headMax = parts.short ? 90 : 66;
+  const head = shorten(headSource, headMax, true) || (v ? cap(proseJoin(v.metrics.slice(0, 2))) : shorten(label, 66));
   const clause = !parts.short || isClause(topic) || LABEL_CLAUSE.test(label);
   const subjects = subjectLines(head, type, who, v, forWhom, ctaGoal, readers, clause);
   const roadmap = sections.length ? `${casual ? 'Here is what is in this issue' : 'In this issue'}: ${proseJoin(sections.map((s) => lower(s.heading)))}.` : '';
@@ -165,13 +167,13 @@ export function generateNewsletter(args: {
   // ---- the hooks ---------------------------------------------------------------------------------------------------
   // alternative openings: a question the issue does not already ask, and the figure as the first line
   const askedInDraft = new Set(sections.flatMap((x) => x.body.split('"')));
-  const hookQuestion = v ? toYou(v.discovery.filter((d) => !/\bclient'?s?\b|current provider|\bme\b|\bour\b|\bwe\b/i.test(d)).find((d) => !askedInDraft.has(toYou(d))) || '') : '';
+  const hookQuestion = v ? toYou(v.discovery.filter((d) => !/\bclient'?s?\b|current provider|signs off each|governed|\bme\b|\bour\b|\bwe\b/i.test(d))[0] || '') : '';
   const hooks: { name: string; text: string }[] = [];
   if (hookQuestion) hooks.push({ name: 'Question', text: hookQuestion });
   const fig = figures.find((p) => p.label) || figures[0];
-  if (fig) hooks.push({ name: 'Statistic', text: `Open with the figure from the evidence section, "${fig.text}"${fig.label ? ` (${fig.label})` : ''}, and state the problem second.` });
+  if (fig) hooks.push({ name: 'Statistic', text: `Open with the figure from the evidence section, "${fig.text}"${fig.label ? ` (${fig.label})` : ''}, and state the problem second.${fig.label ? '' : ' Its source is not given yet, so add it before you use the figure.'}` });
 
-  const sectorBlock = v ? `## Sector notes: ${cap(v.name)}
+  const sectorBlock = v ? `## Sector Notes: ${cap(v.name)}
 
 ${ctx.line}
 
@@ -262,7 +264,7 @@ function subjectLines(head: string, type: string, who: string, v: Vertical | nul
   const out: string[] = [];
   for (const c of pool) {
     const s = c.trim();
-    if (!s || s.length > 76) continue;
+    if (!s || s.length > Math.max(76, head.length + 4)) continue;
     if (out.some((x) => x.toLowerCase() === s.toLowerCase())) continue;
     out.push(s);
   }

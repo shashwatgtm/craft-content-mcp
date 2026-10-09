@@ -47,18 +47,18 @@ test("testimonial_capture keeps the story whole and the role as typed", async ()
 test("thought_leadership_series keeps each proof point whole and numbers intact", async () => {
   const t = await call("thought_leadership_series", { topic: "Last-mile delivery", your_take: "Plan the route around the window. We reached 99.5% on time deliveries in a quarter.", target_reader: "Heads of logistics", proof_points: "Lanehop reached 99.5% on time deliveries; Cost fell by Rs. 80,000 per branch, i.e. a low fee; Savings of Rs. 1,00,000 a month, vs. last year; Sr. Manager Asha Rao said it was easy", author_background: "Sr. Director at Branchwire. 12.5 years in logistics.", num_articles: 4 });
   noFragments(t, "thought_leadership_series");
-  assert.match(t, /1\. Lanehop reached 99\.5% on time deliveries/);
-  assert.match(t, /2\. Cost fell by Rs\. 80,000 per branch, i\.e\. a low fee/);
-  assert.match(t, /3\. Savings of Rs\. 1,00,000 a month, vs\. last year/);
-  assert.match(t, /4\. Sr\. Manager Asha Rao said it was easy/);
+  assert.match(t, /\| Lanehop reached 99\.5% on time deliveries/);   // run 22 rewrite: the proof points are listed in a table
+  assert.match(t, /\| Cost fell by Rs\. 80,000 per branch, i\.e\. a low fee/);
+  assert.match(t, /\| Savings of Rs\. 1,00,000 a month, vs\. last year/);
+  assert.match(t, /\| Sr\. Manager Asha Rao said it was easy/);
   assert.doesNotMatch(t, /logistics\.\./, "no doubled full stop after the author background");
 });
 
 test("a comma inside a number never splits a list or becomes a semicolon (newsletter, sales, case study)", async () => {
   const n = await call("newsletter_builder", { topic: "Failed first-attempt deliveries", cta_goal: "read the guide", key_points: "Saved Rs. 1,00,000 a month, vs. last year; Cut 1,200 hours; Reached 99.5% on time deliveries" });
-  assert.match(n, /Saved Rs\. 1,00,000 a month, vs\. last year/);
-  assert.match(n, /Cut 1,200 hours/);
-  assert.match(n, /Reached 99\.5% on time deliveries/);
+  assert.match(n, /Saved Rs\. 1,00,000 a month, vs\. last year/i);   // run 22 rewrite: the first letter may be lowered inside a sentence of ours
+  assert.match(n, /Cut 1,200 hours/i);
+  assert.match(n, /Reached 99\.5% on time deliveries/i);
   assert.doesNotMatch(n, /\d;\s?\d{2,3}\b/);
   const c = await call("case_study_generator", { customer_name: "Lanehop", your_product: "Branchwire", challenge: "Late drops", solution: "Window planning", results: "Savings of Rs. 1,00,000 a month, Cost fell by 80,000 a branch, 99.5% on time deliveries" });
   assert.match(c, /Rs\. 1,00,000 a month/);

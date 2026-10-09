@@ -118,8 +118,9 @@ for (const type of ["educational", "product_demo", "panel_discussion", "customer
 test("webinar script: thin input says once what is missing and does not pad", async () => {
   const t = await call("webinar_script", { topic: "Keeping change orders from stalling payment", target_audience: "Project executives at general contractors", webinar_type: "panel_discussion" });
   checkClean(t, "thin");
-  assert.equal((t.match(/Not given:/g) || []).length, 1);
-  assert.match(t, /Not given:[^\n]*speakers/);
-  assert.match(t, /Not given:[^\n]*key_takeaways/);
+  // run 22 rewrite: what is missing is named once, at the end, with what each input would change
+  assert.equal((t.match(/To sharpen this, give:/g) || []).length, 1);
+  assert.match(t, /To sharpen this, give:[^\n]*speakers \(it would change/);
+  assert.match(t, /To sharpen this, give:[^\n]*key_takeaways \(it would change/);
   assert.match(t, /\*\*SPEAKER:\*\*/);
 });

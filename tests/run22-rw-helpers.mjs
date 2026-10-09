@@ -29,7 +29,7 @@ export function sentences(t) {
   const out = [];
   for (const line of t.split("\n")) {
     const l = line.replace(/^\s*(?:[#>*\-]+|\d+\.)\s*/, "").replace(/\*\*|\*|`/g, "").trim();
-    if (!l || l.startsWith("|")) continue;
+    if (!l || l.startsWith("|") || /^(?:Lead proof point|Counter-argument it answers|Draft length|Headline):/.test(l)) continue;   // one-line labels of an article, not prose
     for (const s of l.split(/(?<=[.!?])\s+(?=[A-Z"“(])/)) out.push(s.trim());
   }
   return out;

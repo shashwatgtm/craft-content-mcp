@@ -152,7 +152,7 @@ const INSTRUCTION_LIKE = /\b(?:ignore|disregard|forget|override)\b.{0,60}\b(?:in
 
 // "Heads of customer operations at online retailers": the role is everything before " at ", the field what follows.
 function splitAudience(audience: string): { role: string; field: string; connector: string } {
-  const m = /^(.+?)\s+(at|in)\s+(.+)$/i.exec(audience.trim());
+  const m = audience.trim().match(/^(.+?)\s+(at|in)\s+(.+)$/i);
   if (m && m[1].split(/\s+/).length <= 7) return { role: m[1].trim(), field: m[3].trim(), connector: m[2].toLowerCase() };
   const r = roleOf(audience);
   return { role: r.role, field: r.field, connector: 'in' };

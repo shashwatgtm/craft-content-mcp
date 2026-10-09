@@ -34,10 +34,10 @@ test("a take that shares no word with the sector's measures gives no measure lin
 test("the measure list is checked for items before it is indexed", async () => {
   const { readFileSync } = await import("node:fs");
   const src = readFileSync(new URL("../src/thought-leadership.ts", import.meta.url), "utf8");
-  const at = src.indexOf("ranked[(a.index * 2) % ranked.length]");
+  const at = src.indexOf("const m0 = pool[0]");   // run 22 rewrite: the pool of related measures replaced the ranked list
   assert.ok(at > 0);
   const before = src.slice(Math.max(0, at - 160), at);
-  assert.match(before, /if \(ranked\.length\)/);
+  assert.match(before, /if \(pool\.length\)/);
 });
 
 // Run 21c round 3 (test first): a topic with a bracket note was cut inside the bracket in the headlines ("A Framework for X (customer Operations").

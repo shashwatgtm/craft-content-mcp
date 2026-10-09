@@ -108,16 +108,18 @@ for (const type of ["educational", "product_update", "industry_news", "thought_l
     checkClean(t, type);
     const draft = norm(t.slice(t.indexOf("**Subject:**"), t.indexOf("## Subject Lines")));
     for (const p of items(A.key_points)) assert.ok(draft.includes(norm(p).replace(/\s*\([^)]*\)\s*$/, "")), `${type}: ${p}`);
-    assert.equal((t.match(/^### \d+\. /gm) || []).length, 4);
+    const nSec = (t.match(/^### \d+\. /gm) || []).length;   // run 22 rewrite: the sections are grouped by what the points are, no longer one per point
+    assert.ok(nSec >= 3 && nSec <= 6, `${nSec} sections`);
   });
 }
 
 test("newsletter draft: thin input says once what is missing and does not pad", async () => {
   const t = await call("newsletter_builder", { topic: "Fewer change order disputes on commercial building projects", cta_goal: "read the guide" });
   checkClean(t, "thin");
-  assert.equal((t.match(/Not given:/g) || []).length, 1, "one line that says what is missing");
-  assert.match(t, /Not given:[^\n]*key_points/);
-  assert.match(t, /Not given:[^\n]*your_product/);
+  // run 22 rewrite: what is missing is named once, at the end, with what each input would change
+  assert.equal((t.match(/To sharpen this, give:/g) || []).length, 1, "one line that says what is missing");
+  assert.match(t, /To sharpen this, give:[^\n]*key_points \(it would change/);
+  assert.match(t, /To sharpen this, give:[^\n]*your_product \(it would change/);
   assert.match(t, /\*\*Subject:\*\*/);
   assert.match(t, /Button: Read the guide/);
 });

@@ -3,7 +3,7 @@
 // whole sentence of ours, and write the closing line that names what was not given. Rule B82: nothing here adds a figure, a quote, a
 // customer or a named company; the words come from the user's text and from the one sector file (src/verticals.ts).
 
-import { splitList, fixNumbers, endSentence, capFirst, proseJoin, clipAtWord, dropTail, STAT, FIGURE, RECOGNITION, SCALE } from './draft.ts';
+import { splitList, fixNumbers, endSentence, capFirst, proseJoin, clipAtWord, dropTail, tidyPoint, STAT, FIGURE, RECOGNITION, SCALE } from './draft.ts';
 import { cap, lowerFirstIfCommon } from './utils.js';
 
 // ---- the text as typed -------------------------------------------------------------------------------------------------------
@@ -29,8 +29,8 @@ export function instructionNote(lines: string[]): string {
 const LABEL_WORD = /\b(?:claims?|quotes?|words|headline|title|story|stories|figures?|case study|hypothetical|example|press release|analyst|recogni\w+|report|source|testimonial|review|video)\b/i;
 export function splitLabel(s: string): { text: string; label: string } {
   const t = s.trim();
-  const m = /\s*\(([^()]*)\)\s*[.;]?\s*$/.exec(t);
-  if (m && m.index > 0 && LABEL_WORD.test(m[1])) return { text: t.slice(0, m.index).trim(), label: m[1].trim() };
+  const m = t.match(/\s*\(([^()]*)\)\s*[.;]?\s*$/);
+  if (m && (m.index as number) > 0 && LABEL_WORD.test(m[1])) return { text: t.slice(0, m.index as number).trim(), label: m[1].trim() };
   return { text: t, label: '' };
 }
 
@@ -149,7 +149,18 @@ export function readPoints(raw: string | undefined, known: { problem?: string } 
     const t = takeKnown(list, tidy(known.problem));
     if (t.first) { items.push({ text: t.first.replace(/[.\s]+$/, ''), label: '', problem: true }); list = t.rest.flatMap(splitAfterLabels); }
   }
-  for (const p of list) { const s = splitLabel(p.replace(/^[-*•]\s*/, '').replace(/^(?:and|but|or|then)\s+/i, '')); const tx = s.text.replace(/[.;,\s]+$/, ''); if (tx) items.push({ text: tx, label: s.label, problem: false }); }
+  // A list broken at both commas and semicolons shows it by a piece that opens on a joining word; then a short piece that starts with a
+  // small letter continues the piece before it (up to 420 characters), so no point is a stump.
+  if (list.slice(1).some((x) => /^(?:not|but|and|or|so|which|that|because|while|with|without|including|plus|then|yet|rather)\b/i.test(x))) {
+    const welded: string[] = [];
+    for (const cur of list) {
+      const prev = welded[welded.length - 1];
+      if (prev !== undefined && /^[a-z]/.test(cur) && cur.split(/\s+/).length < 8 && !/[.!?]$/.test(prev) && prev.length + cur.length < 420 && !splitLabel(prev).label && !splitLabel(cur).label && !/\d/.test(cur)) welded[welded.length - 1] = `${prev}, ${cur}`;
+      else welded.push(cur);
+    }
+    list = welded;
+  }
+  for (const p of list) { const s = splitLabel(tidyPoint(p.replace(/^[-*•]\s*/, '').replace(/^(?:and|but|or|then)\s+/i, ''))); const tx = s.text.replace(/[.;,\s]+$/, ''); if (tx) items.push({ text: tx, label: s.label, problem: false }); }
   // a fragment that begins on a joining word continues the point before it; a short fragment without a verb continues a list
   const merged: typeof items = [];
   let inList = false;
@@ -162,7 +173,7 @@ export function readPoints(raw: string | undefined, known: { problem?: string } 
     const joins = /^(?:with|without|including|plus|which|that|because|instead|not|so)\b/i.test(it.text);
     const fragment = /^[a-z]/.test(it.text) && !looksClause(it.text) && !PARTICIPLE_START.test(it.text) && !it.label && !/\d/.test(it.text);
     if (fragment && words <= 3 && /^(?:an?|the|its|their|our|one)\b/i.test(it.text) && !it.problem) { carry = it.text; continue; }
-    if (prev && !it.problem && !prev.problem && !prev.label && (joins || (fragment && (words <= 3 || inList)))) {
+    if (prev && !it.problem && !prev.label && ((joins && !/^(?:with|without|including|plus)\b/i.test(it.text)) || !prev.problem && (joins || (fragment && (words <= 3 || inList))))) {
       prev.text += `, ${it.text}`;
       inList = fragment && words <= 3 ? true : inList && fragment;
     } else {
@@ -201,7 +212,7 @@ export function sentenceOf(p: Pt, who: string, variant = 0): string {
     case 'recognition': return endSentence(`${who ? `${who} is on record as` : 'On record'}: ${lowerStart(t)}`);
     case 'quote': return endSentence(`A customer puts it this way: "${p.text.replace(/^["“]|["”]$/g, '').replace(/"/g, "'")}"${p.label ? ` (${p.label})` : ''}`);
     case 'scale': return endSentence(`The scale: ${lowerStart(t)}`);
-    case 'story': return endSentence(`One customer story is titled "${p.text.replace(/"/g, "'")}"${p.label ? ` (${p.label})` : ''}, and its title carries no result of its own`);
+    case 'story': return endSentence(`One customer story is titled: ${p.text.replace(/"/g, "'")}${p.label ? ` (${p.label})` : ''}; its title carries no result of its own`);
     case 'problem': return endSentence(`The problem: ${lowerStart(t)}`);
     default: return endSentence(`${variant % 2 === 0 ? (who ? `How ${who} does it` : 'How it works') : (who ? `What ${who} brings` : 'What it brings')}: ${lowerStart(t)}`);
   }
@@ -219,13 +230,7 @@ export function renderGroup(points: Pt[], who: string, lead: string, variant = 0
 }
 // Capability phrases that follow each other are one list: "a, b, with c".
 export function groupPhrases(points: Pt[]): Pt[] {
-  const out: Pt[] = [];
-  for (const p of points) {
-    const prev = out[out.length - 1];
-    if (prev && !p.clause && !prev.clause && p.role === 'capability' && prev.role === 'capability' && !p.label && !prev.label && !PARTICIPLE_START.test(p.text)) out[out.length - 1] = { ...prev, text: `${prev.text}, ${p.text}` };
-    else out.push({ ...p });
-  }
-  return out;
+  return points.map((p) => ({ ...p }));   // each phrase stays a point of its own; the renderers put phrases in a short list
 }
 
 // ---- short forms -------------------------------------------------------------------------------------------------------------
@@ -234,7 +239,7 @@ export function groupPhrases(points: Pt[]): Pt[] {
 export function shorten(text: string, max: number, strict = false): string {
   const t = text.replace(/\s+/g, ' ').trim().replace(/[.!?:;,]+$/, '');
   if (t.length <= max) return capFirst(t);
-  const gap = /\b(?:but|yet|while)\s+(?:do|does|did|are|is)\s+not\s+(.+)$/i.exec(t) || /\b(?:but|yet|while)\s+(?:cannot|can't|never|rarely)\s+(.+)$/i.exec(t);
+  const gap = t.match(/\b(?:but|yet|while)\s+(?:do|does|did|are|is)\s+not\s+(.+)$/i) || t.match(/\b(?:but|yet|while)\s+(?:cannot|can't|never|rarely)\s+(.+)$/i);
   if (gap && gap[1].length >= 18 && gap[1].length <= max) return capFirst(gap[1].replace(/[.,;]+$/, ''));
   const clauses = t.split(/;\s+|\s+(?:but|because|so that|while|which|instead of)\s+|:\s+|\s+\(/);
   for (const c of clauses) { const cc = c.trim(); if (cc.split(/\s+/).length >= 4 && cc.length <= max) return capFirst(cc.replace(/[.,;:]+$/, '')); }

@@ -113,18 +113,18 @@ const LONG_TOPIC = "How multi-branch retailers can tackle branch outages are cos
 test("newsletter_builder: a long topic gives short subject lines, hooks and sections without brackets, and the sector's own question as the hook", async () => {
   const t = await call("newsletter_builder", { topic: LONG_TOPIC, key_points: "branch outages are costly; several providers selling overpriced links; one control centre for every link", cta_goal: "book a conversation about Branchwire managed SD-WAN", newsletter_type: "thought_leadership" });
   const subjects = t.split("## Subject Lines")[1].split("## Opening Hooks")[0].split("\n").filter((l) => l.startsWith("**"));
-  assert.equal(subjects.length, 4);
+  assert.equal(subjects.length, 3);   // run 22 rewrite: the subject of the issue plus three alternatives
   for (const s of subjects) { assert.ok(s.length < 150, s); assert.doesNotMatch(s, /\[/, s); assert.doesNotMatch(s, /how multi-branch retailers/i, s); }
   noBrackets(t, "newsletter");
   assert.match(t, /### Hook 1: Question\n> How many sites do you run, and which ones suffer the most outages\?/);
   assert.match(t, /\| \*\*Product\*\* \| Branchwire managed SD-WAN \(read from the call to action\)/);
-  assert.match(t, /### 1\. Branch outages are costly/);
+  assert.match(t, /branch outages are costly/i);   // run 22 rewrite: the point is written into a section or the opening, not a heading of its own
 });
 test("newsletter_builder: a statistic hook uses a figure the user gave and never invents one", async () => {
   const withFigure = await call("newsletter_builder", { topic: "Failed first-attempt deliveries", key_points: "Failed drops fell by 12.5% in one region; Plan around windows", cta_goal: "read the guide" });
-  assert.match(withFigure, /### Hook 2: Statistic\n> Failed drops fell by 12\.5% in one region\./);
+  assert.match(withFigure, /### Hook \d: Statistic\n> [^\n]*Failed drops fell by 12\.5% in one region[^\n]*/);   // run 22 rewrite: the hook says where to put the figure
   const without = await call("newsletter_builder", { topic: "Failed first-attempt deliveries", key_points: "Plan around windows; Tell the customer early", cta_goal: "read the guide" });
-  assert.match(without, /No figure was given in key_points/);
+  assert.doesNotMatch(without, /Statistic/);   // run 22 rewrite: no hook is made without a figure, and no placeholder text stands in for it
 });
 
 // ---------------------------------------------------------------------------------------------------------------------------
@@ -133,10 +133,10 @@ test("newsletter_builder: a statistic hook uses a figure the user gave and never
 test("webinar_script: the topic is printed once, the pain point is written from the topic and the sector, and every takeaway is taught", async () => {
   const topic = "How finance teams in mid-size manufacturers can tackle slow month-end close because receipts, cards and approvals live in different tools, with Spendrill";
   const t = await call("webinar_script", { topic, target_audience: "CFO at mid-size manufacturers", webinar_type: "educational", duration: "45_min", key_takeaways: "close faster by posting card spend to the ledger daily; keep one approval policy for cards and claims; give audit one trail per transaction" });
-  assert.equal(t.split(topic).length - 1, 2, "the heading and the table, no more");
+  assert.equal(t.split(topic).length - 1, 1, "the table only; the heading and the script use a short form");
   noBrackets(t, "webinar");
-  assert.match(t, /The problem we are here to take on: slow month-end close because receipts, cards and approvals live in different tools\./);   // run 21c: draft rewrite (spoken line)
-  assert.match(t, /For a CFO in mid-size manufacturers the usual yardsticks are [^.]+\./);   // run 21b: the neutral fintech entry; the close-the-books yardsticks belong to the spend and expense sub-type
+  assert.match(t, /Here is the problem we are here to take on\. Slow month-end close because receipts, cards and approvals live in different tools\./);   // run 21c: draft rewrite (spoken line)
+  assert.match(t, /For a CFO (?:in|at) mid-size manufacturers, the usual yardsticks are [^.]+\./);   // run 21b: the neutral fintech entry; the close-the-books yardsticks belong to the spend and expense sub-type
   for (const k of ["close faster by posting card spend to the ledger daily", "keep one approval policy for cards and claims", "give audit one trail per transaction"]) {
     assert.ok(t.split("Main Content Block 1")[2].toLowerCase().includes(k), k);
   }
@@ -317,11 +317,11 @@ test("round 2, newsletter: a list broken at commas and semicolons is welded into
   });
   assert.doesNotMatch(t, /larger than:|larger than most can:/);
   assert.doesNotMatch(t, /### \d\. (?:Teams and sources of truth, so specs|Collections and docs drift apart)\n/);
-  assert.match(t, /most teams run the lifecycle as disconnected projects with separate tools, teams and sources of truth, so specs, collections and docs drift apart/i);   // run 21c: draft rewrite (a long run-on point is quoted whole, in the opening)
+  assert.match(t, /most teams run the lifecycle as disconnected projects with separate tools, teams and sources of truth, so specs, collections and docs drift apart/i);   // run 21c: draft rewrite (the run-on point is kept whole)
   for (const m of t.matchAll(/- Preview text: (.+)/g)) assert.doesNotMatch(m[1], /\b\w{1,2}$/, m[1]);
-  assert.match(t, /### Hook 2: Statistic\n> No figure was given/);
+  assert.doesNotMatch(t, /Statistic/);   // run 22 rewrite: no figure, no statistic hook, and no placeholder in its place
   assert.doesNotMatch(t, /To finish this section|Ask your reader/);
-  assert.match(t, /This issue looks at \d points on /);
+  assert.match(t, /In this issue: /);   // run 22 rewrite
 });
 test("round 2, webinar: every content block teaches something, a CFO of a billing product reads finance measures, the pasted source note is dropped", async () => {
   const t = await call("webinar_script", {
@@ -334,7 +334,7 @@ test("round 2, webinar: every content block teaches something, a CFO of a billin
   assert.doesNotMatch(t, /activation rate|time to value|net revenue retention/);
   assert.match(t, /billing errors and disputes|invoice accuracy/);
   assert.doesNotMatch(t, /on the home page/);
-  assert.match(t, /The answer is to /);
+  assert.match(t, /A fair way to settle it is to /);   // run 22 rewrite: the answer is said to the reader
 });
 test("round 2, repurposer: no scaffolding, no cut subject lines, a story title is not called a result, quote cards hold real quotes", async () => {
   const src = `routing software for retailers: what to do about slow dispatch planning
@@ -358,13 +358,13 @@ test("round 2, thought leadership: unlabeled proof is split, no bare story title
     target_reader: "Heads of sales operations", proof_points: "Customer quote: expanded from 500 to 4,000 trucks while improving fleet efficiency by 24%, Customer quote: launched Lanehop in 24 depots in two months, Lanehop Market Recognition From Example Analyst For 7 Years (home page)",
     num_articles: 3, article_type: "framework",
   });
-  assert.match(t, /\n1\. Customer quote: expanded from 500 to 4,000 trucks/);
-  assert.match(t, /\n2\. Customer quote: launched Lanehop in 24 depots in two months/);
-  assert.match(t, /\n3\. Lanehop Market Recognition From Example Analyst For 7 Years/);
+  assert.match(t, /\| Customer quote: expanded from 500 to 4,000 trucks/);   // run 22 rewrite: the proof points are listed in a table
+  assert.match(t, /\| Customer quote: launched Lanehop in 24 depots in two months/);
+  assert.match(t, /\| Lanehop Market Recognition From Example Analyst For 7 Years/);
   for (const m of t.matchAll(/\*\*Headline:\*\* ([^\n]+)/g)) assert.doesNotMatch(m[1], /\.\.\.|\bTo$|Marke\b/);
   assert.doesNotMatch(t, /Say what|Set the idea out|Turn the position into steps|Open with|Close with/);
   // run 21c: draft rewrite. The opening of a framework article says what the article does with the take.
-  assert.match(t, /This article sets it out as a framework/);
+  assert.match(t, /This article sets that position out as a framework/);
   assert.doesNotMatch(t, /That argument has a test/);
 });
 test("round 2, case study: an unnamed customer gets no one company's result as its headline or snippet, and a narrative line is not offered as a customer quote", async () => {

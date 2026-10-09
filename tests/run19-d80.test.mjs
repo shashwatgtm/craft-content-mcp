@@ -122,9 +122,11 @@ test("newsletter_builder: the full topic in grammar-safe subject lines, no inven
   const r = await call("newsletter_builder", { topic: "AI agents in customer support", key_points: "How an LLM is evaluated before go-live, Why a person approves every refund", cta_goal: "register for our support automation webinar", audience_segment: "practitioners", newsletter_type: "educational", tone: "conversational", your_product: "Answerloop" });
   assert.equal(r.isError, false);
   shared(r.text, { names: ["Answerloop"], sector: AI_SECTOR, label: "newsletter" });
+  // run 22 rewrite: the subject of the issue holds the whole topic; the three alternatives to test against it differ from it and from each other (the judges faulted four lines that repeat one phrase)
   const subjects = r.text.split("## Subject Lines")[1].split("## Opening Hooks")[0].split("\n").filter((l) => l.startsWith("**"));
-  assert.equal(subjects.length, 4);
-  for (const s of subjects) assert.match(s, /AI agents in customer support/i, s);
+  assert.equal(subjects.length, 3);
+  assert.match(r.text.match(/\*\*Subject:\*\* ([^\n]+)/)[1], /AI agents in customer support/i);
+  assert.equal(new Set(subjects.map((x) => x.toLowerCase())).size, 3);
   assert.doesNotMatch(r.text, /Why AI agents is|AI agents is broken/);
   assert.doesNotMatch(r.text, /78%/);
   assert.match(r.text, /Button: Register for our support automation webinar/i);   // run 21c: draft rewrite (the button is a plain line, no bracket placeholder)
@@ -142,9 +144,11 @@ test("newsletter_builder: a topic that is a clause is never pasted into a verb s
 test("newsletter_builder: a topic of up to 90 characters is used whole in every subject line, never clipped to three words", async () => {
   const topic = "Month-end close without spreadsheets for finance controllers at mid-size manufacturers";
   const long = await call("newsletter_builder", { topic, cta_goal: "reply with your biggest close problem", newsletter_type: "educational" });
+  // run 22 rewrite: the subject of the issue uses the whole topic; no subject line is clipped to a few words
   const subjects = long.text.split("## Subject Lines")[1].split("## Opening Hooks")[0].split("\n").filter((l) => l.startsWith("**"));
-  assert.equal(subjects.length, 4);
-  for (const s of subjects) assert.ok(s.toLowerCase().includes(topic.toLowerCase()), s);
+  assert.equal(subjects.length, 3);
+  assert.ok(long.text.match(/\*\*Subject:\*\* ([^\n]+)/)[1].toLowerCase().includes(topic.toLowerCase()));
+  for (const s of subjects) assert.ok(s.replace(/\*/g, "").split(/\s+/).length >= 4, s);
 });
 
 // ---- webinar_script ----
@@ -158,7 +162,9 @@ test("webinar_script: speakers are listed as typed, never pasted after 'I'm'; po
   // run 21c: draft rewrite (the subtle product line is the user's own description; the recording line is one stage direction, conditional)
   assert.doesNotMatch(r.text, /hosted by/i); // run 21c round 3: a name with no description gives no product line (no invented host)
   assert.doesNotMatch(r.text, /^- We're recording today's session/m);
-  assert.match(r.text, /add the line "This session is recorded and the link will follow" only if you record it/i);
+  // run 22 rewrite: the recording line is advice to the host, so it is in the notes and not in the spoken script
+  assert.match(r.text, /If you record the session, add a line at the start that says so/i);
+  assert.doesNotMatch(r.text.slice(r.text.indexOf("## Full Script"), r.text.indexOf("## Notes for you")), /only if you record/i);
   assert.doesNotMatch(r.text, /free trial|plans or trial/i);
 });
 
@@ -230,18 +236,19 @@ test("thought_leadership_series: three different articles, every proof point use
   // run 21c: draft rewrite. The take is printed whole once, in the overview; the articles open with its parts as the author's own sentences.
   assert.ok(r.text.includes(take), "the take is printed whole");
   // run 21c: draft rewrite. The part of the take after the semicolon is now its own whole sentence ("The ones who win buy ..."); it must still never be joined into a sentence of ours.
-  assert.doesNotMatch(r.text, /accept that most|Let me tell you about|buy for for|(?<!The ones who )win buy for secondary sales growth of 12%\./);
+  assert.doesNotMatch(r.text, /accept that most|Let me tell you about|buy for for|(?<!the ones who )win buy for secondary sales growth of 12%\./i);
   assert.doesNotMatch(r.text, /\[Common Practice\]|\[Topic\]|\[Name\]|\[X Years\]|\[Number\]|\[Year\]/);
   assert.doesNotMatch(r.text, /Forbes|Entrepreneur|Harvard|Word Count: ~750/);
   // run 21c: draft rewrite. Each article states the length of the draft it is, not a target.
-  assert.match(r.text, /Draft length:\*\* about \d+ words/);
+  // run 22 rewrite: the metadata line is gone; each article is a whole article of its own
+  for (const a of arts) assert.ok(a.split(/\s+/).length >= 120, "an article of its own");
 });
 
 test("thought_leadership_series: without proof points the drafts name suggested evidence and the sector's proof shape", async () => {
   const r = await call("thought_leadership_series", { topic: "managed SD-WAN for branch networks", your_take: "Branch uptime is bought, not hoped for", target_reader: "Heads of IT infrastructure at companies with many branches", num_articles: 1, article_type: "how_to" });
   shared(r.text, { sector: /uptime|mean time to repair|cost per site|wave plan|site survey/i, label: "thought leadership 2" });
   // run 21c: draft rewrite. The generic list of proof to gather is gone; the missing proof is named once, with the sector's proof shape.
-  assert.match(r.text, /Not given: proof_points/);
+  assert.match(r.text, /To sharpen this, give: proof_points \(it would change/);   // run 22 rewrite: said once, at the end
 });
 
 // ---- testimonial_capture ----

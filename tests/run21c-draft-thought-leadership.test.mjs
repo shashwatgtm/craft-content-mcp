@@ -101,12 +101,12 @@ test("thought_leadership_series draft: two different kinds of company get drafts
 test("thought_leadership_series draft: a missing input is said once near the top, and the draft still reads", async () => {
   const { proof_points, author_background, ...rest } = A;
   const t = await call("thought_leadership_series", { ...rest, topic: "construction software that keeps job budgets honest while the work is still going on", num_articles: 2 });
-  const notGiven = t.split("\n").filter((l) => /^Not given:/i.test(l.trim()));
-  assert.ok(notGiven.length >= 1 && notGiven.length <= 2, `Not given lines: ${notGiven.length}`);
-  assert.ok(t.split("\n").slice(0, 14).join("\n").match(/Not given: [^\n]*proof_points/), "proof_points named near the top");
-  assert.match(t, /add author_background/);
-  assert.equal((t.match(/add author_background/g) || []).length, 1, "said once");
-  assert.equal((t.match(/add proof_points/g) || []).length, 1, "said once");
+  // run 22 rewrite: what is missing is named once, at the end, with what each input would change
+  assert.equal((t.match(/To sharpen this, give:/g) || []).length, 1, "said once");
+  const tail = t.slice(t.indexOf("To sharpen this, give:"));
+  assert.match(tail, /proof_points \(it would change/);
+  assert.match(tail, /author_background \(it would change/);
+  assert.ok(t.length - t.indexOf("To sharpen this, give:") < 900, "at the end");
   assert.doesNotMatch(t, BAD_PLACEHOLDER);
   assert.doesNotMatch(t, /Suggested Proof Points|A personal story where you learned/);
   assert.doesNotMatch(t, /[–—]/);

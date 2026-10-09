@@ -1,13 +1,13 @@
 import { lowerFirstIfCommon, cap } from './utils.js';
 import { readContext, audienceLine, isClause, type Vertical } from './sector.ts';
 import { splitList, unpackTopic, fixNumbers, endSentence, capFirst, proseJoin, productParts, toYou, bestQuestion, softenClaims } from './draft.ts';
-import { readPoints, groupPhrases, sentenceOf, renderGroup, shorten, shortReaders, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, nk, quotedEnd, type Pt } from './rw-content.ts';
+import { readPoints, groupPhrases, sentenceOf, renderGroup, readersFit, isStatistic, companyFrom, shorten, shortReaders, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, nk, quotedEnd, lowerFirstSafe, type Pt } from './rw-content.ts';
 
 // Run 22 (rewrite): the issue is written, not assembled. The key points are read for what they are (the problem, what changes, how it
 // works, the evidence), each is said in a whole sentence, and the sector file adds the measures, the proof to ask for and the questions
 // a reader can put to their own team. No figure, customer, quote or promise is added (B82); what was not given is named once at the end.
 
-const lower = (s: string) => lowerFirstIfCommon(s);
+const lower = (s: string) => lowerFirstSafe(s);
 const VERB_START = /^(?:book|see|register|read|download|request|start|join|reply|share|try|get|talk|schedule|subscribe|sign|watch|explore|learn|contact|call|visit|take|view|ask|send|forward|review|apply|buy|order|claim|speak|meet|discover|compare|check|find|build|create|set|add|use|come|hear|listen|plan)\b/i;
 const LABEL_CLAUSE = /\b(?:is|are|was|were|run|runs|combine|combines|means|rely|relies|chain|chains|sits|happens|hand|hands|can|will|must|should|have|has|do|does|break|breaks|fragments|drift|drifts)\b/i;
 
@@ -32,14 +32,17 @@ export function generateNewsletter(args: {
   const ctaProduct = /\babout\s+(.+)$/i.exec(ctaGoal)?.[1]?.trim() || '';
   const firstClause = (parts.problem || '').split(/[,;:]| \(/)[0].trim();
   const label = parts.short ? topic.replace(/ +/g, ' ') : (firstClause && firstClause.length <= 110 && firstClause.length > parts.label.length && firstClause.toLowerCase().startsWith(parts.label.toLowerCase()) ? firstClause : parts.label);
-  const ctx = readContext(undefined, { seller: [product, args.cta_goal], context: [topic, args.key_points, args.previous_topics] });
-  const v = ctx.v;
+  const ctx = readContext(undefined, { seller: [product, args.cta_goal], context: [topic, args.key_points, args.previous_topics], buyer: [parts.audience] });
+  const vFull = ctx.v;
   const casual = /conversational|casual|friendly|warm|informal|relaxed/i.test(tone);
   const productName = product ? productParts(product).name : '';
   const productDescription = product ? productParts(product).description : '';
-  const who = productName || parts.company || (ctaProduct ? productParts(ctaProduct).name : '');
-  const kind = v ? (v.name.includes(',') ? v.name.split(',').slice(1).join(',').trim() : v.name) : '';
+  const who = productName || (parts.company && parts.company.split(/\s+/).length <= 4 ? parts.company : (companyFrom(topic) || parts.company)) || (ctaProduct ? productParts(ctaProduct).name : '');
   const readers = parts.audience ? shortReaders(parts.audience) : '';
+  const fits = !vFull || !readers || readersFit(readers, vFull);   // the readers the user named win over the sector's default readers
+  // a general software reading (SaaS, software) that does not fit the readers named is not used in the draft at all: its measures belong to other readers
+  const v = vFull && !fits && !vFull.subtype && ['saas', 'software'].includes(vFull.id) ? null : vFull;
+  const kind = v ? (v.name.includes(',') ? v.name.split(',').slice(1).join(',').trim() : v.name) : '';
   const forWhom = readers || (kind ? `teams in ${kind}` : 'your team');
 
   // ---- the points --------------------------------------------------------------------------------------------------
@@ -113,7 +116,7 @@ export function generateNewsletter(args: {
   }
   const pushWho = readers ? cap(readers) : kind ? `Teams in ${kind}` : 'Readers';
   // where readers push back: the sector objection that shares most words with the points, and a way to test it
-  if (v && given) {
+  if (v && given && fits) {
     const text = ` ${label} ${pts.map((p) => p.text).join(' ')} `.toLowerCase();
     let best = v.objections[0]; let bestN = -1;
     for (const o of v.objections) { const n = (o.objection.toLowerCase().match(/[a-z]{5,}/g) || []).filter((w) => text.includes(w.slice(0, 5))).length; if (n > bestN) { best = o; bestN = n; } }
@@ -130,7 +133,7 @@ export function generateNewsletter(args: {
   // ---- subject, preview, opening ------------------------------------------------------------------------------------
   const headSource = parts.problem ? parts.problem.split(/;\s+/)[0] : label;
   const headMax = parts.short ? 90 : 66;
-  const head = shorten(headSource, headMax, true) || (v ? cap(proseJoin(v.metrics.slice(0, 2))) : shorten(label, 66));
+  const head = shorten(headSource, headMax, true) || (who && readers ? `${who} for ${readers}` : v ? `Where do you stand on ${v.metrics[0]}?` : shorten(label, 66));
   const clause = !parts.short || isClause(topic) || LABEL_CLAUSE.test(label);
   const subjects = subjectLines(head, type, who, v, forWhom, ctaGoal, readers, clause);
   const roadmap = sections.length ? `${casual ? 'Here is what is in this issue' : 'In this issue'}: ${proseJoin(sections.map((s) => lower(s.heading)))}.` : '';
@@ -170,17 +173,17 @@ export function generateNewsletter(args: {
   const hookQuestion = v ? toYou(v.discovery.filter((d) => !/\bclient'?s?\b|current provider|signs off each|governed|\bme\b|\bour\b|\bwe\b/i.test(d))[0] || '') : '';
   const hooks: { name: string; text: string }[] = [];
   if (hookQuestion) hooks.push({ name: 'Question', text: hookQuestion });
-  const fig = figures.find((p) => p.label) || figures[0];
+  const fig = figures.find((p) => p.label && isStatistic(p.text)) || figures.find((p) => isStatistic(p.text));
   if (fig) hooks.push({ name: 'Statistic', text: `Open with the figure from the evidence section, "${fig.text}"${fig.label ? ` (${fig.label})` : ''}, and state the problem second.${fig.label ? '' : ' Its source is not given yet, so add it before you use the figure.'}` });
 
-  const sectorBlock = v ? `## Sector Notes: ${cap(v.name)}
+  const sectorBlock = vFull ? `## Sector Notes: ${cap(vFull.name)}
 
 ${ctx.line}
 
-- ${audienceLine(v)}
-- **Terms this audience uses:** ${v.vocabulary.slice(0, 6).join(', ')}.
-- **Objections to expect, and how to settle each:** ${v.objections.map((o) => `"${o.objection}" (${lower(o.response.replace(/\.$/, ''))})`).join('; ')}.
-- **A proof point that lands:** ${v.proofShape}` : `## Sector notes
+- ${fits ? audienceLine(vFull) : `Readers named in your input: ${readers}. The notes below were written for ${vFull.name}, whose usual readers are ${vFull.buyerRoles.slice(0, 3).join(', ')}; they do not match your readers, so the draft does not use them.`}
+- **Terms this audience uses:** ${vFull.vocabulary.slice(0, 6).join(', ')}.
+- **Objections the sector file lists${fits ? '' : ' (written for its own readers, so check them against yours)'}, and how to settle each:** ${vFull.objections.map((o) => `"${o.objection}" (${lower(o.response.replace(/\.$/, ''))})`).join('; ')}.
+- **A proof point that lands:** ${vFull.proofShape}` : `## Sector notes
 
 ${ctx.line}`;
 

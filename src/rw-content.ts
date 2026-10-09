@@ -4,7 +4,7 @@
 // customer or a named company; the words come from the user's text and from the one sector file (src/verticals.ts).
 
 import { splitList, fixNumbers, endSentence, capFirst, proseJoin, clipAtWord, dropTail, tidyPoint, STAT, FIGURE, RECOGNITION, SCALE } from './draft.ts';
-import { cap, lowerFirstIfCommon } from './utils.js';
+import { cap, lowerFirstIfCommon, isCommonWord } from './utils.js';
 
 // ---- the text as typed -------------------------------------------------------------------------------------------------------
 
@@ -14,8 +14,12 @@ export function stripGuardQuotes(s: string): string {
   return /^[“"][\s\S]*[”"]$/.test(t) && !/[“”]/.test(t.slice(1, -1)) && t.length > 2 && /^“/.test(t) ? t.slice(1, -1).trim() : t;
 }
 // Numbers typed with grouping commas that were turned into semicolons ("80;000", "5;00;000") are put back.
+export function splitQuoteRuns(s: string): string {
+  // a quote that ends and a source label that closes, each followed by a comma and a capital, end a point
+  return s.replace(/([.!?]['"”’])\s*,\s+(?=[A-Z0-9])/g, '$1; ').replace(/(\([^()]*\))\s*,\s+(?=[A-Z0-9])/g, (m, g1: string) => (LABEL_WORD.test(g1) ? `${g1}; ` : m));
+}
 export function tidy(s: string): string {
-  return fixNumbers(s).replace(/(\d);(\d{2})(?=;\d{2,3}(?!\d))/g, '$1,$2').replace(/(\d);(\d{3})(?!\d)/g, '$1,$2').replace(/[ \t]+/g, ' ').trim();
+  return splitQuoteRuns(fixNumbers(s)).replace(/(\d);(\d{2})(?=;\d{2,3}(?!\d))/g, '$1,$2').replace(/(\d);(\d{3})(?!\d)/g, '$1,$2').replace(/[ \t]+/g, ' ').trim();
 }
 // Text that tries to give the writing tool an order. It is kept in quotes, as the user's own words, and never followed or built into the draft.
 const INSTRUCTION = /\b(?:ignore|disregard|forget|override|bypass)\b.{0,60}\b(?:instructions?|prompts?|rules?|guidelines?|above|previous|prior)\b|\bsystem prompt\b|\bnew instructions?\b|\byou are now\b|\bpretend (?:to be|you)\b|\breveal\b.{0,40}\b(?:prompt|secret|password|key)\b|\bact as (?:an? )?(?:ai|assistant|model|dan)\b/i;
@@ -51,8 +55,9 @@ const VERB = new Set(('capture track tell give connect run make help turn let ke
 const IRREG = /^(?:bought|sold|went|came|saw|ran|grew|rose|fell|kept|built|left|held|paid|met|led|found|began|became|chose|sent|spent|stood|took|told|lost|got|made|gave|won|cut|put|set|hit|read)$/;
 const NOT_MAIN = /^(?:that|which|who|whose|where|when|while|if|because)$/;
 // A point that opens on a plain action verb is an instruction ("Show planned and visited outlets side by side"); it stands as a sentence.
-const IMPERATIVE = /^(?:show|let|log|tie|send|post|push|see|get|keep|make|use|put|move|start|stop|build|add|pick|choose|ask|agree|compare|measure|find|read|write|tell|give|take|bring|connect|define|turn|drive|reduce|increase|improve|automate|simplify|replace|remove|align|avoid|reclaim|shrink|raise|free|resolve|expand|launch|pay|act|train|prepare|stay|cut|speed|stitch)\b/i;
+const IMPERATIVE = /^(?:show|let|log|tie|send|post|push|see|get|keep|make|use|put|move|start|stop|build|add|pick|choose|ask|agree|compare|measure|find|read|write|tell|give|take|bring|connect|define|turn|drive|reduce|increase|improve|automate|simplify|replace|remove|align|avoid|reclaim|shrink|raise|free|resolve|expand|launch|pay|act|train|prepare|stay|cut|speed|stitch|unify|deliver|protect|detect|prevent|consolidate|streamline|standardi[sz]e|migrate|onboard|enable|ensure|validate|verify|block|collect|optimi[sz]e|accelerate|boost|grow|retain|convert|recover|deploy|integrate|centrali[sz]e|scale|analy[sz]e|save|link|win|earn|spend|hit)\b/i;
 const IMPERATIVE_WITH_OBJECT = /^(?:run|check|review|track|share|reach|plan|map|set|test|release|close|open|route|book|name|list|count)\s+(?:a|an|the|every|each|all|one|your|its|their|any|only)\b/i;
+export const startsImperative = (t: string): boolean => IMPERATIVE.test(t.trim());
 export const isImperative = (text: string): boolean => text.trim().split(/\s+/).length >= 3 && (IMPERATIVE.test(text.trim()) || IMPERATIVE_WITH_OBJECT.test(text.trim()));
 const FUNCTION_WORD = /^(?:a|an|the|of|in|on|at|by|to|from|with|as|into|across|over|and|or|for|its|their|our|your|per|each|every|all|any|no|new|more|most|fewer|less|measurable|significant|single|unified)$/;
 export function looksClause(text: string): boolean {
@@ -76,6 +81,8 @@ export function looksClause(text: string): boolean {
   }
   return false;
 }
+// A plain phrase: starts with a small letter, has no verb of its own, carries no label or figure.
+const fragment0 = (t: string): boolean => /^[a-z]/.test(t) && !looksClause(t) && !PARTICIPLE_START.test(t) && !/\d/.test(t);
 // A point that opens on a past participle ("built from the ground up for ...") or a joining word continues a sentence; it is never one.
 export const PARTICIPLE_START = /^(?:(?:built|designed|made|powered|backed|trusted|operated|delivered|offered|priced|billed|written|hosted|managed|used)\s+(?:by|for|from|on|in|with|to|around|as|across)|available\s+(?:in|on|for|as|across))\b/i;
 export const JOIN_START = /^(?:with|without|including|plus|and|but|or|so|which|that|because|while|instead|rather|not|then|yet)\b/i;
@@ -198,10 +205,16 @@ export function readPoints(raw: string | undefined, known: { problem?: string } 
     carry = '';
     const prev = merged[merged.length - 1];
     const words = it.text.split(/\s+/).length;
-    const joins = /^(?:with|without|including|plus|which|that|because|instead|not|so|combined)\b/i.test(it.text);
+    const joins = /^(?:with|without|including|plus|which|that|because|instead|not|so|combined|such as|for example|e\.g\.|at|than|under|per|within|via|using|through)\b/i.test(it.text);
+    // a name or a short run of names after a piece that ends on a name ("partnerships with Google; WhatsApp; Meta") continues that list
+    const nameList = !!prev && !prev.label && prev.text.split(/\s+/).length >= 2 && /[A-Z][A-Za-z0-9.+-]*$/.test(prev.text) && /^[A-Z0-9]/.test(it.text) && it.text.split(/\s+/).length <= 5 && !looksClause(it.text) && !it.label && !isImperative(it.text);
+    // a piece that ends on a joining word ("partnerships with") runs on into the next one
+    const dangling = !!prev && !prev.label && /\b(?:with|including|such as|and|or|of|from|by|to|for|across)$/i.test(prev.text);
+    // a list-taking verb with no object yet ("that adapts simulations, coaching") takes the plain phrases that follow
+    const verbList = !!prev && !prev.label && /\b(?:adapts|covers|includes|connects|combines|supports|handles|offers|provides|unifies|spans|tracks|monitors|automates)\s+[^;]{0,70}$/i.test(prev.text) && fragment0(it.text) && it.text.split(/\s+/).length <= 24;
     const fragment = /^[a-z]/.test(it.text) && !looksClause(it.text) && !PARTICIPLE_START.test(it.text) && !it.label && !/\d/.test(it.text);
     if (fragment && words <= 3 && /^(?:an?|the|its|their|our|one)\b/i.test(it.text) && !it.problem) { carry = it.text; continue; }
-    if (prev && !it.problem && !prev.label && ((joins && !/^(?:with|without|including|plus|combined)\b/i.test(it.text)) || !prev.problem && (joins || (fragment && (words <= 3 || inList))))) {
+    if (prev && !it.problem && !prev.label && ((joins && !/^(?:with|without|including|plus|combined|at|than|under|per|within|via|using|through)\b/i.test(it.text)) || !prev.problem && (joins || nameList || dangling || verbList || (fragment && (words <= 3 || inList))))) {
       prev.text += `, ${it.text}`;
       if (it.label && !prev.label) prev.label = it.label;
       inList = fragment && words <= 3 ? true : inList && fragment;
@@ -230,7 +243,14 @@ export function readPoints(raw: string | undefined, known: { problem?: string } 
 
 // ---- saying a point ----------------------------------------------------------------------------------------------------------
 export const withLabel = (p: Pt): string => (p.label ? `${p.text} (${p.label})` : p.text);
-const lowerStart = (s: string): string => lowerFirstIfCommon(s);
+// A sentence placed after a lead-in of ours: its first letter is lowered only when the first word is a common word, so a name keeps its capital.
+export function lowerFirstSafe(s: string): string {
+  const t = s.trim();
+  const w = t.split(/\s+/)[0] || '';
+  if (/[A-Z0-9]/.test(w.slice(1)) || w === 'I' || !isCommonWord(w.replace(/[^A-Za-z]/g, ''))) return t;
+  return t.charAt(0).toLowerCase() + t.slice(1);
+}
+const lowerStart = (s: string): string => lowerFirstSafe(s);
 // One point as a whole sentence. `who` is the product or company the points are about ("" when none is known).
 export function sentenceOf(p: Pt, who: string, variant = 0): string {
   const t = withLabel(p);
@@ -273,15 +293,59 @@ export function shorten(text: string, max: number, strict = false): string {
   if (gap && gap[1].length >= 18 && gap[1].length <= max) return capFirst(gap[1].replace(/[.,;]+$/, ''));
   const clauses = t.split(/;\s+|\s+(?:but|because|so that|while|which|instead of)\s+|:\s+|\s+\(/);
   for (const c of clauses) { const cc = c.trim(); if (cc.split(/\s+/).length >= 4 && cc.length <= max) return capFirst(cc.replace(/[.,;:]+$/, '')); }
+  // a long first part that stands as a phrase of its own ("when processes take people away from the project, things slow down ...")
+  const comma = t.split(/,\s+/)[0].trim();
+  if (comma.split(/\s+/).length >= 6 && comma.length <= max) return capFirst(comma);
   if (strict) return '';
   return capFirst(dropTail(clipAtWord(t, max)));
 }
-// The readers of a topic typed as "How <readers> can ...": the readers without a bracket note or a trailing description.
+// The readers of a topic typed as "How <readers> can ...", or an audience typed in full: without a bracket note, a source note or a trailing
+// description. A long list of readers is cut to its first items, whole ("online retailers and social sellers").
 export function shortReaders(audience: string, max = 80): string {
-  let a = audience.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+  let a = audience.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').replace(/\s+,/g, ',').trim();
   const cut = a.split(/\s+(?:that|who|which|where|whose|at|including)\s+|;\s+/)[0].trim();
-  if (cut.length >= 4 && (cut.split(/\s+/).length >= 2 || a.length > max || /;/.test(a))) a = cut;
-  return a.length <= max ? a : '';
+  if (cut.length >= 4 && (cut.split(/\s+/).length >= 2 || a.length > max || /;/.test(a))) a = cut.replace(/[,\s]+$/, '');
+  if (a.length <= max) return a;
+  // keep the first items of a comma list while they fit
+  const items = a.split(/,\s+/).map((x) => x.split(/\s+and\s+(?=large|other|more)/)[0].trim()).filter(Boolean);
+  const kept: string[] = [];
+  for (const it of items) { if (proseJoin([...kept, it]).length > max || it.split(/\s+/).length > 6) break; kept.push(it); }
+  return kept.length ? proseJoin(kept) : '';
+}
+// The audience of a webinar for a spoken line: bracket notes and source notes taken out, cut at a semicolon, whole words only.
+export function audienceShort(audience: string, max = 90): string {
+  const a = audience.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').replace(/\s+,/g, ',').trim();
+  const first = a.split(/;\s+/)[0].trim().replace(/[,\s]+$/, '');
+  if (first.length <= max) return first;
+  const kept = shortReaders(first, max);
+  return kept || dropTail(clipAtWord(first, max));
+}
+// The company named at the end of a topic typed as "How ... can ..., with <Company> <description with commas>": the capitalised words after the last ", with" or ", from".
+export function companyFrom(topic: string): string {
+  const all = [...topic.matchAll(/,\s*(?:with|from)\s+([A-Z][\w.-]*(?:\s+[A-Z][\w.-]*){0,2})/g)];
+  return all.length ? all[all.length - 1][1].trim() : '';
+}
+// Do the readers the user named share a word with the readers the sector file expects? When they do not, the user's readers win.
+export function readersFit(readers: string, v: { buyerRoles: string[]; vocabulary: string[]; committee: string; name: string }): boolean {
+  const stems = (t: string) => new Set((t.toLowerCase().match(/[a-z]{5,}/g) || []).map((w) => w.replace(/(?:ing|ed|es|s)$/, '').slice(0, 6)));
+  const mine = stems(readers);
+  if (!mine.size) return true;
+  const theirs = stems(`${v.buyerRoles.join(' ')} ${v.vocabulary.join(' ')}`);
+  return [...mine].some((w) => theirs.has(w));
+}
+// A figure that is a statistic: a percentage, an amount of money, a multiple, or a count of something (not 24/7, 3PL or 4G).
+export const isStatistic = (t: string): boolean => STAT.test(t) || /\b\d[\d,.]*\+?\s*(?:x|times|days?|weeks?|months?|years?|hours?|minutes?|seconds?|milliseconds|users|customers|businesses|companies|enterprises|brands|languages|countries|devices|networks|trucks|sites|points?)\b/i.test(t);
+// The shape of a point that is not a whole statement, for the word that has to lead it.
+const ADJ_LEAD = /^(?:accurate|fast|faster|slow|slower|secure|safer|reliable|scalable|compliant|flexible|simple|simpler|easy|easier|open|ready|available|transparent|predictable|cheaper|lower|higher|better|smarter|fully|highly)\s+(?:in|at|with|for|to|than|on|across|under|from|by)\b/i;
+export type Shape = 'clause' | 'imperative' | 'participle' | 'adjective' | 'gerund' | 'example' | 'phrase';
+export function shapeOf(p: Pt): Shape {
+  if (/^(?:such as|for example|e\.g\.)\s/i.test(p.text)) return 'example';
+  if (isImperative(p.text)) return 'imperative';
+  if (p.clause) return 'clause';
+  if (PARTICIPLE_START.test(p.text)) return 'participle';
+  if (ADJ_LEAD.test(p.text)) return 'adjective';
+  if (/^[A-Za-z-]+ing\b/i.test(p.text) && !/^(?:ongoing|building|housing|planning|engineering|marketing|banking|billing|routing|shipping|pricing|testing|reporting|learning)\b/i.test(p.text)) return 'gerund';
+  return 'phrase';
 }
 
 // ---- the sector's answers, said to the reader --------------------------------------------------------------------------------
@@ -293,6 +357,11 @@ const TO_READER: [RegExp, string][] = [
   [/^pilot\b/i, 'ask for a pilot'], [/^measure\b/i, 'measure'], [/^model\b/i, 'model'], [/^describe\b/i, 'ask to have described'], [/^time\b/i, 'time'], [/^take\b/i, 'take'], [/^share\b/i, 'ask to be shown'], [/^project\b/i, 'project'],
   [/^say\b/i, 'ask to be told'], [/^count\b/i, 'count'], [/^find\b/i, 'find'], [/^list\b/i, 'list'], [/^set\b/i, 'set'], [/^run\b/i, 'run'], [/^test\b/i, 'test'],
 ];
+// Template wording written for the author, said to the reader: "the buyer side" is "your side", "the buyer" is "you".
+export function toReader(s: string): string {
+  const AGREE: Record<string, string> = { gets: 'get', has: 'have', is: 'are', uses: 'use', sees: 'see', needs: 'need', wants: 'want', pays: 'pay', buys: 'buy', does: 'do', runs: 'run', knows: 'know', takes: 'take', makes: 'make', owns: 'own', signs: 'sign', reads: 'read', checks: 'check', chooses: 'choose', gains: 'gain', receives: 'receive', measures: 'measure' };
+  return s.replace(/\bon the buyer(?:'s)? side\b/gi, 'on your side').replace(/\bthe buyer(?:'s)? side\b/gi, 'your side').replace(/\bthe buyer'?s own\b/gi, 'your own').replace(/\bthe buyer uses\b/gi, 'you use').replace(/\bthe buyer'?s\b/gi, 'your').replace(/\bthe (?:value|result|outcome) the buyer (\w+)\b/gi, (m, v) => m.replace(/the buyer \w+/i, `you ${AGREE[v.toLowerCase()] || v}`)).replace(/\bthe buyer\b/gi, 'you').replace(/\byou (gets|has|is|uses|sees|needs|wants|pays|buys|does|runs|knows|takes|makes|owns|signs|reads|checks|chooses|gains|receives|measures)\b/gi, (m, v) => `you ${AGREE[v.toLowerCase()]}`);
+}
 // The way to settle an objection as a phrase ("ask to see ..."), '' when the pattern holds nothing a reader can do.
 export function settleBare(response: string): string {
   let r = response.trim().replace(/\.$/, '');
@@ -301,7 +370,7 @@ export function settleBare(response: string): string {
   r = r.charAt(0).toUpperCase() + r.slice(1);
   const hit = TO_READER.find(([re]) => re.test(r));
   if (!hit) return '';
-  const body = `${hit[1]}${r.replace(hit[0], '')}`.replace(/\bthe buyer'?s own\b/gi, 'your own').replace(/\bthe buyer'?s\b/gi, 'your').replace(/\bthe buyer\b/gi, 'you').replace(/\bthe product\b/gi, 'the vendor');
+  const body = toReader(`${hit[1]}${r.replace(hit[0], '')}`).replace(/\bthe product\b/gi, 'the vendor');
   return body.charAt(0).toLowerCase() + body.slice(1);
 }
 // A way for the reader to settle the objection, in one sentence; '' when the pattern holds nothing a reader can do.

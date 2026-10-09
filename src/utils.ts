@@ -83,7 +83,7 @@ const COMMON_WORDS = new Set((
 ).split(/\s+/).filter(Boolean));
 // A word counts as common when it is in the list, or ends in -ing or -ed ("Automated", "Missing"). A hyphenated
 // word counts by its first part ("Two-way", "No-code").
-function isCommonWord(word: string): boolean {
+export function isCommonWord(word: string): boolean {
   const head = word.split('-')[0].replace(/[^A-Za-z']+$/, '');
   if (!/^[A-Z][a-z']*$/.test(head) || head === 'I' || /[A-Z]/.test(word.slice(1))) return false;
   const w = head.toLowerCase();

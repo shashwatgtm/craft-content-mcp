@@ -1,8 +1,8 @@
 import { cap, lowerFirstIfCommon, titleWords } from './utils.js';
 import { cleanClaims, tagsFor } from './content-repurposer.ts';
 import { readContext, isClause, clipWords, type Vertical } from './sector.ts';
-import { toYou, parseProof, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, brandFrom, claimsToSource, headlineSubject, KIND_NOTE, bestQuestion, clipAtWord, dropTail, type ProofItem } from './draft.ts';
-import { isInstruction, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, shorten, quotedEnd } from './rw-content.ts';
+import { parseProof, fixNumbers, RECOGNITION, endSentence, capFirst, shortenClauses, proseJoin, brandFrom, claimsToSource, headlineSubject, KIND_NOTE, bestQuestion, clipAtWord, dropTail, type ProofItem } from './draft.ts';
+import { isInstruction, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, shorten, quotedEnd, splitQuoteRuns, lowerFirstSafe, toReader as toYou } from './rw-content.ts';
 
 // Run 21c (draft rewrite): the series is a first draft built from the inputs. Each article is written out in full sentences: an opening
 // that states one part of the take, sections built from the proof points, the sector's objections and measures, and a closing line.
@@ -47,15 +47,24 @@ export function generateThoughtLeadership(args: {
   const suggested = !proofRaw;
   const removedClaims: string[] = [];
   const soft = (t: string) => { const r = cleanClaims(t); removedClaims.push(...r.removed); return r.text; };
-  const items: ProofItem[] = proofRaw ? parseProof(proofRaw).filter((i) => { if (isInstruction(i.text)) { orders.push(i.text); return false; } return true; }).map((i) => ({ ...i, text: soft(i.text), shown: soft(i.shown) })) : [];
+  const SAYS = /^(.{3,90}?)\s+says?:\s*['"“](.+?)['"”]\.?$/;
+  const items: ProofItem[] = proofRaw ? parseProof(splitQuoteRuns(proofRaw)).filter((i) => { if (isInstruction(i.text)) { orders.push(i.text); return false; } return true; }).map((i) => ({ ...i, text: soft(i.text), shown: soft(i.shown) })).map((i): ProofItem => {
+    // a customer who "says: '...'" is a quote; a story title that holds a figure reports a result, so it is not "a headline with no result"
+    if (i.kind === 'result' && SAYS.test(i.text)) return { ...i, kind: 'quote' };
+    if (i.kind === 'title' && i.figure) return { ...i, kind: 'result' };
+    return i;
+  }) : [];
   const evidence = items.filter((i) => (i.kind === 'result' || i.kind === 'quote') && !isPartner(i));
   const stories = items.filter((i) => i.kind === 'title');
-  const credibility = items.filter((i) => !evidence.includes(i) && !stories.includes(i));
+  const credibilityItems = items.filter((i) => !evidence.includes(i) && !stories.includes(i));
 
   const topicNorm = topic.toLowerCase().replace(/\W+/g, ' ').trim();
   const takeAll = splitTake(soft(yourTake));
   const takeNew = takeAll.filter((t) => { const n = t.toLowerCase().replace(/\W+/g, ' ').trim(); return !(topicNorm.includes(n) || n.includes(topicNorm)); });
-  const parts = (takeNew.length ? takeNew : takeAll).map((t) => clipEcho(t, ECHO));
+  const partsAll = (takeNew.length ? takeNew : takeAll).map((t) => clipEcho(t, ECHO));
+  const recognitionParts = partsAll.filter((t) => RECOGNITION.test(t));
+  const parts = partsAll.filter((t) => !RECOGNITION.test(t)).length ? partsAll.filter((t) => !RECOGNITION.test(t)) : partsAll;
+  const credibility = [...credibilityItems, ...recognitionParts.map((t): ProofItem => ({ text: t.replace(/[.\s]+$/, ''), label: '', kind: 'recognition', figure: false, shown: t.replace(/[.\s]+$/, '') }))];
   // a take typed as "X's view on Y: Z" is opened as "X's view on Y is this: Z", so the first article does not start on a fragment
   const viewMatch = soft(yourTake).match(/^([A-Z][\w&.-]*(?:\s[A-Z][\w&.-]*)?(?:'s|’s)\s+(?:view|take|position)\s+on\s+(?:[^:()]|\([^)]*\))+?):\s+\S/);
   const view = viewMatch ? viewMatch[1] : '';
@@ -67,6 +76,7 @@ export function generateThoughtLeadership(args: {
   const topicLabel = shortTopic(topic);
   const takeText = [...parts, ...evidence.map((e) => e.text)].join(' ');
 
+  const conflicts = items.filter((i) => { const pc = [...new Set((i.text.match(/\d[\d.,]*\s?%/g) || []).map((x) => x.replace(/\s/g, '')))]; return pc.length >= 2 && (/\bon the [^%]{0,40}\b(?:page|card)\b/i.test(i.text) || /\b(?:vs\.?|versus)\b/i.test(i.text)); });
   const used = new Map<ProofItem, number[]>();
   const mark = (p: ProofItem, article: number) => { const l = used.get(p) || []; if (!l.includes(article)) l.push(article); used.set(p, l); };
   const count = (p: ProofItem) => (used.get(p) || []).length;
@@ -75,21 +85,23 @@ export function generateThoughtLeadership(args: {
   const listedParts = new Map<string, number>();
   const testUsed = new Set<string>();
 
-  const arts: { head: Angle; text: string; lead: string; objection: string }[] = [];
+  const arts: { head: Angle; text: string; lead: string; objection: string; leadItem?: ProofItem }[] = [];
   const heads = Array.from({ length: numArticles }, (_, i) => getArticleAngle(i, articleType, topicLabel, evidence.length + stories.length > 0));
   for (let i = 0; i < numArticles; i++) {
-    const a: Art = { index: i, total: numArticles, type: articleType, topic: topicLabel, parts, readerNoun, v, evidence, stories, mark, count, suggested, heads, askedQuestions, takeText, view, metricsSeries, listedParts, testUsed };
+    const a: Art = { index: i, total: numArticles, type: articleType, topic: topicLabel, parts, readerNoun, v, evidence, stories, mark, count, suggested, heads, askedQuestions, takeText, view, metricsSeries, listedParts, testUsed, conflicts };
     arts.push(buildArticle(a, authorBackground, targetReader, credibility));
   }
 
   // What was not given is named once, at the end.
   const missing: { field: string; change: string }[] = [];
   if (suggested) missing.push({ field: 'proof_points', change: `every article, which now quotes no result, customer or figure${v ? ` and names instead what would carry the argument in this field: ${lowerFirst(v.proofShape).replace(/\.$/, '')}` : ''}` });
+  for (const c of conflicts) { const pc = [...new Set((c.text.match(/\d[\d.,]*\s?%/g) || []).map((x) => x.replace(/\s/g, '')))]; missing.push({ field: `which figure to use, ${pc.join(' or ')}, for one case`, change: 'the evidence sentence, which now shows both figures as typed and flags that they differ' }); }
   if (!hasAuthor) missing.push({ field: 'author_background', change: 'the bylines, which now read "the author"' });
   const notUsed = items.filter((i) => !used.has(i) && !credibility.includes(i));
   const notes: string[] = [];
   if (claims.length) notes.push(`**Claims to source before you publish:** your take or proof points use ${proseJoin(claims.map((c) => `"${c}"`))}. The articles and posts leave them out; add one back once, in one place, and only if you can prove it with a source a reader can check.`);
   if (notUsed.length) notes.push(`Not used as examples: ${proseJoin(notUsed.map((i) => `"${clipEcho(i.text, 80)}"`))}, because ${numArticles === 1 ? 'the article has' : `the ${numArticles} articles have`} room for only so many; ${notUsed.length === 1 ? 'it is' : 'they are'} listed under the proof points below.`);
+  if (conflicts.length) notes.push(`Two different figures are given for one result: ${proseJoin(conflicts.map((c) => `"${clipEcho(c.shown, 200)}"`))}. They differ, so the articles show them as typed and say so; tell me which one to use.`);
   if (orders.length) notes.push(instructionNote(orders));
 
   let output = `# Thought Leadership Series
@@ -106,7 +118,7 @@ ${numArticles === 1 ? 'One article' : `${numArticles} articles`} in the ${articl
 
 ## Promotional Posts
 
-${generatePromotionalPosts(parts, evidence, arts.map((x) => x.head.title), readerNoun, v, takeText)}
+${generatePromotionalPosts(parts, arts.map((x) => x.leadItem), arts.map((x) => x.head.title), readerNoun, v, takeText)}
 ---
 
 ## Publishing Order
@@ -119,7 +131,7 @@ Link each promo post to its article. ${tags ? `Hashtags for the posts: ${tags}.`
 
 ## Proof Points Used
 
-${items.length ? `| Proof point | What it is | How it is used |\n|---|---|---|\n${items.map((p) => `| ${clipEcho(p.shown, 600).replace(/\|/g, '/')} | ${noteOf(p)} | ${credibility.includes(p) ? 'a credibility line, not an example' : used.has(p) ? `article ${(used.get(p) as number[]).join(' and ')}` : 'not used as an example'} |`).join('\n')}` : 'None were given.'}
+${items.length || credibility.length ? `| Proof point | What it is | How it is used |\n|---|---|---|\n${[...items, ...credibility.filter((c) => !items.includes(c))].map((p) => `| ${clipEcho(p.shown, 600).replace(/\|/g, '/')} | ${noteOf(p)} | ${credibility.includes(p) ? 'a credibility line, not an example' : used.has(p) ? `article ${(used.get(p) as number[]).join(' and ')}` : 'not used as an example'} |`).join('\n')}` : 'None were given.'}
 ${sectorBlock(v, askedQuestions.has('who'))}
 ---
 
@@ -215,7 +227,7 @@ type Angle = { title: string; plan: { head: string; kind: Kind }[] };
 
 // The plan of each position in the series; the headings follow the article type.
 const PLANS: Kind[][] = [
-  ['objection', 'evidence', 'parts', 'who', 'test'],
+  ['evidence', 'parts', 'objection', 'who', 'test'],
   ['parts', 'objection', 'quote', 'who', 'question'],
   ['story', 'objection', 'test', 'parts', 'who'],
   ['question', 'evidence', 'objection', 'parts', 'test'],
@@ -309,10 +321,10 @@ interface Art {
   index: number; total: number; type: string; topic: string; parts: string[]; readerNoun: string; v: Vertical | null;
   evidence: ProofItem[]; stories: ProofItem[]; mark: (p: ProofItem, article: number) => void; count: (p: ProofItem) => number;
   suggested: boolean; heads: Angle[]; askedQuestions: Set<string>; takeText: string; view: string;
-  metricsSeries: Set<string>; listedParts: Map<string, number>; testUsed: Set<string>;
+  metricsSeries: Set<string>; listedParts: Map<string, number>; testUsed: Set<string>; conflicts: ProofItem[];
 }
 
-const lowerFirst = (s: string) => (/[A-Z0-9]/.test(s.slice(1, 3)) ? s : s.charAt(0).toLowerCase() + s.slice(1));
+const lowerFirst = (s: string) => lowerFirstSafe(s);
 const sentence = (s: string) => endSentence(capFirst(s.trim()));
 const stems = (s: string) => new Set((s.toLowerCase().match(/[a-z]{4,}/g) || []).map((w) => w.slice(0, 5)));
 
@@ -320,17 +332,23 @@ const stems = (s: string) => new Set((s.toLowerCase().match(/[a-z]{4,}/g) || [])
 function quoteParts(p: ProofItem): { who: string; words: string } {
   const m = /^(?:customer|partner) (?:quote|words)(?: from)?\s*(.*?):\s*["“](.+?)["”]\.?$/i.exec(p.text);
   if (m) return { who: m[1].trim().replace(/^from\s+/i, ''), words: clipEcho(m[2], ECHO) };
+  const sy = p.text.match(/^(.{3,90}?)\s+says?:\s*['"“](.+?)['"”]\.?$/);
+  if (sy) return { who: sy[1].trim(), words: clipEcho(sy[2], ECHO) };
   const bare = p.text.replace(/^(?:customer|partner) (?:quote|words):\s*/i, '');
   const sp = /^([^:"]{3,90}):\s+(.+)$/.exec(bare);
   if (sp) return { who: sp[1].trim(), words: capFirst(clipEcho(sp[2], ECHO)) };
   return { who: '', words: capFirst(clipEcho(bare, ECHO)) };
 }
+// "A Product Manager at X" after "A customer," keeps its sense: the article is lowered. The full stop of the words stays inside the quotes.
 function quoteLine(p: ProofItem, seen = 0): string {
-  const { who, words } = quoteParts(p);
+  const { who: who0, words } = quoteParts(p);
+  const who = who0.replace(/^(A|An|The)\s/, (m) => m.toLowerCase());
   const label = p.label ? ` (${p.label})` : '';
-  if (seen === 1) return endSentence(`In ${who ? `${who}'s` : "the customer's"} words: "${words}"${label}`);
-  if (seen >= 2) return endSentence(`${who ? who : 'The customer'} says it again: "${words}"${label}`);
-  return endSentence(`A customer${who ? `, ${who},` : ''} puts it this way: "${words}"${label}`);
+  const q2 = `"${words}"`;
+  const end = /[.!?]$/.test(words) ? '' : '.';
+  if (seen === 1) return `In ${who ? `${who}'s` : "the customer's"} words: ${q2}${label}${end}`;
+  if (seen >= 2) return `${who ? capFirst(who) : 'The customer'} says it again: ${q2}${label}${end}`;
+  return `A customer${who ? `, ${who},` : ''} puts it this way: ${q2}${label}${end}`;
 }
 // The same quote for a short post: the words first, then who said them.
 function quotePost(p: ProofItem): string {
@@ -350,7 +368,7 @@ function questionsFor(a: Art): string[] {
   return a.v ? a.v.discovery.filter((d) => !/\bclient'?s?\b|current provider/i.test(d)) : [];
 }
 
-function buildArticle(a: Art, authorBackground: string, targetReader: string, credibility: ProofItem[]): { head: Angle; text: string; lead: string; objection: string } {
+function buildArticle(a: Art, authorBackground: string, targetReader: string, credibility: ProofItem[]): { head: Angle; text: string; lead: string; objection: string; leadItem?: ProofItem } {
   const head = a.heads[a.index];
   const { v } = a;
   const thesis = a.parts[a.index % a.parts.length];
@@ -369,8 +387,7 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
     picked.add(pick);
     return pick;
   };
-  const leadPool = a.evidence.length ? a.evidence : [];
-  const lead = leadPool.length ? leadPool[a.index % leadPool.length] : undefined;
+  let lead: ProofItem | undefined;
   const metricsUsed = new Set<string>();
   const relevantMetric = (text: string, skipIfNamed = true): string => {
     const top = rankMetrics(v, text).find((x) => x.ok && !metricsUsed.has(x.m) && !a.metricsSeries.has(x.m));
@@ -401,6 +418,7 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
     } else if (kind === 'evidence' || kind === 'quote' || kind === 'story') {
       const item = kind === 'story' && a.stories.length ? nextProof(a.stories) : nextProof(a.evidence, kind === 'quote' ? 'quote' : undefined) || nextProof(a.stories);
       if (item) {
+        if (!lead && item.kind !== 'title') lead = item;
         const seen = a.count(item);
         a.mark(item, a.index + 1);
         const hh = (HEADINGS[a.type] || HEADINGS.contrarian)[item.kind === 'quote' ? 'quote' : item.kind === 'title' ? 'story' : 'evidence'];
@@ -408,8 +426,9 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
         if (item.kind === 'quote') body.push(quoteLine(item, seen));
         else if (item.kind === 'title') { const n = [...a.askedQuestions].filter((x) => x.startsWith('story:')).length; a.askedQuestions.add(`story:${item.text}`); const t0 = clipEcho(item.shown, ECHO).replace(/[.]$/, ''); body.push(n === 0 ? `One customer story points the same way: ${t0}. Its headline carries no result, so none is claimed for it here.` : `Another customer story points the same way: ${t0}, again a headline with no result of its own.`); }
         else {
+          const flag = a.conflicts.includes(item) ? ' (these two figures differ, so confirm which one to publish)' : '';
           const shownT = clipEcho(seen > 0 ? item.shown.replace(/([.!?])\s+(?=[A-Z])/g, '; ') : item.shown, ECHO);
-          const frames = [`The evidence: ${endSentence(capFirst(shownT))}`, `Here is a result: ${endSentence(capFirst(shownT))}`, `One result on record: ${endSentence(capFirst(shownT))}`];
+          const frames = [`The evidence: ${endSentence(capFirst(shownT + flag))}`, `Here is a result: ${endSentence(capFirst(shownT + flag))}`, `One result on record: ${endSentence(capFirst(shownT + flag))}`];
           body.push(frames[seen % frames.length]);
         }
         if (v && !a.askedQuestions.has('proofShape')) { a.askedQuestions.add('proofShape'); body.push(`Evidence of this kind is strongest when it looks like this: ${lowerFirst(toYou(v.proofShape)).replace(/\.$/, '')}.`); }
@@ -481,7 +500,7 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
       ...credibility.map((c) => `**Credibility line** (${noteOf(c)}, for the byline or the footer): ${endSentence(capFirst(clipEcho(c.shown, 300)))}`)].filter(Boolean).join('\n\n')
     : '';
   const bodyWords = [opener, ...sections].join(' ').split(/\s+/).length;
-  const leadText = lead ? endSentence(capFirst(clipEcho(lead.shown, 300))) : a.suggested ? 'none given' : 'none of your proof points is a customer result';
+  const leadText = lead ? (lead.kind === 'quote' ? `${quoteParts(lead).who ? `${capFirst(quoteParts(lead).who)}: ` : ''}"${quoteParts(lead).words.replace(/[.]$/, '')}."${lead.label ? ` (${lead.label})` : ''}` : endSentence(capFirst(clipEcho(lead.shown, 300)))) : a.suggested ? 'none given' : 'none of your proof points is a customer result';
 
   const text = `
 ---
@@ -502,7 +521,7 @@ ${byline}
 ${opener}
 
 ${sections.join('\n\n')}${sections.length ? '\n\n' : ''}${next ? `${next}\n\n` : ''}${about ? `${about}\n\n` : ''}`;
-  return { head, text: text.replace(/\n{3,}/g, '\n\n').replace(/^## (?!Article )/gm, '### '), lead: leadText, objection: objection ? objection.objection : '' };
+  return { head, text: text.replace(/\n{3,}/g, '\n\n').replace(/^## (?!Article )/gm, '### '), lead: leadText, objection: objection ? objection.objection : '', leadItem: lead };
 }
 
 // The parts of the take that go with this article's thesis: the others, from the one after it, at most three; a part that no article
@@ -518,16 +537,18 @@ function listOthers(a: Art, thesis: string): string[] {
 
 // One finished promo post per article: the new headline, the article's part of the take in short, its evidence (each item once), and a
 // question from the sector. A part, a proof point or a question is used in one post only.
-function generatePromotionalPosts(parts: string[], evidence: ProofItem[], titles: string[], readerNoun: string, v: Vertical | null, takeText: string): string {
+function generatePromotionalPosts(parts: string[], leads: (ProofItem | undefined)[], titles: string[], readerNoun: string, v: Vertical | null, takeText: string): string {
   let posts = '';
   const qs = v ? v.discovery.filter((d) => !/\bclient'?s?\b|current provider|\bme\b|\bour\b/i.test(d)) : [];
   const asked = new Set<string>();
+  const usedProof = new Set<ProofItem>();
   for (let i = 0; i < titles.length; i++) {
-    const proof = i < evidence.length ? evidence[i] : undefined;
-    const proofLine = proof ? (proof.kind === 'quote' ? quotePost(proof) : `On record: ${endSentence(lowerFirst(clipEcho(proof.shown, 300).replace(/([.!?])\s+(?=[A-Z])/g, '; ')))}`) : '';
+    const proof = leads[i] && !usedProof.has(leads[i] as ProofItem) ? leads[i] : undefined;
+    if (proof) usedProof.add(proof);
+    const proofLine = proof ? (proof.kind === 'quote' ? quotePost(proof) : `On record: ${endSentence(capFirst(clipEcho(proof.shown, 300).replace(/([.!?])\s+(?=[A-Z])/g, '; ')))}`) : '';
     const part = i < parts.length ? parts[i] : '';
     const question = qs.length ? `A question for ${readerNoun}: "${bestQuestion(`${part} ${takeText}`, qs, asked)}"` : '';
-    const blocks = [`New article: "${titles[i]}".`, part ? `The short version: ${lowerFirst(clipEcho(part, 300)).replace(/[.]$/, '')}.` : '', proofLine, question].filter(Boolean);
+    const blocks = [`New article: "${titles[i]}".`, part ? `The short version: ${clipEcho(part, 300).replace(/[.]$/, '')}.` : '', proofLine, question].filter(Boolean);
     posts += `### Promo Post ${i + 1} (for Article ${i + 1})
 
 ---

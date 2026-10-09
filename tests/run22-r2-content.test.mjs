@@ -111,7 +111,7 @@ test("r2 thought leadership: two different figures for one case are flagged and 
   const t = await call("thought_leadership_series", TL);
   assert.match(t.slice(t.indexOf("## Notes for you")), /Two different figures are given for one result/);
   const inArticles = t.slice(0, t.indexOf("## Promotional Posts"));
-  if (/35% on the case page/.test(inArticles)) assert.match(inArticles, /these two figures differ, so confirm which one to publish/, "used in an article, the figure is flagged where it stands");
+  if (/35% on the case page/.test(inArticles)) assert.match(inArticles, /two different figures are given for this case/, "used in an article, the figure is flagged where it stands");
   assert.match(t, /To sharpen this, give:[^\n]*which figure to use, 35% or 25%/);
 });
 

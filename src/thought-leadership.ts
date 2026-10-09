@@ -2,7 +2,7 @@ import { cap, lowerFirstIfCommon, titleWords } from './utils.js';
 import { cleanClaims, tagsFor } from './content-repurposer.ts';
 import { readContext, isClause, clipWords, type Vertical } from './sector.ts';
 import { parseProof, fixNumbers, RECOGNITION, endSentence, capFirst, shortenClauses, proseJoin, brandFrom, claimsToSource, headlineSubject, KIND_NOTE, bestQuestion, clipAtWord, dropTail, type ProofItem } from './draft.ts';
-import { isInstruction, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, shorten, quotedEnd, splitQuoteRuns, lowerFirstSafe, toReader as toYou } from './rw-content.ts';
+import { isInstruction, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, shorten, quotedEnd, readersFit, shortReaders, splitQuoteRuns, lowerFirstSafe, toReader as toYou } from './rw-content.ts';
 
 // Run 21c (draft rewrite): the series is a first draft built from the inputs. Each article is written out in full sentences: an opening
 // that states one part of the take, sections built from the proof points, the sector's objections and measures, and a closing line.
@@ -41,7 +41,11 @@ export function generateThoughtLeadership(args: {
   const articleType = args.article_type && TYPE_VERB[args.article_type] ? args.article_type : 'contrarian';
   // Run 19 (D80, problems 4 and 8): the sector is read from every text the user gave.
   const ctx = readContext(undefined, { seller: [topic], context: [yourTake, proofRaw, args.author_background], role: [targetReader] });
-  const v = ctx.v;
+  const vFull = ctx.v;
+  // a general software reading that does not fit the readers the user named is not used in the articles: its measures belong to other readers
+  const fits = !vFull || readersFit(shortReaders(targetReader) || targetReader, vFull);
+  const generic = !!vFull && !fits && !vFull.subtype && ['saas', 'software'].includes(vFull.id);
+  const v = generic && vFull ? { ...vFull, metrics: [] as string[] } : vFull;   // the objections and questions stay; the measures of other readers go
 
   // Proof points: sorted by what they are. Customer results, quotes and story titles carry the argument; recognition, company-wide counts and page claims are credibility lines.
   const suggested = !proofRaw;
@@ -132,7 +136,7 @@ Link each promo post to its article. ${tags ? `Hashtags for the posts: ${tags}.`
 ## Proof Points Used
 
 ${items.length || credibility.length ? `| Proof point | What it is | How it is used |\n|---|---|---|\n${[...items, ...credibility.filter((c) => !items.includes(c))].map((p) => `| ${clipEcho(p.shown, 600).replace(/\|/g, '/')} | ${noteOf(p)} | ${credibility.includes(p) ? 'a credibility line, not an example' : used.has(p) ? `article ${(used.get(p) as number[]).join(' and ')}` : 'not used as an example'} |`).join('\n')}` : 'None were given.'}
-${sectorBlock(v, askedQuestions.has('who'))}
+${sectorBlock(vFull, askedQuestions.has('who'))}${generic ? '\n- The readers you named do not match the readers this sector reading is written for, so the articles use none of its measures.\n' : ''}
 ---
 
 ## Notes for you

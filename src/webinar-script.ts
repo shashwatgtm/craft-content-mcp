@@ -51,7 +51,7 @@ export function generateWebinarScript(args: {
   const given = (args.your_product || '').trim();
   const company = parts.company && parts.company.split(/\s+/).length <= 4 ? parts.company : (companyFrom(topic) || parts.company);
   const product = given || (productLevel === 'none' ? '' : company);
-  const ctx: Ctx = readContext(args.business_model, { seller: [given || company, parts.problem || topic], context: [args.key_takeaways, args.speakers], role: [audienceFull], buyer: [parts.audience, audienceFull] });
+  const ctx: Ctx = readContext(args.business_model, { seller: [given || parts.company || company, parts.problem || topic], context: [args.key_takeaways, args.speakers], role: [audienceFull], buyer: [parts.audience, audienceFull] });
 
   // the takeaways: read for what each one is; the problem the topic names is said once, as the problem
   const haveTakeaways = !!(args.key_takeaways && args.key_takeaways.trim());
@@ -426,7 +426,8 @@ function productLine(w: W, k: number, mine: Pt[]): string {
 // A takeaway as a short phrase for the agenda and the summary: its first whole clause, a figure with its label, else its number.
 function topicOf(p: Pt, n: number): string {
   if (p.figure) return `the ${ORD[n] || `number ${n + 1}`} result`;   // a figure is not restated outside its own sentence, so it needs no label here
-  const first = p.text.includes(',') && p.text.split(',')[0].trim().split(/\s+/).length >= 4 ? p.text.split(',')[0].trim() : p.text;
+  const head = p.text.split(',')[0].trim();
+  const first = p.text.includes(',') && head.split(/\s+/).length >= 4 && !/\b(?:that|which|who|whose|and|or|with)$/i.test(head) && !/\b(?:that|which|who|whose)\b/i.test(head) ? head : p.text;
   const sh = shorten(first, 90, true);
   if (!sh || ['adjective', 'participle', 'phrase'].includes(shapeOf(p)) && sh.length > 60) return `the ${ORD[n] || `number ${n + 1}`} point`;
   if (shapeOf(p) === 'imperative') return `how to ${lowerFirst(sh)}`;

@@ -1,7 +1,7 @@
 import { lowerFirstIfCommon, cap } from './utils.js';
 import { readContext, audienceLine, isClause, type Vertical } from './sector.ts';
 import { splitList, unpackTopic, fixNumbers, endSentence, capFirst, proseJoin, productParts, toYou, bestQuestion, softenClaims } from './draft.ts';
-import { readPoints, groupPhrases, sentenceOf, renderGroup, shorten, shortReaders, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, nk, type Pt } from './rw-content.ts';
+import { readPoints, groupPhrases, sentenceOf, renderGroup, shorten, shortReaders, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, nk, quotedEnd, type Pt } from './rw-content.ts';
 
 // Run 22 (rewrite): the issue is written, not assembled. The key points are read for what they are (the problem, what changes, how it
 // works, the evidence), each is said in a whole sentence, and the sector file adds the measures, the proof to ask for and the questions
@@ -54,7 +54,7 @@ export function generateNewsletter(args: {
   const outcomes = pts.filter((p) => p.role === 'outcome');
   const hows = groupPhrases(pts.filter((p) => p.role === 'capability'));
   const evidence = pts.filter((p) => ['result', 'quote', 'recognition', 'scale', 'story'].includes(p.role));
-  const figures = evidence.filter((p) => p.figure);
+  const figures = pts.filter((p) => p.figure && p.role !== 'problem');
   const unsourced = figures.filter((p) => !p.label);
   const opening = problems[0];
   const laterProblems = problems.slice(1);
@@ -118,13 +118,13 @@ export function generateNewsletter(args: {
     let best = v.objections[0]; let bestN = -1;
     for (const o of v.objections) { const n = (o.objection.toLowerCase().match(/[a-z]{5,}/g) || []).filter((w) => text.includes(w.slice(0, 5))).length; if (n > bestN) { best = o; bestN = n; } }
     const settle = waysToSettle(best.response);
-    if (settle) sections.splice(Math.max(0, sections.length - 1), 0, { heading: 'Where readers push back', body: `${pushWho} often say: "${best.objection}". ${settle}` });
+    if (settle) sections.splice(Math.max(0, sections.length - 1), 0, { heading: 'Where readers push back', body: `${pushWho} often say: ${quotedEnd(best.objection)} ${settle}` });
   }
   // no key points: the sector's own objection, in the reader's voice, is the first section
   if (!given && v) {
     const o = v.objections[0];
     const settle = waysToSettle(o.response);
-    sections.unshift({ heading: 'The question you will hear', body: `${readers ? cap(readers) : `Teams in ${kind}`} often say: "${o.objection}". ${settle}`.trim() });
+    sections.unshift({ heading: 'The question you will hear', body: `${readers ? cap(readers) : `Teams in ${kind}`} often say: ${quotedEnd(o.objection)} ${settle}`.trim() });
   }
 
   // ---- subject, preview, opening ------------------------------------------------------------------------------------

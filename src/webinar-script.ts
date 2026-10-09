@@ -1,7 +1,7 @@
 import { lowerFirstIfCommon, cap } from './utils.js';
 import { q, readContext, startWords, audienceLine, isClause, type Vertical, type BusinessModel } from './sector.ts';
 import { splitList, bestQuestion, toYou, unpackTopic, fixNumbers, endSentence, capFirst, proseJoin, roleOf, clipAtWord, productParts, softenClaims } from './draft.ts';
-import { readPoints, groupPhrases, sentenceOf, withLabel, shorten, waysToSettle, settleBare, instructionNote, sharpenLine, stripGuardQuotes, PARTICIPLE_START, type Pt } from './rw-content.ts';
+import { readPoints, groupPhrases, sentenceOf, withLabel, shorten, waysToSettle, settleBare, quotedEnd, instructionNote, sharpenLine, stripGuardQuotes, PARTICIPLE_START, type Pt } from './rw-content.ts';
 
 // Run 22 (rewrite): the script is written to be read aloud. The takeaways are read for what they are and said in whole sentences, the
 // problem the topic names is said as the problem, and the sector file adds the measures, the questions for the chat and the objections.
@@ -464,7 +464,7 @@ function generateScriptSection(section: { name: string; duration: number; purpos
     case 'Q&A':
       return seg(section, 'Q&A slide', [
         'Now your questions. I will read each one aloud from the chat and answer it.',
-        objection ? `If the chat is quiet, I will start with a question we hear a lot: "${objection.objection}". ${settleLine(w, objection.response)}` : '',
+        objection ? `If the chat is quiet, I will start with a concern we hear a lot: ${quotedEnd(objection.objection)} ${settleLine(w, objection.response)}` : '',
         'Questions we do not reach will be answered in the follow-up email.'
       ]);
     case 'Close & CTA':
@@ -566,7 +566,7 @@ function generateScriptSection(section: { name: string; duration: number; purpos
     case 'Brief Topic Context':
       return seg(section, 'Topic slide', [topicLine(w), painPoint(w), agendaLine(w)]);
     case 'Q&A Session':
-      return seg(section, 'Q&A slide', [`First question. ${objection ? `If the chat is quiet, I will start with a question we hear a lot: "${objection.objection}". ${settleLine(w, objection.response)}` : 'If the chat is quiet, I will start with the question I hear most.'}`, t[0] ? `Another place to start: ${tk(t[0], w)}` : '']);
+      return seg(section, 'Q&A slide', [`First question. ${objection ? `If the chat is quiet, I will start with a concern we hear a lot: ${quotedEnd(objection.objection)} ${settleLine(w, objection.response)}` : 'If the chat is quiet, I will start with the question I hear most.'}`, t[0] ? `Another place to start: ${tk(t[0], w)}` : '']);
     case 'Rapid Fire':
       return seg(section, 'Rapid fire slide', [v ? `Rapid fire, short answers: ${toYou(v.discovery[2 % v.discovery.length])}` : 'Rapid fire: short questions from the chat, one or two sentences each.', t.slice(1).length ? `Still to cover from the takeaways. ${numbered(t.slice(1, 4), w)}` : '']);
     default:
@@ -628,7 +628,7 @@ function qaPrep(w: W): string {
 function followUps(w: W): string {
   const v = w.ctx.v;
   const t = w.takeaways;
-  const head = shorten(w.label, 70, true) || (w.shortTopic ? w.label : 'the session');
+  const head = (w.label.split(/\s+/).length >= 3 ? shorten(w.label, 70, true) : '') || (w.shortTopic ? w.label : `the ${w.type.replace(/_/g, ' ')} session for ${shorten(w.audience, 50) || 'you'}`);
   const name = w.productName;
   const e1 = `### Email 1: Same day
 
@@ -643,9 +643,9 @@ Questions? Reply to this email.
   const o = v ? v.objections[3 % v.objections.length] : null;
   const e2 = o ? `### Email 2: Day 3
 
-**Subject:** A question from the session: ${o.objection}
+**Subject:** A concern from the session: ${o.objection}
 
-The question we hear most is "${o.objection}". ${settleLine(w, o.response)}
+The concern we hear most is ${quotedEnd(o.objection)} ${settleLine(w, o.response)}
 
 ---
 ` : t.length ? `### Email 2: Day 3

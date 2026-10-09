@@ -1,8 +1,8 @@
 import { cap, lowerFirstIfCommon, titleWords } from './utils.js';
 import { cleanClaims, tagsFor } from './content-repurposer.ts';
 import { readContext, isClause, clipWords, type Vertical } from './sector.ts';
-import { parseProof, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, brandFrom, claimsToSource, headlineSubject, KIND_NOTE, bestQuestion, clipAtWord, dropTail, type ProofItem } from './draft.ts';
-import { isInstruction, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, shorten } from './rw-content.ts';
+import { toYou, parseProof, fixNumbers, endSentence, capFirst, shortenClauses, proseJoin, brandFrom, claimsToSource, headlineSubject, KIND_NOTE, bestQuestion, clipAtWord, dropTail, type ProofItem } from './draft.ts';
+import { isInstruction, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, shorten, quotedEnd } from './rw-content.ts';
 
 // Run 21c (draft rewrite): the series is a first draft built from the inputs. Each article is written out in full sentences: an opening
 // that states one part of the take, sections built from the proof points, the sector's objections and measures, and a closing line.
@@ -57,7 +57,7 @@ export function generateThoughtLeadership(args: {
   const takeNew = takeAll.filter((t) => { const n = t.toLowerCase().replace(/\W+/g, ' ').trim(); return !(topicNorm.includes(n) || n.includes(topicNorm)); });
   const parts = (takeNew.length ? takeNew : takeAll).map((t) => clipEcho(t, ECHO));
   // a take typed as "X's view on Y: Z" is opened as "X's view on Y is this: Z", so the first article does not start on a fragment
-  const viewMatch = /^([A-Z][\w&.-]*(?:\s[A-Z][\w&.-]*)?(?:'s|’s)\s+(?:view|take|position)\s+on\s+[^:]+?):\s+\S/.exec(soft(yourTake));
+  const viewMatch = /^([A-Z][\w&.-]*(?:\s[A-Z][\w&.-]*)?(?:'s|’s)\s+(?:view|take|position)\s+on\s+(?:[^:()]|\([^)]*\))+?):\s+\S/.exec(soft(yourTake));
   const view = viewMatch ? viewMatch[1] : '';
   const brand = brandFrom(yourTake, args.author_background || '', topic);
   const tags = tagsFor(`${topic} ${yourTake} ${proofRaw}`, brand, v);
@@ -389,13 +389,13 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
       if (objection) {
         const settle = waysToSettle(objection.response);
         const frames = [
-          `${cap(a.readerNoun)} will push back with this: "${objection.objection}".`,
-          `The objection to expect from ${a.readerNoun} is "${objection.objection}".`,
-          `Someone at the table will say: "${objection.objection}".`,
+          `${cap(a.readerNoun)} will push back with this: ${quotedEnd(objection.objection)}`,
+          `The objection to expect from ${a.readerNoun} is ${quotedEnd(objection.objection)}`,
+          `Someone at the table will say: ${quotedEnd(objection.objection)}`,
         ];
         body.push(`${frames[(a.index + k) % frames.length]}${settle ? ` ${settle}` : ''}`);
         const m = relevantMetric(`${objection.objection} ${objection.response}`);
-        if (m) body.push(`The measure to read it by is ${m}.`);
+        if (m) body.push(`The measure to read it by is ${toYou(m)}.`);
         heading = `The objection: ${lowerFirst(objection.objection.replace(/[.?!]+$/, ''))}`;
       }
     } else if (kind === 'evidence' || kind === 'quote' || kind === 'story') {
@@ -412,7 +412,7 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
           const frames = [`The evidence: ${endSentence(capFirst(shownT))}`, `Here is a result: ${endSentence(capFirst(shownT))}`, `One result on record: ${endSentence(capFirst(shownT))}`];
           body.push(frames[seen % frames.length]);
         }
-        if (v && !a.askedQuestions.has('proofShape')) { a.askedQuestions.add('proofShape'); body.push(`Evidence of this kind is strongest when it looks like this: ${lowerFirst(v.proofShape).replace(/\.$/, '')}.`); }
+        if (v && !a.askedQuestions.has('proofShape')) { a.askedQuestions.add('proofShape'); body.push(`Evidence of this kind is strongest when it looks like this: ${lowerFirst(toYou(v.proofShape)).replace(/\.$/, '')}.`); }
       }
     } else if (kind === 'parts') {
       const others = listOthers(a, thesis);
@@ -451,7 +451,7 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
         heading = `${h}: ${m0}`;
       }
     } else if (kind === 'who') {
-      if (v && !a.askedQuestions.has('who')) { a.askedQuestions.add('who'); body.push(`Whoever reads this will not decide alone. ${v.committee}`); }
+      if (v && !a.askedQuestions.has('who')) { a.askedQuestions.add('who'); body.push(`Whoever reads this will not decide alone. ${toYou(v.committee)}`); }
     } else if (kind === 'question') {
       const qs = questionsFor(a);
       if (qs.length) {

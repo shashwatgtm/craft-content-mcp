@@ -89,7 +89,7 @@ function roleOf(p: { text: string; label: string; clause: boolean; figure: boole
   if (RECOGNITION.test(p.text) && !/customer/.test(l)) return 'recognition';
   if (/title|headline|story/.test(l) && !p.figure) return 'story';
   if (SCALE.test(p.text) && !p.clause) return 'scale';
-  if (p.figure && (p.label || p.clause || OUTCOMEISH.test(p.text) || STAT.test(p.text))) return 'result';
+  if (p.figure && (p.label || p.clause || OUTCOMEISH.test(p.text))) return 'result';
   if (problemLike) return 'problem';
   if (OUTCOMEISH.test(p.text)) return 'outcome';
   return 'capability';
@@ -98,21 +98,49 @@ const PROBLEM_WORD = /\b(?:(?:do|does|did|is|are|was|were|can|could|will|would)\
 export const nk = (x: string): string => x.toLowerCase().replace(/[^a-z0-9]+/g, '');
 
 // Split off the first top-level pieces that spell out `known` (the problem the topic names), whatever commas or semicolons separate them.
+// The topic's problem may run on into a description of the seller (a bracket note, a list of services), so a point that spells out the
+// start of it is recognised too: the covered part is the problem, the rest of that piece stays a point.
 function takeKnown(pieces: string[], known: string): { first: string | null; rest: string[] } {
   const target = nk(known);
   if (target.length < 20) return { first: null, rest: pieces };
   let acc = ''; let k = 0;
-  while (k < pieces.length && acc.length < target.length) { acc += nk(pieces[k]); k++; }
-  if (!acc.startsWith(target)) return { first: null, rest: pieces };
-  const over = acc.length - target.length;
-  if (over === 0) return { first: known, rest: pieces.slice(k) };
-  const last = pieces[k - 1];
-  const keep = nk(last).length - over;
-  let idx = 0; let n = 0;
-  while (idx < last.length && n < keep) { if (/[a-z0-9]/i.test(last[idx])) n++; idx++; }
-  while (idx < last.length && /[)\]"”'’.]/.test(last[idx])) idx++;
-  const rest = last.slice(idx).replace(/^[\s,;:.\-]+/, '').trim();
-  return { first: known, rest: rest ? [rest, ...pieces.slice(k)] : pieces.slice(k) };
+  while (k < pieces.length && target.startsWith(acc + nk(pieces[k])) && nk(pieces[k]).length > 0) { acc += nk(pieces[k]); k++; if (acc.length === target.length) break; }
+  if (acc.length === target.length) return { first: known, rest: pieces.slice(k) };
+  // the covered part ends inside the next piece, or the next piece runs on past the problem
+  const next = pieces[k];
+  let covered = acc.length;
+  let restOfNext = '';
+  if (next !== undefined) {
+    const want = target.slice(acc.length); const have = nk(next);
+    let L = 0; while (L < want.length && L < have.length && want[L] === have[L]) L++;
+    if (L === want.length && have.length > L) {
+      // the piece runs on past the end of the problem: cut it after the problem's last character
+      let idx = 0; let n = 0;
+      while (idx < next.length && n < L) { if (/[a-z0-9]/i.test(next[idx])) n++; idx++; }
+      while (idx < next.length && /[)\]"”'’.]/.test(next[idx])) idx++;
+      covered += L; restOfNext = next.slice(idx).replace(/^[\s,;:.\-]+/, '').trim();
+      k++;
+    } else if (L >= 15 && L < have.length) {
+      // the problem text goes on in the topic but the piece goes its own way: cut at the last whole word that agrees
+      let idx = 0; let n = 0;
+      while (idx < next.length && n < L) { if (/[a-z0-9]/i.test(next[idx])) n++; idx++; }
+      while (idx < next.length && /[a-z0-9]/i.test(next[idx])) idx--;
+      if (idx > 0) {
+        const kept = nk(next.slice(0, idx)).length;
+        covered += kept; restOfNext = next.slice(idx).replace(/^[\s,;:.\-]+/, '').trim(); k++;
+      }
+    }
+  }
+  if (covered < 40 && covered < 0.6 * target.length) return { first: null, rest: pieces };
+  // the covered part of the topic's own spelling of the problem
+  let cut = 0; let n2 = 0;
+  while (cut < known.length && n2 < covered) { if (/[a-z0-9]/i.test(known[cut])) n2++; cut++; }
+  while (cut < known.length && /[)\]"”'’]/.test(known[cut])) cut++;
+  const first = known.slice(0, cut).replace(/[\s,;:.\-]+$/, '');
+  let rest = restOfNext ? [restOfNext, ...pieces.slice(k)] : pieces.slice(k);
+  // one or two stray words ("faster") belong to the point that follows
+  if (restOfNext && restOfNext.split(/\s+/).length <= 2 && rest.length > 1) rest = [`${rest[0]}, ${rest[1]}`, ...rest.slice(2)];
+  return { first, rest };
 }
 // A source label followed by a comma and more text ("... in 6 days (page claim), built from the ground up") ends the point.
 function splitAfterLabels(piece: string): string[] {
@@ -170,11 +198,12 @@ export function readPoints(raw: string | undefined, known: { problem?: string } 
     carry = '';
     const prev = merged[merged.length - 1];
     const words = it.text.split(/\s+/).length;
-    const joins = /^(?:with|without|including|plus|which|that|because|instead|not|so)\b/i.test(it.text);
+    const joins = /^(?:with|without|including|plus|which|that|because|instead|not|so|combined)\b/i.test(it.text);
     const fragment = /^[a-z]/.test(it.text) && !looksClause(it.text) && !PARTICIPLE_START.test(it.text) && !it.label && !/\d/.test(it.text);
     if (fragment && words <= 3 && /^(?:an?|the|its|their|our|one)\b/i.test(it.text) && !it.problem) { carry = it.text; continue; }
-    if (prev && !it.problem && !prev.label && ((joins && !/^(?:with|without|including|plus)\b/i.test(it.text)) || !prev.problem && (joins || (fragment && (words <= 3 || inList))))) {
+    if (prev && !it.problem && !prev.label && ((joins && !/^(?:with|without|including|plus|combined)\b/i.test(it.text)) || !prev.problem && (joins || (fragment && (words <= 3 || inList))))) {
       prev.text += `, ${it.text}`;
+      if (it.label && !prev.label) prev.label = it.label;
       inList = fragment && words <= 3 ? true : inList && fragment;
     } else {
       merged.push({ ...it });
@@ -185,12 +214,13 @@ export function readPoints(raw: string | undefined, known: { problem?: string } 
   if (carry) merged.push({ text: carry, label: '', problem: false });
   // a plural label at the end of a run of figures ("... (page claims)") covers the figures before it that carry none
   for (let i = merged.length - 1; i > 0; i--) {
-    if (/\b(?:claims|figures|words|quotes|stories)\b/i.test(merged[i].label) && STAT.test(merged[i].text)) {
-      for (let j = i - 1; j >= 0 && !merged[j].label && (STAT.test(merged[j].text) || FIGURE.test(merged[j].text)) && !merged[j].problem; j--) merged[j].label = merged[i].label;
+    const fig = (t: string) => STAT.test(t) || FIGURE.test(t) || /\bper cent\b/i.test(t);
+    if (/\b(?:claims|figures|words|quotes|stories)\b/i.test(merged[i].label)) {
+      for (let j = i - 1; j >= 0 && !merged[j].label && fig(merged[j].text) && !merged[j].problem; j--) merged[j].label = merged[i].label;
     }
   }
   return merged.map((it) => {
-    const figure = (STAT.test(it.text) || FIGURE.test(it.text)) && /\d/.test(it.text);
+    const figure = (STAT.test(it.text) || FIGURE.test(it.text) || /\bper cent\b/i.test(it.text)) && /\d/.test(it.text);
     const clause = looksClause(it.text) && !PARTICIPLE_START.test(it.text) && !JOIN_START.test(it.text);
     const base = { text: it.text, label: it.label, clause, figure };
     const problemLike = it.problem || (clause && PROBLEM_WORD.test(it.text) && !figure && !isImperative(it.text) && !/^(?:it|we|our|its|this|these)\b/i.test(it.text));
@@ -286,5 +316,8 @@ export function sharpenLine(missing: { field: string; change: string }[]): strin
   if (!missing.length) return '';
   return `To sharpen this, give: ${missing.map((m) => `${m.field} (it would change ${m.change})`).join('; ')}.`;
 }
+
+// A typed objection in quotes inside a sentence of ours: the full stop goes after the closing quote only when the objection has no mark of its own.
+export const quotedEnd = (text: string): string => `"${text.trim().replace(/"/g, "'")}"${/[?!.]$/.test(text.trim()) ? '' : '.'}`;
 
 export { cap, proseJoin, capFirst, endSentence };

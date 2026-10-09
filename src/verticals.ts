@@ -325,7 +325,7 @@ export const SUBTYPES: SubType[] = [
   },
   {
     id: 'seller-shipping', vertical: 'logistics-tech', name: 'shipping for online sellers',
-    match: /\b(?:shipping aggregators?|courier aggregators?|multi.?courier|courier partners?|e-?commerce (?:shipping|enablement)|shipping (?:solutions?|platforms?|software|tools?) for (?:small |online |indian )?(?:sellers|merchants|d2c|e-?commerce|online (?:stores?|retailers?|businesses)|small (?:businesses|brands))|(?:sellers|merchants|d2c brands|online (?:stores?|retailers?)) (?:to )?(?:manage|ship|send) (?:their )?(?:shipping|orders|shipments|parcels))\b/i,
+    match: /\b(?:shipping aggregators?|courier aggregators?|multi.?courier|multi.?carrier (?:shipping|parcel|label)s?(?: software| platform| tool)?|(?:buy|print|printing) (?:and print )?(?:discounted )?shipping labels?|courier partners?|e-?commerce (?:shipping|enablement)|shipping (?:solutions?|platforms?|software|tools?) for (?:small |online |indian )?(?:sellers|merchants|d2c|e-?commerce|online (?:stores?|retailers?|businesses)|small (?:businesses|brands))|(?:sellers|merchants|d2c brands|online (?:stores?|retailers?)) (?:to )?(?:manage|ship|send) (?:their )?(?:shipping|orders|shipments|parcels))\b/i,
     model: 'transactions',
     notes: {
       vocabulary: ['courier partner', 'pin code serviceability', 'cash on delivery', 'return to origin', 'non delivery report', 'weight discrepancy', 'pickup', 'shipping label', 'store and marketplace channels', 'remittance'],
@@ -428,7 +428,7 @@ export const SUBTYPES: SubType[] = [
   },
   {
     id: 'payments-banking', vertical: 'fintech', name: 'payments and banking APIs',
-    match: /\b(?:payment gateway|payment processing|payments and banking (?:platform|stack|infrastructure)|banking platform|payments? (?:platform|infrastructure)|payment service provider|payment orchestration|card issuing|card processing|banking as a service|bank account (?:data|api|linking|access|verification)|open banking|core banking|remittance (?:service|platform)|merchant acquiring|(?:connects?|links?) (?:\w+ ){1,3}(?:to )?(?:\w+'?s? )?bank accounts?|financial (?:data )?(?:network|apis?)|payments? apis?|payment links?|card programs?|upi)\b/i,
+    match: /\b(?:payment gateway|payment processing|payments and banking (?:platform|stack|infrastructure)|banking platform|payments? (?:platform|infrastructure)|payment service provider|payment orchestration|card issuing|card processing|banking as a service|bank account (?:data|api|linking|connections?|access|verification)|account (?:and routing number )?verification|ach (?:payments?|transfers?|returns?|debits?)|bank payments?|open banking|core banking|remittance (?:service|platform)|merchant acquiring|(?:connects?|links?) (?:\w+ ){1,3}(?:to )?(?:\w+'?s? )?bank accounts?|financial (?:data )?(?:network|apis?)|payments? apis?|payment links?|card programs?|upi)\b/i,
     model: 'transactions',
     notes: {
       vocabulary: ['payment success rate', 'settlement', 'chargeback', 'authorisation', 'tokenisation', 'sponsor bank', 'sandbox', 'webhook', 'uptime', 'payout'],

@@ -55,7 +55,7 @@ const VERB = new Set(('capture track tell give connect run make help turn let ke
 const IRREG = /^(?:bought|sold|went|came|saw|ran|grew|rose|fell|kept|built|left|held|paid|met|led|found|began|became|chose|sent|spent|stood|took|told|lost|got|made|gave|won|cut|put|set|hit|read)$/;
 const NOT_MAIN = /^(?:that|which|who|whose|where|when|while|if|because)$/;
 // A point that opens on a plain action verb is an instruction ("Show planned and visited outlets side by side"); it stands as a sentence.
-const IMPERATIVE = /^(?:show|let|log|tie|send|post|push|see|get|keep|make|use|put|move|start|stop|build|add|pick|choose|ask|agree|compare|measure|find|read|write|tell|give|take|bring|connect|define|turn|drive|reduce|increase|improve|automate|simplify|replace|remove|align|avoid|reclaim|shrink|raise|free|resolve|expand|launch|pay|act|train|prepare|stay|cut|speed|stitch|unify|deliver|protect|detect|prevent|consolidate|streamline|standardi[sz]e|migrate|onboard|enable|ensure|validate|verify|block|collect|optimi[sz]e|accelerate|boost|grow|retain|convert|recover|deploy|integrate|centrali[sz]e|scale|analy[sz]e|save|link|win|earn|spend|hit)\b/i;
+const IMPERATIVE = /^(?:show|let|log|tie|send|post|push|see|get|keep|make|use|put|move|start|stop|build|add|pick|choose|ask|agree|compare|measure|find|read|write|tell|give|take|bring|connect|define|turn|drive|reduce|increase|improve|automate|simplify|replace|remove|align|avoid|reclaim|shrink|raise|free|resolve|expand|launch|pay|act|train|prepare|stay|cut|speed|stitch|unify|deliver|protect|detect|prevent|consolidate|streamline|standardi[sz]e|migrate|onboard|enable|ensure|validate|verify|block|collect|optimi[sz]e|accelerate|boost|grow|retain|convert|recover|deploy|integrate|centrali[sz]e|scale|analy[sz]e|save|link|win|earn|spend|hit|settle|reconcile|ship|approve|forecast|escalate|submit|respond|authori[sz]e)\b/i;
 const IMPERATIVE_WITH_OBJECT = /^(?:run|check|review|track|share|reach|plan|map|set|test|release|close|open|route|book|name|list|count)\s+(?:a|an|the|every|each|all|one|your|its|their|any|only)\b/i;
 export const startsImperative = (t: string): boolean => IMPERATIVE.test(t.trim());
 export const isImperative = (text: string): boolean => text.trim().split(/\s+/).length >= 3 && (IMPERATIVE.test(text.trim()) || IMPERATIVE_WITH_OBJECT.test(text.trim()));
@@ -68,7 +68,10 @@ export function looksClause(text: string): boolean {
   for (let i = 1; i < Math.min(tokens.length, 10); i++) {
     const w = tokens[i].replace(/[^a-z'-]/g, '');
     if (NOT_MAIN.test(w)) return false;
-    if (AUX.has(w) || IRREG.test(w)) return true;
+    if (/^(?:led|built|held|driven|based)$/.test(w) && /^[A-Z]{2,}$/.test((raw[i - 1] || '').replace(/[^A-Za-z]/g, ''))) continue;   // "API led", "AI driven": a compound adjective
+    if (AUX.has(w)) return true;
+    if (/ed$/.test(w) && /^(?:by|in|to|from|on|with|for|under|within|through|across|over)$/.test((tokens[i + 1] || '').replace(/[^a-z]/g, '')) && !AUX.has(tokens[i - 1].replace(/[^a-z'-]/g, ''))) continue;   // "transcripts delivered in under 300 milliseconds": a participle, not a main verb
+    if (IRREG.test(w) && !(/^(?:led|built|held|driven)$/.test(w) && /^[A-Z]{2,}$/.test((raw[i - 1] || '').replace(/[^A-Za-z]/g, '')))) return true;
     const prev = tokens[i - 1].replace(/[^a-z'-]/g, '');
     if (FUNCTION_WORD.test(prev)) continue;
     const stem = w.replace(/(?:ies)$/, 'y').replace(/(?:es|s|ed|d)$/, '');
@@ -254,17 +257,18 @@ const lowerStart = (s: string): string => lowerFirstSafe(s);
 // One point as a whole sentence. `who` is the product or company the points are about ("" when none is known).
 export function sentenceOf(p: Pt, who: string, variant = 0): string {
   const t = withLabel(p);
+  const tIn = t.replace(/:\s+/, ', namely ');   // a text that has a colon of its own does not follow a lead-in that has one
   if (p.clause) return endSentence(capFirst(t));
   if (PARTICIPLE_START.test(p.text) && who) return endSentence(`${who} is ${lowerStart(t)}`);
   switch (p.role) {
-    case 'result': return endSentence(`${['The result on record', 'One result to hold on to', 'A figure worth knowing'][variant % 3]}: ${lowerStart(t)}`);
-    case 'outcome': return endSentence(`${['The change on offer', 'What readers can expect', 'The difference it makes'][variant % 3]}: ${lowerStart(t)}`);
-    case 'recognition': return endSentence(`${who ? `${who} is on record as` : 'On record'}: ${lowerStart(t)}`);
+    case 'result': return endSentence(`${['The result on record', 'One result to hold on to', 'A figure worth knowing'][variant % 3]}: ${lowerStart(tIn)}`);
+    case 'outcome': return endSentence(`${['The change on offer', 'What readers can expect', 'The difference it makes'][variant % 3]}: ${lowerStart(tIn)}`);
+    case 'recognition': return endSentence(`${who ? `${who} is on record as` : 'On record'}: ${lowerStart(tIn)}`);
     case 'quote': return endSentence(`A customer puts it this way: "${p.text.replace(/^["“]|["”]$/g, '').replace(/"/g, "'")}"${p.label ? ` (${p.label})` : ''}`);
     case 'scale': return endSentence(`The scale: ${lowerStart(t)}`);
     case 'story': return endSentence(`One customer story is titled: ${p.text.replace(/"/g, "'")}${p.label ? ` (${p.label})` : ''}; its title carries no result of its own`);
     case 'problem': return endSentence(`The problem: ${lowerStart(t)}`);
-    default: return endSentence(`${variant % 2 === 0 ? (who ? `How ${who} does it` : 'How it works') : (who ? `What ${who} brings` : 'What it brings')}: ${lowerStart(t)}`);
+    default: return endSentence(`${variant % 2 === 0 ? (who ? `How ${who} does it` : 'How it works') : (who ? `What ${who} brings` : 'What it brings')}: ${lowerStart(tIn)}`);
   }
 }
 // A group of points in one paragraph: statements as sentences; phrases (which cannot stand as a sentence) under one lead-in as a short list.
@@ -352,14 +356,16 @@ export function shapeOf(p: Pt): Shape {
 // The sector file writes an answer pattern for the seller ("Offer a pilot at one site"). To a reader it reads as a way to test the claim.
 const TO_READER: [RegExp, string][] = [
   [/^show\b/i, 'ask to see'], [/^ask\b/i, 'ask'], [/^offer\b/i, 'ask for'], [/^propose\b/i, 'ask for'], [/^give\b/i, 'ask for'], [/^compare\b/i, 'compare'],
-  [/^name\b/i, 'ask for the names of'], [/^state\b/i, 'ask to have stated'], [/^bring\b/i, 'ask to be shown'], [/^explain\b/i, 'ask to have explained'], [/^walk\b/i, 'ask to be walked'],
-  [/^plan\b/i, 'plan'], [/^map\b/i, 'map'], [/^tie\b/i, 'tie'], [/^prepare\b/i, 'prepare'], [/^align\b/i, 'align'], [/^start\b/i, 'start'], [/^agree\b/i, 'agree'], [/^use\b/i, 'use'],
-  [/^pilot\b/i, 'ask for a pilot'], [/^measure\b/i, 'measure'], [/^model\b/i, 'model'], [/^describe\b/i, 'ask to have described'], [/^time\b/i, 'time'], [/^take\b/i, 'take'], [/^share\b/i, 'ask to be shown'], [/^project\b/i, 'project'],
-  [/^say\b/i, 'ask to be told'], [/^count\b/i, 'count'], [/^find\b/i, 'find'], [/^list\b/i, 'list'], [/^set\b/i, 'set'], [/^run\b/i, 'run'], [/^test\b/i, 'test'],
+  [/^name\b/i, 'ask the vendor to name'], [/^state\b/i, 'ask the vendor to state'], [/^bring\b/i, 'ask the vendor to bring'], [/^explain\b/i, 'ask the vendor to explain'], [/^walk\b/i, 'ask the vendor to walk'],
+  [/^position it\b/i, 'treat it'], [/^plan\b/i, 'plan'], [/^map\b/i, 'map'], [/^tie\b/i, 'tie'], [/^prepare\b/i, 'prepare'], [/^align\b/i, 'align'], [/^start\b/i, 'start'], [/^agree\b/i, 'agree'], [/^use\b/i, 'use'],
+  [/^pilot\b/i, 'ask for a pilot'], [/^measure\b/i, 'measure'], [/^model\b/i, 'model'], [/^describe\b/i, 'ask the vendor to describe'], [/^time\b/i, 'time'], [/^take\b/i, 'take'], [/^share\b/i, 'ask to be shown'], [/^project\b/i, 'project'],
+  [/^say\b/i, 'ask the vendor to say'], [/^count\b/i, 'count'], [/^find\b/i, 'find'], [/^list\b/i, 'list'], [/^set\b/i, 'set'], [/^run\b/i, 'run'], [/^test\b/i, 'test'],
 ];
 // Template wording written for the author, said to the reader: "the buyer side" is "your side", "the buyer" is "you".
 export function toReader(s: string): string {
   const AGREE: Record<string, string> = { gets: 'get', has: 'have', is: 'are', uses: 'use', sees: 'see', needs: 'need', wants: 'want', pays: 'pay', buys: 'buy', does: 'do', runs: 'run', knows: 'know', takes: 'take', makes: 'make', owns: 'own', signs: 'sign', reads: 'read', checks: 'check', chooses: 'choose', gains: 'gain', receives: 'receive', measures: 'measure' };
+  const base = (v: string): string => (v.toLowerCase() === 'has' ? 'have' : v.toLowerCase() === 'is' ? 'are' : v.toLowerCase() === 'does' ? 'do' : /(?:ies)$/i.test(v) ? v.replace(/ies$/i, 'y') : /(?:ches|shes|sses|xes|zes)$/i.test(v) ? v.replace(/es$/i, '') : /oes$/i.test(v) ? v.replace(/es$/i, '') : /[^s]s$/i.test(v) ? v.replace(/s$/i, '') : v);
+  s = s.replace(/\bthe buyer (\w+)\b/gi, (m, v: string) => (/[^s]s$/i.test(v) || /^(?:has|is|does)$/i.test(v) ? `you ${base(v)}` : m));
   return s.replace(/\bon the buyer(?:'s)? side\b/gi, 'on your side').replace(/\bthe buyer(?:'s)? side\b/gi, 'your side').replace(/\bthe buyer'?s own\b/gi, 'your own').replace(/\bthe buyer uses\b/gi, 'you use').replace(/\bthe buyer'?s\b/gi, 'your').replace(/\bthe (?:value|result|outcome) the buyer (\w+)\b/gi, (m, v) => m.replace(/the buyer \w+/i, `you ${AGREE[v.toLowerCase()] || v}`)).replace(/\bthe buyer\b/gi, 'you').replace(/\byou (gets|has|is|uses|sees|needs|wants|pays|buys|does|runs|knows|takes|makes|owns|signs|reads|checks|chooses|gains|receives|measures)\b/gi, (m, v) => `you ${AGREE[v.toLowerCase()]}`);
 }
 // The way to settle an objection as a phrase ("ask to see ..."), '' when the pattern holds nothing a reader can do.
@@ -385,6 +391,9 @@ export function sharpenLine(missing: { field: string; change: string }[]): strin
   if (!missing.length) return '';
   return `To sharpen this, give: ${missing.map((m) => `${m.field} (it would change ${m.change})`).join('; ')}.`;
 }
+
+// The sector line without the request to the user: what could be given belongs in the closing line, where it is asked for once.
+export const cleanSectorLine = (line: string): string => line.replace(/; set business_model to change it/g, '').replace(/; set business_model \([^)]*\) for advice that fits it/g, '');
 
 // A typed objection in quotes inside a sentence of ours: the full stop goes after the closing quote only when the objection has no mark of its own.
 export const quotedEnd = (text: string): string => `"${text.trim().replace(/"/g, "'")}"${/[?!.]$/.test(text.trim()) ? '' : '.'}`;

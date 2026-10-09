@@ -364,7 +364,9 @@ test("round 2, thought leadership: unlabeled proof is split, no bare story title
   for (const m of t.matchAll(/\*\*Headline:\*\* ([^\n]+)/g)) assert.doesNotMatch(m[1], /\.\.\.|\bTo$|Marke\b/);
   assert.doesNotMatch(t, /Say what|Set the idea out|Turn the position into steps|Open with|Close with/);
   // run 21c: draft rewrite. The opening of a framework article says what the article does with the take.
-  assert.match(t, /This article sets that position out as a framework/);
+  // run 22 round 3: the tool does not talk about itself inside an article; a framework article names its components, numbered, in the author's own words
+  assert.doesNotMatch(t, /This article sets that position out as a framework|Article \d starts from/);
+  assert.match(t, /### The components\n\n1\. /);
   assert.doesNotMatch(t, /That argument has a test/);
 });
 test("round 2, case study: an unnamed customer gets no one company's result as its headline or snippet, and a narrative line is not offered as a customer quote", async () => {

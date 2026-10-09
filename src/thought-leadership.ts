@@ -57,7 +57,7 @@ export function generateThoughtLeadership(args: {
   const takeNew = takeAll.filter((t) => { const n = t.toLowerCase().replace(/\W+/g, ' ').trim(); return !(topicNorm.includes(n) || n.includes(topicNorm)); });
   const parts = (takeNew.length ? takeNew : takeAll).map((t) => clipEcho(t, ECHO));
   // a take typed as "X's view on Y: Z" is opened as "X's view on Y is this: Z", so the first article does not start on a fragment
-  const viewMatch = /^([A-Z][\w&.-]*(?:\s[A-Z][\w&.-]*)?(?:'s|’s)\s+(?:view|take|position)\s+on\s+(?:[^:()]|\([^)]*\))+?):\s+\S/.exec(soft(yourTake));
+  const viewMatch = soft(yourTake).match(/^([A-Z][\w&.-]*(?:\s[A-Z][\w&.-]*)?(?:'s|’s)\s+(?:view|take|position)\s+on\s+(?:[^:()]|\([^)]*\))+?):\s+\S/);
   const view = viewMatch ? viewMatch[1] : '';
   const brand = brandFrom(yourTake, args.author_background || '', topic);
   const tags = tagsFor(`${topic} ${yourTake} ${proofRaw}`, brand, v);

@@ -16,6 +16,7 @@ const ORCHARD = {
   include_polls: true,
   product_mention_level: "subtle",
   your_product: "Orchardly, a field sales app and distributor management software for FMCG brands",
+  business_model: "saas",
 };
 const NORTH = {
   topic: "Moving a service desk to a new provider without a dip in service levels",

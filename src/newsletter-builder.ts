@@ -1,7 +1,7 @@
 import { lowerFirstIfCommon, cap } from './utils.js';
 import { readContext, audienceLine, isClause, type Vertical } from './sector.ts';
 import { splitList, unpackTopic, fixNumbers, endSentence, capFirst, proseJoin, productParts, toYou, bestQuestion, softenClaims } from './draft.ts';
-import { readPoints, groupPhrases, sentenceOf, renderGroup, readersFit, isStatistic, companyFrom, shorten, shortReaders, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, nk, quotedEnd, lowerFirstSafe, type Pt } from './rw-content.ts';
+import { cleanSectorLine, looksClause, readPoints, groupPhrases, sentenceOf, renderGroup, readersFit, isStatistic, companyFrom, shorten, shortReaders, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, nk, quotedEnd, lowerFirstSafe, type Pt } from './rw-content.ts';
 
 // Run 22 (rewrite): the issue is written, not assembled. The key points are read for what they are (the problem, what changes, how it
 // works, the evidence), each is said in a whole sentence, and the sector file adds the measures, the proof to ask for and the questions
@@ -42,6 +42,11 @@ export function generateNewsletter(args: {
   const fits = !vFull || !readers || readersFit(readers, vFull);   // the readers the user named win over the sector's default readers
   // a general software reading (SaaS, software) that does not fit the readers named is not used in the draft at all: its measures belong to other readers
   const v = vFull && !fits && !vFull.subtype && ['saas', 'software'].includes(vFull.id) ? null : vFull;
+  // do the readers named share a word with the sector's own buyer roles? When they do not (online sellers against heads of supply chain), the sector's
+  // measures still help but its questions and proof about systems, sites and lanes are left out
+  const stemsOf = (t: string) => new Set((t.toLowerCase().match(/[a-z]{4,}/g) || []).map((x) => x.replace(/(?:ing|ed|es|s)$/, '').slice(0, 6)));
+  const rolesFit = !v || !readers || [...stemsOf(readers)].some((x) => stemsOf(v.buyerRoles.join(' ')).has(x));
+  const ENTERPRISE = /\b(?:systems?|data|owns?|owners?|lanes?|contracts?|vendors?|tenders?|procure\w*|erp|wms|tms|audit\w*|approv\w*|committee|stakeholders?|sign(?:s|ed)? off)\b/i;
   const kind = v ? (v.name.includes(',') ? v.name.split(',').slice(1).join(',').trim() : v.name) : '';
   const forWhom = readers || (kind ? `teams in ${kind}` : 'your team');
 
@@ -97,12 +102,12 @@ export function generateNewsletter(args: {
     sections.push({ heading: nm.how, body: [renderGroup(hows, who, bring, 1), m ? `${cap(forWhom)} would judge it on ${m}.` : ''].filter(Boolean).join('\n\n') });
   }
   if (evidence.length) {
-    const proof = v ? `When a vendor shows you results like these, ${forWhom === 'your team' ? 'look for' : 'the evidence to ask for is'} ${lower(toYou(v.proofShape.replace(/\.$/, '')))}.` : '';
+    const proof = v ? (rolesFit ? `When a vendor shows you results like these, ${forWhom === 'your team' ? 'look for' : 'the evidence to ask for is'} ${lower(toYou(v.proofShape.replace(/\.$/, '')))}.` : 'When a vendor shows you results like these, ask for the same measure before and after, over the same period, for a group of a size you can compare with yours.') : '';
     sections.push({ heading: nm.evidence, body: [renderGroup(evidence, who, 'The results on record:'), proof].filter(Boolean).join('\n\n') });
   }
   // the reader's own check: the sector's questions, said to the reader
   if (v) {
-    const free = v.discovery.filter((d) => !/\bclient'?s?\b|current provider|signs off each|governed|\bme\b|\bour\b|\bwe\b/i.test(d));
+    const free = v.discovery.filter((d) => !/\bclient'?s?\b|current provider|signs off each|governed|\bme\b|\bour\b|\bwe\b/i.test(d) && (rolesFit || !ENTERPRISE.test(d)));
     const hookFirst = free[0] || '';
     const used = new Set<string>(hookFirst ? [hookFirst] : []);
     const n = segment === 'executives' ? 1 : 2;
@@ -111,8 +116,11 @@ export function generateNewsletter(args: {
     const ms = v.metrics.filter((m) => !usedMetric.has(m)).slice(0, 2);
     const lead = asked.length === 1 ? 'Put this question to your own team' : 'Put these two questions to your own team';
     const qs = asked.length === 1 ? `"${asked[0]}"` : `First, "${asked[0]}" Second, "${asked[1]}"`;
-    const body = [asked.length ? `${lead} this week. ${qs}` : '', ms.length ? `Whatever the answers, write down where you stand today on ${proseJoin(ms)}, so that the next change has a number to beat.` : ''].filter(Boolean).join(' ');
+    const body = asked.length ? [`${lead} this week. ${qs}`, ms.length ? `Whatever the answers, write down where you stand today on ${proseJoin(ms)}, so that the next change has a number to beat.` : ''].filter(Boolean).join(' ') : ms.length ? `Put this to your own team this week: where do you stand today on ${proseJoin(ms)}, and who looks at those numbers? Write the answers down, so that the next change has a number to beat.` : '';
     if (body) sections.push({ heading: nm.check, body });
+  }
+  if (!v && given && (hows.length || outcomes.length || evidence.length)) {
+    sections.push({ heading: nm.check, body: 'Put these two questions to your own team this week. First, "Where does this happen in your own work today, and who feels it first?" Second, "Which one number would tell you whether it is getting better?" Whatever the answers, write them down, so that the next change has a baseline to beat.' });
   }
   const pushWho = readers ? cap(readers) : kind ? `Teams in ${kind}` : 'Readers';
   // where readers push back: the sector objection that shares most words with the points, and a way to test it
@@ -132,13 +140,14 @@ export function generateNewsletter(args: {
 
   // ---- subject, preview, opening ------------------------------------------------------------------------------------
   const headSource = parts.problem ? parts.problem.split(/;\s+/)[0] : label;
-  const headMax = parts.short ? 90 : 66;
-  const head = shorten(headSource, headMax, true) || (who && readers ? `${who} for ${readers}` : v ? `Where do you stand on ${v.metrics[0]}?` : shorten(label, 66));
+  const headMax = parts.short ? 90 : 72;
+  const pieceHeads = (parts.problem ? parts.problem.split(/;\s+|,\s+(?:and\s+)?(?=[a-z])/) : []).concat(problems.flatMap((p) => p.text.split(/;\s+|,\s+(?:and\s+)?(?=[a-z])/))).map((x) => x.trim()).filter(Boolean);
+  const head = shorten(headSource, headMax, true) || pieceHeads.map((x) => shorten(x, headMax, true)).find((x) => x && x.split(/\s+/).length >= 4) || (v ? `Where do you stand with ${v.metrics[0]}?` : who && readers ? `${who} for ${readers}` : shorten(label, 66));
   const clause = !parts.short || isClause(topic) || LABEL_CLAUSE.test(label);
   const subjects = subjectLines(head, type, who, v, forWhom, ctaGoal, readers, clause);
   const roadmap = sections.length ? `${casual ? 'Here is what is in this issue' : 'In this issue'}: ${proseJoin(sections.map((s) => lower(s.heading)))}.` : '';
   const openLines: string[] = [];
-  if (opening) openLines.push(opening.clause && opening.text.includes('; ') && opening.text.split('; ').every((x) => x.trim().split(/\s+/).length >= 4) ? opening.text.split('; ').map((x) => endSentence(capFirst(x.trim()))).join(' ') : sentenceOf(opening, who));
+  if (opening) openLines.push(openingSentences(opening, who));
   else openLines.push(parts.short ? `This issue is about ${clause ? `"${label}"` : lower(label)}.` : `This issue is about ${lower(head)}.`);
   if (v) openLines.push(`For ${forWhom}, the numbers to watch are ${proseJoin(v.metrics.slice(0, 2))}.`);
   if (previous.length) {
@@ -149,13 +158,19 @@ export function generateNewsletter(args: {
   const previewPool = [v ? `For ${forWhom}, the numbers to watch are ${proseJoin(v.metrics.slice(0, 2))}.` : '', firstSentence(openLines[0]), sections.length ? `Inside: ${proseJoin(sections.map((x) => lower(x.heading)))}.` : '', who ? `From ${who}: ${lower(head)}.` : '', `${cap(head)}.`,
     sections.length >= 2 ? `${sections.length} short sections and one next step.` : '', `A ${type.replace(/_/g, ' ')} issue for ${forWhom}.`, sections[0] ? `Starting with ${lower(sections[0].heading)}.` : ''];
   const previewOptions: string[] = [];
-  for (const c of previewPool) { const x = c.trim(); if (x && x.length <= 125 && !previewOptions.some((y) => nk(y) === nk(x))) previewOptions.push(x); }
+  for (const c of previewPool) { const x = c.trim(); if (x && x.length >= 28 && x.length <= 125 && !previewOptions.some((y) => nk(y) === nk(x))) previewOptions.push(x); }
   const preview = (i: number) => previewOptions[i % previewOptions.length];
 
   // ---- closing -----------------------------------------------------------------------------------------------------
   const about = productName && productDescription && productDescription !== productName && productDescription.length > productName.length + 3 ? `${productName} is ${lower(productDescription.replace(/\.$/, ''))}. ` : '';
   const next = VERB_START.test(ctaGoal) ? `you can ${lower(ctaGoal)}` : `the next step is ${lower(ctaGoal)}`;
   const closing = `${about}${casual ? 'If this made you think, ' : 'If you would like to take this further, '}${next}.`;
+  // the button says the action in a few words: a bracket note is left out, and a long product name is the short name the issue already uses
+  const buttonText = ((): string => {
+    let b = ctaGoal.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+    if (who && b.length > 45) { const m = b.match(/^(.*?\b(?:about|with|from|for|to)\s+)(\S.*)$/i); if (m && m[2].toLowerCase().startsWith(who.toLowerCase()) && m[2].length > who.length + 3) b = `${m[1]}${who}`; }
+    return cap(b);
+  })();
 
   // ---- what was not given ------------------------------------------------------------------------------------------
   const missing: { field: string; change: string }[] = [];
@@ -170,7 +185,7 @@ export function generateNewsletter(args: {
   // ---- the hooks ---------------------------------------------------------------------------------------------------
   // alternative openings: a question the issue does not already ask, and the figure as the first line
   const askedInDraft = new Set(sections.flatMap((x) => x.body.split('"')));
-  const hookQuestion = v ? toYou(v.discovery.filter((d) => !/\bclient'?s?\b|current provider|signs off each|governed|\bme\b|\bour\b|\bwe\b/i.test(d))[0] || '') : '';
+  const hookQuestion = v ? toYou(v.discovery.filter((d) => !/\bclient'?s?\b|current provider|signs off each|governed|\bme\b|\bour\b|\bwe\b/i.test(d) && (rolesFit || !ENTERPRISE.test(d)))[0] || '') : '';
   const hooks: { name: string; text: string }[] = [];
   if (hookQuestion) hooks.push({ name: 'Question', text: hookQuestion });
   const fig = figures.find((p) => p.label && isStatistic(p.text)) || figures.find((p) => isStatistic(p.text));
@@ -178,14 +193,14 @@ export function generateNewsletter(args: {
 
   const sectorBlock = vFull ? `## Sector Notes: ${cap(vFull.name)}
 
-${ctx.line}
+${cleanSectorLine(ctx.line)}
 
 - ${fits ? audienceLine(vFull) : `Readers named in your input: ${readers}. The notes below were written for ${vFull.name}, whose usual readers are ${vFull.buyerRoles.slice(0, 3).join(', ')}; they do not match your readers, so the draft does not use them.`}
 - **Terms this audience uses:** ${vFull.vocabulary.slice(0, 6).join(', ')}.
 - **Objections the sector file lists${fits ? '' : ' (written for its own readers, so check them against yours)'}, and how to settle each:** ${vFull.objections.map((o) => `"${o.objection}" (${lower(o.response.replace(/\.$/, ''))})`).join('; ')}.
 - **A proof point that lands:** ${vFull.proofShape}` : `## Sector notes
 
-${ctx.line}`;
+${cleanSectorLine(ctx.line)}`;
 
   const table = `| Setting | Value |
 |---------|-------|
@@ -212,9 +227,7 @@ ${sections.map((s, i) => `### ${i + 1}. ${s.heading}\n\n${s.body}`).join('\n\n')
 
 ${closing}
 
-**${cap(ctaGoal)}**
-
-Button: ${cap(ctaGoal)}
+Button: ${buttonText}
 
 ---
 
@@ -239,6 +252,16 @@ ${missing.length ? `\n${sharpenLine(missing)}\n` : ''}`;
   return out.replace(/\n{3,}/g, '\n\n');
 }
 
+// The problem as the issue opens: a run of clauses is said as sentences of their own; a run of phrases is said as a list of problems.
+function openingSentences(opening: Pt, who: string): string {
+  for (const cut of [/;\s+/, /;\s+|,\s+(?:and\s+)?(?=[a-z])/]) {
+    const pieces = opening.text.split(cut).map((x) => x.trim()).filter(Boolean);
+    if (opening.clause && pieces.length >= 2 && pieces.every((x) => x.split(/\s+/).length >= 5 && looksClause(x))) return pieces.map((x) => endSentence(capFirst(x))).join(' ');
+  }
+  const phrases = opening.text.split(/;\s+/).map((x) => x.trim()).filter(Boolean);
+  if (!opening.clause && phrases.length >= 2) return endSentence(`${phrases.length === 2 ? 'Two problems' : phrases.length === 3 ? 'Three problems' : 'Several problems'} come up: ${phrases.map(lower).join('; ')}`);
+  return sentenceOf(opening, who);
+}
 // The first whole sentence of a paragraph, short enough for a preview line.
 function firstSentence(text: string): string {
   const one = text.split(/(?<=[.!?])\s+(?=[A-Z"])/)[0].trim();
@@ -250,25 +273,29 @@ function settleFor(response: string): string {
   return `The way to test it is to ${r.charAt(0).toLowerCase()}${r.slice(1)}.`.replace(/\bthe buyer'?s own\b/gi, 'your own').replace(/\bthe buyer'?s\b/gi, 'your').replace(/\bthe buyer\b/gi, 'you');
 }
 
-// Four different subject lines, each short and whole. The first one is the subject of the draft.
+// Four different subject lines, each short and whole. The first one is the subject of the draft; no two of the others repeat one phrase.
 function subjectLines(head: string, type: string, who: string, v: Vertical | null, forWhom: string, ctaGoal: string, readers: string, clause: boolean): string[] {
   const mid = lower(head);
   const m0 = v ? v.metrics[0] : '';
   const m1 = v ? v.metrics[1] : '';
   const readerHead = readers && readers.length <= 40 ? `For ${readers}: ${mid}` : '';
   const base: Record<string, string[]> = {
-    educational: [head, m0 ? `Where do you stand on ${m0}?` : '', who ? `${who}: ${mid}` : '', readerHead, m0 && m1 ? `${cap(m0)} and ${m1}: what to check` : ''],
+    educational: [head, m0 ? `Where do you stand with ${m0}?` : '', who ? `${who}: ${mid}` : '', readerHead, m0 && m1 ? `${cap(m0)} and ${m1}: what to check` : ''],
     product_update: [who ? `New from ${who}: ${mid}` : `New: ${mid}`, head, m0 ? `What this changes for ${m0}` : '', readerHead, who ? `${who}: ${mid}` : ''],
     industry_news: [head, `Industry news: ${mid}`, m0 ? `What this means for ${m0}` : '', readerHead, who ? `${who} on ${mid}` : ''],
-    thought_leadership: [head, m0 ? `A view on ${m0}` : '', who ? `${who}: ${mid}` : '', readerHead, m0 ? `Where do you stand on ${m0}?` : ''],
-    curated_links: [`${head}: this week's reading`, head, readerHead, m0 ? `Reading on ${m0}` : '', who ? `${who}: ${mid}` : '']
+    thought_leadership: [head, m0 ? `Thinking about ${m0}` : '', who ? `${who}: ${mid}` : '', readerHead, m0 ? `Where do you stand with ${m0}?` : ''],
+    curated_links: [`${head}: this week's reading`, head, readerHead, m0 ? `Reading about ${m0}` : '', who ? `${who}: ${mid}` : '']
   };
-  const pool = [...(base[type] || base.educational), ctaGoal ? `Next step: ${lower(ctaGoal)}` : '', `${head}: the issue`, clause ? `A question for ${forWhom}` : `${head}: read on`];
+  const pool = [...(base[type] || base.educational), m0 && m1 ? `${cap(m0)} and ${m1}: what to check` : '', m0 ? `Questions to ask your team about ${m0}` : '', ctaGoal ? `Next step: ${lower(ctaGoal)}` : '', `${head}: the issue`, clause ? `A question for ${forWhom}` : `${head}: read on`, `A short read for ${forWhom}`, `What to check this week, for ${forWhom}`];
   const out: string[] = [];
+  let withHead = 0;
   for (const c of pool) {
     const s = c.trim();
     if (!s || s.length > Math.max(76, head.length + 4)) continue;
     if (out.some((x) => x.toLowerCase() === s.toLowerCase())) continue;
+    // an alternative repeats the subject's own words at most once; a name is never said twice in one line
+    if (out.length && s.toLowerCase().includes(mid)) { if (withHead >= 1) continue; withHead++; }
+    if (who && s.toLowerCase().split(who.toLowerCase()).length > 2) continue;
     out.push(s);
   }
   while (out.length < 4) out.push(`${head} (${out.length + 1})`);

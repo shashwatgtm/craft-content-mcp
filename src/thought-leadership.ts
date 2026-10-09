@@ -2,7 +2,7 @@ import { cap, lowerFirstIfCommon, titleWords } from './utils.js';
 import { cleanClaims, tagsFor } from './content-repurposer.ts';
 import { readContext, isClause, clipWords, type Vertical } from './sector.ts';
 import { parseProof, fixNumbers, RECOGNITION, endSentence, capFirst, shortenClauses, proseJoin, brandFrom, claimsToSource, headlineSubject, KIND_NOTE, bestQuestion, clipAtWord, dropTail, type ProofItem } from './draft.ts';
-import { looksClause, isInstruction, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, shorten, quotedEnd, readersFit, shortReaders, splitQuoteRuns, isStatistic, lowerFirstSafe, toReader as toYou } from './rw-content.ts';
+import { cleanSectorLine, looksClause, isInstruction, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, shorten, quotedEnd, readersFit, shortReaders, splitQuoteRuns, isStatistic, lowerFirstSafe, toReader as toYou } from './rw-content.ts';
 
 // Run 21c (draft rewrite): the series is a first draft built from the inputs. Each article is written out in full sentences: an opening
 // that states one part of the take, sections built from the proof points, the sector's objections and measures, and a closing line.
@@ -138,7 +138,7 @@ ${sectorBlock(vFull, askedQuestions.has('who'))}${generic ? '\n- The readers you
 
 ## Notes for you
 
-${ctx.line}
+${cleanSectorLine(ctx.line)}
 
 ${numArticles === 1 ? 'One article' : `${numArticles} articles`} in the ${articleType.replace(/_/g, ' ')} style, written for ${readerNoun}.
 
@@ -267,6 +267,7 @@ const POSITION_HEADING: Record<string, string> = { contrarian: 'The position in 
 const NEXT_HEADINGS = ['What to do next', 'Where to start', 'The first thing to try', 'What to try this week', 'How to begin'];
 for (const [k, row] of Object.entries(HEADINGS)) { row.position = POSITION_HEADING[k]; row.next = 'What to do next'; }
 // The word that numbers a part of the take in each article type.
+const ON_ITS_OWN: Record<string, string> = { contrarian: 'one part of the position', how_to: 'one step', lessons_learned: 'one lesson', prediction: 'one prediction', framework: 'one component of the framework' };
 const PART_WORD: Record<string, string> = { contrarian: 'Part', how_to: 'Step', lessons_learned: 'Lesson', prediction: 'Prediction', framework: 'Component' };
 // [phrase headline, clause suffix]: a topic that is a clause ("how finance teams close the month") goes before a colon.
 const TITLES: Record<string, [(t: string) => string, string][]> = {
@@ -496,8 +497,8 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
   let first: string;
   if (a.index === 0 && list.length >= 2) first = a.view ? `${a.view} has ${list.length} ${list.length === 2 ? 'parts' : 'parts'}.` : '';
   else if (a.index === 0) first = a.view ? `${a.view} is this: ${lowThesis}.` : sentence(clipEcho(thesis, ECHO));
-  else if (!repeat && multi) first = `${word} ${a.index + 1}: ${sentence(clipEcho(thesis, ECHO))}`;
-  else first = `This follows "${a.heads[a.index - 1].title}", the article before it in the series.`;
+  else if (!repeat && multi) first = `Take ${ON_ITS_OWN[a.type] || ON_ITS_OWN.contrarian} on its own: ${lowThesis}.`;
+  else first = `This picks up from "${a.heads[a.index - 1].title}".`;
   // the measure this reader watches, only when the sector's measure shares words with the take
   const mm = v ? rankMetrics(v, a.takeText).find((x) => x.ok && !a.metricsSeries.has(x.m)) : undefined;
   if (mm) a.metricsSeries.add(mm.m);

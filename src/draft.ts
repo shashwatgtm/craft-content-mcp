@@ -355,7 +355,7 @@ export function productParts(product: string): { name: string; facts: string[]; 
   const second = segs[1] || '';
   const listy = segs.length >= 2 && (segs[0] || '').split(/\s+/).length <= 3 && /^[a-z]/.test(second) && !/^(?:an?|the|our|its|their|it|is|are|that|which)\b/i.test(second) && /\band\b/i.test(second.split(/[,:;]/)[0]);
   if (listy) first = `${segs[0]}, ${second}`;
-  // "Sonata managed services from Sonata Software" is named by what comes before "from"
+  // "Brightfield managed services from Brightfield Software" is named by what comes before "from"
   const from = /^(.+?)\s+(?:from|by|of)\s+[A-Z]/.exec(first);
   if (first.split(/\s+/).length > 5 && from) first = from[1];
   const words = first.split(/\s+/);

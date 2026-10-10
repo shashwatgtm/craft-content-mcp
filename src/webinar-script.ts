@@ -40,7 +40,7 @@ export function generateWebinarScript(args: {
   const { role, field, connector } = splitAudience(audience);
   const duration = args.duration || '60_min';
   const type = args.webinar_type;
-  const speakerRaw = args.speakers ? stripGuardQuotes(args.speakers) : '';
+  const speakerRaw = args.speakers ? stripGuardQuotes(args.speakers, true) : '';
   const speakerList = speakerRaw
     ? (/[;\n]/.test(speakerRaw) ? speakerRaw.split(/[;\n]/).map((x) => x.trim()).filter(Boolean) : joinNameAndTitle(splitList(speakerRaw), speakerRaw))
     : [];

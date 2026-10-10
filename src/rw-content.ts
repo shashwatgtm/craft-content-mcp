@@ -5,13 +5,19 @@
 
 import { splitList, fixNumbers, endSentence, capFirst, proseJoin, clipAtWord, dropTail, tidyPoint, STAT, FIGURE, RECOGNITION, SCALE } from './draft.ts';
 import { cap, lowerFirstIfCommon, isCommonWord } from './utils.js';
+import { neutraliseText } from './echo-safe.ts';
 
 // ---- the text as typed -------------------------------------------------------------------------------------------------------
 
-// The entry safeguard quotes a whole field in curly quotes when a part of it looks like an instruction. The quotes are not the user's.
-export function stripGuardQuotes(s: string): string {
+// The entry safeguard quotes a whole field in curly quotes when a part of it looks like an instruction. The quotes are not the user's, so they are taken off
+// for fields that are split into points (each instruction-like point is quoted again later). With keepIfInstruction a field that is built into a sentence
+// as it stands (a byline, "written for ...", a speaker line) keeps the safeguard's quotes when it is instruction-like (run 22 close: the final hostile probe
+// found the instruction text woven into those lines without them); quotes the user typed round a plain field are unwrapped either way.
+export function stripGuardQuotes(s: string, keepIfInstruction = false): string {
   const t = s.trim();
-  return /^[“"][\s\S]*[”"]$/.test(t) && !/[“”]/.test(t.slice(1, -1)) && t.length > 2 && /^“/.test(t) ? t.slice(1, -1).trim() : t;
+  if (!(/^[“"][\s\S]*[”"]$/.test(t) && !/[“”]/.test(t.slice(1, -1)) && t.length > 2 && /^“/.test(t))) return t;
+  const inner = t.slice(1, -1).trim();
+  return keepIfInstruction && /^“[\s\S]*”$/.test(neutraliseText(inner)) ? t : inner;
 }
 // Numbers typed with grouping commas that were turned into semicolons ("80;000", "5;00;000") are put back.
 export function splitQuoteRuns(s: string): string {

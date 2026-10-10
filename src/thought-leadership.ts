@@ -27,16 +27,17 @@ export function generateThoughtLeadership(args: {
   article_type?: string;
 }): string {
   const g = (x?: string) => stripGuardQuotes((x || '').trim());
+  const gk = (x?: string) => stripGuardQuotes((x || '').trim(), true);
   const orders: string[] = [];
-  const topic = fixNumbers(g(args.topic));
+  const topic = fixNumbers(gk(args.topic));
   // sentences of the take that read like an order to the writing tool are kept aside, quoted, and never built into an article
   const takeRaw = fixNumbers(g(args.your_take).replace(/^"|"$/g, ''));
   const takeKept = takeRaw.split(/(?<=[.!?])\s+(?=[A-Z0-9"])/).filter((sn) => { if (isInstruction(sn)) { orders.push(sn.trim()); return false; } return true; });
   const yourTake = takeKept.join(' ').trim() || topic;
-  const targetReader = g(args.target_reader);
+  const targetReader = gk(args.target_reader);
   const proofRaw = g(args.proof_points);
   const hasAuthor = !!(args.author_background && g(args.author_background));
-  const authorBackground = hasAuthor ? g(args.author_background) : '';
+  const authorBackground = hasAuthor ? gk(args.author_background) : '';
   const numArticles = args.num_articles || 3;
   const articleType = args.article_type && TYPE_VERB[args.article_type] ? args.article_type : 'contrarian';
   // Run 19 (D80, problems 4 and 8): the sector is read from every text the user gave.

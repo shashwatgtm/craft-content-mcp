@@ -8,6 +8,7 @@
 - Docs (MCP and REST, every field): https://craft-content.gtmhelix.com/docs/
 - FAQ: https://craft-content.gtmhelix.com/faq/
 - Privacy policy: https://craft-content.gtmhelix.com/privacy/
+- Terms of use: https://craft-content.gtmhelix.com/terms/
 - Local npm package: @shashwatgtmalpha/craft-content-mcp
 - Source code: https://github.com/shashwatgtm/craft-content-mcp
 - Built by: Shashwat Ghosh, Helix GTM Consulting (https://www.gtmexpert.com)

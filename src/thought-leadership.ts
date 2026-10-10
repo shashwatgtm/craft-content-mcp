@@ -45,16 +45,7 @@ export function generateThoughtLeadership(args: {
   // a general software reading that does not fit the readers the user named is not used in the articles: its measures belong to other readers
   const fits = !vFull || readersFit(shortReaders(targetReader) || targetReader, vFull);
   const generic = !!vFull && !fits && !vFull.subtype && ['saas', 'software'].includes(vFull.id);
-  // a general software reading (no sub type) says nothing about a niche topic: its buying group and its proof shape are left out, and a question or an
-  // objection is kept only when it shares words with what the author wrote; the sector's own sub types keep everything
-  const softAll = !!vFull && !vFull.subtype && ['saas', 'software'].includes(vFull.id);
-  const STOP6 = new Set(['should', 'before', 'through', 'during', 'around', 'because', 'across', 'another', 'between', 'become', 'rather', 'within', 'without', 'always', 'people', 'things']);
-  const stems6 = (t: string) => new Set((t.toLowerCase().match(/[a-z]{6,}/g) || []).filter((x) => !STOP6.has(x)).map((x) => x.slice(0, 6)));
-  const hayStems = stems6(`${topic} ${args.your_take} ${args.proof_points || ''}`);
-  const overlap = (t: string) => [...stems6(t)].filter((x) => hayStems.has(x)).length;
-  const v = softAll && vFull
-    ? { ...vFull, metrics: generic ? [] as string[] : vFull.metrics, committee: '', proofShape: '', discovery: vFull.discovery.filter((d) => overlap(d) >= 1), objections: vFull.objections.filter((o) => overlap(`${o.objection} ${o.response}`) >= 1) }
-    : vFull;
+  const v = generic && vFull ? { ...vFull, metrics: [] as string[] } : vFull;   // the objections and questions stay; the measures of other readers go
 
   // Proof points: sorted by what they are. Customer results, quotes and story titles carry the argument; recognition, company-wide counts and page claims are credibility lines.
   const suggested = !proofRaw;
@@ -65,23 +56,8 @@ export function generateThoughtLeadership(args: {
     // a customer who "says: '...'" is a quote; a story title that holds a figure reports a result, so it is not "a headline with no result"
     if (i.kind === 'result' && SAYS.test(i.text)) return { ...i, kind: 'quote' };
     if (i.kind === 'title' && isStatistic(i.text)) return { ...i, kind: 'result' };
-    // a labelled quote is a quote, whatever the text looks like
-    const tag = i.text.match(/\s*\(([^()]*\b(?:quote|testimonial))\)\s*$/i);
-    if (i.kind !== 'quote' && !isPartner(i) && (/quote|testimonial/i.test(i.label) || tag) && /^[^:"]{3,90}:\s+\S|["\u201c]/.test(i.text)) {
-      const text = tag ? i.text.replace(tag[0], '') : i.text;
-      const label = i.label || (tag ? tag[1] : '');
-      return { ...i, kind: 'quote', text, label, shown: label ? `${text} (${label})` : text };
-    }
-    // an award or a ranking is a recognition, never a result
-    if ((i.kind === 'result' || i.kind === 'claim') && AWARD.test(i.text) && !OUTCOME_WORD.test(i.text)) return { ...i, kind: 'recognition' };
-    // "Case study: a regional insurer cut ...": the label is said at the end of the sentence, so no label is pasted at the start
-    if (CASE_LABEL.test(i.text)) return { ...i, text: i.text.replace(CASE_LABEL, '').replace(/[.\s]+$/, '') + ', according to the case study', shown: i.shown.replace(CASE_LABEL, '').replace(/(\s*\([^)]*\))?\s*$/, ', according to the case study$1') };
     if (i.kind === 'claim' && i.figure && /\b(?:avoid\w*|sav(?:e|ed|es|ing|ings)|reduc\w+|cut|lower\w*|improv\w+|increas\w+|faster|fewer|gain\w*|growth|grew|raised|cost)\b/i.test(i.text)) return { ...i, kind: 'result' };
     return i;
-  }).map((i, k, all) => {
-    // "Rating: 4.8 out of 5 across 598 reviews; 93% recommend it (page claim)": the label that follows belongs to the line before it too
-    const next = all[k + 1];
-    return !i.label && next && next.label && i.kind !== 'result' && proofRaw.includes(`${i.text}; `) ? { ...i, label: next.label, shown: `${i.shown} (${next.label})` } : i;
   }) : [];
   const evidence = items.filter((i) => (i.kind === 'result' || i.kind === 'quote') && !isPartner(i));
   const stories = items.filter((i) => i.kind === 'title');
@@ -123,7 +99,7 @@ export function generateThoughtLeadership(args: {
 
   // What was not given is named once, at the end.
   const missing: { field: string; change: string }[] = [];
-  if (suggested) missing.push({ field: 'proof_points', change: `every article, which now quotes no result, customer or figure${v && v.proofShape ? ` and names instead what would carry the argument in this field: ${lowerFirst(v.proofShape).replace(/\.$/, '')}` : ''}` });
+  if (suggested) missing.push({ field: 'proof_points', change: `every article, which now quotes no result, customer or figure${v ? ` and names instead what would carry the argument in this field: ${lowerFirst(v.proofShape).replace(/\.$/, '')}` : ''}` });
   for (const c of conflicts) { const pc = [...new Set((c.text.match(/\d[\d.,]*\s?%/g) || []).map((x) => x.replace(/\s/g, '')))]; missing.push({ field: `which figure to use, ${pc.join(' or ')}, for one case`, change: 'the evidence sentence, which now shows both figures as typed and flags that they differ' }); }
   if (!hasAuthor) missing.push({ field: 'author_background', change: 'the bylines, which now read "the author"' });
   const notUsed = items.filter((i) => !used.has(i) && !credibility.includes(i));
@@ -183,9 +159,6 @@ ${missing.length ? `\n${sharpenLine(missing)}\n` : ''}`;
 }
 
 // A statement from a partner (a label such as "partner quote") is not a customer's word and is never used as customer proof.
-const AWARD = /^(?:named|recogni[sz]ed|ranked|awarded|selected|listed|featured|honou?red|certified)\b|\b(?:awards?|winner|finalist|leader in|customers' choice|exceptional performer|top performer|star of excellence)\b/i;
-const OUTCOME_WORD = /\b(?:cut|reduc\w+|sav(?:e|ed|es|ing|ings)|improv\w+|increas\w+|faster|fewer|lower\w*|grew|growth|gain\w*)\b/i;
-const CASE_LABEL = /^(?:case study|customer story):\s*/i;
 const isPartner = (p: ProofItem) => /partner/i.test(p.label);
 const noteOf = (p: ProofItem) => (isPartner(p) ? 'a partner statement, not a customer\'s words' : KIND_NOTE[p.kind]);
 
@@ -369,12 +342,12 @@ const stems = (s: string) => new Set((s.toLowerCase().match(/[a-z]{4,}/g) || [])
 // A customer quote typed as "Customer quote from <who>: "<words>"" is shown as the words with the person named; anything else is shown as typed.
 function quoteParts(p: ProofItem): { who: string; words: string } {
   const m = /^(?:customer|partner) (?:quote|words)(?: from)?\s*(.*?):\s*["“](.+?)["”]\.?$/i.exec(p.text);
-  if (m) return { who: m[1].trim().replace(/^from\s+/i, '').replace(/[,\s]+$/, ''), words: clipEcho(m[2], ECHO) };
+  if (m) return { who: m[1].trim().replace(/^from\s+/i, ''), words: clipEcho(m[2], ECHO) };
   const sy = p.text.match(/^(.{3,90}?)\s+says?:\s*['"“](.+?)['"”]\.?$/);
-  if (sy) return { who: sy[1].trim().replace(/[,\s]+$/, ''), words: clipEcho(sy[2], ECHO) };
+  if (sy) return { who: sy[1].trim(), words: clipEcho(sy[2], ECHO) };
   const bare = p.text.replace(/^(?:customer|partner) (?:quote|words):\s*/i, '');
   const sp = /^([^:"]{3,90}):\s+(.+)$/.exec(bare);
-  if (sp) return { who: sp[1].trim().replace(/[,\s]+$/, ''), words: capFirst(clipEcho(sp[2], ECHO)) };
+  if (sp) return { who: sp[1].trim(), words: capFirst(clipEcho(sp[2], ECHO)) };
   return { who: '', words: capFirst(clipEcho(bare, ECHO)) };
 }
 // "A Product Manager at X" after "A customer," keeps its sense: the article is lowered. The full stop of the words stays inside the quotes.
@@ -428,10 +401,9 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
   const objections = v ? v.objections : [];
   const objection = objections.length && a.index < objections.length ? objections[a.index] : null;
   const picked = new Set<ProofItem>();
-  const proofCap = a.evidence.length + a.stories.length > a.total ? 1 : 2;
   // the proof point this article has not used yet that the series has used least; a quote is preferred for a quote section
   const nextProof = (list: ProofItem[], prefer?: ProofItem['kind']): ProofItem | undefined => {
-    const free = list.filter((p) => !picked.has(p) && a.count(p) < proofCap);   // a proof point serves two articles at most, and one when there are enough to go round
+    const free = list.filter((p) => !picked.has(p) && a.count(p) < 2);   // a proof point serves two articles at most
     if (!free.length) return undefined;
     const least = Math.min(...free.map((p) => a.count(p)));
     const tier = free.filter((p) => a.count(p) === least);
@@ -490,10 +462,10 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
           const frames = [`The evidence: ${endSentence(capFirst(shownT + flag))}`, `Here is a result: ${endSentence(capFirst(shownT + flag))}`, `One result on record: ${endSentence(capFirst(shownT + flag))}`];
           body.push(frames[seen % frames.length]);
         }
-        if (v && v.proofShape && !a.askedQuestions.has('proofShape')) { a.askedQuestions.add('proofShape'); body.push(`Evidence of this kind is strongest when it looks like this: ${lowerFirst(toYou(v.proofShape)).replace(/\.$/, '')}.`); }
+        if (v && !a.askedQuestions.has('proofShape')) { a.askedQuestions.add('proofShape'); body.push(`Evidence of this kind is strongest when it looks like this: ${lowerFirst(toYou(v.proofShape)).replace(/\.$/, '')}.`); }
       }
     } else if (kind === 'who') {
-      if (v && v.committee && !a.askedQuestions.has('who')) { a.askedQuestions.add('who'); body.push(`Whoever reads this will not decide alone. ${toYou(v.committee)}`); }
+      if (v && !a.askedQuestions.has('who')) { a.askedQuestions.add('who'); body.push(`Whoever reads this will not decide alone. ${toYou(v.committee)}`); }
     } else if (kind === 'next') {
       // what to do next: test the position on one live piece of work, and the question to take into the next meeting
       heading = NEXT_HEADINGS[a.index % NEXT_HEADINGS.length];
@@ -511,10 +483,7 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
         body.push(['Pick one live piece of work and test the position on it before you change anything else.', 'Start with one team and one piece of work, and write down where it stands today.', 'Choose the piece of work that hurts most, and try the position on that one first.'][a.index % 3]);
       }
       const qs = questionsFor(a);
-      const asked0 = new Set(a.askedQuestions);
-      const picked0 = qs.length ? bestQuestion(`${thesis} ${a.takeText}`, qs, a.askedQuestions) : '';
-      if (picked0 && !asked0.has(picked0)) body.push(`Then take this question into the next meeting: "${picked0}"`);
-      else if (a.index < n) body.push(`Then take this question into the next meeting: "What would change for your own team if this held: ${lowerFirst(clipEcho(thesis, 110)).replace(/[.]$/, '')}?"`);
+      if (qs.length) body.push(`Then take this question into the next meeting: "${bestQuestion(`${thesis} ${a.takeText}`, qs, a.askedQuestions)}"`);
     }
     if (body.length) sections.push(`## ${heading}\n\n${kind === 'position' ? body.join('\n') : body.join('\n\n')}`);
   });
@@ -591,9 +560,7 @@ function generatePromotionalPosts(parts: string[], leads: (ProofItem | undefined
     if (proof) usedProof.add(proof);
     const proofLine = proof ? (proof.kind === 'quote' ? quotePost(proof) : `On record: ${endSentence(capFirst(clipEcho(proof.shown, 300).replace(/([.!?])\s+(?=[A-Z])/g, '; ')))}`) : '';
     const part = i < parts.length ? parts[i] : '';
-    const before = new Set(asked);
-    const qPick = qs.length ? bestQuestion(`${part} ${takeText}`, qs, asked) : '';
-    const question = qPick && !before.has(qPick) ? `A question for ${readerNoun}: "${qPick}"` : part ? `A question for ${readerNoun}: "What would change for your own team if this held: ${lowerFirst(clipEcho(part, 110)).replace(/[.]$/, '')}?"` : '';
+    const question = qs.length ? `A question for ${readerNoun}: "${bestQuestion(`${part} ${takeText}`, qs, asked)}"` : '';
     const blocks = [`New article: "${titles[i]}".`, part ? `The short version: ${clipEcho(part, 300).replace(/[.]$/, '')}.` : '', proofLine, question].filter(Boolean);
     posts += `### Promo Post ${i + 1} (for Article ${i + 1})
 

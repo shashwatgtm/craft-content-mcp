@@ -105,12 +105,6 @@ export function generateNewsletter(args: {
     const proof = v ? (rolesFit ? `When a vendor shows you results like these, ${forWhom === 'your team' ? 'look for' : 'the evidence to ask for is'} ${lower(toYou(v.proofShape.replace(/\.$/, '')))}.` : 'When a vendor shows you results like these, ask for the same measure before and after, over the same period, for a group of a size you can compare with yours.') : '';
     sections.push({ heading: nm.evidence, body: [renderGroup(evidence, who, 'The results on record:'), proof].filter(Boolean).join('\n\n') });
   }
-  // claims that carry only a page label are not results: say so, and name the evidence to ask for
-  if (!evidence.length && v) {
-    const claimed = [...outcomes, ...hows].filter((p) => p.label);
-    const labels = [...new Set(claimed.map((p) => p.label))];
-    if (claimed.length) sections.push({ heading: 'What to ask for', body: `The points marked ${proseJoin(labels.map((l) => `"${l}"`))} are the vendor's own claims, not results. Before you rely on them, ${rolesFit ? `the evidence to ask for is ${lower(toYou(v.proofShape.replace(/\.$/, '')))}` : 'ask for the same measure before and after, over the same period, for a group of a size you can compare with yours'}.` });
-  }
   // the reader's own check: the sector's questions, said to the reader
   if (v) {
     const free = v.discovery.filter((d) => !/\bclient'?s?\b|current provider|signs off each|governed|\bme\b|\bour\b|\bwe\b/i.test(d) && (rolesFit || !ENTERPRISE.test(d)));
@@ -118,7 +112,7 @@ export function generateNewsletter(args: {
     const used = new Set<string>(hookFirst ? [hookFirst] : []);
     const n = segment === 'executives' ? 1 : 2;
     const asked: string[] = [];
-    for (let i = 0; i < n; i++) { const q = bestQuestion(`${label} ${pts.map((p) => p.text).join(' ')}`, free, used); if (q && !asked.includes(toYou(q))) { asked.push(toYou(q)); used.add(q); } }
+    for (let i = 0; i < n; i++) { const q = bestQuestion(`${label} ${pts.map((p) => p.text).join(' ')}`, free, used); if (q) asked.push(toYou(q)); }
     const ms = v.metrics.filter((m) => !usedMetric.has(m)).slice(0, 2);
     const lead = asked.length === 1 ? 'Put this question to your own team' : 'Put these two questions to your own team';
     const qs = asked.length === 1 ? `"${asked[0]}"` : `First, "${asked[0]}" Second, "${asked[1]}"`;
@@ -126,18 +120,16 @@ export function generateNewsletter(args: {
     if (body) sections.push({ heading: nm.check, body });
   }
   if (!v && given && (hows.length || outcomes.length || evidence.length)) {
-    const piece = opening ? opening.text.split(/;\s+/)[0].replace(/[.\s]+$/, '') : '';
-    const first = piece && piece.split(/\s+/).length >= 4 && piece.length <= 170 ? `Does this sound like your own team today: ${lower(piece.replace(/"/g, "'"))}? How often, and who feels it first?` : 'Where does this happen in your own work today, and who feels it first?';
-    sections.push({ heading: nm.check, body: `Put these two questions to your own team this week. First, "${first}" Second, "Which one number would tell you whether it is getting better?" Whatever the answers, write them down, so that the next change has a baseline to beat.` });
+    sections.push({ heading: nm.check, body: 'Put these two questions to your own team this week. First, "Where does this happen in your own work today, and who feels it first?" Second, "Which one number would tell you whether it is getting better?" Whatever the answers, write them down, so that the next change has a baseline to beat.' });
   }
   const pushWho = readers ? cap(readers) : kind ? `Teams in ${kind}` : 'Readers';
-  // where readers push back: the sector objection that shares words with the points (never one that the input did not touch), labelled as the sector's
+  // where readers push back: the sector objection that shares most words with the points, and a way to test it
   if (v && given && fits) {
     const text = ` ${label} ${pts.map((p) => p.text).join(' ')} `.toLowerCase();
-    let best = v.objections[0]; let bestN = 0;
+    let best = v.objections[0]; let bestN = -1;
     for (const o of v.objections) { const n = (o.objection.toLowerCase().match(/[a-z]{5,}/g) || []).filter((w) => text.includes(w.slice(0, 5))).length; if (n > bestN) { best = o; bestN = n; } }
     const settle = waysToSettle(best.response);
-    if (settle && bestN > 1) sections.splice(Math.max(0, sections.length - 1), 0, { heading: 'Where readers push back', body: `The sector notes list this pushback for ${kind || 'this kind of product'}, and your points touch it: ${quotedEnd(best.objection)} ${settle}` });
+    if (settle) sections.splice(Math.max(0, sections.length - 1), 0, { heading: 'Where readers push back', body: `${pushWho} often say: ${quotedEnd(best.objection)} ${settle}` });
   }
   // no key points: the sector's own objection, in the reader's voice, is the first section
   if (!given && v) {
@@ -197,13 +189,13 @@ export function generateNewsletter(args: {
   const hooks: { name: string; text: string }[] = [];
   if (hookQuestion) hooks.push({ name: 'Question', text: hookQuestion });
   const fig = figures.find((p) => p.label && isStatistic(p.text)) || figures.find((p) => isStatistic(p.text));
-  if (fig) hooks.push({ name: 'Statistic', text: `${capFirst(fig.text)}${fig.label ? ` (${fig.label})` : ''}: what would a figure like that mean for ${forWhom === 'your team' ? 'your own work' : forWhom}?${fig.label ? '' : ' Its source is not given yet, so add it before you use the figure.'}` });
+  if (fig) hooks.push({ name: 'Statistic', text: `Open with the figure from the evidence section, "${fig.text}"${fig.label ? ` (${fig.label})` : ''}, and state the problem second.${fig.label ? '' : ' Its source is not given yet, so add it before you use the figure.'}` });
 
   const sectorBlock = vFull ? `## Sector Notes: ${cap(vFull.name)}
 
 ${cleanSectorLine(ctx.line)}
 
-- ${fits ? (rolesFit ? audienceLine(vFull) : `Readers named in your input: ${readers}. The sector file's usual readers for ${vFull.name} are ${vFull.buyerRoles.slice(0, 3).join(', ')}; the draft uses its measures and leaves out its buying group and its questions about systems and data.`) : `Readers named in your input: ${readers}. The notes below were written for ${vFull.name}, whose usual readers are ${vFull.buyerRoles.slice(0, 3).join(', ')}; they do not match your readers, so the draft does not use them.`}
+- ${fits ? audienceLine(vFull) : `Readers named in your input: ${readers}. The notes below were written for ${vFull.name}, whose usual readers are ${vFull.buyerRoles.slice(0, 3).join(', ')}; they do not match your readers, so the draft does not use them.`}
 - **Terms this audience uses:** ${vFull.vocabulary.slice(0, 6).join(', ')}.
 - **Objections the sector file lists${fits ? '' : ' (written for its own readers, so check them against yours)'}, and how to settle each:** ${vFull.objections.map((o) => `"${o.objection}" (${lower(o.response.replace(/\.$/, ''))})`).join('; ')}.
 - **A proof point that lands:** ${vFull.proofShape}` : `## Sector notes

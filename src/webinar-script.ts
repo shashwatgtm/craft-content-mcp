@@ -414,6 +414,9 @@ function tk(p0: Pt, w: W, after = false): string {
       if (p.role === 'result' || p.role === 'quote' || p.role === 'recognition' || p.role === 'scale' || p.role === 'story') return sentenceOf(p, w.who);
       if (claim) return endSentence(`${after ? 'We covered' : 'We will cover'} ${lower(t)}`);
       if (p.role === 'outcome') return endSentence(`${after ? 'The outcome to expect' : 'You will hear what to expect'}: ${lower(t)}`);
+      // Run 27B (trace: "You will see adds <a product part> ..."): a point that starts with its own verb says what the product does; a cut piece is quoted as typed
+      if (/^(?:adds|gives|keeps|lets|helps|makes|turns|brings|cuts|saves|runs|connects|replaces|removes|reduces|combines|unifies|automates|finds|fixes|shows|tracks|stops|blocks|protects|secures|delivers|provides|offers|supports)\s/i.test(p.text)) return endSentence(`${w.who || 'The product'} ${lower(t)}`);
+      if (/\b(?:where|that|which|when|whose)\s+[\w-]+$|\b(?:of|and|or|to|the|a|an|with|for|in|on|where|that|which)$/i.test(p.text.trim()) && p.text.trim().split(/\s+/).length <= 6) return `A point you listed, in your words: "${t.replace(/[.]+$/, '')}".`;
       return endSentence(`${after ? 'We covered' : 'You will see'} ${lower(t)}`);
   }
 }

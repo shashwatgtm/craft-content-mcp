@@ -351,13 +351,18 @@ const ROLE_QUESTIONS: [RegExp, string, string[]][] = [
     'What would you tell another allocator about the first months?']]
 ];
 
-function roleBlock(role: string | undefined): string {
+function roleBlock(role: string | undefined, P = 'the product'): string {
   if (!role) return `### Questions for Their Role\n\n1. What was your own part in choosing and rolling it out?\n2. What did you have to explain to your own leadership, and what convinced them?\n3. What would you tell another leader in your position?\n`;
   const hit = ROLE_QUESTIONS.find(([re]) => re.test(role));
-  const qs = hit ? hit[2] : [
+  // Run 27B (trace: an Office Manager was asked leader questions): a role with no questions of its own is asked about its own work, in its own title
+  const leader = /\b(?:chief|head|vp|vice president|director|president|founder|owner|ceo|cfo|cto|cio|coo|cmo|ciso|lead|leader)\b/i.test(role);
+  const qs = hit ? hit[2] : leader ? [
     'What was your own part in choosing and rolling it out?',
     'What did you have to explain to your own leadership, and what convinced them?',
-    'What would you tell another leader in your position?'];
+    'What would you tell another leader in your position?'] : [
+    `What does a normal week look like for you as ${role}, and which part of it did ${P} change first?`,
+    `Which task do you no longer do by hand, or do faster, since ${P}, and how do you know?`,
+    `What would you tell another ${role} who is thinking about ${P}?`];
   return `### Questions for this role (${role})\n\n${qs.map((x, i) => `${i + 1}. ${x}`).join('\n')}\n`;
 }
 
@@ -392,7 +397,7 @@ ${figures.map((f, i) => `${15 + i}. You told us: "${clipEcho(f.text, 160)}". Wha
 ${15 + figures.length}. What would you tell someone considering ${P}?
 ${16 + figures.length}. Who would you recommend ${P} to?
 
-${roleBlock(role)}
+${roleBlock(role, P)}
 ${v ? `### Questions on the Measures ${cap(v.name)} Buyers Look For
 
 ${v.metrics.slice(0, 3).map((m, i) => `${i + 1}. How did ${m} change after the ${w.rollout}? What was it before, and over what period?`).join('\n')}

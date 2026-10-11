@@ -347,9 +347,11 @@ function quoteParts(p: ProofItem): { who: string; words: string } {
   const sy = p.text.match(/^(.{3,90}?)\s+says?:\s*['"“](.+?)['"”]\.?$/);
   if (sy) return { who: sy[1].trim(), words: clipEcho(sy[2], ECHO) };
   const bare = p.text.replace(/^(?:customer|partner) (?:quote|words):\s*/i, '');
+  // Run 27B: the words keep the user's own quotation marks once only, and the speaker loses a trailing comma
+  const unq = (w: string): string => { const t = w.trim(); const m2 = /^["\u201c]([^"\u201c\u201d]+)["\u201d]\.?$/.exec(t); return m2 ? m2[1] : t; };
   const sp = /^([^:"]{3,90}):\s+(.+)$/.exec(bare);
-  if (sp) return { who: sp[1].trim(), words: capFirst(clipEcho(sp[2], ECHO)) };
-  return { who: '', words: capFirst(clipEcho(bare, ECHO)) };
+  if (sp) return { who: sp[1].trim().replace(/[,;\s]+$/, ''), words: capFirst(clipEcho(unq(sp[2]), ECHO)) };
+  return { who: '', words: capFirst(clipEcho(unq(bare), ECHO)) };
 }
 // "A Product Manager at X" after "A customer," keeps its sense: the article is lowered. The full stop of the words stays inside the quotes.
 function quoteLine(p: ProofItem, seen = 0): string {

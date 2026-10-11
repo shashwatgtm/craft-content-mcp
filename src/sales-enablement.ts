@@ -108,7 +108,13 @@ export function generateSalesEnablement(args: {
     objectionsNote = `\n**NOTE:** You didn't provide objections and no sector could be read from your inputs, so no objection handlers are written (a generic list would be invented). Add common_objections, or name the industry, to get them.\n`;
   }
 
-  const valueProps = args.value_props ? splitList(args.value_props).map((p) => clipEcho(p)) : [];
+  // Run 27B (trace: "here's how X could help: founded in <year> and <amount> funding raised"): a fact about the company (founding year, funding,
+  // head count, offices, a ranking, a review count) is not value to the buyer. It is listed as given; the product's own parts are the value then.
+  const vpAll = args.value_props ? splitList(args.value_props).map((p) => clipEcho(p)) : [];
+  const COMPANY_FACT = /^(?:founded|established|incorporated|headquartered|offices?\b|backed by|named|recogni[sz]ed|ranked|awarded|winner|describes itself|rated)\b|\b(?:funding|funded|raised|employees|staff|headcount|unicorn|reviews? on|investors?)\b/i;
+  const companyFacts = vpAll.filter((x) => COMPANY_FACT.test(x.replace(/\s*\([^()]*\)\s*$/, '')));
+  const productList = (() => { const at = productFull.indexOf(': '); return at > 0 ? splitList(productFull.slice(at + 2)).map((x) => clipEcho(x, 160)).filter((x) => x.split(/\s+/).length >= 2) : []; })();
+  const valueProps = vpAll.filter((x) => !companyFacts.includes(x)).length ? vpAll.filter((x) => !companyFacts.includes(x)) : companyFacts.length ? productList : vpAll;
   const competitorObjections = args.competitor_objections ? splitObjections(args.competitor_objections) : [];
 
   // Generate objection handlers: each objection is read on its own, answered with the sector's pattern and the proof point that fits it.
@@ -148,7 +154,7 @@ ${ctx.line}
 ---
 
 ## Value Propositions
-
+${companyFacts.length ? `\n*Facts about the company you gave in value_props, kept out of the pitch because they are not value to the buyer: ${companyFacts.map((x) => `"${x}"`).join('; ')}.${vpAll.length === companyFacts.length && productList.length ? ' The pitch below uses the parts your product description names instead.' : ''}*\n` : ''}
 ### Pitch Order (Lead with Strongest)
 
 ${valueRows.length ? valueRows.map((r, i) => `
@@ -469,7 +475,10 @@ function generateCompetitorHandler(
   return {
     whenHeard: `When a prospect says ${quoted}, they are weighing you against something they already know.`,
     response: `${proof ? `Here's what we can show: ${asSentence(proof)} ` : 'None of your proof points compares the two, so ask for a customer that did. '}${fact ? `On our side: ${fact}. ` : ''}Then ask: what would ${subject} still leave your team to do by hand?`,
-    trapQuestion: `When you looked at ${named ? named[1] : qs(objection)}, how did it do on ${measure || 'the thing that matters most to you'}? What did it leave out?`,
+    // Run 27B (trace: "When you looked at manual collections, how did it do"): a way of working is not a product the buyer looked at
+    trapQuestion: /\b(?:manual|by hand|spreadsheets?|excel|in-house|our own|status quo|patchwork|emails?|nothing)\b/i.test(named ? named[1] : objection)
+      ? `Where does ${named ? named[1] : qs(objection)} fall short today on ${measure || 'the thing that matters most to you'}, and what does that cost your team?`
+      : `When you looked at ${named ? named[1] : qs(objection)}, how did it do on ${measure || 'the thing that matters most to you'}? What did it leave out?`,
     proof: proof || 'None of your proof points compares the two. The proof that would: a customer that compared both, with its figure and period.'
   };
 }

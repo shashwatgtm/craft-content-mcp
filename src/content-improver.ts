@@ -1,5 +1,5 @@
-import { analyzeContent, generateImprovedVersion, editSentence, toneCheck, annotateText, bodyOf, countWords, avgWordsPerSentence, calculateReadability, ContentAnalysis, SUGGESTION_FOOTER, clipEcho, ASK } from './utils.js';
-import { readContext, audienceLine, sentencesOf } from './sector.ts';
+import { analyzeContent, generateImprovedVersion, editSentence, toneCheck, annotateText, bodyOf, countWords, avgWordsPerSentence, calculateReadability, ContentAnalysis, SUGGESTION_FOOTER, clipEcho, ASK, brokenTemplateLines } from './utils.js';
+import { readContext, audienceLine, sentencesOf, type Vertical } from './sector.ts';
 import { shortenClauses, clipAtWord, endSentence, fixNumbers, FIGURE } from './draft.ts';
 
 // Default goals by content type
@@ -170,7 +170,7 @@ ${tone.notes.map((n) => `- ${n}`).join('\n')}
 
 ${ctx.line}
 
-- ${audienceLine(ctx.v)}
+- ${readerLine(ctx.v, args.audience)}
 - **Measures readers watch:** ${ctx.v.metrics.join(', ')}.
 - **Terms this audience uses:** ${ctx.v.vocabulary.join(', ')}.
 - **A proof point that lands:** ${ctx.v.proofShape}
@@ -196,6 +196,18 @@ ${SUGGESTION_FOOTER}
 `;
 
   return output;
+}
+
+// Run 27B (trace: the seller's sector was printed as the reader's): with an audience typed, the reader is that audience. The sector's usual
+// buyers are named as the seller's sector's, and the reader is asked to be checked against them; without an audience the old line stays.
+function readerLine(v: Vertical, audience: string | undefined): string {
+  const a = (audience || '').trim();
+  if (!a) return audienceLine(v);
+  const words: string[] = a.toLowerCase().match(/[a-z]{3,}/g) || [];
+  const fits = v.buyerRoles.some((r) => (r.toLowerCase().match(/[a-z]{4,}/g) || []).some((w) => words.includes(w)));
+  return fits
+    ? `Your reader, as you gave it: "${a}". Readers like this in ${v.name} usually watch ${v.metrics.slice(0, 4).join(', ')}.`
+    : `Your reader, as you gave it: "${a}". The notes below are for buyers of ${v.name}, the sector read from your own text, whose usual buyers are ${v.buyerRoles.slice(0, 3).join(', ')}: use only the ones that fit this reader.`;
 }
 
 // Which of the sector's measures the text already names (a measure counts when one of its long words appears).
@@ -243,7 +255,10 @@ function shorterEmail(content: string): { text: string; left: string[] } | null 
   const outcome = /\b(?:reduc\w+|cut|cuts|saved?|saves|improv\w+|increas\w+|grew|grow|boost\w*|achiev\w+|automat\w+|consolidat\w+|expanded|faster|resolved|fell|rose|from \d[\d.,]*%? to)\b/i;
   const score = (x: string) => (FIGURE.test(x) ? 2 : -9) + (outcome.test(x) ? 1 : -9) + (/title\)\s*$/i.test(x) ? -9 : 0) + (/from \d[\d.,]*%? to|\d%|[$₹€£]\s?\d|lakhs?/i.test(x) ? 3 : 0) + (/customer|quote|case study/i.test(x) ? 2 : 0) + (/^(?:recognition|named|leader|featured)\b/i.test(x) ? -9 : 0);
   const proof = pieces.filter((x) => score(x) > 0).sort((a, b) => score(b) - score(a))[0];
-  const opening = rest[0];
+  // Run 27B: a broken template line is not the opening of the shorter version (the finding above names it)
+  const broken = brokenTemplateLines(content);
+  const isBroken = (x: string): boolean => broken.some((b) => b.line.includes(x.trim().slice(0, 40)));
+  const opening = rest.find((x) => !isBroken(x)) || rest[0];
   const product = rest.find((s, i) => i > 0 && s !== proof && !(proof && s.includes(proof)));
   const kept: string[] = [];
   const left: string[] = [];
@@ -255,7 +270,7 @@ function shorterEmail(content: string): { text: string; left: string[] } | null 
     if (gone.length > 12) left.push(`${clipAtWord(gone, 45)}${gone.length > 45 ? '...' : ''}`);
   };
   const out: string[] = [];
-  if (subjectLine) {
+  if (subjectLine && !broken.some((b) => b.line === subjectLine.trim())) {
     const full = subjectLine.replace(/^subject:\s*/i, '');
     const sub = shortenClauses(full, 60);
     out.push(`Subject: ${sub}`);

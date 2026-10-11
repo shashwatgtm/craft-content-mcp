@@ -347,6 +347,21 @@ export function bodyOf(content: string): string {
   return content.split(/\n/).filter((l) => !/^\s*(?:subject:|(?:hi|hello|dear|hey)\b[^.!?]*,\s*$)/i.test(l)).join('\n').trim() || content;
 }
 
+// Run 27B: the slot of an opening template ("often deal with ...", "quick question about ...") that holds a clause with its own subject and verb.
+const TEMPLATE_SLOT = /\b(often deal with|often struggle with|quick question about|question about)\s+(.{3,})$/i;
+const CLAUSE_START = /^(?:without|most|many|some|all|our|their|your|we|they|it|there|when|because|if)\b/i;
+const OWN_VERB = /(?<!\b(?:that|which|who)\s)\b(?:is|are|was|were|does|do|did|has|have|had|run|runs|hunt|hunts|fill|fills|stall|stalls|need|needs|sit|sits|cannot|can't|don't|doesn't|lose|loses|spend|spends)\b/i;
+export function brokenTemplateLines(content: string): { line: string; slot: string }[] {
+  const out: { line: string; slot: string }[] = [];
+  for (const raw of content.split('\n')) {
+    const line = raw.trim();
+    const m = TEMPLATE_SLOT.exec(line);
+    if (!m) continue;
+    const slot = m[2].split(/\s+/).slice(0, 10).join(' ');
+    if (CLAUSE_START.test(m[2]) || OWN_VERB.test(slot)) out.push({ line, slot: m[1] });
+  }
+  return out;
+}
 export function analyzeContent(content: string, contentType: string, goal: string, opts: { audience?: string } = {}): ContentAnalysis {
   const analysis: ContentAnalysis = {
     clarity: { score: 0, issues: [], suggestions: [] },
@@ -390,6 +405,14 @@ export function analyzeContent(content: string, contentType: string, goal: strin
   const fragments = sentenceList.filter((s) => /^[\d$₹€£]/.test(s) && s.split(/\s+/).length >= 3 && !s.split(/\s+/).some((w) => VERBISH.test(w.replace(/[^A-Za-z]/g, '')) || (w.length > 4 && /(?:ed|ing)$/i.test(w.replace(/[^A-Za-z]/g, '')))));
   if (fragments.length > 0) {
     note('clarity', 'fragment', Math.min(4, 2 * fragments.length), `Sentence fragment (a figure with no verb): "${clipEcho(fragments[0], 160)}"${fragments.length > 1 ? ` and ${fragments.length - 1} more` : ''}`, 'Turn each figure into a sentence that says who got it and what changed, for example "At <customer>, <result>."', true);
+  }
+
+  // Run 27B (trace: the broken opening of a template email was never named): a template line whose slot holds a whole sentence
+  // ("Teams at sales teams often deal with without help, reps hunt ...") does not read, and is named with the words quoted
+  const brokenAll = brokenTemplateLines(content);
+  const brokenLine = brokenAll.find((x) => !/^subject:/i.test(x.line)) || brokenAll[0];
+  if (brokenLine) {
+    note('clarity', 'broken-template', 2, `Broken opening: the words after "${brokenLine.slot}" are a whole sentence, so the line does not read: "${clipEcho(brokenLine.line, 160)}"${brokenAll.length > 1 ? ` (the same in ${brokenAll.length - 1} more line${brokenAll.length > 2 ? 's' : ''}, ${brokenAll.some((x) => /^subject:/i.test(x.line)) ? 'the subject line among them' : 'quoted in your text below'})` : ''}`, `Name the reader's problem in a few words after "${brokenLine.slot}", or write the line as your own sentence.`, true);
   }
 
   // Run 20 (round 1b), wrong results found by the judges, each a listed finding that quotes the text: a very hard to read text was
@@ -591,8 +614,13 @@ export function generateImprovedVersion(content: string, _analysis?: ContentAnal
   const edits: { before: string; after: string }[] = [];
   const text = content.split('\n').map((line) => {
     if (!line.trim() || /^\s*subject:/i.test(line)) return line;
+    // Run 27B: a sentence inside quotation marks, or one that opens or closes a quote, is a person's words and is never edited
+    let inQuote = false;
     return sentencesOf(line).map((sentence) => {
-      const after = /\((?:[^()]*\btitle|customer quote|page claim|case study)[^()]*\)/i.test(sentence) ? sentence : editSentence(sentence);
+      const marks = (sentence.match(/["\u201c\u201d]/g) || []).length;
+      const quoted = inQuote || marks > 0;
+      if (marks % 2 === 1) inQuote = !inQuote;
+      const after = quoted || /\((?:[^()]*\btitle|customer quote|page claim|case study)[^()]*\)/i.test(sentence) ? sentence : editSentence(sentence);
       if (after !== sentence) edits.push({ before: sentence.trim(), after: after.trim() });
       return after;
     }).join(' ');

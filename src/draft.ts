@@ -44,8 +44,14 @@ function splitOutsideParens(text: string, sep: RegExp): string[] {
   let m: RegExpExecArray | null;
   const depthAt: number[] = [];
   for (let i = 0, d = 0; i < text.length; i++) { if (text[i] === '(') d++; else if (text[i] === ')') d = Math.max(0, d - 1); depthAt[i] = d; }
+  // Run 27B (trace: a customer quote was cut at its own semicolon): a separator inside a closed quotation is part of the quote
+  const inQuote: boolean[] = [];
+  const straight = [...text.matchAll(/"/g)].map((x) => x.index as number);
+  for (let k = 0; k + 1 < straight.length; k += 2) for (let i = straight[k]; i <= straight[k + 1]; i++) inQuote[i] = true;
+  for (const q of text.matchAll(/\u201c[^\u201c\u201d]*\u201d/g)) for (let i = q.index as number; i < (q.index as number) + q[0].length; i++) inQuote[i] = true;
   while ((m = g.exec(text))) {
     if (m[0].length === 0) { g.lastIndex++; continue; }
+    if (inQuote[m.index]) continue;
     depth = depthAt[m.index] || 0;
     if (depth === 0) { out.push(text.slice(start, m.index)); start = m.index + m[0].length; }
   }
@@ -74,7 +80,10 @@ export function splitList(raw: unknown): string[] {
     const prevLast = merged.length ? (merged[merged.length - 1].split(/\s+/).pop() || '') : '';
     // a short capitalised fragment after an item that ends in an acronym or place ("across the US; UK; EU") continues that list
     const placeList = merged.length > 0 && (p.split(/\s+/).length <= 3 || (/^[A-Z]{2,5}\b/.test(p) && /^[A-Z]{2,5}[,.]?$/.test(prevLast) && p.split(/\s+/).length <= 7)) && /^[A-Z]/.test(p) && !/\d/.test(p) && (/^[A-Z]{2,5}[,.]?$/.test(prevLast) || /^[A-Z][a-z]+$/.test(prevLast));
-    if (merged.length && (JOINER.test(p) || placeList)) merged[merged.length - 1] += ', ' + p;
+    // Run 27B (trace: "one view where code; cloud and runtime findings meet" was cut in two): a relative clause left with one word
+    // ("where code") goes on into the next piece when that piece starts in lower case
+    const openClause = merged.length > 0 && /\b(?:where|that|which|when|whose)\s+[\w-]+$/i.test(merged[merged.length - 1]) && /^[a-z]/.test(p);
+    if (merged.length && (JOINER.test(p) || placeList || openClause)) merged[merged.length - 1] += ', ' + p;
     else merged.push(p);
   }
   // short fragments: "fast; transparent; compliant and error free travel" is one run of adjectives
@@ -153,7 +162,8 @@ export function splitProof(raw: unknown): string[] {
       if (pieces.length && (pieces[pieces.length - 1].length < 60 || (/^\d/.test(piece) && bare.split(/\s+/).length < 5))) pieces[pieces.length - 1] += ', ' + piece;
       else pieces.push(piece);
     }
-    for (const piece of pieces.length ? pieces : [chunk]) items.push(piece.replace(/;\s+(?=[\d a-z])/g, ', '));
+    // Run 27B: a semicolon inside a quote is the speaker's own and stays
+    for (const piece of pieces.length ? pieces : [chunk]) items.push(piece.split(/(["\u201c][^"\u201c\u201d]*["\u201d])/).map((x, k) => (k % 2 ? x : x.replace(/;\s+(?=[\d a-z])/g, ', '))).join(''));
   }
   return items.map((x) => x.replace(/[;,]\s*$/, '').trim()).filter(Boolean);
 }
@@ -166,14 +176,15 @@ export function parseProof(raw: unknown): ProofItem[] {
   return splitProof(raw).map((item) => {
     const m = LABEL_END.exec(item);
     const label = m ? m[1].trim() : '';
-    const text = (m ? item.slice(0, m.index) : item).trim().replace(/[;,.\s]+$/, '').replace(/\s+on the (?:home|about|pricing|product|customers?) page\b/gi, '').replace(/^Recognition listed:?\s*/i, 'Recognition: ');
+    const text = (m ? item.slice(0, m.index) : item).trim().replace(/[;,.\s]+$/, '').replace(/\s+on the (?:home|about|pricing|product|customers?) page\b/gi, '').replace(/[,;]\s*:/g, ':').replace(/^Recognition listed:?\s*/i, 'Recognition: ');
     const l = label.toLowerCase();
     const figure = FIGURE.test(text);
     let kind: ProofKind;
     if (RECOGNITION.test(text) && !/\bcustomer quote\b/.test(l)) kind = 'recognition';
     else if (/quote/.test(l)) kind = 'quote';
     else if (/title|story/.test(l) || /^(?:how|why)\b/i.test(text)) kind = 'title';
-    else if (SCALE.test(text) && !OUTCOME_VERB.test(text)) kind = 'scale';
+    // Run 27B: an item that opens with a named customer and a colon ("Skyline Air: 3,000+ tablets connected ...") is that customer's result, not a company-wide count
+    else if (SCALE.test(text) && !OUTCOME_VERB.test(text) && !/^[A-Z][\w&.'-]*(?:\s+[A-Z][\w&.'-]*){0,3}:\s/.test(text)) kind = 'scale';
     else if (/page claim/.test(l) && !OUTCOME_VERB.test(text)) kind = 'claim';
     else kind = 'result';
     return { text, label, kind, figure, shown: label ? `${text} (${label})` : text };

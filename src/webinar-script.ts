@@ -1,6 +1,6 @@
 import { lowerFirstIfCommon, cap, aOrAn } from './utils.js';
 import { q, readContext, startWords, audienceLine, isClause, type Vertical, type BusinessModel } from './sector.ts';
-import { splitList, bestQuestion, unpackTopic, fixNumbers, endSentence, capFirst, proseJoin, roleOf, clipAtWord, productParts, softenClaims } from './draft.ts';
+import { splitList, listEntries, bestQuestion, unpackTopic, fixNumbers, endSentence, capFirst, proseJoin, roleOf, clipAtWord, productParts, softenClaims } from './draft.ts';
 import { cleanSectorLine, readPoints, groupPhrases, sentenceOf, withLabel, shorten, waysToSettle, settleBare, quotedEnd, instructionNote, sharpenLine, stripGuardQuotes, lowerFirstSafe, audienceShort, shapeOf, startsImperative, companyFrom, toReader as toYou, PARTICIPLE_START, type Pt } from './rw-content.ts';
 
 // Run 22 (rewrite): the script is written to be read aloud. The takeaways are read for what they are and said in whole sentences, the
@@ -54,9 +54,12 @@ export function generateWebinarScript(args: {
   const ctx: Ctx = readContext(args.business_model, { seller: [given || parts.company || company, parts.problem || topic], context: [args.key_takeaways, args.speakers], role: [audienceFull], buyer: [parts.audience, audienceFull] });
 
   // the takeaways: read for what each one is; the problem the topic names is said once, as the problem
-  const haveTakeaways = !!(args.key_takeaways && args.key_takeaways.trim());
-  const soft0 = softenClaims(args.key_takeaways || '');
-  const soft = soft0.removed.length ? soft0 : { text: args.key_takeaways || '', removed: [] as string[] };
+  // Run 27B (b): takeaways_list, one takeaway per entry, read whole (its own semicolons become commas); it wins over key_takeaways when given
+  const tkList = listEntries((args as Record<string, unknown>).takeaways_list);
+  const takeawaysText = tkList.length ? tkList.map((x) => x.replace(/;/g, ',')).join('\n') : args.key_takeaways || '';
+  const haveTakeaways = !!takeawaysText.trim();
+  const soft0 = softenClaims(takeawaysText);
+  const soft = soft0.removed.length ? soft0 : { text: takeawaysText, removed: [] as string[] };
   const softP = softenClaims(parts.problem || '');
   const all = readPoints(soft.text, { problem: soft0.removed.length || softP.removed.length ? softP.text : parts.problem || '' });
   for (const p of all) if (p.role === 'instruction') orders.push(p.text);

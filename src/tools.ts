@@ -96,7 +96,8 @@ export const tools: Tool[] = [
           enum: ["none", "subtle", "moderate", "heavy"]
         },
         your_product: YOUR_PRODUCT_FIELD,
-        business_model: BUSINESS_MODEL_FIELD
+        business_model: BUSINESS_MODEL_FIELD,
+        takeaways_list: { type: "array", items: { type: "string" }, description: "Optional: the key takeaways, one per entry. Each entry is read whole; used instead of key_takeaways when given" }
       },
       required: ["topic", "target_audience", "webinar_type"]
     }
@@ -148,7 +149,8 @@ export const tools: Tool[] = [
           type: "string",
           description: "The style of the articles",
           enum: ["contrarian", "how_to", "lessons_learned", "prediction", "framework"]
-        }
+        },
+        proof_list: { type: "array", items: { anyOf: [{ type: "string" }, { type: "object", properties: { text: { type: "string" }, label: { type: "string", description: "Where it comes from, for example customer quote or page claim" } }, required: ["text"] }] }, description: "Optional: the proof points, one per entry (a result, a quote with who said it, a recognition), each with where it comes from if known. Each entry is read whole; used instead of proof_points when given" }
       },
       required: ["topic", "your_take", "target_reader"]
     }
@@ -172,7 +174,8 @@ export const tools: Tool[] = [
         use_case: { type: "string", description: "Where the testimonial will be used (the website or a sales deck, for example)" },
         incentive: { type: "string", description: "Optional: what you are offering in return" },
         your_product: YOUR_PRODUCT_FIELD,
-        business_model: BUSINESS_MODEL_FIELD
+        business_model: BUSINESS_MODEL_FIELD,
+        success_story_list: { type: "array", items: { anyOf: [{ type: "string" }, { type: "object", properties: { text: { type: "string" }, label: { type: "string", description: "Where it comes from, for example customer quote or page claim" } }, required: ["text"] }] }, description: "Optional: the parts of the success story, one per entry (a result, a quote with who said it, a claim), each with where it comes from if known. Each entry is read whole; used instead of success_story when given" }
       },
       required: ["customer_name", "customer_company", "success_story", "testimonial_type"]
     }
@@ -195,7 +198,10 @@ export const tools: Tool[] = [
           description: "The stage of the sales funnel",
           enum: ["prospecting", "discovery", "demo", "negotiation", "closing"]
         },
-        business_model: BUSINESS_MODEL_FIELD
+        business_model: BUSINESS_MODEL_FIELD,
+        proof_list: { type: "array", items: { anyOf: [{ type: "string" }, { type: "object", properties: { text: { type: "string" }, label: { type: "string", description: "Where it comes from, for example customer quote or page claim" } }, required: ["text"] }] }, description: "Optional: the proof points, one per entry (a result, a quote with who said it, a recognition), each with where it comes from if known. Each entry is read whole; used instead of proof_points when given" },
+        value_props_list: { type: "array", items: { type: "string" }, description: "Optional: the value propositions, one per entry. Each entry is read whole; used instead of value_props when given" },
+        objections_list: { type: "array", items: { type: "object", properties: { question: { type: "string" }, answer: { type: "string", description: "The answer you already have, if any" } }, required: ["question"] }, description: "Optional: the sales objections, one per entry, each with the answer you already have if any. Each entry is read whole; used instead of common_objections when given" }
       },
       required: ["product", "target_persona", "proof_points"]
     }

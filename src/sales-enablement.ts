@@ -1,6 +1,6 @@
 import { lowerFirstIfCommon, cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { q, qs, readContext, answerFor, objectionKind, proofFor, sectorNotes, startWords, type ObjectionKind, type Vertical } from './sector.ts';
-import { splitList, splitObjections, parseProof, productParts, fixNumbers, endSentence, capFirst, proseJoin, roleOf, shortenClauses, KIND_NOTE, type ProofItem } from './draft.ts';
+import { splitList, splitObjections, parseProof, parseProofList, listEntries, productParts, fixNumbers, endSentence, capFirst, proseJoin, roleOf, shortenClauses, KIND_NOTE, type ProofItem } from './draft.ts';
 
 // Text only (run 8): an input phrase used as a whole sentence inside a script ends with a full stop.
 function asSentence(text: string | undefined): string {
@@ -80,7 +80,9 @@ export function generateSalesEnablement(args: {
   const persona = args.target_persona.trim();
   const { role, field } = roleOf(persona);
   const roleShown = role || persona;
-  const items: ProofItem[] = parseProof(args.proof_points);
+  // Run 27B (b): proof_list, value_props_list and objections_list, one entry each, read whole; they win over the free text fields when given
+  const items: ProofItem[] = parseProofList((args as Record<string, unknown>).proof_list) ?? parseProof(args.proof_points);
+  const objQA = Array.isArray((args as Record<string, unknown>).objections_list) ? ((args as Record<string, unknown>).objections_list as unknown[]).map((x) => ({ q: listEntries([x])[0] || '', a: x && typeof x === 'object' && typeof (x as Record<string, unknown>).answer === 'string' ? ((x as Record<string, unknown>).answer as string).trim() : '' })).filter((x) => x.q).slice(0, 20) : [];
   // Customer results, quotes and the vendor's own claims can answer an objection; recognition and company-wide counts are credibility only.
   const usable = items.filter((i) => i.kind !== 'recognition' && i.kind !== 'scale');
   const credibility = items.filter((i) => !usable.includes(i));
@@ -98,7 +100,9 @@ export function generateSalesEnablement(args: {
   // HANDLE optional objections: the sector's own objections when none were given and the sector is known; never generic invented ones.
   let objections: string[];
   let objectionsNote = '';
-  if (args.common_objections) {
+  if (objQA.length) {
+    objections = objQA.map((x) => x.q);
+  } else if (args.common_objections) {
     objections = splitObjections(args.common_objections);
   } else if (v) {
     objections = v.objections.map((o) => o.objection);
@@ -110,7 +114,8 @@ export function generateSalesEnablement(args: {
 
   // Run 27B (trace: "here's how X could help: founded in <year> and <amount> funding raised"): a fact about the company (founding year, funding,
   // head count, offices, a ranking, a review count) is not value to the buyer. It is listed as given; the product's own parts are the value then.
-  const vpAll = args.value_props ? splitList(args.value_props).map((p) => clipEcho(p)) : [];
+  const vpList = listEntries((args as Record<string, unknown>).value_props_list);
+  const vpAll = vpList.length ? vpList.map((p) => clipEcho(p)) : args.value_props ? splitList(args.value_props).map((p) => clipEcho(p)) : [];
   const COMPANY_FACT = /^(?:founded|established|incorporated|headquartered|offices?\b|backed by|named|recogni[sz]ed|ranked|awarded|winner|describes itself|rated)\b|\b(?:funding|funded|raised|employees|staff|headcount|unicorn|reviews? on|investors?)\b/i;
   const companyFacts = vpAll.filter((x) => COMPANY_FACT.test(x.replace(/\s*\([^()]*\)\s*$/, '')));
   const productList = (() => { const at = productFull.indexOf(': '); return at > 0 ? splitList(productFull.slice(at + 2)).map((x) => clipEcho(x, 160)).filter((x) => x.split(/\s+/).length >= 2) : []; })();
@@ -179,7 +184,7 @@ ${generateStagePitch(stage, product, valueProps, roleShown, usableTexts, walk, v
 
 ${objectionHandlers.length ? objectionHandlers.map((handler, i) => `
 ### Objection ${i + 1}: "${objections[i]}"
-
+${objQA[i] && objQA[i].q === objections[i] && objQA[i].a ? `\n**The answer you already have:** ${objQA[i].a} (from your input; say it in those words and confirm it is current)\n` : ''}
 **What this is:** ${handler.label}
 
 **Acknowledge:**

@@ -173,7 +173,10 @@ export const SCALE = /\b(?:\d[\d,.]*\+?\s*(?:m|mn|million|k|thousand|lakh|crore)
 const OUTCOME_VERB = /\b(?:reduc\w+|cut|cuts|saved?|saves|improv\w+|increas\w+|grew|grow|boost\w*|achiev\w+|automat\w+|consolidat\w+|digiti[sz]ed|expanded|scaled|deliver\w+|lower\w*|rais\w+|doubl\w+|halv\w+|faster|shorter|from \d[\d.,]*%? to|up from|down from|resulted in)\b/i;
 
 export function parseProof(raw: unknown): ProofItem[] {
-  return splitProof(raw).map((item) => {
+  return splitProof(raw).map(classifyProof);
+}
+function classifyProof(item: string): ProofItem {
+  {
     const m = LABEL_END.exec(item);
     const label = m ? m[1].trim() : '';
     const text = (m ? item.slice(0, m.index) : item).trim().replace(/[;,.\s]+$/, '').replace(/\s+on the (?:home|about|pricing|product|customers?) page\b/gi, '').replace(/[,;]\s*:/g, ':').replace(/^Recognition listed:?\s*/i, 'Recognition: ');
@@ -188,7 +191,21 @@ export function parseProof(raw: unknown): ProofItem[] {
     else if (/page claim/.test(l) && !OUTCOME_VERB.test(text)) kind = 'claim';
     else kind = 'result';
     return { text, label, kind, figure, shown: label ? `${text} (${label})` : text };
-  });
+  }
+}
+
+// Run 27B (b): the optional list fields. Each entry is one item, read whole (never cut at a comma or a semicolon); an entry may be a string
+// or { text, label } (label: where it comes from, as in "(customer quote)" or "(page claim)").
+export function listEntries(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v.map((x) => (typeof x === 'string' ? x : x && typeof x === 'object' ? (() => { const o = x as Record<string, unknown>; const t = String(o.text ?? o.question ?? ''); const l = typeof o.label === 'string' && o.label.trim() && !/\)\s*$/.test(t) ? ` (${o.label.trim()})` : ''; return `${t}${l}`; })() : ''))
+    .map((x) => fixNumbers(x.replace(/\s+/g, ' ').trim())).filter(Boolean).slice(0, 20);
+}
+/** The proof items from an optional list field, each entry classified on its own; null when the field is not a list with entries. */
+export function parseProofList(v: unknown): ProofItem[] | null {
+  const e = listEntries(v);
+  if (!e.length) return null;
+  return e.map(classifyProof);
 }
 
 export const KIND_NOTE: Record<ProofKind, string> = {

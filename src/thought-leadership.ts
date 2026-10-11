@@ -1,7 +1,7 @@
 import { cap, lowerFirstIfCommon, titleWords } from './utils.js';
 import { cleanClaims, tagsFor } from './content-repurposer.ts';
 import { readContext, isClause, clipWords, type Vertical } from './sector.ts';
-import { parseProof, fixNumbers, RECOGNITION, endSentence, capFirst, shortenClauses, proseJoin, brandFrom, claimsToSource, headlineSubject, KIND_NOTE, bestQuestion, clipAtWord, dropTail, type ProofItem } from './draft.ts';
+import { parseProof, parseProofList, fixNumbers, RECOGNITION, endSentence, capFirst, shortenClauses, proseJoin, brandFrom, claimsToSource, headlineSubject, KIND_NOTE, bestQuestion, clipAtWord, dropTail, type ProofItem } from './draft.ts';
 import { cleanSectorLine, looksClause, isInstruction, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, shorten, quotedEnd, readersFit, shortReaders, splitQuoteRuns, isStatistic, lowerFirstSafe, toReader as toYou } from './rw-content.ts';
 
 // Run 21c (draft rewrite): the series is a first draft built from the inputs. Each article is written out in full sentences: an opening
@@ -35,7 +35,9 @@ export function generateThoughtLeadership(args: {
   const takeKept = takeRaw.split(/(?<=[.!?])\s+(?=[A-Z0-9"])/).filter((sn) => { if (isInstruction(sn)) { orders.push(sn.trim()); return false; } return true; });
   const yourTake = takeKept.join(' ').trim() || topic;
   const targetReader = gk(args.target_reader);
-  const proofRaw = g(args.proof_points);
+  // Run 27B (b): proof_list, one entry per proof point, each read whole; it wins over proof_points when given
+  const listP = parseProofList((args as Record<string, unknown>).proof_list);
+  const proofRaw = g(args.proof_points) || (listP ? listP.map((i) => i.shown).join('; ') : '');
   const hasAuthor = !!(args.author_background && g(args.author_background));
   const authorBackground = hasAuthor ? gk(args.author_background) : '';
   const numArticles = args.num_articles || 3;
@@ -53,7 +55,7 @@ export function generateThoughtLeadership(args: {
   const removedClaims: string[] = [];
   const soft = (t: string) => { const r = cleanClaims(t); removedClaims.push(...r.removed); return r.text; };
   const SAYS = /^(.{3,90}?)\s+says?:\s*['"“](.+?)['"”]\.?$/;
-  const items: ProofItem[] = proofRaw ? parseProof(splitQuoteRuns(proofRaw).replace(/\bon the (home|about|pricing|product|customers?) page card\b/gi, 'on the $1-page card').replace(/,\s+(?=(?:Named an?|Named as|Recogni[sz]ed as|Featured in|Winner of)\b)/g, '; ')).filter((i) => { if (isInstruction(i.text)) { orders.push(i.text); return false; } return true; }).map((i) => ({ ...i, text: soft(i.text), shown: soft(i.shown) })).map((i): ProofItem => {
+  const items: ProofItem[] = proofRaw ? (listP ?? parseProof(splitQuoteRuns(proofRaw).replace(/\bon the (home|about|pricing|product|customers?) page card\b/gi, 'on the $1-page card').replace(/,\s+(?=(?:Named an?|Named as|Recogni[sz]ed as|Featured in|Winner of)\b)/g, '; '))).filter((i) => { if (isInstruction(i.text)) { orders.push(i.text); return false; } return true; }).map((i) => ({ ...i, text: soft(i.text), shown: soft(i.shown) })).map((i): ProofItem => {
     // a customer who "says: '...'" is a quote; a story title that holds a figure reports a result, so it is not "a headline with no result"
     if (i.kind === 'result' && SAYS.test(i.text)) return { ...i, kind: 'quote' };
     if (i.kind === 'title' && isStatistic(i.text)) return { ...i, kind: 'result' };

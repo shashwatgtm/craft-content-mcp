@@ -1,6 +1,6 @@
 import { cap, aOrAn, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { readContext, startWords, type Vertical, type BusinessModel } from './sector.ts';
-import { parseProof, parseProofList, fixNumbers, endSentence, capFirst, proseJoin, isGenericName, shortenClauses, KIND_NOTE, type ProofItem } from './draft.ts';
+import { parseProof, fixNumbers, endSentence, capFirst, proseJoin, isGenericName, shortenClauses, KIND_NOTE, type ProofItem } from './draft.ts';
 
 export function generateTestimonialCapture(args: {
   customer_name: string;
@@ -37,8 +37,7 @@ export function generateTestimonialCapture(args: {
 
   // The success story is sorted: only a result, a quote or a story with a figure can be said to belong to this company, and only when
   // the company is named. A result of another customer, a recognition or a company-wide count is never put in this contact's mouth.
-  // Run 27B (b): success_story_list, one entry per part of the story, each read whole; it wins over success_story when given
-  const items = parseProofList((args as Record<string, unknown>).success_story_list) ?? parseProof(storyFull);
+  const items = parseProof(storyFull);
   const own = genericCo ? [] : items.filter((i) => i.kind === 'result' || i.kind === 'quote' || (i.kind === 'title' && i.figure));
   const elsewhere = items.filter((i) => !own.includes(i));
   const first = isGenericName(name) ? '' : name.replace(/\s*\(.*\)\s*$/, '').split(/\s+/)[0];

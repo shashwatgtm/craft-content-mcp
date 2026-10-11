@@ -1,4 +1,4 @@
-// Run 27B (b): optional named list fields for four tools (owner decision "(g) and (b) together"; input schemas of these tools only).
+// Run 27B (b): optional named list fields for three tools (webinar_script, thought_leadership_series, sales_enablement_content: the tools of this server whose top fault on pool P5 after fix (g) was still input ignored, cut or garbled) (owner decision "(g) and (b) together"; input schemas of these tools only).
 // Each list entry is read whole: never cut at a comma or a semicolon. The old free text fields still work (every older test passes unchanged).
 // Plain words only, no real company (rule B81). Loads dist (run npm run build first). Run: node --test tests/run27b-lists.test.mjs
 import { test } from "node:test";
@@ -15,13 +15,14 @@ const rpc = async (method, params) => {
 };
 const call = async (name, args) => { const r = await rpc("tools/call", { name, arguments: args }); return { isError: !!r.isError, text: r.content.map((c) => c.text).join("\n") }; };
 
-test("tools/list: the four tools offer the new list fields as optional inputs", async () => {
+test("tools/list: the three tools offer the new list fields as optional inputs, and testimonial_capture does not", async () => {
   const tools = (await rpc("tools/list", {})).tools;
-  const want = { webinar_script: ["takeaways_list"], thought_leadership_series: ["proof_list"], testimonial_capture: ["success_story_list"], sales_enablement_content: ["proof_list", "value_props_list", "objections_list"] };
+  const want = { webinar_script: ["takeaways_list"], thought_leadership_series: ["proof_list"], sales_enablement_content: ["proof_list", "value_props_list", "objections_list"] };
   for (const [name, fields] of Object.entries(want)) {
     const t = tools.find((x) => x.name === name);
     for (const f of fields) { assert.equal(t.inputSchema.properties[f].type, "array", `${name}.${f}`); assert.ok(!t.inputSchema.required.includes(f), `${name}.${f} optional`); }
   }
+  assert.ok(!("success_story_list" in tools.find((x) => x.name === "testimonial_capture").inputSchema.properties));
 });
 
 test("webinar_script: each takeaway entry is one takeaway, also with a semicolon inside", async () => {
@@ -39,13 +40,6 @@ test("thought_leadership_series: each proof entry is read whole, a quote with it
   assert.equal(r.isError, false);
   assert.match(r.text, /We see every store's tasks in one place; nothing is lost in chat now\./);
   assert.match(r.text, /Head of Operations at a grocery chain/);
-});
-
-test("testimonial_capture: each story entry is read whole", async () => {
-  const r = await call("testimonial_capture", { customer_name: "contact at a customer (name not given)", customer_company: "a grocery chain", customer_role: "Head of Operations", success_story: "see the list",
-    success_story_list: [{ text: "Stores finished 30% more tasks on time, in the first quarter; audits moved from paper to the app", label: "case study; page claim" }], testimonial_type: "written_quote" });
-  assert.equal(r.isError, false);
-  assert.match(r.text, /Stores finished 30% more tasks on time, in the first quarter; audits moved from paper to the app/);
 });
 
 test("sales_enablement_content: value props, proof and objections from the lists, with the answer the user has", async () => {

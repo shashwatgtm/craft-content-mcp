@@ -174,8 +174,7 @@ export const tools: Tool[] = [
         use_case: { type: "string", description: "Where the testimonial will be used (the website or a sales deck, for example)" },
         incentive: { type: "string", description: "Optional: what you are offering in return" },
         your_product: YOUR_PRODUCT_FIELD,
-        business_model: BUSINESS_MODEL_FIELD,
-        success_story_list: { type: "array", items: { anyOf: [{ type: "string" }, { type: "object", properties: { text: { type: "string" }, label: { type: "string", description: "Where it comes from, for example customer quote or page claim" } }, required: ["text"] }] }, description: "Optional: the parts of the success story, one per entry (a result, a quote with who said it, a claim), each with where it comes from if known. Each entry is read whole; used instead of success_story when given" }
+        business_model: BUSINESS_MODEL_FIELD
       },
       required: ["customer_name", "customer_company", "success_story", "testimonial_type"]
     }

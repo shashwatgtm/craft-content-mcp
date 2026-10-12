@@ -259,7 +259,9 @@ function shorterEmail(content: string): { text: string; left: string[] } | null 
   const broken = brokenTemplateLines(content);
   const isBroken = (x: string): boolean => broken.some((b) => b.line.includes(x.trim().slice(0, 40)));
   const opening = rest.find((x) => !isBroken(x)) || rest[0];
-  const product = rest.find((s, i) => i > 0 && s !== proof && !(proof && s.includes(proof)));
+  // Run 29G loop round 6 (judges: the shorter version printed one sentence twice when the first line was a broken template line): the product
+  // sentence is never the opening sentence again
+  const product = rest.find((s, i) => i > 0 && s !== opening && s !== proof && !(proof && s.includes(proof)));
   const kept: string[] = [];
   const left: string[] = [];
   const note = (orig: string, shown: string) => {
@@ -287,7 +289,8 @@ function shorterEmail(content: string): { text: string; left: string[] } | null 
   out.push(...sign);
   for (const s of rest) if (!kept.includes(s)) for (const piece of s.split(/;\s+/)) if (piece !== proof && !kept.includes(piece)) left.push(`${clipAtWord(piece.replace(/\s+/g, ' '), 45)}${piece.length > 45 ? '...' : ''}`);
   if (proof && opening && !kept.includes(opening)) return null;
-  const text = out.map((l, i) => (/^subject:/i.test(l) || l === greeting || sign.includes(l) ? l : editSentence(l))).join('\n');
+  // Run 29G loop round 6 (judges: a customer's quoted words were reworded, "value unlocked" to "value got"): a line that holds a quotation is kept as typed
+  const text = out.map((l, i) => (/^subject:/i.test(l) || l === greeting || sign.includes(l) || /["\u201c\u201d]/.test(l) ? l : editSentence(l))).join('\n');
   return countWords(text) < countWords(content) ? { text, left: left.slice(0, 6) } : null;
 }
 

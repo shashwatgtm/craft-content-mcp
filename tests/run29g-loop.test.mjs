@@ -100,3 +100,12 @@ test("sales_enablement_content: the spoken line does not read the user's bracket
   for (const l of said) assert.doesNotMatch(l, /the page answers/, `the note read aloud: ${l}`);
   assert.match(t, /^### Objection 1: "?Can I choose specific modules and pay only for what I use\? \(the page answers yes; pay based on usage\)/m);
 });
+
+// Round 9 (judges on pool P6: the product name was cut to "Powerplay, construction management software on a" in spoken lines and subjects):
+// a one-word name followed by a description is the name, not the start of a list.
+test("sales_enablement_content: a name followed by a long description is said as the name", async () => {
+  const t = await call("sales_enablement_content", { product: "Gridmark, construction billing software on a mobile app and desktop software that puts office and site teams in one place: pay applications, lien waivers and collections", target_persona: "Head of Finance", sales_stage: "discovery",
+    proof_points: "Gridmark is used by 300 subcontractors (page claim)" });
+  assert.doesNotMatch(t, /Gridmark, construction billing software on a\b(?! mobile)/, "the name is cut inside the description");
+  assert.match(t, /Before I tell you about Gridmark,? I'd love/);
+});

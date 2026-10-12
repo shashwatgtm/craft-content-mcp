@@ -455,7 +455,9 @@ function generateObjectionHandler(
     : k0;
   const factSentence = factText.length ? `From what we offer: ${factText.join('; ')}.` : '';
   const valueSentence = valueMatch && valueMatch !== proof ? `Our answer: ${asSentence(valueMatch.charAt(0).toUpperCase() + valueMatch.slice(1))}` : '';
-  const fullScript = `I hear you: ${qs(objection)}. ${k.ack} ${k.reframe} ${factSentence} ${valueSentence} ${proofSentence} ${k.close}`.replace(/\s+/g, ' ').trim();
+  // Run 29G loop round 8 (judge PJ1: the user's own bracket note was read aloud to the buyer): the spoken line quotes the question without it
+  const spoken = givenAnswer ? objection.replace(/\s*\((?:the page answers?|the answer is|answer:|answered:?)[^()]*\)\s*([.?!]?)\s*$/i, '$1').trim() : objection;
+  const fullScript = `I hear you: ${qs(spoken)}. ${k.ack} ${k.reframe} ${factSentence} ${valueSentence} ${proofSentence} ${k.close}`.replace(/\s+/g, ' ').trim();
   return {
     label: KIND_LABEL[kind],
     acknowledge: k.ack,

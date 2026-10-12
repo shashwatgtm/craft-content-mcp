@@ -387,7 +387,9 @@ export function productParts(product: string): { name: string; facts: string[]; 
   let first = segs[0] || text;
   // run 21c round 3: a comma inside a list of what the product covers ("Integrated travel, expense and payment management platform") is not the end of a name
   const second = segs[1] || '';
-  const listy = segs.length >= 2 && (segs[0] || '').split(/\s+/).length <= 3 && /^[a-z]/.test(second) && !/^(?:an?|the|our|its|their|it|is|are|that|which)\b/i.test(second) && /\band\b/i.test(second.split(/[,:;]/)[0]);
+  // Run 29G loop round 9 (judges: "Powerplay, construction management software on a"): a list continues the first segment only when its "and"
+  // comes early ("Integrated travel, expense and payment management platform"), not deep inside a description that follows a name
+  const listy = segs.length >= 2 && (segs[0] || '').split(/\s+/).length <= 3 && /^[a-z]/.test(second) && !/^(?:an?|the|our|its|their|it|is|are|that|which)\b/i.test(second) && /\band\b/i.test(second.split(/[,:;]/)[0].split(/\s+/).slice(0, 4).join(' '));
   if (listy) first = `${segs[0]}, ${second}`;
   // "Brightfield managed services from Brightfield Software" is named by what comes before "from"
   const from = /^(.+?)\s+(?:from|by|of)\s+[A-Z]/.exec(first);

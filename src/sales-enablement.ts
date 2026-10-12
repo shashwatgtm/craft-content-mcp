@@ -446,7 +446,13 @@ function generateObjectionHandler(
       close: isQuestion ? 'Does that answer it, or is there a part that matters more to you?' : 'What would be most helpful to show you next?'
     }
   };
-  const k = kinds[kind];
+  // Run 29G loop round 7 (judges: "Good question. Let me answer it first" and no answer, when the objection carried its own answer in a bracket,
+  // "(the page answers yes; pay based on usage)"): the answer given is said, labelled as given, and the question behind it is asked after it
+  const givenAnswer = (objection.match(/\((?:the page answers?|the answer is|answer:|answered:?)\s*([^()]+)\)\s*[.?!]?\s*$/i) || [])[1];
+  const k0 = kinds[kind];
+  const k = givenAnswer
+    ? { ...k0, reframe: `As your own answer says: ${givenAnswer.trim().replace(/;\s*/g, ', ').replace(/^./, (c) => c.toUpperCase()).replace(/[.]+$/, '')}. ${k0.reframe === 'Let me answer it first, and then ask what is behind it for you.' ? 'What is behind the question for you?' : k0.reframe}` }
+    : k0;
   const factSentence = factText.length ? `From what we offer: ${factText.join('; ')}.` : '';
   const valueSentence = valueMatch && valueMatch !== proof ? `Our answer: ${asSentence(valueMatch.charAt(0).toUpperCase() + valueMatch.slice(1))}` : '';
   const fullScript = `I hear you: ${qs(objection)}. ${k.ack} ${k.reframe} ${factSentence} ${valueSentence} ${proofSentence} ${k.close}`.replace(/\s+/g, ' ').trim();

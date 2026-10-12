@@ -20,6 +20,7 @@ import { generateThoughtLeadership } from "./thought-leadership.js";
 import { generateTestimonialCapture } from "./testimonial-capture.js";
 import { generateSalesEnablement } from "./sales-enablement.js";
 import { generateContentImprover } from "./content-improver.js";
+import { structureAnswer } from "./structure.js";
 
 export const SERVER_NAME = "craft-content-mcp";
 export const SERVER_VERSION = "2.2.17";
@@ -143,6 +144,8 @@ function checkRequiredInputs(
   return null;
 }
 
+const STRUCTURED = new Set(["craft_content_improver", "testimonial_capture", "thought_leadership_series", "webinar_script", "sales_enablement_content"]);
+
 export function createServer(): Server {
   const server = new Server(
     {
@@ -203,6 +206,12 @@ export function createServer(): Server {
           break;
         default:
           throw new Error(`Unknown tool: ${name}`);
+      }
+      // Run 29G (owner decision D-27B-1 (a)): the five tools of this server among the ten weakest return six plain sections (src/structure.ts).
+      if (STRUCTURED.has(name)) {
+        const schema = (tools.find((t) => t.name === name)?.inputSchema || {}) as { properties?: Record<string, unknown>; required?: string[] };
+        const optional = Object.keys(schema.properties || {}).filter((k) => !(schema.required || []).includes(k));
+        result = structureAnswer(name, (args || {}) as Record<string, unknown>, result, optional);
       }
 
       return {

@@ -76,3 +76,15 @@ test("craft_content_improver: the shorter version never repeats a sentence and k
   assert.equal(new Set(lines).size, lines.length, `a sentence printed twice: ${lines.join(" | ")}`);
   assert.doesNotMatch(sv, /value got/, "a quoted word was reworded");
 });
+
+// Round 7 (judges on pools P5 and P6: "Good question. Let me answer it first" with no answer, when the objection carried its own answer in a
+// bracket): the handler says the answer the user gave, labelled as theirs, and then asks what is behind the question.
+test("sales_enablement_content: an objection with its own answer in a bracket is answered with it", async () => {
+  const t = await call("sales_enablement_content", { product: "Cardwell, a card issuing platform for fintech companies: virtual cards, spend controls and a ledger", target_persona: "Head of Payments",
+    proof_points: "Cardwell processes card payments for 40 fintech companies (page claim)",
+    common_objections: "Can I choose specific modules and pay only for what I use? (the page answers yes; pay based on usage)" });
+  const block = (t.split(/^### Objection 1: /m)[1] || "").split(/\n### /)[0];
+  assert.ok(block, "an objection block");
+  assert.doesNotMatch(block, /Let me answer it first/, "the answer is promised but not given");
+  assert.match(block, /\*\*Reframe:\*\*\n> [^\n]*yes, pay based on usage/i);
+});

@@ -88,3 +88,15 @@ test("sales_enablement_content: an objection with its own answer in a bracket is
   assert.doesNotMatch(block, /Let me answer it first/, "the answer is promised but not given");
   assert.match(block, /\*\*Reframe:\*\*\n> [^\n]*yes, pay based on usage/i);
 });
+
+// Round 8 (judge PJ1 on pool P6: the spoken script read the user's own bracket note, "(the page answers ...)", aloud to the prospect): the
+// line to say quotes the buyer's question without the note; the note stays in the heading.
+test("sales_enablement_content: the spoken line does not read the user's bracket note to the buyer", async () => {
+  const t = await call("sales_enablement_content", { product: "Cardwell, a card issuing platform for fintech companies: virtual cards, spend controls and a ledger", target_persona: "Head of Payments",
+    proof_points: "Cardwell processes card payments for 40 fintech companies (page claim)",
+    common_objections: "Can I choose specific modules and pay only for what I use? (the page answers yes; pay based on usage)" });
+  const said = t.split("\n").filter((l) => /I hear you: /.test(l));
+  assert.ok(said.length, "a spoken line");
+  for (const l of said) assert.doesNotMatch(l, /the page answers/, `the note read aloud: ${l}`);
+  assert.match(t, /^### Objection 1: "?Can I choose specific modules and pay only for what I use\? \(the page answers yes; pay based on usage\)/m);
+});

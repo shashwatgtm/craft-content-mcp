@@ -60,3 +60,19 @@ test("sales_enablement_content: press quotes, profitability and download counts 
   const facts = (t.match(/Facts about the company you gave in value_props[^\n]*/) || [""])[0];
   for (const f of ["crossed profitability in 2020", "press quotes on the about page", "2 million app downloads"]) assert.ok(facts.includes(f), `kept out of the pitch as a company fact: ${f}`);
 });
+
+// Round 6 (judges on pools P5 and P6: the shorter version printed the same sentence twice, and reworded a customer's quoted words, "value
+// unlocked" to "value got", while saying nothing was reworded): no sentence twice, and quoted words stay as typed.
+test("craft_content_improver: the shorter version never repeats a sentence and keeps quoted words as typed", async () => {
+  const email = ["Subject: Faster invoicing for repair shops that work on trucks and trailers every single day", "", "Hi,", "",
+    "Teams at independent truck repair shops often deal with every job needs to be done right, with the correct parts on hand and every hour billed accurately.",
+    "Gridshop is a repair shop management platform that lets shops take repair requests, build estimates and invoice customers from one place.",
+    "One shop said “the value unlocked in the first month paid for the whole year” and cut invoice time from 3 days to 1 day (customer quote).",
+    "Would you be open to a 20-minute call next week?", "", "Thanks,", "The Gridshop team"].join("\n");
+  const t = await call("craft_content_improver", { content: email, content_type: "sales_email" });
+  const sv = (t.split("## Suggested Shorter Version")[1] || "").split("\n---")[0];
+  assert.ok(sv.trim(), "a shorter version is given");
+  const lines = sv.split("\n").map((l) => l.trim()).filter((l) => l.length > 30 && !l.startsWith("*"));
+  assert.equal(new Set(lines).size, lines.length, `a sentence printed twice: ${lines.join(" | ")}`);
+  assert.doesNotMatch(sv, /value got/, "a quoted word was reworded");
+});

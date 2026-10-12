@@ -45,3 +45,18 @@ test("the note to the assistant states what the sections hold and gives no order
   for (const l of note.trim().split("\n")) assert.doesNotMatch(l, /^(?:Write|Use|Add|Ask|Keep|Invent|Do not|Don't)\b/, `an order in the note: ${l}`);
   assert.match(note, /^Section 2 is /m);
 });
+
+// Round 3 (judges on pools P5 and P6): the improver never says the text "contains no long sentence" right after listing long sentences; a sales
+// kit does not pitch press quotes, profitability or download counts as value to the buyer.
+test("craft_content_improver: with no automatic edit, the answer does not say the text holds no long sentence", async () => {
+  const long = "Teams at regional grocery chains often lose hours every week because store tasks arrive by email, chat and phone from several managers at once, so nobody can see what is done, what is late and what needs a photo check before the area manager visits the store.";
+  const t = await call("craft_content_improver", { content: `Subject: Store tasks\n\nHi,\n\n${long}\n\nWould you be open to a call?\n\nThanks`, content_type: "sales_email" });
+  assert.doesNotMatch(t, /contains no buzzword, long sentence/);
+});
+test("sales_enablement_content: press quotes, profitability and download counts are company facts, not value propositions", async () => {
+  const t = await call("sales_enablement_content", { product: "Cardwell, a card issuing platform for fintech companies: virtual cards, spend controls and a ledger", target_persona: "Head of Payments",
+    proof_points: "Cardwell processes card payments for 40 fintech companies (page claim)",
+    value_props: "crossed profitability in 2020; press quotes on the about page; 2 million app downloads; virtual cards issued in minutes (page claims)" });
+  const facts = (t.match(/Facts about the company you gave in value_props[^\n]*/) || [""])[0];
+  for (const f of ["crossed profitability in 2020", "press quotes on the about page", "2 million app downloads"]) assert.ok(facts.includes(f), `kept out of the pitch as a company fact: ${f}`);
+});

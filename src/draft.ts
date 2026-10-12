@@ -80,10 +80,14 @@ export function splitList(raw: unknown): string[] {
     const prevLast = merged.length ? (merged[merged.length - 1].split(/\s+/).pop() || '') : '';
     // a short capitalised fragment after an item that ends in an acronym or place ("across the US; UK; EU") continues that list
     const placeList = merged.length > 0 && (p.split(/\s+/).length <= 3 || (/^[A-Z]{2,5}\b/.test(p) && /^[A-Z]{2,5}[,.]?$/.test(prevLast) && p.split(/\s+/).length <= 7)) && /^[A-Z]/.test(p) && !/\d/.test(p) && (/^[A-Z]{2,5}[,.]?$/.test(prevLast) || /^[A-Z][a-z]+$/.test(prevLast));
+    // Run 29G loop (judges: "the United Kingdom" was printed as a value proposition): a place name with "the" ("the United Kingdom", "the Netherlands
+    // and South Africa") after an item that ends in a place goes on that item; so does a list of acronyms in the plural ("CIOs; CTOs and CXOs who ...")
+    const thePlace = merged.length > 0 && /^the\s+[A-Z][a-z]+(?:\s+(?:[A-Z][a-z]+|and|the))*$/.test(p) && p.split(/\s+/).length <= 6 && /^[A-Z][a-z]+$/.test(prevLast);
+    const acronyms = merged.length > 0 && /^[A-Z]{2,5}s[,.]?$/.test(prevLast) && /^[A-Z]{2,5}s\b/.test(p);
     // Run 27B (trace: "one view where code; cloud and runtime findings meet" was cut in two): a relative clause left with one word
     // ("where code") goes on into the next piece when that piece starts in lower case
     const openClause = merged.length > 0 && /\b(?:where|that|which|when|whose)\s+[\w-]+$/i.test(merged[merged.length - 1]) && /^[a-z]/.test(p);
-    if (merged.length && (JOINER.test(p) || placeList || openClause)) merged[merged.length - 1] += ', ' + p;
+    if (merged.length && (JOINER.test(p) || placeList || openClause || thePlace || acronyms)) merged[merged.length - 1] += ', ' + p;
     else merged.push(p);
   }
   // short fragments: "fast; transparent; compliant and error free travel" is one run of adjectives
@@ -367,7 +371,9 @@ export function splitObjections(raw: unknown): string[] {
   if (typeof raw !== 'string') return [];
   const text = fixNumbers(raw);
   const out: string[] = [];
-  for (const line of text.split(/\n|;/).map((x) => x.trim().replace(/^[-*•]\s*/, '')).filter(Boolean)) {
+  // Run 29G loop (judges on pools P5 and P6: "a single minimum commitment)" was printed as an objection): a semicolon inside an objection's own
+  // bracket note is part of that objection
+  for (const line of text.split(/\n/).flatMap((l) => splitOutsideParens(l, /;/)).map((x) => x.trim().replace(/^[-*•]\s*/, '')).filter(Boolean)) {
     out.push(...splitOutsideParens(line, /(?<=[A-Za-z0-9?)"'])\s*,\s+(?=[A-Z])/));
   }
   return out;

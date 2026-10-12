@@ -138,7 +138,7 @@ ${improved.edits.length > 0
 ---
 
 ${improved.text}`
-  : `No automatic edits were found. The text above contains no buzzword, long sentence or unproven claim that this tool can replace on its own, so there is no improved version to show. The findings in Priority Fixes need your facts or your judgement.`}
+  : `No automatic edits were found: none of the findings above is one this tool can change on its own (a buzzword it has a plainer word for, a claim it can remove, or a sentence it can split at a joining word), so there is no improved version to show. The findings in Priority Fixes need your facts or your judgement.`}
 
 ---
 ${shorter ? `

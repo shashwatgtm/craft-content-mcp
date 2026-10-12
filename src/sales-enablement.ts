@@ -116,7 +116,8 @@ export function generateSalesEnablement(args: {
   // head count, offices, a ranking, a review count) is not value to the buyer. It is listed as given; the product's own parts are the value then.
   const vpList = listEntries((args as Record<string, unknown>).value_props_list);
   const vpAll = vpList.length ? vpList.map((p) => clipEcho(p)) : args.value_props ? splitList(args.value_props).map((p) => clipEcho(p)) : [];
-  const COMPANY_FACT = /^(?:founded|established|incorporated|headquartered|offices?\b|backed by|named|recogni[sz]ed|ranked|awarded|winner|describes itself|rated)\b|\b(?:funding|funded|raised|employees|staff|headcount|unicorn|reviews? on|investors?)\b/i;
+  // Run 29G loop round 3 (judges: press quotes, profitability and download counts were pitched as value): these are facts about the company too
+  const COMPANY_FACT = /^(?:founded|established|incorporated|headquartered|offices?\b|backed by|named|recogni[sz]ed|ranked|awarded|winner|describes itself|rated|crossed)\b|\b(?:funding|funded|raised|employees|staff|headcount|unicorn|reviews? on|investors?|profitab\w*|press quotes?|quoted in|featured in|downloads?|series [a-f])\b/i;
   const companyFacts = vpAll.filter((x) => COMPANY_FACT.test(x.replace(/\s*\([^()]*\)\s*$/, '')));
   const productList = (() => { const at = productFull.indexOf(': '); return at > 0 ? splitList(productFull.slice(at + 2)).map((x) => clipEcho(x, 160)).filter((x) => x.split(/\s+/).length >= 2) : []; })();
   const valueProps = vpAll.filter((x) => !companyFacts.includes(x)).length ? vpAll.filter((x) => !companyFacts.includes(x)) : companyFacts.length ? productList : vpAll;

@@ -258,7 +258,7 @@ const proofLine = (k: Kit, label = 'Result'): string => {
   const tag = p.label ? ` (${p.label})` : '';
   if (m) { const who = m[1].trim().replace(/^from\s+/i, ''); return endSentence(`A customer${who ? `, ${who},` : ''} says: "${m[2]}"${tag}`); }
   if (/^customer (?:quote|words):/i.test(p.text)) return endSentence(p.shown);
-  return `${p.kind === 'title' ? 'Customer story' : label}: ${endSentence(p.shown)}`;
+  return `${p.kind === 'title' ? 'Customer story' : p.kind === 'quote' ? 'Customer quote' : label}: ${endSentence(p.shown)}`;
 };
 // A line for a tweet: complete, at most 270 characters, ending at a clause boundary.
 const tweet = (s: string): string => endSentence(shortenClauses(s, 270));

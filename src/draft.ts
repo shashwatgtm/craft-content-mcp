@@ -11,7 +11,7 @@ export function fixNumbers(s: string): string {
 
 export function endSentence(s: string): string {
   const t = s.trim().replace(/[;,:\s]+$/, '');
-  return /[.!?]$/.test(t) ? t : `${t}.`;
+  return /[.!?]["'”’]?$/.test(t) ? t : `${t}.`;
 }
 export function capFirst(s: string): string {
   const t = s.trim();
@@ -64,7 +64,11 @@ export function splitList(raw: unknown): string[] {
   const lines = text.split(/\n/).map((x) => x.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
   const hasBreaks = lines.length > 1 || /;/.test(text);
   let parts: string[] = [];
+  // Run 42: items separated by ", Capital" with semicolons INSIDE the items ("a; the team pays the price; so b, C; d and e") keep each sentence whole:
+  // a semicolon followed by a small letter or a digit continues the item, only ", Capital" or "; Capital" starts the next one.
+  const mixed = lines.length === 1 && /;\s+(?![A-Z\s])/.test(text) && /,\s+[A-Z][a-z]/.test(text);
   for (const line of lines) {
+    if (mixed) { parts.push(...splitOutsideParens(line, /;\s+(?=[A-Z])|,\s+(?=[A-Z][a-z])/).map((x) => x.replace(/;\s+(?![A-Z])/g, ', '))); continue; }
     const bySemi = splitOutsideParens(line, /;/);
     if (bySemi.length > 1 || hasBreaks) parts.push(...bySemi);
     else parts.push(...splitOutsideParens(line, LIST_COMMA));
@@ -117,11 +121,56 @@ const LABEL_WORDS = '(?:customer quote|partner quote|page claim|case study title
 const LABEL_CLOSE = new RegExp(`\\(\\s*${LABEL_WORDS}[^()]*\\)\\s*[;,]\\s+(?=[A-Z0-9"“])`, 'g');
 const LABEL_END = new RegExp(`\\(\\s*(${LABEL_WORDS}[^()]*)\\)\\s*[.;]?\\s*$`, 'i');
 
+
+// Run 42: a quote stays whole and keeps its speaker. A quoted span ("..." '...' or curly) never splits at a comma, semicolon or line
+// break inside it; a speaker's name, title and "says" that were split apart ("Name; Title at Company; says ...") are put back together;
+// and a bare name or title (no verb) is never an item of its own.
+const QCOMMA = '', QSEMI = '', QNL = '';
+const QUOTED = /(?<=^|[\s:(\[])(?:"[^"\n]{8,}?"|'[^'\n]{8,}?'(?=[\s.,;:!?)]|$)|“[^”]{8,}?”|‘[^’]{8,}?’)/g;
+export function maskQuoted(t: string): string {
+  return t.replace(QUOTED, (m) => m.replace(/,/g, QCOMMA).replace(/;/g, QSEMI).replace(/\n/g, QNL));
+}
+export function unmaskQuoted(t: string): string {
+  return t.split(QCOMMA).join(',').split(QSEMI).join(';').split(QNL).join('\n');
+}
+const TITLE_WORDS = '(?:Director|Head|VP|Vice President|CEO|CTO|CFO|COO|CMO|CIO|CISO|CRO|President|Founder|Co-?founder|Manager|Lead|Officer|Chief|Principal|Partner|Owner|Engineer|Analyst|Architect|Consultant|Leader|Chairman|Chair)';
+const TITLE_PRE = '(?:(?:Senior|Chief|Vice|Global|Group|Regional|Associate|Executive|Managing|Technical|Product|International|Deputy|Assistant)\\s+)*';
+const TITLE_START = new RegExp(`^${TITLE_PRE}${TITLE_WORDS}\\b`, 'i');
+const SPEECH_START = /^(?:says?|said|states?|notes?|explains?|adds?|told|reports?|shares?|believes?|commented|stated)\b/i;
+const NAME = "[A-Z][\\p{L}.'’-]+(?: [A-Z][\\p{L}.'’-]+){1,3}";
+const NAME_ONLY = new RegExp(`^${NAME}$`, 'u');
+const ATTRIBUTED = new RegExp(`^(?:${NAME}, )?${TITLE_PRE}${TITLE_WORDS}\\b[^:]{0,100}(?::|, (?:says?|said)\\b)|^${NAME},? (?:says?|said)\\b`, 'u');
+const TITLE_ONLY = (x: string) => TITLE_START.test(x) && !/:/.test(x) && !/\b(?:helped|has|have|had|is|are|was|were|reduced|cut|saved|improved|increased|grew)\b/i.test(x) && x.split(/\s+/).length <= 14;
+const NAME_COMMA = new RegExp(`^${NAME}, `, 'u');
+const isAttribution = (x: string) => !SPEECH_START.test(x) && ((NAME_ONLY.test(x) && !/\d/.test(x)) || TITLE_ONLY(x) || (NAME_COMMA.test(x) && TITLE_ONLY(x.replace(NAME_COMMA, ''))));
+// A statement with its speaker in front ("Name, Title at Company: ..." or "Name, Title, says ...") or a quotation followed by the speaker.
+export function isAttributed(x: string): boolean {
+  return ATTRIBUTED.test(x) || /^\s*(?:"[^"]{8,}"|“[^”]{8,}”)\s*[,—-]\s*[A-Z]/.test(x);
+}
+function rejoinAttributed(items: string[]): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < items.length; i++) {
+    let cur = items[i];
+    // a name or a title (no verb) goes with what follows it when that is a title or a "says ..." clause
+    while (i < items.length - 1 && isAttribution(cur) && (TITLE_START.test(items[i + 1]) || SPEECH_START.test(items[i + 1]))) {
+      i++;
+      cur += (SPEECH_START.test(items[i]) && NAME_ONLY.test(cur) ? ' ' : ', ') + items[i];
+    }
+    // "says ..." belongs to the speaker before it
+    if (out.length && SPEECH_START.test(cur) && isAttribution(out[out.length - 1])) { out[out.length - 1] += ', ' + cur; continue; }
+    // the rest of a sentence that began with a speaker ("..., says X brought a, b and c.")
+    const prev = out[out.length - 1];
+    if (prev !== undefined && /^[a-z]/.test(cur) && isAttributed(prev) && /\b(?:says?|said)\b/i.test(prev) && !/[.!?]["'”’]?$/.test(prev)) { out[out.length - 1] += ', ' + cur; continue; }
+    out.push(cur);
+  }
+  return out;
+}
+
 // Splits a list of proof points or results. A bracketed source label at the end of an item ("(page claim)") marks where it ends,
 // so a comma or a semicolon inside an item never splits it. Without labels, the general list rule applies.
 export function splitProof(raw: unknown): string[] {
   if (typeof raw !== 'string') return [];
-  const text = fixNumbers(raw).trim();
+  const text = maskQuoted(fixNumbers(raw).trim());
   if (!text) return [];
   const lines = text.split(/\n+/).map((x) => x.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
   const out: string[] = [];
@@ -155,7 +204,7 @@ export function splitProof(raw: unknown): string[] {
     }
     for (const piece of pieces.length ? pieces : [chunk]) items.push(piece.replace(/;\s+(?=[\d a-z])/g, ', '));
   }
-  return items.map((x) => x.replace(/[;,]\s*$/, '').trim()).filter(Boolean);
+  return rejoinAttributed(items.map((x) => x.replace(/[;,]\s*$/, '').trim()).filter(Boolean)).map(unmaskQuoted);
 }
 
 export const RECOGNITION = /\b(?:recogni[sz]ed|recognition|named (?:a |an |as )?(?:leader|major contender|contender|challenger|visionary|enterprise innovator|top)|leader in|leaders? in|ranked|ranking|award(?:s|ed)?|winner|magic quadrant|gartner|forrester|\bg2\b|everest|hfs|frost radar|frost & sullivan|idc\b|cio choice|enterprise innovator|best (?:[A-Za-z&\-]+ ){1,6}(?:platform|solution|tool|provider|vendor|product)|top \d+)\b/i;
@@ -171,7 +220,7 @@ export function parseProof(raw: unknown): ProofItem[] {
     const figure = FIGURE.test(text);
     let kind: ProofKind;
     if (RECOGNITION.test(text) && !/\bcustomer quote\b/.test(l)) kind = 'recognition';
-    else if (/quote/.test(l)) kind = 'quote';
+    else if (/quote/.test(l) || isAttributed(text)) kind = 'quote';
     else if (/title|story/.test(l) || /^(?:how|why)\b/i.test(text)) kind = 'title';
     else if (SCALE.test(text) && !OUTCOME_VERB.test(text)) kind = 'scale';
     else if (/page claim/.test(l) && !OUTCOME_VERB.test(text)) kind = 'claim';

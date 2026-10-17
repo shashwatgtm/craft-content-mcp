@@ -47,8 +47,51 @@ const IT_ROLE = /\b(?:gm[- ]it|cio|chief information|head of it|it head|it (?:ma
 function scrub(list: unknown[] | undefined): unknown[] | undefined {
   return list?.map((x) => typeof x === 'string' ? x.replace(/\b(?:per|each|every|single|individual)\s+securit(?:y|ies)\b/gi, 'instrument').replace(/\bsecurities\b/gi, 'instruments').replace(/\bSOC ?[123]\b/gi, 'audit report').replace(/\b([A-Z][A-Za-z0-9]+) Software\b/g, '$1') : x);
 }
+// Run 42: the seller's own category and product description outweigh words about the seller's customers' industries.
+// (1) One ambiguous word in the seller's text ("warehouse" in "warehouse data activation", "security" in "cloud and security") does not
+//     name a sector unless another text of the inputs reads as the same sector; alone, the sector stays unread and neither the
+//     job titles nor the buyer's industry fill the gap (they say who the customers are, not what the seller sells).
+// (2) A list of customer industries in the deal text ("across banking, manufacturing, retail and telecom") is not the seller's sector.
+// (3) A seller text that is only a product name, read as no sector, is not made a sector by the buyer's industry or job titles alone.
+// When the signals are weak or conflicting the answer uses neutral B2B wording (no sector read).
+const AMBIGUOUS_WORD = new Set(['warehouse', 'warehousing', 'security', 'secure', 'shipping', 'shipment', 'shipments', 'delivery', 'fleet', 'freight', 'transport', 'payment', 'payments', 'network', 'networking', 'data', 'cloud', 'banking', 'platform', 'trading', 'lending', 'insurance', 'tracking', 'route', 'routing', 'inventory', 'compliance', 'risk', 'fraud', 'billing', 'logistics', 'hotel', 'hotels', 'retail', 'travel', 'carrier', 'carriers', 'stock']);
+const INDUSTRY_WORD = /\b(?:banking|banks?|bfsi|financial services|insurance|insurers?|manufacturing|retail|e-?commerce|telecom\w*|hospitality|travel|logistics|energy|utilities|automotive|education|media|government|public sector|consumer goods|fmcg|airlines?|real estate)\b/gi;
+function nonEmpty(list: unknown[] | undefined): string[] { return (list || []).filter((x): x is string => typeof x === 'string' && x.trim().length > 0); }
+function weighSignals(input: ReaderInput): ReaderInput {
+  const out: ReaderInput = { ...input };
+  const dropIndustryLists = (list: unknown[] | undefined) => list?.map((x) => {
+    if (typeof x !== 'string') return x;
+    const found = new Set((x.match(INDUSTRY_WORD) || []).map((w) => w.toLowerCase()));
+    return found.size >= 3 ? x.replace(INDUSTRY_WORD, 'customer industry') : x;
+  });
+  out.context = dropIndustryLists(input.context);
+  out.buyer = dropIndustryLists(input.buyer);
+  const sellerTexts = nonEmpty(out.seller);
+  if (!sellerTexts.length) return out;
+  const sr = explainSector({ seller: out.seller });
+  if (sr.vertical) {
+    const word = sr.strong.length === 1 ? sr.strong[0].toLowerCase().trim() : '';
+    if (!word || sr.weak.length > 0 || !AMBIGUOUS_WORD.has(word)) return out;
+    // the word is the product's own category when it sits next to a product noun ("warehouse management system", "software for warehouses")
+    const w = word.replace(/[^a-z]/g, '');
+    const category = new RegExp(`\\b${w}\\w*(?: [a-z-]+){0,1} (?:system|software|platform|app|tool|solution|suite|service|provider|company|vendor)s?\\b|\\b(?:software|platform|system|app|tool|solution|service)s? (?:for|to|that|which) [^.;]{0,60}\\b${w}`, 'i');
+    if (sellerTexts.some((t) => category.test(t))) return out;
+    // another text corroborates only with words other than the lone one
+    const lone = new RegExp(`\\b${word.replace(/[^a-z]/g, '')}\\w*`, 'gi');
+    const same = (t: string) => explainSector({ seller: [t.replace(lone, ' ')] }).vertical?.id === sr.vertical!.id;
+    if ([...nonEmpty(out.context), ...nonEmpty(out.role), ...nonEmpty(out.buyer), ...sellerTexts].some(same)) return out;
+    return { seller: [], context: out.context, role: [], buyer: [] };
+  }
+  // The seller gave a product but its words name no sector: a sector read only from words naming customers' industries ("banking",
+  // "payments", "retail", "travel") describes who the customers are, so it is not used.
+  const CUSTOMER_WORD = new RegExp(`^(?:${INDUSTRY_WORD.source.replace(/^\\b\(\?:|\)\\b$/g, '')}|payments?|lending|lenders?|fintech|financial)$`, 'i');
+  const onlyCustomerWords = (g: unknown[] | undefined, key: 'context' | 'buyer') => { const r = explainSector({ [key]: g }); return !!r.vertical && r.strong.every((x) => CUSTOMER_WORD.test(x.trim())); };
+  if (onlyCustomerWords(out.context, 'context')) out.context = [];
+  if (onlyCustomerWords(out.buyer, 'buyer') || !explainSector({ context: out.context }).vertical) out.buyer = [];
+  return out;
+}
 export function readContext(explicitModel: unknown, raw: ReaderInput): { v: Vertical | null; model: BusinessModel | null; how: string; line: string; source: string | null } {
-  const input: ReaderInput = { seller: scrub(raw.seller), context: scrub(raw.context), role: scrub(raw.role), buyer: scrub(raw.buyer) };
+  const input: ReaderInput = weighSignals({ seller: scrub(raw.seller), context: scrub(raw.context), role: scrub(raw.role), buyer: scrub(raw.buyer) });
   let v = detectVertical(input);
   const m = detectModel(explicitModel, input);
   const source = v ? explainSector(input).source : null;

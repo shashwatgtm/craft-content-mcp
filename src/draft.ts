@@ -131,8 +131,8 @@ export interface ProofItem {
   shown: string;         // text plus label, as typed
 }
 
-const LABEL_WORDS = '(?:customer quote|partner quote|page claim|case study title|case study|ebook title[^()]*|customer story title|success story title|story title|press release|analyst report|source|customer story|quote)';
-const LABEL_CLOSE = new RegExp(`\\(\\s*${LABEL_WORDS}[^()]*\\)\\s*[;,]\\s+(?=[A-Z0-9"“])`, 'g');
+const LABEL_WORDS = '(?:customer quote|partner quote|page claim|page banner|page teaser|page promo|case study title|case study|ebook title[^()]*|customer story title|success story title|story title|press release|analyst report|source|customer story|quote)';
+const LABEL_CLOSE = new RegExp(`\\(\\s*${LABEL_WORDS}[^()]*\\)\\s*[.;,]+\\s+(?=[A-Z0-9"“])`, 'g');
 const LABEL_END = new RegExp(`\\(\\s*(${LABEL_WORDS}[^()]*)\\)\\s*[.;]?\\s*$`, 'i');
 
 
@@ -256,6 +256,9 @@ function splitProofRaw(raw: unknown): string[] {
       // Run 42B: a source line ("Press quote: within days of an event") keeps the result that follows it ("; Acme picked up ..."), and a quote typed with
       // a speaker stays whole when a semicolon cuts it before its sentence ends (the second pass below): neither becomes a fragment and a separate item
       if (pieces.length && /^[A-Z]/.test(piece) && cutAfterColon(pieces[pieces.length - 1], piece)) { pieces[pieces.length - 1] += (isAttributed(pieces[pieces.length - 1].replace(/;/g, ',')) ? ', ' : '; ') + piece; continue; }
+      // Run 42B (round P): a bare speaker name after a finished sentence belongs to the item that follows it (its own title and words), never to the sentence before it
+      const nextSpeaker = pieces.length > 0 && /[.!?]["”'’]?$/.test(pieces[pieces.length - 1]) && NAME_ONLY.test(bare) && !/\d/.test(bare);
+      if (nextSpeaker) { pieces.push(piece); continue; }
       if (pieces.length && (pieces[pieces.length - 1].length < 60 || (/^\d/.test(piece) && bare.split(/\s+/).length < 5))) pieces[pieces.length - 1] += ', ' + piece;
       else pieces.push(piece);
     }
@@ -270,10 +273,11 @@ function splitProofRaw(raw: unknown): string[] {
   return joined.map(unmaskQuoted);
 }
 
-export const RECOGNITION = /\b(?:recogni[sz]ed|recognition|named (?:a |an |as )?(?:leader|major contender|contender|challenger|visionary|enterprise innovator|top)|leader in|leaders? in|ranked|ranking|award(?:s|ed)?|winner|magic quadrant|gartner|forrester|\bg2\b|everest|hfs|frost radar|frost & sullivan|idc\b|cio choice|enterprise innovator|best (?:[A-Za-z&\-]+ ){1,6}(?:platform|solution|tool|provider|vendor|product)|top \d+)\b/i;
+export const RECOGNITION = /\b(?:recogni[sz]ed|recognition|named (?:a |an |as )?(?:leader|major contender|contender|challenger|visionary|enterprise innovator|top)|leader in|leaders? in|ranked|ranking|award(?:s|ed)?|winner|magic quadrant|gartner|forrester|\bg2\b|everest|hfs|frost radar|frost & sullivan|idc\b|cio choice|enterprise innovator|best (?:[A-Za-z&\-]+ ){1,6}(?:platform|solution|tool|provider|vendor|product)|top \d+|one of the (?:best|top|most)\b[^.;]{0,40}|first and only|number (?:one|1)|no\.? ?1)\b|(?<![\w&])#\s?1\b/i;
 export const SCALE = /\b(?:\d[\d,.]*\+?\s*(?:m|mn|million|k|thousand|lakh|crore)?\+?\s+(?:businesses|customers|teams|companies|users|brands|enterprises|organi[sz]ations|developers|clients|countries)\b|(?:more than|over|up to)\s+\d[\d,.]*\+?\s*(?:million|thousand|k|m)?\s+\w+\s+(?:use|trust|rely)|\d[\d,.]*\+?\s*(?:million|mn|m|thousand|k)?\+?\s+\w+\s+(?:trust|use)\b)/i;
 const OUTCOME_VERB = /\b(?:reduc\w+|cut|cuts|saved?|saves|improv\w+|increas\w+|grew|grow|boost\w*|achiev\w+|automat\w+|consolidat\w+|digiti[sz]ed|expanded|scaled|deliver\w+|lower\w*|rais\w+|doubl\w+|halv\w+|faster|shorter|from \d[\d.,]*%? to|up from|down from|resulted in)\b/i;
 
+const PROMO_OFFER = /\b(?:financ(?:e|es|ing)|loans?|credit lines?|working capital|[a-z]+ capital to fund|pay later|buy now|apply now|get funded|0% (?:apr|interest)|special offer|limited[- ]time)\b/i;
 export function parseProof(raw: unknown): ProofItem[] {
   return splitProof(raw).map((item) => {
     const m = LABEL_END.exec(item);
@@ -284,7 +288,9 @@ export function parseProof(raw: unknown): ProofItem[] {
     let kind: ProofKind;
     if (RECOGNITION.test(text) && !/\bcustomer quote\b/.test(l)) kind = 'recognition';
     else if (/quote/.test(l) || isAttributed(text)) kind = 'quote';
-    else if (/title|story/.test(l) || /^(?:how|why)\b/i.test(text)) kind = 'title';
+    else if (/title|story|teaser|banner|promo/.test(l) || /^(?:how|why)\b/i.test(text)) kind = 'title';
+    // Run 42B (round P): a financing or promotional offer with no outcome is never proof of the platform
+    else if (PROMO_OFFER.test(text) && !figure && !OUTCOME_VERB.test(text)) kind = 'claim';
     else if (SCALE.test(text) && !OUTCOME_VERB.test(text)) kind = 'scale';
     else if (/page claim/.test(l) && !OUTCOME_VERB.test(text)) kind = 'claim';
     else kind = 'result';

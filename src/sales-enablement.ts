@@ -1,5 +1,5 @@
 import { lowerFirstIfCommon, cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
-import { q, qs, readContext, answerFor, objectionKind, proofFor, sectorNotes, startWords, type ObjectionKind, type Vertical } from './sector.ts';
+import { q, qs, clipWords, readContext, answerFor, objectionKind, proofFor, sectorNotes, startWords, type ObjectionKind, type Vertical } from './sector.ts';
 import { splitList, splitObjections, parseProof, productParts, fixNumbers, endSentence, capFirst, proseJoin, roleOf, shortenClauses, KIND_NOTE, RECOGNITION, type ProofItem } from './draft.ts';
 
 // Text only (run 8): an input phrase used as a whole sentence inside a script ends with a full stop.
@@ -108,7 +108,9 @@ export function generateSalesEnablement(args: {
     objections = splitObjections(args.common_objections);
   } else if (v) {
     objections = v.objections.map((o) => o.objection);
-    objectionsNote = `\n**NOTE:** You didn't provide objections. We've generated handlers for the objections ${v.name} buyers raise most. Update these with real objections you hear from prospects.\n`;
+    objectionsNote = args.competitor_objections
+      ? `\n**NOTE:** You gave one or more objections under competitor_objections (answered under Competitive Responses). We have added handlers for the objections ${v.name} buyers raise most; replace them with the ones you hear.\n`
+      : `\n**NOTE:** You didn't provide objections. We've generated handlers for the objections ${v.name} buyers raise most. Update these with real objections you hear from prospects.\n`;
   } else {
     objections = [];
     objectionsNote = `\n**NOTE:** You didn't provide objections and no sector could be read from your inputs, so no objection handlers are written (a generic list would be invented). Add common_objections, or name the industry, to get them.\n`;
@@ -122,12 +124,20 @@ export function generateSalesEnablement(args: {
   // Generate objection handlers: each objection is read on its own, answered with the sector's pattern and the proof point that fits it.
   const usedProof = new Set<string>();
   const usedValue = new Set<string>();
-  const objectionHandlers = objections.map((obj) => generateObjectionHandler(obj, valueProps, usableTexts, pp.facts, priceContext, v, usedProof, usedValue, pp.name, roleShown));
+  const strongestItem = usable.find((i) => i.figure) || usable.find((i) => i.kind === 'result') || usable[0];
+  const strongestText = strongestItem ? clipEcho(strongestItem.shown, 300) : '';
+  const objectionHandlers = objections.map((obj) => generateObjectionHandler(obj, valueProps, usableTexts, pp.facts, priceContext, v, usedProof, usedValue, pp.name, roleShown, strongestText));
   const competitorHandlers = competitorObjections.map((obj, i) => generateCompetitorHandler(obj, usableTexts, pp.facts, v, i));
 
   // A value proposition with the proof that bears on it (by shared words, then by kind) and the sector measure it ties to.
-  const valueRows = allValueProps.map((vp) => {
-    const proof = isCompanyFact(vp) ? undefined : relevant(vp, usableTexts)[0];
+  // A ranking claim ("#1", "number one", "ranked first") from a page is a claim, not proof: it goes after the points that are not rankings and says so.
+  const RANKING = /(?<![\w&])#\s?1\b|\bno\.? ?1\b|\bnumber (?:one|1)\b|\bfirst and only\b|\branked\b|\bbest[- ]in[- ]class\b/i;
+  const orderedProps = [...allValueProps.filter((p) => !RANKING.test(p)), ...allValueProps.filter((p) => RANKING.test(p))];
+  const strongest = usable.find((i) => i.figure) || usable.find((i) => i.kind === 'result') || usable[0];
+  const valueRows = orderedProps.map((vp) => {
+    const ranking = RANKING.test(vp);
+    const near = isCompanyFact(vp) || ranking ? undefined : relevant(vp, usableTexts)[0];
+    const proof = near || (ranking ? 'a ranking claim from a page is not proof: cite who ranked it and when before you say it' : strongest ? `none of your proof points bears on this one (the strongest you gave is: ${clipEcho(strongest.shown, 200)})` : undefined);
     const metric = v ? v.metrics.find((m) => [...wordSet(m)].some((x) => wordSet(vp).has(x))) : undefined;
     const obj = v ? v.objections.find((o) => relevant(vp, [o.objection]).length > 0) : undefined;
     const why = metric ? `it ties to ${metric}, a measure ${v!.name} buyers track` : obj ? `it answers an objection this sector raises: "${obj.objection}"` : '';
@@ -151,7 +161,7 @@ ${ctx.line}
 | **Price Position** | ${priceShown} |
 | **Sales Stage** | ${stage.replace(/_/g, ' ')}${args.sales_stage ? '' : ' (default)'} |${!args.value_props ? `
 | **Note** | No value_props given: the pitch order below leads with your proof points |` : ''}${!args.common_objections ? `
-| **Note** | Objections suggested: replace them with the ones you hear |` : ''}
+| **Note** | ${args.competitor_objections ? 'Your objection is under Competitive Responses; the handlers above add the usual ones for the sector' : 'Objections suggested: replace them with the ones you hear'} |` : ''}
 
 ---
 
@@ -375,7 +385,8 @@ function generateObjectionHandler(
   usedProof: Set<string>,
   usedValue: Set<string>,
   productName = '',
-  persona = ''
+  persona = '',
+  strongestText = ''
 ): { label: string; acknowledge: string; reframe: string; proof: string; facts: string; pattern: string; bridge: string; fullScript: string } {
   const kind = objectionKind(objection);
   const isQuestion = /\?\s*$/.test(objection.trim()) || /^(?:how|what|does|do|is|are|can|will|why|which|who|when)\b/i.test(objection.trim());
@@ -442,7 +453,7 @@ function generateObjectionHandler(
     other: {
       ack: isQuestion ? 'Good question.' : 'Thank you for saying so directly.',
       // Run 42 round 2: the question and the next step use the objection's own words, the persona and the product the user gave
-      reframe: isQuestion ? 'Let me answer it first, and then ask what is behind it for you.' : `Which part of that matters most${persona ? ` to a ${persona}` : ' to you'}, and what would you need to see to be comfortable?`,
+      reframe: isQuestion ? `On ${qs(clipWords(objection, 90))}: let me answer it first, and then ask what is behind it for you.` : `Which part of that matters most${/^(?:an?|the)?\s*[A-Za-z][A-Za-z ,-]{2,60}$/.test(persona) && !/\b(?:and|or|not given|unknown)\b|s$/i.test(persona) ? ` to ${/^(?:an?|the)\b/i.test(persona) ? '' : 'a '}${persona}` : ' to you'}, and what would you need to see on ${qs(clipWords(objection, 90))} to be comfortable?`,
       close: isQuestion ? 'Does that answer it, or is there a part that matters more to you?' : `Would it help if I showed how ${productName || 'we'} ${productName ? 'handles' : 'handle'} that, starting from your own example?`
     }
   };
@@ -454,7 +465,7 @@ function generateObjectionHandler(
     label: KIND_LABEL[kind],
     acknowledge: k.ack,
     reframe: k.reframe,
-    proof: proof || (valueMatch ? `None of your proof points answers this objection; your value proposition does: "${valueMatch}". Lead with it.` : `None of your proof points answers this objection. The proof that would: ${PROOF_THAT_WOULD[kind]}.`),
+    proof: proof || (valueMatch ? `None of your proof points answers this objection; your value proposition does: "${valueMatch}". Lead with it.` : `None of your proof points answers this objection. The proof that would: ${PROOF_THAT_WOULD[kind]}.${strongestText ? ` The strongest proof you gave is: ${strongestText}` : ''}`),
     facts: factText.join('; '),
     pattern,
     bridge: valueMatch && valueMatch !== proof ? valueMatch : '',

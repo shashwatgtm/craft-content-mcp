@@ -3,7 +3,7 @@
 // text instead of pasting it into fixed sentences, split typed lists, and pick whole sentences from a source text.
 // Rule B82: nothing here adds a statistic, a benchmark or a named-company fact.
 
-import { detectVertical, detectModel, explainSector, profileFor, VERTICALS, MODEL_NAME, SECTOR_MODEL, type Vertical, type BusinessModel, type ReaderInput } from './verticals.ts';
+import { detectVertical, detectModel, explainSector, profileFor, VERTICALS, SUBTYPES, MODEL_NAME, SECTOR_MODEL, type Vertical, type BusinessModel, type ReaderInput } from './verticals.ts';
 
 export type { Vertical, BusinessModel, ReaderInput };
 
@@ -22,6 +22,10 @@ export function weldNames(parts: string[]): string[] {
     const prev = out[out.length - 1];
     const apposition = /^(?:an?|the)\s+[a-z]/.test(p);
     const title = /^[A-Za-z][^:;]{2,70}\b(?:at|of|for)\b[^:;]{1,60}:\s/.test(p) && p.split(':')[0].split(/\s+/).length >= 3;
+    // Run 42B (round P): a speaker's name before "Company Name: the words said" belongs to that quote ("Jo Smith; Acme Kitchens: Now everything is in one place")
+    const company = /^[A-Z][^:;.]{1,40}:\s+\S/.test(p) && p.split(':')[0].split(/\s+/).length >= 2 && p.split(':')[0].split(/\s+/).length <= 5 && !/\b(?:quotes?|stor(?:y|ies)|headlines?|case|results?|press|proof|source|customers?|claims?|recognition|award|named|featured)\b/i.test(p.split(':')[0]);
+    const personName = prev !== undefined && /^[A-Z][\p{L}.'-]+(?:\s+[A-Z][\p{L}.'-]+){1,2}$/u.test(prev.trim()) && !/\d/.test(prev);
+    if (prev !== undefined && personName && company && !/[.!?:]$/.test(prev)) { out[out.length - 1] = `${prev}, ${p}`; continue; }
     if (prev !== undefined && !/[.!?:]$/.test(prev) && !/\d/.test(prev) && NAME_PHRASE.test(prev.trim()) && prev.trim().split(/\s+/).length <= 5 && (apposition || title)) out[out.length - 1] = `${prev}, ${p}`;
     else out.push(p);
   }
@@ -172,7 +176,23 @@ const STATED_MODEL = /\b(?:saas|subscriptions?|per seat|per user|licen[cs]es?|pe
 const SUBTYPE_GATE: Record<string, RegExp> = {
   'seller-shipping': /\b(?:india\w*|pin ?codes?|cash on delivery|cod remittance|courier (?:aggregators?|partners?)|shipping aggregators?|multi.?courier|d2c|rto|rupees?|lakh|crore)\b|₹/i
 };
+// Run 42B (addendum 8, round P): the ONE gate for every sub industry line (vocabulary, buyer roles, measures, objections, committee, discovery, proof shape).
+// A sub industry is used only when the seller's own category or product description holds its own words: its name, or two or more different words of its own list.
+// Otherwise null, and the tools use the sector's general notes or neutral wording. your_sector fixes the sector, never the sub industry.
+export function subIndustryFor(sellerTexts: unknown[], st: { name: string; match: RegExp } | null | undefined): boolean {
+  if (!st) return false;
+  const text = nonEmpty(sellerTexts).join(' | ');
+  if (!text) return false;
+  if (text.toLowerCase().includes(st.name.toLowerCase())) return true;
+  const found = new Set((text.match(new RegExp(st.match.source, st.match.flags.replace('g', '') + 'g')) || []).map((x) => x.toLowerCase().replace(/\s+/g, ' ').trim()));
+  if (found.size >= 2) return true;
+  // One keyword is enough only when it is a specific noun of the sub industry; a generic "<word> management software" phrase (job, project, service,
+  // work, business, asset) names no trade, so it needs a second word of the sub industry.
+  const [one] = [...found];
+  return !!one && !/^(?:(?:total |complete |all in one |cloud )?(?:job|project|service|work|business|task|customer|asset|workflow|operations?) (?:management|software)(?: (?:software|system|platform|tool|app))?|service management software|job management software)$/.test(one);
+}
 function subIndustryClear(base: Vertical, full: Vertical, model: BusinessModel | null, input: ReaderInput, own: unknown[] = []): boolean {
+  if (full.subtype && !subIndustryFor([...nonEmpty(input.seller), ...nonEmpty(own)], SUBTYPES.find((x) => x.id === full.subtype))) return false;
   const heads = [...nonEmpty(input.seller), ...nonEmpty(own)].filter((t) => t.includes(':') || t.length <= 200).map((t) => categoryHead(t)).filter((h) => h.length >= 8 && h.split(LIST_COMMA).length < 4);
   if (!heads.length) return false;
   const gate = full.subtype ? SUBTYPE_GATE[full.subtype] : undefined;

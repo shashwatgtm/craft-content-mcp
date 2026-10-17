@@ -190,7 +190,8 @@ const TYPE_VERB: Record<string, string> = {
 };
 
 // A topic for a headline: the whole topic when it is short, else the part before a trailing description ("... while the work is still going on").
-function shortTopic(topic: string): string {
+function shortTopic(topic: string): string { return shortTopicRaw(topic).replace(/[,;:\s-]+$/, '').trim(); }
+function shortTopicRaw(topic: string): string {
   const t = topic.replace(/\s+/g, ' ').trim().replace(/[.!?]+$/, '');
   if (t.length <= 48) return t;
   // Run 42B: a seller description ("a ... platform provider delivering purpose-built ...") is cut before its participle, so the headline names the kind of company, not a fragment

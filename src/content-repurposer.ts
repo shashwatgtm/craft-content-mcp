@@ -104,11 +104,13 @@ export function generateContentRepurposer(args: {
   const unknown = keys.filter((f) => !KNOWN_FORMATS.includes(f));
   const known = keys.filter((f) => KNOWN_FORMATS.includes(f));
   const customerProof = proof.filter((p) => !isPartnerItem(p) && (p.kind === 'result' || p.kind === 'quote' || (p.kind === 'title' && p.figure)));
-  const bestProof = ['result', 'quote', 'title'].map((kind) => customerProof.find((p) => p.kind === kind && p.figure)).find(Boolean) || customerProof[0];
+  // Run 42B (round P): with no figure anywhere, a customer's result outranks a quote; and a quote and a result are both kept (the strongest proof is never dropped)
+  const bestProof = ['result', 'quote', 'title'].map((kind) => customerProof.find((p) => p.kind === kind && p.figure)).find(Boolean) || customerProof.find((p) => p.kind === 'result' && /\b(?:cut|reduc\w+|sav(?:e|ed|es|ing)|improv\w+|increas\w+|faster|won|grew|doubl\w+|from \w+ to \w+)\b/i.test(p.text)) || customerProof.find((p) => p.kind === 'result') || customerProof[0];
+  const secondProof = bestProof ? customerProof.find((p) => p !== bestProof && (p.kind === 'result' || p.kind === 'quote')) : undefined;
   const otherProof = proof.filter((p) => !customerProof.includes(p));
   const tags = hashtags(content, keyMessage, ctx.v);
   const kind = sourceType.replace(/_/g, ' ');
-  const k: Kit = { points, pointsFull, proof, bestProof, hook, title, voice, keyMessage, kind, v: ctx.v, tags, content };
+  const k: Kit = { points, pointsFull, proof, bestProof, secondProof, hook, title, voice, keyMessage, kind, v: ctx.v, tags, content };
 
   // What the user must supply or add by hand, once.
   const notGiven: string[] = [];
@@ -247,14 +249,17 @@ function extractTitle(content: string, keyMessage: string): { title: string; fro
 }
 
 interface Kit {
-  points: string[]; pointsFull: string[]; proof: ProofItem[]; bestProof: ProofItem | undefined; hook: string; title: string; voice: string;
+  points: string[]; pointsFull: string[]; proof: ProofItem[]; bestProof: ProofItem | undefined; secondProof?: ProofItem; hook: string; title: string; voice: string;
   keyMessage: string; kind: string; v: Vertical | null; tags: string; content: string;
 }
 
 // The best proof as a line: a customer quote is shown as its words and the person named; a result or a story is shown as typed, with its label.
 const proofLine = (k: Kit, label = 'Result'): string => {
-  const p = k.bestProof;
-  if (!p) return '';
+  if (!k.bestProof) return '';
+  const first = proofLineOf(k.bestProof, label);
+  return k.secondProof && label === 'Result' ? `${first} ${proofLineOf(k.secondProof, 'Another result')}` : first;
+};
+const proofLineOf = (p: ProofItem, label: string): string => {
   const m = /^(?:customer|partner) (?:quote|words)(?: from)?\s*(.*?):\s*["“](.+?)["”]\.?$/i.exec(p.text);
   const tag = p.label ? ` (${p.label})` : '';
   if (m) { const who = m[1].trim().replace(/^from\s+/i, ''); return endSentence(`A customer${who ? `, ${who},` : ''} says: "${m[2]}"${tag}`); }
@@ -319,7 +324,7 @@ ${[endSentence(lead), ...rest.slice(0, 4).map((p) => endSentence(p)), proof, msg
     twitter_thread: () => {
       const tweets: string[] = [`${tweet(k.hook)} A thread.`];
       for (const p of rest.slice(0, 5)) for (const part of tweetParts(p)) tweets.push(`${tweets.length}/ ${part}`);
-      if (k.bestProof) for (const part of tweetParts(proof)) tweets.push(`${tweets.length}/ ${part}`);
+      if (k.bestProof) for (const part of tweetParts(proofLineOf(k.bestProof, 'Result'))) tweets.push(`${tweets.length}/ ${part}`);
       tweets.push(`${tweets.length}/ ${[msg ? tweet(msg) : '', close].filter(Boolean).join(' ')}`);
       return `
 ### Twitter/X Thread

@@ -80,22 +80,22 @@ const SERVICES_SIGNS: RegExp[] = [
 const TELECOM_SIGNS = /\b(?:connectivity|bandwidth|fib(?:re|er)|wavelengths?|ethernet|ip transit|sd-?wan|sip trunking|subsea|mpls|broadband|dedicated internet access|network as a service|carrier[- ]grade|carrier networks?|wholesale carriers?|cable landing|peering|peered)\b/gi;
 const FREIGHT_WORDS = /\b(?:shipments?|freight|shippers?|supply chain|logistics|truck\w*|warehous\w*|detention|etas?|last[- ]mile|3pl)\b/i;
 function distinct(re: RegExp, t: string): number { return new Set((t.match(re) || []).map((x) => x.toLowerCase())).size; }
-function coreOverride(input: ReaderInput): { id: 'ites' | 'telecom' | null; seller?: string[] } {
+function coreOverride(input: ReaderInput): { id: 'ites' | 'telecom' | null; seller?: string[]; vertical?: Vertical } {
   const sellerTexts = nonEmpty(input.seller);
   if (!sellerTexts.length) return { id: null };
   const whole = sellerTexts.join(' \n ');
   if (SERVICES_SIGNS.filter((re) => re.test(whole)).length >= 2 && !/\b(?:saas|subscription|per seat|per user|software platform)\b/i.test(whole)) return { id: 'ites' };
   if (distinct(TELECOM_SIGNS, whole) >= 2 && !FREIGHT_WORDS.test(whole)) return { id: 'telecom' };
   for (const t of sellerTexts) {
-    if (!t.includes(':')) continue;
+    if (!t.includes(':') && t.length > 200) continue;
     const head = categoryHead(t);
     if (head.length < 8) continue;
     const r = explainSector({ seller: [head] });
-    if (r.vertical && r.strong.some((w) => !AMBIGUOUS_WORD.has(w.toLowerCase().trim())) && r.weak.length === 0) return { id: null, seller: [head] };
+    if (r.vertical && !['ites', 'ai-native', 'saas'].includes(r.vertical.id) && r.strong.some((w) => !AMBIGUOUS_WORD.has(w.toLowerCase().trim())) && r.weak.length === 0) return { id: null, seller: [head], vertical: r.vertical };
   }
   return { id: null };
 }
-const NAME_ONLY = /^[A-Z][\w&.-]*(?: (?:[A-Z][\w&.-]*|and|of|&)){0,4}$/;
+const NAME_ONLY = /^[A-Z][\w&.-]*(?: [A-Z][\w&.-]*){0,3} (?:Services|Technology|Technologies|Solutions|Systems|Group|Global|Consulting|Digital|Limited|Ltd|Inc|Corp|Corporation|Company|Partners)$/;
 // A list of five or more capabilities (modules of one product) is not read twice: one of its items does not corroborate another.
 function isFeatureList(t: string): boolean { return t.split(LIST_COMMA).length >= 5; }
 function weighSignals(input: ReaderInput): ReaderInput {
@@ -124,7 +124,7 @@ function weighSignals(input: ReaderInput): ReaderInput {
     const lone = new RegExp(`\\b${w}\\w*`, 'gi');
     const same = (t: string) => { const r = explainSector({ seller: [t.replace(lone, ' ')] }); return r.vertical?.id === sr.vertical!.id && !r.strong.every((x) => AMBIGUOUS_WORD.has(x.toLowerCase().trim())); };
     if ([...nonEmpty(out.context), ...nonEmpty(out.role), ...nonEmpty(out.buyer), ...sellerTexts.filter((t) => !isFeatureList(t))].some(same)) return out;
-    return { seller: [], context: out.context, role: [], buyer: [] };
+    return { seller: [], context: out.context?.map((x) => typeof x === 'string' ? x.replace(lone, ' ') : x), role: [], buyer: [] };
   }
   // The seller gave a product but its words name no sector: a sector read only from words naming customers' industries ("banking",
   // "payments", "retail", "travel") describes who the customers are, so it is not used.
@@ -138,9 +138,9 @@ export function readContext(explicitModel: unknown, raw: ReaderInput): { v: Vert
   const scrubbed: ReaderInput = { seller: scrub(raw.seller), context: scrub(raw.context), role: scrub(raw.role), buyer: scrub(raw.buyer) };
   const ov = coreOverride(scrubbed);
   const input: ReaderInput = weighSignals(ov.seller ? { ...scrubbed, seller: ov.seller } : scrubbed);
-  const forced = ov.id ? VERTICALS.find((x) => x.id === ov.id) ?? null : null;
+  const forced = ov.vertical ?? (ov.id ? VERTICALS.find((x) => x.id === ov.id) ?? null : null);
   let v = forced ?? detectVertical(input);
-  const m = forced && !(typeof explicitModel === 'string' && explicitModel) ? { model: SECTOR_MODEL[forced.id], how: 'sector' as const } : detectModel(explicitModel, input);
+  const m = ov.vertical ? detectModel(explicitModel, { seller: ov.seller }) : forced && !(typeof explicitModel === 'string' && explicitModel) ? { model: SECTOR_MODEL[forced.id], how: 'sector' as const } : detectModel(explicitModel, input);
   const source = v ? (forced ? 'seller' : explainSector(input).source) : null;
   // A seller that manages money gets the investment notes (profileFor), and an AI native seller of support automation the support notes.
   // When only the buyer's industry points to fintech and that buyer is an investor, the seller's product may be anything: no notes are shown.

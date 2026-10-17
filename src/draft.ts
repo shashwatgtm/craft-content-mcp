@@ -133,7 +133,7 @@ export function maskQuoted(t: string): string {
 export function unmaskQuoted(t: string): string {
   return t.split(QCOMMA).join(',').split(QSEMI).join(';').split(QNL).join('\n');
 }
-const TITLE_WORDS = '(?:Director|Head|VP|Vice President|CEO|CTO|CFO|COO|CMO|CIO|CISO|CRO|President|Founder|Co-?founder|Manager|Lead|Officer|Chief|Principal|Partner|Owner|Engineer|Analyst|Architect|Consultant|Leader|Chairman|Chair)';
+const TITLE_WORDS = '(?:Director|Head|VP|Vice President|CEO|CTO|CFO|COO|CMO|CIO|CISO|CRO|President|Founder|Co-?founder|Manager|Lead|Officer|Chief|Principal|Partner|Owner|Engineer|Analyst|Architect|Consultant|Leader|Chairman|Chair|Controller|Treasurer|Accountant|Supervisor|Administrator|Coordinator|Specialist|Executive|Superintendent|Producer|Operator|Strategist|Developer|Buyer|Planner)';
 const TITLE_PRE = '(?:(?:Senior|Chief|Vice|Global|Group|Regional|Associate|Executive|Managing|Technical|Product|International|Deputy|Assistant)\\s+)*';
 const TITLE_START = new RegExp(`^${TITLE_PRE}${TITLE_WORDS}\\b`, 'i');
 const SPEECH_START = /^(?:says?|said|states?|notes?|explains?|adds?|told|reports?|shares?|believes?|commented|stated)\b/i;
@@ -147,7 +147,19 @@ const isAttribution = (x: string) => !SPEECH_START.test(x) && ((NAME_ONLY.test(x
 export function isAttributed(x: string): boolean {
   return ATTRIBUTED.test(x) || /^\s*(?:"[^"]{8,}"|“[^”]{8,}”)\s*[,—-]\s*[A-Z]/.test(x);
 }
-function rejoinAttributed(items: string[]): string[] {
+function rejoinAttributed(list: string[]): string[] {
+  // Run 42 round 2: "...with WNS; per Angela Maguire; Manager; Agency; Refunds and Chargebacks (page claim)" is one item: the words after
+  // "per", "by" or "said" and a name, and the short capitalised fragments of the title that follows, belong to the statement before them.
+  const items: string[] = [];
+  const ATTR_TAIL = /\b(?:per|by|from|according to|said|says) [A-Z][\p{L}.'’-]+(?: [A-Z][\p{L}.'’-]+)+(?:, [^,]{1,40}){0,4}$/u;
+  for (const x of list) {
+    const prev = items[items.length - 1];
+    const bare = x.replace(/\([^)]*\)[.\s]*$/, '').trim();
+    const startsWithBy = /^(?:per|by|according to) [A-Z]/.test(x);
+    const fragment = bare.split(/\s+/).length <= 6 && !/\d|:/.test(bare) && !OUTCOME_VERB.test(bare) && /^[A-Z][a-z]+(?: (?:and|of|&) [A-Z][a-z]+| [A-Z][a-z]+)*$/.test(bare);
+    if (prev !== undefined && (startsWithBy || (fragment && ATTR_TAIL.test(prev)))) items[items.length - 1] = prev.replace(/[;,]\s*$/, '') + ', ' + x;
+    else items.push(x);
+  }
   const out: string[] = [];
   for (let i = 0; i < items.length; i++) {
     let cur = items[i];
@@ -156,6 +168,15 @@ function rejoinAttributed(items: string[]): string[] {
       i++;
       cur += (SPEECH_START.test(items[i]) && NAME_ONLY.test(cur) ? ' ' : ', ') + items[i];
     }
+    // Run 42 round 2: a name and title alone ("Tracy Weston, Controller") is never proof: it goes with the words after it (a department,
+    // a company, the statement), and with nothing after it the bare attribution is dropped.
+    const hasTitle = (x: string) => TITLE_START.test(x) || (NAME_COMMA.test(x) && TITLE_START.test(x.replace(NAME_COMMA, '')));
+    const bareTitle = (x: string) => isAttribution(x) && hasTitle(x) && !/\b(?:says?|said)\b/i.test(x);
+    while (i < items.length - 1 && bareTitle(cur)) {
+      i++;
+      cur += (/^[a-z]/.test(items[i]) ? ' ' : ', ') + items[i];
+    }
+    if (bareTitle(cur)) continue;
     // "says ..." belongs to the speaker before it
     if (out.length && SPEECH_START.test(cur) && isAttribution(out[out.length - 1])) { out[out.length - 1] += ', ' + cur; continue; }
     // the rest of a sentence that began with a speaker ("..., says X brought a, b and c.")
@@ -194,11 +215,15 @@ export function splitProof(raw: unknown): string[] {
   // inside one chunk, "; Capital" outside brackets starts another item; "; 2,000+ man hours" continues the one before
   const items: string[] = [];
   for (const chunk of out) {
-    const raw = splitOutsideParens(chunk, /(?:;\s+(?=[A-Z0-9$₹€£"“])|[,;]\s+(?=(?:Customer (?:quote|words)|Recognition|Named (?:a|as)|Featured in|Success story|[A-Z][A-Za-z]+ Market Recognition|[A-Z][A-Za-z-]+ Excellence Award|[A-Z][a-z]+(?:'s|’s) [A-Z]{2,})\b)|,\s+(?=[A-Z][a-z]+(?:\s[A-Z][a-z]+){0,3}\s(?:automates|cuts|reduced|reduces|saved|saves|achieved|launched|expanded|improves|boosts|grew|consolidated|digiti[sz]ed|validates|optimi[sz]es|secured|helps|delivers|moved)\b))/);
+    const raw = splitOutsideParens(chunk, /(?:;\s+(?=[A-Z0-9$₹€£"“])|(?<=[a-z]{5}\.),\s+(?=[A-Z0-9])|[,;]\s+(?=(?:Customer (?:quote|words)|Recognition|Named (?:a|as)|Featured in|Success story|[A-Z][A-Za-z]+ Market Recognition|[A-Z][A-Za-z-]+ Excellence Award|[A-Z][a-z]+(?:'s|’s) [A-Z]{2,})\b)|,\s+(?=[A-Z][a-z]+(?:\s[A-Z][a-z]+){0,3}\s(?:automates|cuts|reduced|reduces|saved|saves|achieved|launched|expanded|improves|boosts|grew|consolidated|digiti[sz]ed|validates|optimi[sz]es|secured|helps|delivers|moved)\b))/);
     // a piece shorter than 60 characters is the start of the item that follows ("Success story: sensitive credentials exposed; Acme secured ...")
     const pieces: string[] = [];
     for (const piece of raw) {
-      const bare = piece.replace(/\([^)]*\)\s*$/, '').trim();
+      const bare = piece.replace(/\([^)]*\)[.\s]*$/, '').trim();
+      // a name and title typed with semicolons ("per Angela Maguire; Manager; Agency; Refunds and Chargebacks") stay in the item they belong to
+      const prevTail = pieces.length ? pieces[pieces.length - 1].split(/,\s+/).pop() ?? '' : '';
+      const inAttribution = /\b(?:per|by|from|according to|said|says) [A-Z][\p{L}.'’-]+(?: [A-Z][\p{L}.'’-]+)+(?:, [^,]{1,40}){0,4}$/u.test(pieces.length ? pieces[pieces.length - 1] : '') || (TITLE_START.test(prevTail) && !/[.!?:]$/.test(prevTail) && prevTail.split(/\s+/).length <= 8);
+      if (inAttribution && bare.split(/\s+/).length <= 6 && !/\d|:/.test(bare) && !OUTCOME_VERB.test(piece) && (TITLE_START.test(piece) || /^[A-Z][a-z]+(?: (?:and|of|&) [A-Z][a-z]+| [A-Z][a-z]+)*$/.test(bare))) { pieces[pieces.length - 1] += ', ' + piece; continue; }
       if (pieces.length && (pieces[pieces.length - 1].length < 60 || (/^\d/.test(piece) && bare.split(/\s+/).length < 5))) pieces[pieces.length - 1] += ', ' + piece;
       else pieces.push(piece);
     }

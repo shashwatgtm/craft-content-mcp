@@ -3,7 +3,7 @@
 // text instead of pasting it into fixed sentences, split typed lists, and pick whole sentences from a source text.
 // Rule B82: nothing here adds a statistic, a benchmark or a named-company fact.
 
-import { detectVertical, detectModel, explainSector, profileFor, VERTICALS, MODEL_NAME, type Vertical, type BusinessModel, type ReaderInput } from './verticals.ts';
+import { detectVertical, detectModel, explainSector, profileFor, VERTICALS, MODEL_NAME, SECTOR_MODEL, type Vertical, type BusinessModel, type ReaderInput } from './verticals.ts';
 
 export type { Vertical, BusinessModel, ReaderInput };
 
@@ -54,9 +54,50 @@ function scrub(list: unknown[] | undefined): unknown[] | undefined {
 // (2) A list of customer industries in the deal text ("across banking, manufacturing, retail and telecom") is not the seller's sector.
 // (3) A seller text that is only a product name, read as no sector, is not made a sector by the buyer's industry or job titles alone.
 // When the signals are weak or conflicting the answer uses neutral B2B wording (no sector read).
-const AMBIGUOUS_WORD = new Set(['warehouse', 'warehousing', 'security', 'secure', 'shipping', 'shipment', 'shipments', 'delivery', 'fleet', 'freight', 'transport', 'payment', 'payments', 'network', 'networking', 'data', 'cloud', 'banking', 'platform', 'trading', 'lending', 'insurance', 'tracking', 'route', 'routing', 'inventory', 'compliance', 'risk', 'fraud', 'billing', 'logistics', 'hotel', 'hotels', 'retail', 'travel', 'carrier', 'carriers', 'stock']);
-const INDUSTRY_WORD = /\b(?:banking|banks?|bfsi|financial services|insurance|insurers?|manufacturing|retail|e-?commerce|telecom\w*|hospitality|travel|logistics|energy|utilities|automotive|education|media|government|public sector|consumer goods|fmcg|airlines?|real estate)\b/gi;
+const AMBIGUOUS_WORD = new Set(['warehouse', 'warehousing', 'security', 'secure', 'shipping', 'shipment', 'shipments', 'delivery', 'fleet', 'freight', 'transport', 'payment', 'payments', 'network', 'networking', 'data', 'cloud', 'banking', 'platform', 'trading', 'lending', 'insurance', 'tracking', 'route', 'routing', 'inventory', 'compliance', 'risk', 'fraud', 'billing', 'logistics', 'hotel', 'hotels', 'retail', 'travel', 'carrier', 'carriers', 'stock', 'document', 'documents', 'document processing', 'invoice', 'invoices', 'invoicing', 'procure to pay', 'procure-to-pay', 'bill pay', 'accounts payable', 'agents', 'ai agents', 'workflow', 'workflows', 'automation', 'analytics', 'ocr']);
+const INDUSTRY_WORD = /\b(?:banking|banks?|bfsi|financial services|insurance|insurers?|manufacturing|retail|e-?commerce|telecom\w*|hospitality|travel|logistics|energy|utilities|automotive|education|media|government|public sector|consumer goods|fmcg|airlines?|real estate|capital markets?)\b/gi;
 function nonEmpty(list: unknown[] | undefined): string[] { return (list || []).filter((x): x is string => typeof x === 'string' && x.trim().length > 0); }
+
+// Run 42 round 2: the seller's category and the core of its description decide the sector; a feature inside the product (payments, AI,
+// documents, invoices) does not make the product that sector.
+// (a) The category phrase (the words before the first colon, else the first sentence) is read alone with its AI labels removed
+//     ("An AI execution platform for supply chain" is a platform for supply chain, not an AI agent product).
+// (b) Services wording (people delivered, managed, outsourcing, BPO, delivery centres, a statement of work) means the services model.
+// (c) Connectivity wording (connectivity, bandwidth, fibre, wavelength, Ethernet, IP transit, carrier network) means telecom, unless the
+//     seller's words are about shipments and freight.
+const AI_LABEL = /\b(?:(?:agentic|generative|gen) ?ai|ai)(?:[- ](?:powered|native|first|driven|enabled|led|execution|based))?\b/gi;
+function categoryHead(t: string): string {
+  const colon = t.indexOf(':');
+  const head = (colon > 8 && colon < 200 ? t.slice(0, colon) : t.split(/(?<=[.!?])\s/)[0]).slice(0, 200);
+  return head.replace(AI_LABEL, ' ').replace(/\s+/g, ' ').trim();
+}
+const SERVICES_SIGNS: RegExp[] = [
+  /\bbpo\b|\boutsourc\w*|\bmanaged services?\b|\bbusiness process\b|\bshared services\b/i,
+  /\bdelivery cent(?:er|re)s?\b|\bstatement of work\b|\bper[- ](?:fte|person|head)\b|\bfte\b|\bheadcount\b|\b\d[\d,;]*\+? (?:employees|people|professionals|associates)\b/i,
+  /\b(?:operations|transformation|services|consulting) (?:and [a-z]+ )?(?:company|firm|provider)\b/i,
+  /\b(?:finance and accounting|procurement|customer experience|research|analytics)\b[^.]{0,80}\bservices\b/i,
+];
+const TELECOM_SIGNS = /\b(?:connectivity|bandwidth|fib(?:re|er)|wavelengths?|ethernet|ip transit|sd-?wan|sip trunking|subsea|mpls|broadband|dedicated internet access|network as a service|carrier[- ]grade|carrier networks?|wholesale carriers?|cable landing|peering|peered)\b/gi;
+const FREIGHT_WORDS = /\b(?:shipments?|freight|shippers?|supply chain|logistics|truck\w*|warehous\w*|detention|etas?|last[- ]mile|3pl)\b/i;
+function distinct(re: RegExp, t: string): number { return new Set((t.match(re) || []).map((x) => x.toLowerCase())).size; }
+function coreOverride(input: ReaderInput): { id: 'ites' | 'telecom' | null; seller?: string[] } {
+  const sellerTexts = nonEmpty(input.seller);
+  if (!sellerTexts.length) return { id: null };
+  const whole = sellerTexts.join(' \n ');
+  if (SERVICES_SIGNS.filter((re) => re.test(whole)).length >= 2 && !/\b(?:saas|subscription|per seat|per user|software platform)\b/i.test(whole)) return { id: 'ites' };
+  if (distinct(TELECOM_SIGNS, whole) >= 2 && !FREIGHT_WORDS.test(whole)) return { id: 'telecom' };
+  for (const t of sellerTexts) {
+    if (!t.includes(':')) continue;
+    const head = categoryHead(t);
+    if (head.length < 8) continue;
+    const r = explainSector({ seller: [head] });
+    if (r.vertical && r.strong.some((w) => !AMBIGUOUS_WORD.has(w.toLowerCase().trim())) && r.weak.length === 0) return { id: null, seller: [head] };
+  }
+  return { id: null };
+}
+const NAME_ONLY = /^[A-Z][\w&.-]*(?: (?:[A-Z][\w&.-]*|and|of|&)){0,4}$/;
+// A list of five or more capabilities (modules of one product) is not read twice: one of its items does not corroborate another.
+function isFeatureList(t: string): boolean { return t.split(LIST_COMMA).length >= 5; }
 function weighSignals(input: ReaderInput): ReaderInput {
   const out: ReaderInput = { ...input };
   const dropIndustryLists = (list: unknown[] | undefined) => list?.map((x) => {
@@ -68,18 +109,21 @@ function weighSignals(input: ReaderInput): ReaderInput {
   out.buyer = dropIndustryLists(input.buyer);
   const sellerTexts = nonEmpty(out.seller);
   if (!sellerTexts.length) return out;
-  const sr = explainSector({ seller: out.seller });
+  // A seller text that is only a company name ("Colt Technology Services") names no sector: "Services" or "Technology" in a name is not a category.
+  const nameOnly = sellerTexts.every((t) => NAME_ONLY.test(t.trim()));
+  const sr = nameOnly ? { vertical: null as Vertical | null, strong: [] as string[], weak: [] as string[] } : explainSector({ seller: out.seller });
+  if (nameOnly) out.seller = [];
   if (sr.vertical) {
     const word = sr.strong.length === 1 ? sr.strong[0].toLowerCase().trim() : '';
     if (!word || sr.weak.length > 0 || !AMBIGUOUS_WORD.has(word)) return out;
     // the word is the product's own category when it sits next to a product noun ("warehouse management system", "software for warehouses")
-    const w = word.replace(/[^a-z]/g, '');
+    const w = word.replace(/[^a-z]+/g, '[ -]');
     const category = new RegExp(`\\b${w}\\w*(?: [a-z-]+){0,1} (?:system|software|platform|app|tool|solution|suite|service|provider|company|vendor)s?\\b|\\b(?:software|platform|system|app|tool|solution|service)s? (?:for|to|that|which) [^.;]{0,60}\\b${w}`, 'i');
     if (sellerTexts.some((t) => category.test(t))) return out;
     // another text corroborates only with words other than the lone one
-    const lone = new RegExp(`\\b${word.replace(/[^a-z]/g, '')}\\w*`, 'gi');
-    const same = (t: string) => explainSector({ seller: [t.replace(lone, ' ')] }).vertical?.id === sr.vertical!.id;
-    if ([...nonEmpty(out.context), ...nonEmpty(out.role), ...nonEmpty(out.buyer), ...sellerTexts].some(same)) return out;
+    const lone = new RegExp(`\\b${w}\\w*`, 'gi');
+    const same = (t: string) => { const r = explainSector({ seller: [t.replace(lone, ' ')] }); return r.vertical?.id === sr.vertical!.id && !r.strong.every((x) => AMBIGUOUS_WORD.has(x.toLowerCase().trim())); };
+    if ([...nonEmpty(out.context), ...nonEmpty(out.role), ...nonEmpty(out.buyer), ...sellerTexts.filter((t) => !isFeatureList(t))].some(same)) return out;
     return { seller: [], context: out.context, role: [], buyer: [] };
   }
   // The seller gave a product but its words name no sector: a sector read only from words naming customers' industries ("banking",
@@ -91,10 +135,13 @@ function weighSignals(input: ReaderInput): ReaderInput {
   return out;
 }
 export function readContext(explicitModel: unknown, raw: ReaderInput): { v: Vertical | null; model: BusinessModel | null; how: string; line: string; source: string | null } {
-  const input: ReaderInput = weighSignals({ seller: scrub(raw.seller), context: scrub(raw.context), role: scrub(raw.role), buyer: scrub(raw.buyer) });
-  let v = detectVertical(input);
-  const m = detectModel(explicitModel, input);
-  const source = v ? explainSector(input).source : null;
+  const scrubbed: ReaderInput = { seller: scrub(raw.seller), context: scrub(raw.context), role: scrub(raw.role), buyer: scrub(raw.buyer) };
+  const ov = coreOverride(scrubbed);
+  const input: ReaderInput = weighSignals(ov.seller ? { ...scrubbed, seller: ov.seller } : scrubbed);
+  const forced = ov.id ? VERTICALS.find((x) => x.id === ov.id) ?? null : null;
+  let v = forced ?? detectVertical(input);
+  const m = forced && !(typeof explicitModel === 'string' && explicitModel) ? { model: SECTOR_MODEL[forced.id], how: 'sector' as const } : detectModel(explicitModel, input);
+  const source = v ? (forced ? 'seller' : explainSector(input).source) : null;
   // A seller that manages money gets the investment notes (profileFor), and an AI native seller of support automation the support notes.
   // When only the buyer's industry points to fintech and that buyer is an investor, the seller's product may be anything: no notes are shown.
   const allText = [input.seller, input.context, input.role, input.buyer].flatMap((g) => (Array.isArray(g) ? g : [])).filter((x): x is string => typeof x === 'string').join(' \n ');

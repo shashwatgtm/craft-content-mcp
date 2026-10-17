@@ -2,7 +2,7 @@
 // instead of pasting them into fixed sentence frames. Rule B82: nothing here adds a statistic, a quote or a named company; the
 // helpers only split, sort and label what the user typed, and join it with plain sentences of our own.
 
-import { LIST_COMMA } from './sector.ts';
+import { LIST_COMMA, weldNames } from './sector.ts';
 
 // A comma typed inside a number ("2,000") that an upstream step turned into a semicolon ("2;000") is put back.
 export function fixNumbers(s: string): string {
@@ -58,7 +58,8 @@ const JOINER = /^(?:(?:not|but|and|or|so|which|that|because|while|with|without|i
 // A list typed by the user. Lines and semicolons separate items; a comma separates items only when the text has neither; a comma
 // inside parentheses or a number never separates. A fragment that opens with a joining word continues the item before it, and a
 // one or two word fragment ("fast", "transparent") is joined to the next item as part of a run of adjectives.
-export function splitList(raw: unknown): string[] {
+export function splitList(raw: unknown): string[] { return weldNames(splitListRaw(raw)); }
+function splitListRaw(raw: unknown): string[] {
   if (typeof raw !== 'string') return [];
   const text = fixNumbers(raw);
   const lines = text.split(/\n/).map((x) => x.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
@@ -189,7 +190,8 @@ function rejoinAttributed(list: string[]): string[] {
 
 // Splits a list of proof points or results. A bracketed source label at the end of an item ("(page claim)") marks where it ends,
 // so a comma or a semicolon inside an item never splits it. Without labels, the general list rule applies.
-export function splitProof(raw: unknown): string[] {
+export function splitProof(raw: unknown): string[] { return weldNames(splitProofRaw(raw)); }
+function splitProofRaw(raw: unknown): string[] {
   if (typeof raw !== 'string') return [];
   const text = maskQuoted(fixNumbers(raw).trim());
   if (!text) return [];

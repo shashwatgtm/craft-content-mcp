@@ -125,3 +125,8 @@ test("webinar on putting AI to work in a services sector names the measures of A
   const t = await call("webinar_script", { topic: "How global enterprises can move AI from pilot to measurable value, with Servico", target_audience: "CIOs at global 2000 enterprises", webinar_type: "educational", duration: "45_min", key_takeaways: "AI pilots stall before production, A managed service that runs AI in production", include_polls: true, product_mention_level: "subtle", your_sector: "ites" });
   assert.match(t, /usual yardsticks are [^.]*accuracy on the buyer's own data/);
 });
+
+test("case study for freelancers does not judge them as teams", async () => {
+  const t = await call("case_study_generator", { customer_name: "a Billo customer (freelancers and solopreneurs)", customer_industry: "freelancers and solopreneurs", your_product: "Billo", mode: "full", challenge: "Owners lose time chasing payments", solution: "Automated invoices and reminders", results: "Quote from Jo Smith, Owner of Smith Studio: Billo has helped me be more efficient through the year.", your_sector: "saas" });
+  assert.doesNotMatch(t, /teams are usually judged|adoption by the target team/);
+});

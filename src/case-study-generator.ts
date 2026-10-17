@@ -1,6 +1,8 @@
 import { SUGGESTION_FOOTER, clipEcho, cap, lowerFirstIfCommon } from './utils.js';
 import { q, readContext, startWords, firstSentence, sentencesOf, fromIndicator, type Vertical, type BusinessModel } from './sector.ts';
 import { parseProof, fixNumbers, endSentence, lowerFirstWord, isGenericName, proseJoin, plural, type ProofItem, type ProofKind } from './draft.ts';
+// Run 42B round S3: freelancers, solo owners and small firms are not judged as teams
+const SOLO_WORDS = /\b(?:freelancers?|solopreneurs?|sole traders?|self[- ]employed|small business(?:es)?|micro[- ]?business(?:es)?)\b/i;
 
 type Ctx = { v: Vertical | null; model: BusinessModel | null; line: string };
 
@@ -416,7 +418,7 @@ ${bullets(quotes.slice(0, 2))}`
     const paras: string[] = [];
     const slots: string[] = [];
     const ms = v ? v.metrics.slice(0, 2) : [];
-    paras.push(`**The situation.** ${Subj} is in the ${industryText || sectorName || 'its market'} segment${ms.length ? `, where teams are usually judged on ${proseJoin(ms)}` : ''}.`);
+    paras.push(`**The situation.** ${Subj} is in the ${industryText || sectorName || 'its market'} segment${ms.length ? `, where ${SOLO_WORDS.test(industryText || '') ? 'the work is usually judged on' : 'teams are usually judged on'} ${proseJoin(ms)}` : ''}.`);
     if (challengeText) paras.push(`**The challenge.** Before ${product}, the team was dealing with a problem many in ${industryText || 'the field'} know: ${lowerFirstIfCommon(strip(challengeText))}. ${ms.length ? `Problems like this usually show up first in ${ms[0]}.` : 'That was the case for change.'}`);
     else slots.push(`what ${subj} was dealing with before ${product}, in the customer's own words`);
     if (solutionText) paras.push(`**The approach.** ${solutionText.startsWith(product) || /^(?:\S+\s+){0,3}\w+ed\b/.test(solutionText) ? `The team brought in ${product}. ${endSentence(capFirst(strip(solutionText)))}` : `The team put ${product} in place: ${lowerFirstIfCommon(strip(solutionText))}.`}${v ? ` As in most of ${sectorName}, the change had to work for the people who use it every day as well as the people who sign it off.` : ''}`);

@@ -56,6 +56,8 @@ function scrub(list: unknown[] | undefined): unknown[] | undefined {
 // When the signals are weak or conflicting the answer uses neutral B2B wording (no sector read).
 const AMBIGUOUS_WORD = new Set(['warehouse', 'warehousing', 'security', 'secure', 'shipping', 'shipment', 'shipments', 'delivery', 'fleet', 'freight', 'transport', 'payment', 'payments', 'network', 'networking', 'data', 'cloud', 'banking', 'platform', 'trading', 'lending', 'insurance', 'tracking', 'route', 'routing', 'inventory', 'compliance', 'risk', 'fraud', 'billing', 'logistics', 'hotel', 'hotels', 'retail', 'travel', 'carrier', 'carriers', 'stock', 'document', 'documents', 'document processing', 'invoice', 'invoices', 'invoicing', 'procure to pay', 'procure-to-pay', 'bill pay', 'accounts payable', 'agents', 'ai agents', 'workflow', 'workflows', 'automation', 'analytics', 'ocr']);
 const INDUSTRY_WORD = /\b(?:banking|banks?|bfsi|financial services|insurance|insurers?|manufacturing|retail|e-?commerce|telecom\w*|hospitality|travel|logistics|energy|utilities|automotive|education|media|government|public sector|consumer goods|fmcg|airlines?|real estate|capital markets?)\b/gi;
+// Words that name a feature inside a product (modules, documents, invoices, agents), not what the product is: a text read only through them does not corroborate a sector.
+const FEATURE_WORD = new Set(['document', 'documents', 'document processing', 'invoice', 'invoices', 'invoicing', 'procure to pay', 'procure-to-pay', 'bill pay', 'accounts payable', 'agents', 'ai agents', 'workflow', 'workflows', 'automation', 'analytics', 'ocr', 'payment', 'payments', 'billing']);
 function nonEmpty(list: unknown[] | undefined): string[] { return (list || []).filter((x): x is string => typeof x === 'string' && x.trim().length > 0); }
 
 // Run 42 round 2: the seller's category and the core of its description decide the sector; a feature inside the product (payments, AI,
@@ -122,9 +124,9 @@ function weighSignals(input: ReaderInput): ReaderInput {
     if (sellerTexts.some((t) => category.test(t))) return out;
     // another text corroborates only with words other than the lone one
     const lone = new RegExp(`\\b${w}\\w*`, 'gi');
-    const same = (t: string) => { const r = explainSector({ seller: [t.replace(lone, ' ')] }); return r.vertical?.id === sr.vertical!.id && !r.strong.every((x) => AMBIGUOUS_WORD.has(x.toLowerCase().trim())); };
+    const same = (t: string) => { const r = explainSector({ seller: [t.replace(lone, ' ')] }); return r.vertical?.id === sr.vertical!.id && !r.strong.every((x) => FEATURE_WORD.has(x.toLowerCase().trim())); };
     if ([...nonEmpty(out.context), ...nonEmpty(out.role), ...nonEmpty(out.buyer), ...sellerTexts.filter((t) => !isFeatureList(t))].some(same)) return out;
-    return { seller: [], context: out.context?.map((x) => typeof x === 'string' ? x.replace(lone, ' ') : x), role: [], buyer: [] };
+    return { seller: [], context: FEATURE_WORD.has(word) ? out.context?.map((x) => typeof x === 'string' ? x.replace(lone, ' ') : x) : out.context, role: [], buyer: [] };
   }
   // The seller gave a product but its words name no sector: a sector read only from words naming customers' industries ("banking",
   // "payments", "retail", "travel") describes who the customers are, so it is not used.

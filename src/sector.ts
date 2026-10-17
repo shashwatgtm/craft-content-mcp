@@ -161,7 +161,30 @@ export function givenSector(yourSector: unknown): { given: boolean; v: Vertical 
   const id = SECTOR_ID[yourSector];
   return { given: true, v: id ? VERTICALS.find((x) => x.id === id) ?? null : null };
 }
-export function readContext(explicitModel: unknown, raw: ReaderInput, yourSector?: unknown): { v: Vertical | null; model: BusinessModel | null; how: string; line: string; source: string | null } {
+// Run 42B (addendum 8): the sub industry named by the seller's own category words. The category phrase of each seller text (the words before the first
+// colon, else the first sentence) is read alone; a word inside the long description or a feature list does not name the seller's sub industry.
+const SUBINDUSTRY_MODEL = new Set(['telecom']);
+function subIndustryClear(base: Vertical, full: Vertical, model: BusinessModel | null, input: ReaderInput, own: unknown[] = []): boolean {
+  const heads = [...nonEmpty(input.seller), ...nonEmpty(own)].filter((t) => t.includes(':') || t.length <= 200).map((t) => categoryHead(t)).filter((h) => h.length >= 8 && h.split(LIST_COMMA).length < 4);
+  if (!heads.length) return false;
+  const probe = profileFor(base, model, { seller: heads });
+  if (!probe || probe === base) return false;
+  return full.subtype ? probe.subtype === full.subtype : probe.name === full.name;
+}
+// The AI native sector's text leans on decisions and cases (a decision AI product); for an AI seller without a clear sub industry the same notes are
+// worded for any task the AI does. Only words change; no figure or claim is added.
+function generalNotes(v: Vertical): Vertical {
+  const ai = VERTICALS.find((x) => x.id === 'ai-native');
+  if (!ai || v.id !== 'ai-native' || v.subtype || v.vocabulary !== ai.vocabulary) return v;
+  return {
+    ...v,
+    vocabulary: ['accuracy on your own data', 'human in the loop', 'guardrails', 'explainability', 'data privacy', 'pilot', 'inference cost'],
+    metrics: ["accuracy on the buyer's own data", 'how often a person has to step in', 'time to a working pilot', 'time saved on the task', 'cost to run the task'],
+    objections: v.objections.map((o) => /explain its decisions/i.test(o.objection) ? { ...o, objection: 'We cannot explain what it produced', response: 'Show, for each output, the inputs it used and the reason in words a reviewer can read, and agree what is logged.' } : /answers wrong/i.test(o.objection) ? { ...o, response: "Agree a pilot on the buyer's own data before go-live, score it against the way the work is judged today, and keep a person approving any step that changes a record or goes out to a customer." } : o),
+    discovery: v.discovery.map((d) => /cases or decisions/i.test(d) ? 'Which tasks would you trust the AI to handle first, and which never?' : /case or a decision cost/i.test(d) ? 'What does this work cost you today, and how long does it take?' : d),
+  };
+}
+export function readContext(explicitModel: unknown, raw: ReaderInput, yourSector?: unknown, ownWords?: unknown[]): { v: Vertical | null; model: BusinessModel | null; how: string; line: string; source: string | null } {
   const scrubbed: ReaderInput = { seller: scrub(raw.seller), context: scrub(raw.context), role: scrub(raw.role), buyer: scrub(raw.buyer) };
   const gs = givenSector(yourSector);
   const ov = gs.given ? { id: null } as ReturnType<typeof coreOverride> : coreOverride(scrubbed);
@@ -170,7 +193,7 @@ export function readContext(explicitModel: unknown, raw: ReaderInput, yourSector
   let v = gs.given ? gs.v : forced ?? detectVertical(input);
   // With your_sector the model follows the sector unless the user's own words (business_model, or the seller's wording) state it.
   const given = gs.given && forced ? (() => { const r = detectModel(explicitModel, input); if (r.how === 'sector' && detectVertical(input)?.id === forced.id) return r; return r.how === 'input' || (r.how === 'read' && (r.model !== 'saas' || /(?:saas|subscriptions?|per seat|per user|licen[cs]es?)/i.test(nonEmpty(input.seller).join(' ')))) ? r : { model: SECTOR_MODEL[forced.id], how: 'sector' as const }; })() : null;
-  const m = given ? given : gs.given ? detectModel(explicitModel, input) : ov.vertical ? detectModel(explicitModel, { seller: ov.seller }) : forced && !(typeof explicitModel === 'string' && explicitModel) ? { model: SECTOR_MODEL[forced.id], how: 'sector' as const } : detectModel(explicitModel, input);
+  let m = given ? given : gs.given ? detectModel(explicitModel, input) : ov.vertical ? detectModel(explicitModel, { seller: ov.seller }) : forced && !(typeof explicitModel === 'string' && explicitModel) ? { model: SECTOR_MODEL[forced.id], how: 'sector' as const } : detectModel(explicitModel, input);
   const source = v ? (forced ? 'seller' : explainSector(input).source) : null;
   const chosen = gs.given && !!v;
   // A seller that manages money gets the investment notes (profileFor), and an AI native seller of support automation the support notes.
@@ -182,7 +205,15 @@ export function readContext(explicitModel: unknown, raw: ReaderInput, yourSector
   // investment notes (roles, measures, objections of an allocator) are the ones that fit what the buyer reads.
   const investorOnly = !gs.given && !!v && v.id === 'fintech' && m.model !== 'investment' && investorBuyer;
   const withheld = false;
+  const baseV = v;
   v = investorOnly ? profileFor(v, 'investment', input) : profileFor(v, m.model, input);
+  // Run 42B (addendum 8): a sub industry's own notes are used only when the seller's own category words clearly name it; your_sector fixes the
+  // sector, not the sub industry. Otherwise only the sector's general notes are shown, and a model that only a sub industry implies is left unset.
+  if (v && baseV && v !== baseV && !investorOnly && m.model !== 'investment' && !subIndustryClear(baseV, v, m.model, input, ownWords)) {
+    v = baseV;
+  }
+  if (v && v === baseV && !investorOnly && m.how === 'sector' && SUBINDUSTRY_MODEL.has(baseV.id)) m = { model: null, how: 'unknown' };
+  if (v && v === baseV) v = generalNotes(v);
   // The persona's function decides the measures when the sector's own are another function's: a finance buyer of a billing product
   // reads finance measures, an IT buyer of a sales app reads integration and access measures. Existing words only; no figure.
   let lens = '';

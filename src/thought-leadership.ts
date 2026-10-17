@@ -42,7 +42,7 @@ export function generateThoughtLeadership(args: {
   const numArticles = args.num_articles || 3;
   const articleType = args.article_type && TYPE_VERB[args.article_type] ? args.article_type : 'contrarian';
   // Run 19 (D80, problems 4 and 8): the sector is read from every text the user gave.
-  const ctx = readContext(undefined, { seller: [topic], context: [yourTake, proofRaw, args.author_background], role: [targetReader] }, args.your_sector);
+  const ctx = readContext(undefined, { seller: [topic], context: [yourTake, proofRaw, args.author_background], role: [targetReader] }, args.your_sector, [args.author_background]);
   const vFull = ctx.v;
   // a general software reading that does not fit the readers the user named is not used in the articles: its measures belong to other readers
   const fits = !vFull || readersFit(shortReaders(targetReader) || targetReader, vFull);
@@ -183,9 +183,15 @@ const TYPE_VERB: Record<string, string> = {
 function shortTopic(topic: string): string {
   const t = topic.replace(/\s+/g, ' ').trim().replace(/[.!?]+$/, '');
   if (t.length <= 48) return t;
+  // Run 42B: a seller description ("a ... platform provider delivering purpose-built ...") is cut before its participle, so the headline names the kind of company, not a fragment
+  const kind = t.split(/\s+(?:delivering|providing|offering|enabling|helping|powering|serving|making|built|designed)\s+/i)[0].trim();
+  if (kind.split(/\s+/).length >= 2 && kind.length <= 70 && kind.length < t.length) return kind;
   const cut = t.split(/\s+(?:while|because|when|so that|that|which|with|without|where|as)\s+|,\s+|:\s+|;\s+/)[0].trim();
   if (cut.split(/\s+/).length >= 2 && cut.length <= 70) return cut;
-  return headlineSubject(t, 80);
+  let out = headlineSubject(t, 80);
+  // a cut never ends on a joining word or a dangling modifier
+  while (/\s+(?:and|or|of|for|the|a|an|to|with|in|on|by|at|from|purpose-built|built|based|driven|powered|designed)$/i.test(out)) out = out.replace(/\s+\S+$/, '');
+  return out;
 }
 
 // The reader as a phrase inside a sentence: the whole description when it is short, else its first part.

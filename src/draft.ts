@@ -59,6 +59,16 @@ const JOINER = /^(?:(?:not|but|and|or|so|which|that|because|while|with|without|i
 // inside parentheses or a number never separates. A fragment that opens with a joining word continues the item before it, and a
 // one or two word fragment ("fast", "transparent") is joined to the next item as part of a run of adjectives.
 export function splitList(raw: unknown): string[] { return weldNames(splitListRaw(raw)); }
+// Run 42B: "design, review and handoff in one place" is one phrase (a short series of lower case parts ending in "x and y ..."), never several items.
+const PLACE_TAIL = /\b(?:in|across|from|to|throughout|within)\s+(?:the\s+)?[A-Z][\w.]*(?:,\s+(?:the\s+)?[A-Z][\w.]*)*$/;
+const PLACE_ONLY = /^(?:the\s+)?[A-Z][\w.]*(?:\s+(?:and|&)\s+(?:the\s+)?[A-Z][\w.]*)?(?:\s*\([^)]*\))?$/;
+function isOnePhrase(line: string): boolean {
+  if (/;/.test(line) || line.split(/\s+/).length > 12) return false;
+  const pieces = splitOutsideParens(line, LIST_COMMA).map((x) => x.trim());
+  if (pieces.length < 2) return false;
+  const last = pieces[pieces.length - 1];
+  return pieces.slice(0, -1).every((x) => /^[a-z]/.test(x) && x.split(/\s+/).length <= 3) && /^[a-z]/.test(last) && /\b(?:and|or)\b/.test(last.split(/\s+/).slice(0, 2).join(' '));
+}
 function splitListRaw(raw: unknown): string[] {
   if (typeof raw !== 'string') return [];
   const text = fixNumbers(raw);
@@ -72,6 +82,7 @@ function splitListRaw(raw: unknown): string[] {
     if (mixed) { parts.push(...splitOutsideParens(line, /;\s+(?=[A-Z])|,\s+(?=[A-Z][a-z])/).map((x) => x.replace(/;\s+(?![A-Z])/g, ', '))); continue; }
     const bySemi = splitOutsideParens(line, /;/);
     if (bySemi.length > 1 || hasBreaks) parts.push(...bySemi);
+    else if (isOnePhrase(line)) parts.push(line);
     else parts.push(...splitOutsideParens(line, LIST_COMMA));
   }
   const merged: string[] = [];
@@ -79,7 +90,9 @@ function splitListRaw(raw: unknown): string[] {
     const prevLast = merged.length ? (merged[merged.length - 1].split(/\s+/).pop() || '') : '';
     // a short capitalised fragment after an item that ends in an acronym or place ("across the US; UK; EU") continues that list
     const placeList = merged.length > 0 && (p.split(/\s+/).length <= 3 || (/^[A-Z]{2,5}\b/.test(p) && /^[A-Z]{2,5}[,.]?$/.test(prevLast) && p.split(/\s+/).length <= 7)) && /^[A-Z]/.test(p) && !/\d/.test(p) && (/^[A-Z]{2,5}[,.]?$/.test(prevLast) || /^[A-Z][a-z]+$/.test(prevLast));
-    if (merged.length && (JOINER.test(p) || placeList)) merged[merged.length - 1] += ', ' + p;
+    // Run 42B: a place list cut at its semicolons ("a Great Place to Work in India; the UK; the USA; KSA and the UAE") is one item, not value propositions of its own
+    const places = merged.length > 0 && PLACE_TAIL.test(merged[merged.length - 1]) && PLACE_ONLY.test(p) && !/\d/.test(p.replace(/\([^)]*\)/g, ''));
+    if (merged.length && (JOINER.test(p) || placeList || places)) merged[merged.length - 1] += ', ' + p;
     else merged.push(p);
   }
   // short fragments: "fast; transparent; compliant and error free travel" is one run of adjectives

@@ -1,7 +1,7 @@
 import { lowerFirstIfCommon, cap, aOrAn } from './utils.js';
 import { q, readContext, startWords, audienceLine, isClause, type Vertical, type BusinessModel } from './sector.ts';
 import { splitList, bestQuestion, unpackTopic, fixNumbers, endSentence, capFirst, proseJoin, roleOf, clipAtWord, productParts, softenClaims } from './draft.ts';
-import { cleanSectorLine, readPoints, groupPhrases, sentenceOf, withLabel, shorten, waysToSettle, settleBare, quotedEnd, instructionNote, sharpenLine, stripGuardQuotes, lowerFirstSafe, audienceShort, shapeOf, startsImperative, companyFrom, toReader as toYou, PARTICIPLE_START, type Pt } from './rw-content.ts';
+import { cleanSectorLine, readPoints, groupPhrases, sentenceOf, withLabel, shorten, waysToSettle, settleBare, quotedEnd, instructionNote, sharpenLine, stripGuardQuotes, lowerFirstSafe, audienceShort, shapeOf, startsImperative, companyFrom, toReader as toYou, PARTICIPLE_START, nk, type Pt } from './rw-content.ts';
 
 // Run 22 (rewrite): the script is written to be read aloud. The takeaways are read for what they are and said in whole sentences, the
 // problem the topic names is said as the problem, and the sector file adds the measures, the questions for the chat and the objections.
@@ -61,6 +61,10 @@ export function generateWebinarScript(args: {
   const softP = softenClaims(parts.problem || '');
   const all = readPoints(soft.text, { problem: soft0.removed.length || softP.removed.length ? softP.text : parts.problem || '' });
   for (const p of all) if (p.role === 'instruction') orders.push(p.text);
+  // Run 42B: a typed takeaway that only sounds like a problem ("integrations ... are not needed") but is a vendor claim with no source label is a claim, not the problem: it is
+  // taught as a takeaway under the vendor's-description label, never spoken as the fact of the problem.
+  const knownProblem = nk(parts.problem || '');
+  for (const p of all) if (p.role === 'problem' && !p.label && CLAIM_WORD.test(p.text) && !knownProblem.includes(nk(p.text))) p.role = 'capability';
   const problemPts = all.filter((p) => p.role === 'problem');
   const given2 = groupPhrases(all.filter((p) => p.role !== 'problem' && p.role !== 'instruction'));
   const takeaways: Pt[] = given2.length ? given2 : takeawaysFromSector(ctx.v);

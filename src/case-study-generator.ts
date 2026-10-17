@@ -1,4 +1,4 @@
-import { SUGGESTION_FOOTER, clipEcho, cap } from './utils.js';
+import { SUGGESTION_FOOTER, clipEcho, cap, lowerFirstIfCommon } from './utils.js';
 import { q, readContext, startWords, firstSentence, sentencesOf, fromIndicator, type Vertical, type BusinessModel } from './sector.ts';
 import { parseProof, fixNumbers, endSentence, lowerFirstWord, isGenericName, proseJoin, plural, type ProofItem, type ProofKind } from './draft.ts';
 
@@ -406,6 +406,37 @@ function generateFullCaseStudy(
 ${bullets(quotes.slice(0, 2))}`
       : `No customer_quote was given. Ask for one line the customer would say aloud about what changed${v ? ` in ${v.metrics[0]}` : ''}, and get written approval before you print it.`;
 
+  // Run 42B round S2: the story itself, as prose in the case study shape (situation, challenge, approach, result, quote), from the
+  // inputs only. An unnamed customer gets its situation, challenge and approach; results that name another company stay with that
+  // company, said as what other customers report. What is missing is said in plain words (at most three slots).
+  const story = (() => {
+    const subj = (generic ? label.replace(/^(?:An?|The)\s+/, (m) => m.toLowerCase()) : customerName).replace(/^(an?) (?=\S)/i, (m, art: string, off: number, str: string) => (/^[aeiou]/i.test(str.slice(m.length)) ? (art[0] === 'A' ? 'An ' : 'an ') : (art[0] === 'A' ? 'A ' : 'a ')));
+    const Subj = capFirst(subj);
+    const strip = (t: string) => t.replace(/[.\s]+$/, '');
+    const paras: string[] = [];
+    const slots: string[] = [];
+    const ms = v ? v.metrics.slice(0, 2) : [];
+    paras.push(`**The situation.** ${Subj} is in the ${industryText || sectorName || 'its market'} segment${ms.length ? `, where teams are usually judged on ${proseJoin(ms)}` : ''}.`);
+    if (challengeText) paras.push(`**The challenge.** Before ${product}, the team was dealing with a problem many in ${industryText || 'the field'} know: ${lowerFirstIfCommon(strip(challengeText))}. ${ms.length ? `Problems like this usually show up first in ${ms[0]}.` : 'That was the case for change.'}`);
+    else slots.push(`what ${subj} was dealing with before ${product}, in the customer's own words`);
+    if (solutionText) paras.push(`**The approach.** ${solutionText.startsWith(product) || /^(?:\S+\s+){0,3}\w+ed\b/.test(solutionText) ? `The team brought in ${product}. ${endSentence(capFirst(strip(solutionText)))}` : `The team put ${product} in place: ${lowerFirstIfCommon(strip(solutionText))}.`}${v ? ` As in most of ${sectorName}, the change had to work for the people who use it every day as well as the people who sign it off.` : ''}`);
+    const quoteOf = (p: ProofItem) => { const m = /^([^:"“]{3,120}):\s+(.+)$/.exec(p.text); return m ? { who: m[1].trim(), words: strip(m[2]).replace(/^["“]|["”]$/g, '') } : { who: '', words: strip(p.text) }; };
+    if (!manySources && (outcomes.length || titles.length)) {
+      const res = [...outcomes, ...titles].slice(0, 3).map((r) => `${strip(r.text)}${r.label ? ` (${r.label})` : ''}`);
+      paras.push(`**The result.** ${res.map((r) => endSentence(capFirst(r))).join(' ')}`);
+    } else if (manySources) {
+      const others = [...outcomes, ...quotes, ...titles].slice(0, 3).map((r) => { const qp = quoteOf(r); return r.kind === 'quote' && qp.who ? `${qp.who} puts it this way: "${qp.words}."` : endSentence(capFirst(`${strip(r.text)}${r.label ? ` (${r.label})` : ''}`)); });
+      paras.push(`**The result.** ${Subj}'s own figures are not given yet, so this draft does not claim any. Other ${product} customers say what the change looked like for them. ${others.join(' ')}`);
+      slots.push(`${subj}'s own result: one measure${ms.length ? ` such as ${ms[0]}` : ''}, its value before and after, and the period`);
+    } else slots.push(`the result: one measure${ms.length ? ` such as ${ms[0]}` : ''}, its value before and after, and the period`);
+    const own = quote ? quote.replace(/^"|"$/g, '') : '';
+    if (own) paras.push(`**In their words.** "${strip(own)}." That is how ${subj} sums it up.`);
+    else if (!manySources && quotes.length) { const qp = quoteOf(quotes[0]); paras.push(`**In their words.** ${qp.who ? `${qp.who} sums it up` : 'The customer sums it up'}: "${qp.words}."`); }
+    else slots.push(`one line ${subj} would say aloud about what changed, approved in writing`);
+    const add = slots.slice(0, 3);
+    return `## The Story (draft)\n\n${paras.join('\n\n')}${add.length ? `\n\n**To add before this is published:** ${add.map((s, i) => `(${i + 1}) ${s}`).join('; ')}.` : ''}\n\n*The sections below hold the detail behind each part of the story and the questions that finish it.*`;
+  })();
+
   return `# Case Study: ${customerName}
 
 ## ${headlineOk ? headline : `${label} and ${product}`}
@@ -413,6 +444,10 @@ ${bullets(quotes.slice(0, 2))}`
 ${ctx.line}
 
 *Built from: ${built}.*
+
+---
+
+${story}
 
 ---
 

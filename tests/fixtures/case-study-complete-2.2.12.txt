@@ -8,6 +8,22 @@
 
 ---
 
+## The Story (draft)
+
+**The situation.** FlowOps is in the Logistics segment, where teams are usually judged on on time delivery and cost per shipment or per order.
+
+**The challenge.** Before RouteIQ, the team was dealing with a problem many in Logistics know: dispatchers spent four hours a day planning routes by hand and late deliveries hit 18 percent. Problems like this usually show up first in on time delivery.
+
+**The approach.** The team brought in RouteIQ. RouteIQ planned routes automatically and sent drivers live updates. As in most of logistics tech, the change had to work for the people who use it every day as well as the people who sign it off.
+
+**The result.** Late deliveries down 60%. Planning time cut from 4 hours to 30 minutes. 12% lower fuel cost.
+
+**In their words.** "We got our afternoons back." That is how FlowOps sums it up.
+
+*The sections below hold the detail behind each part of the story and the questions that finish it.*
+
+---
+
 ### About FlowOps
 
 | | |

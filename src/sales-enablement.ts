@@ -127,7 +127,13 @@ export function generateSalesEnablement(args: {
   const usedValue = new Set<string>();
   const strongestItem = usable.find((i) => i.figure) || usable.find((i) => i.kind === 'result') || usable[0];
   const strongestText = strongestItem ? clipEcho(strongestItem.shown, 300) : '';
-  const objectionHandlers = objections.map((obj) => generateObjectionHandler(obj, valueProps, usableTexts, pp.facts, priceContext, v, usedProof, usedValue, pp.name, roleShown, strongestText));
+  // Run 42B round S3: the strongest proof is named once, under the first objection that no proof answers, not repeated under every one
+  let strongestNamed = false;
+  const objectionHandlers = objections.map((obj) => {
+    const h = generateObjectionHandler(obj, valueProps, usableTexts, pp.facts, priceContext, v, usedProof, usedValue, pp.name, roleShown, strongestNamed ? '' : strongestText);
+    if (strongestText && h.proof.includes(strongestText)) strongestNamed = true;
+    return h;
+  });
   const competitorHandlers = competitorObjections.map((obj, i) => generateCompetitorHandler(obj, usableTexts, pp.facts, v, i));
 
   // A value proposition with the proof that bears on it (by shared words, then by kind) and the sector measure it ties to.

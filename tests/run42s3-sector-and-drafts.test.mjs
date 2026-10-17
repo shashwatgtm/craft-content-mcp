@@ -105,3 +105,12 @@ test("framework headlines: a take typed as what the product does reads as an act
   const t = await call("thought_leadership_series", { topic: "a payments company that lets businesses accept payments everywhere through one platform", your_take: "Payly's view on a payments company: Connects local payment rails, card networks and business accounts into one infrastructure", target_reader: "businesses that sell in many countries", num_articles: 2, article_type: "framework", your_sector: "fintech" });
   assert.doesNotMatch(t, /Framework for Connects/);
 });
+
+test("sales kit: the strongest proof is named once, and a data question is read as a security objection", async () => {
+  const { objectionKind } = await import(new URL("../dist/sector.js", import.meta.url));
+  assert.equal(objectionKind("Where does our data go?"), "security");
+  assert.equal(objectionKind("Is the vendor stable enough?"), "proof");
+  const t = await call("sales_enablement_content", { product: "Voicely, voice agents for enterprise customer conversations", target_persona: "contact centre teams at banks", proof_points: "Customer results, customers not named: 60% less seasonal hiring and 35,000 labor hours saved (page claim)", value_props: "Answers calls in many languages", sales_stage: "discovery", your_sector: "ai_native" });
+  const named = t.match(/The strongest proof you gave is/g) || [];
+  assert.ok(named.length <= 1, String(named.length));
+});

@@ -6,6 +6,7 @@
 import { splitList, fixNumbers, endSentence, capFirst, proseJoin, clipAtWord, dropTail, tidyPoint, STAT, FIGURE, RECOGNITION, SCALE } from './draft.ts';
 import { cap, lowerFirstIfCommon, isCommonWord } from './utils.js';
 import { neutraliseText } from './echo-safe.ts';
+import { weldNames } from './sector.ts';
 
 // ---- the text as typed -------------------------------------------------------------------------------------------------------
 
@@ -187,7 +188,7 @@ function pieces(text: string): string[] {
 export function readPoints(raw: string | undefined, known: { problem?: string } = {}): Pt[] {
   if (!raw || !raw.trim()) return [];
   const text = tidy(stripGuardQuotes(raw));
-  let list = pieces(text).flatMap(splitAfterLabels);
+  let list = weldNames(pieces(text)).flatMap(splitAfterLabels);
   const items: { text: string; label: string; problem: boolean }[] = [];
   if (known.problem) {
     const t = takeKnown(list, tidy(known.problem));
@@ -307,7 +308,12 @@ export function shorten(text: string, max: number, strict = false): string {
   const comma = t.split(/,\s+/)[0].trim();
   if (comma.split(/\s+/).length >= 6 && comma.length <= max) return capFirst(comma);
   if (strict) return '';
-  return capFirst(dropTail(clipAtWord(t, max)));
+  // Run 42B: a cut that lands inside a phrase ("... increase of 40% in their first") backs off to the last phrase that is whole: it stops before the
+  // preposition that opens the unfinished part, when what is left is a whole statement of six words or more.
+  const clipped = clipAtWord(t, max);
+  const breaks = [...clipped.matchAll(/\s+(?:in|across|with|for|during|over|after|before|within|by|from|through|under|among|at|on|of)\s+/gi)].map((m) => m.index as number).filter((i) => i >= max * 0.5 && clipped.slice(0, i).split(/\s+/).length >= 6);
+  if (breaks.length && clipped.length < t.length) return capFirst(dropTail(clipped.slice(0, breaks[breaks.length - 1])));
+  return capFirst(dropTail(clipped));
 }
 // The readers of a topic typed as "How <readers> can ...", or an audience typed in full: without a bracket note, a source note or a trailing
 // description. A long list of readers is cut to its first items, whole ("online retailers and social sellers").

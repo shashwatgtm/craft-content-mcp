@@ -12,6 +12,7 @@ const VERB_START = /^(?:book|see|register|read|download|request|start|join|reply
 const LABEL_CLAUSE = /\b(?:is|are|was|were|run|runs|combine|combines|means|rely|relies|chain|chains|sits|happens|hand|hands|can|will|must|should|have|has|do|does|break|breaks|fragments|drift|drifts)\b/i;
 
 export function generateNewsletter(args: {
+  your_sector?: string;
   topic: string;
   cta_goal: string;
   key_points?: string;
@@ -32,7 +33,7 @@ export function generateNewsletter(args: {
   const ctaProduct = /\babout\s+(.+)$/i.exec(ctaGoal)?.[1]?.trim() || '';
   const firstClause = (parts.problem || '').split(/[,;:]| \(/)[0].trim();
   const label = parts.short ? topic.replace(/ +/g, ' ') : (firstClause && firstClause.length <= 110 && firstClause.length > parts.label.length && firstClause.toLowerCase().startsWith(parts.label.toLowerCase()) ? firstClause : parts.label);
-  const ctx = readContext(undefined, { seller: [product, args.cta_goal], context: [topic, args.key_points, args.previous_topics], buyer: [parts.audience] });
+  const ctx = readContext(undefined, { seller: [product, args.cta_goal], context: [topic, args.key_points, args.previous_topics], buyer: [parts.audience] }, args.your_sector);
   const vFull = ctx.v;
   const casual = /conversational|casual|friendly|warm|informal|relaxed/i.test(tone);
   const productName = product ? productParts(product).name : '';

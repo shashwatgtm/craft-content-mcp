@@ -298,7 +298,7 @@ export function clipAtWord(s: string, max: number): string {
   return dropTail((at > 20 ? cut.slice(0, at) : cut).replace(/[,;:\s-]+$/, ''));
 }
 // A cut never ends on a joining word ("... modernization and", "... with the"): those words are taken off the end.
-const TAIL = /\s+(?:and|or|the|a|an|of|to|with|for|in|on|by|as|while|that|which|from|at|than|so|but|plus|into|over|under|per|its|their|our|your|is|are)$/i;
+const TAIL = /\s+(?:and|or|the|a|an|of|to|with|for|in|on|by|as|while|that|which|from|at|than|so|but|plus|into|over|under|per|its|their|our|your|is|are|first|last|next|same|each|every|this|these|those|any|all|more|most|other)$/i;
 export function dropTail(s: string): string {
   let t = s.replace(/[,;:\s-]+$/, '');
   for (let i = 0; i < 4 && TAIL.test(t); i++) t = t.replace(TAIL, '').replace(/[,;:\s-]+$/, '');

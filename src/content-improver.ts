@@ -15,6 +15,7 @@ const DEFAULT_GOALS: Record<string, string> = {
 };
 
 export function generateContentImprover(args: {
+  your_sector?: string;
   content: string;
   content_type: string;
   goal?: string;
@@ -40,7 +41,7 @@ export function generateContentImprover(args: {
   const tone = toneCheck(content, args.tone_preference);
   const emailLike = contentType === 'sales_email' || contentType === 'email';
   const shorter = emailLike && (wordCount > 120 || analysis.findings.some((f) => f.rule === 'subject-length' || f.rule === 'sentence-length' || f.rule === 'run-on')) ? shorterEmail(content) : null;
-  const ctx = readContext(undefined, { seller: [sellerWords(content, contentType)], context: [content, args.goal], role: [args.audience], buyer: [args.audience] });
+  const ctx = readContext(undefined, { seller: [sellerWords(content, contentType)], context: [content, args.goal], role: [args.audience], buyer: [args.audience] }, args.your_sector);
 
   // Create specific recommendations based on analysis: the findings that cost the most points first
   const priorityFixes = [...analysis.findings].sort((a, b) => b.penalty - a.penalty).slice(0, 6).map((f) => {

@@ -18,6 +18,7 @@ function clipEcho(text: string, max: number): string {
 }
 
 export function generateThoughtLeadership(args: {
+  your_sector?: string;
   topic: string;
   your_take: string;
   target_reader: string;
@@ -41,7 +42,7 @@ export function generateThoughtLeadership(args: {
   const numArticles = args.num_articles || 3;
   const articleType = args.article_type && TYPE_VERB[args.article_type] ? args.article_type : 'contrarian';
   // Run 19 (D80, problems 4 and 8): the sector is read from every text the user gave.
-  const ctx = readContext(undefined, { seller: [topic], context: [yourTake, proofRaw, args.author_background], role: [targetReader] });
+  const ctx = readContext(undefined, { seller: [topic], context: [yourTake, proofRaw, args.author_background], role: [targetReader] }, args.your_sector);
   const vFull = ctx.v;
   // a general software reading that does not fit the readers the user named is not used in the articles: its measures belong to other readers
   const fits = !vFull || readersFit(shortReaders(targetReader) || targetReader, vFull);

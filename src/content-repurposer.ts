@@ -70,6 +70,7 @@ export function tagsFor(text: string, brand: string, v: Vertical | null): string
 const VENDOR_SENTENCE = /^(?:[A-Z][\w&.-]*(?:\s[A-Z][\w&.-]*)?\s+(?:is|are|helps?|gives|lets|makes|provides|offers|builds|sells|runs|sends|turns|connects|automates)\b|At [A-Z][\w&.-]*(?:\s[A-Z][\w&.-]*)? we (?:built|build|make|made|offer|sell))/;
 
 export function generateContentRepurposer(args: {
+  your_sector?: string;
   source_content: string;
   source_type: string;
   target_formats?: string;
@@ -97,7 +98,7 @@ export function generateContentRepurposer(args: {
   const wordCount = countWords(content);
   // The sentence that says what the company is or sells ("X is ...", "X helps ...", "At X we built ...") is the seller's own description and is read first.
   const vendorSentence = sentencesOf(body).find((x) => VENDOR_SENTENCE.test(x)) || '';
-  const ctx = readContext(undefined, { seller: [vendorSentence.slice(0, 200), (paras[0] || '').split(/:\s*what to do about\b/i)[0].slice(0, 150)].filter(Boolean), context: [keyMessage, content, title] });
+  const ctx = readContext(undefined, { seller: [vendorSentence.slice(0, 200), (paras[0] || '').split(/:\s*what to do about\b/i)[0].slice(0, 150)].filter(Boolean), context: [keyMessage, content, title] }, args.your_sector);
   const hook = titleInfo.fromSource && title.split(/\s+/).length > 4 ? title : keyMessage ? shortenClauses(keyMessage, 160) : shortenClauses(firstSentence(body), 160);
   const keys = targetFormats.map((f) => f.toLowerCase().replace(/\s+/g, '_'));
   const unknown = keys.filter((f) => !KNOWN_FORMATS.includes(f));

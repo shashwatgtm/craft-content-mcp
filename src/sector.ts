@@ -13,6 +13,20 @@ export type { Vertical, BusinessModel, ReaderInput };
 const JOINER = /^(?:(?:not|but|and|or|so|which|that|because|while|with|without|including|plus|then|yet|rather)\b|i\.e\.|e\.g\.|vs\.|etc\.)/i;
 // Run 20: a comma between digits that opens a group of two or three digits ("1,200", "80,000", "1,00,000") is part of a number, never a list break.
 export const LIST_COMMA = /(?<!\d),|,(?!\d{2,3}(?!\d))/;
+// Run 42B: a name that stands alone before its description ("Acme; a creative agency: ...", "Jo Smith; VP of Supply Chain at Acme: ...") is the
+// start of one item, not an item (and never a result): it is welded to the description that follows it.
+const NAME_PHRASE = /^[A-Z][\w&.'-]*(?:\s+(?:[A-Z][\w&.'-]*|and|of|the|&|de|van|von)){0,4}$/;
+export function weldNames(parts: string[]): string[] {
+  const out: string[] = [];
+  for (const p of parts) {
+    const prev = out[out.length - 1];
+    const apposition = /^(?:an?|the)\s+[a-z]/.test(p);
+    const title = /^[A-Za-z][^:;]{2,70}\b(?:at|of|for)\b[^:;]{1,60}:\s/.test(p) && p.split(':')[0].split(/\s+/).length >= 3;
+    if (prev !== undefined && !/[.!?:]$/.test(prev) && !/\d/.test(prev) && NAME_PHRASE.test(prev.trim()) && prev.trim().split(/\s+/).length <= 5 && (apposition || title)) out[out.length - 1] = `${prev}, ${p}`;
+    else out.push(p);
+  }
+  return out;
+}
 export function splitItems(s: unknown): string[] {
   if (typeof s !== 'string') return [];
   const lines = s.split(/\n|;/).map((x) => x.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
@@ -24,7 +38,7 @@ export function splitItems(s: unknown): string[] {
       else out.push(p);
     });
   }
-  return out;
+  return weldNames(out);
 }
 
 // Text typed by the user, in quotes, when it is placed inside one of the tool's own sentences.
@@ -44,8 +58,10 @@ export function qs(s: string): string {
 // is shown the text with those words changed to "instrument".
 const FINANCE_ROLE = /\b(?:cfo|chief financial|finance|controller|treasur\w*|accounts? (?:payable|receivable)|fp&a)\b/i;
 const IT_ROLE = /\b(?:gm[- ]it|cio|chief information|head of it|it head|it (?:manager|director|infrastructure|lead)|information technology)\b/i;
+// Run 42B: the tools a product plugs into ("integrates with the observability stack IT already uses", "connectors to ...") are other products, not what the seller sells.
+const OTHER_TOOLS = /\b(?:integrat(?:es|ed|ion|ions)?|connectors?|compatible|works?|plugs?|sits?)\s+(?:with|to|into|on top of)\s+(?:the\s+)?[^.;\n]{0,80}?(?:\bstack\b(?:\s+(?:IT|it|they|you|teams?)\s+(?:already\s+)?\w+)?|(?=[.;\n]|$))/gi;
 function scrub(list: unknown[] | undefined): unknown[] | undefined {
-  return list?.map((x) => typeof x === 'string' ? x.replace(/\b(?:per|each|every|single|individual)\s+securit(?:y|ies)\b/gi, 'instrument').replace(/\bsecurities\b/gi, 'instruments').replace(/\bSOC ?[123]\b/gi, 'audit report').replace(/\b([A-Z][A-Za-z0-9]+) Software\b/g, '$1') : x);
+  return list?.map((x) => typeof x === 'string' ? x.replace(/\b(?:per|each|every|single|individual)\s+securit(?:y|ies)\b/gi, 'instrument').replace(/\bsecurities\b/gi, 'instruments').replace(/\bSOC ?[123]\b/gi, 'audit report').replace(OTHER_TOOLS, ' ').replace(/\b([A-Z][A-Za-z0-9]+) Software\b/g, '$1') : x);
 }
 // Run 42: the seller's own category and product description outweigh words about the seller's customers' industries.
 // (1) One ambiguous word in the seller's text ("warehouse" in "warehouse data activation", "security" in "cloud and security") does not
@@ -136,14 +152,27 @@ function weighSignals(input: ReaderInput): ReaderInput {
   if (onlyCustomerWords(out.buyer, 'buyer') || !explainSector({ context: out.context }).vertical) out.buyer = [];
   return out;
 }
-export function readContext(explicitModel: unknown, raw: ReaderInput): { v: Vertical | null; model: BusinessModel | null; how: string; line: string; source: string | null } {
+// Run 42B: the seller's own industry, chosen by the user (the your_sector input). It decides the sector; no reading from text overrides it.
+// "other" means neutral B2B wording. An unknown value is refused by the server before a tool runs; here it is treated as not given and never echoed.
+export const YOUR_SECTORS = ['logistics_tech', 'fintech', 'saas', 'vertical_saas', 'ai_native', 'ites', 'telecom', 'software', 'cybersecurity', 'other'] as const;
+const SECTOR_ID: Record<string, string | null> = { logistics_tech: 'logistics-tech', fintech: 'fintech', saas: 'saas', vertical_saas: 'vertical-saas', ai_native: 'ai-native', ites: 'ites', telecom: 'telecom', software: 'software', cybersecurity: 'cybersecurity', other: null };
+export function givenSector(yourSector: unknown): { given: boolean; v: Vertical | null } {
+  if (typeof yourSector !== 'string' || !Object.prototype.hasOwnProperty.call(SECTOR_ID, yourSector)) return { given: false, v: null };
+  const id = SECTOR_ID[yourSector];
+  return { given: true, v: id ? VERTICALS.find((x) => x.id === id) ?? null : null };
+}
+export function readContext(explicitModel: unknown, raw: ReaderInput, yourSector?: unknown): { v: Vertical | null; model: BusinessModel | null; how: string; line: string; source: string | null } {
   const scrubbed: ReaderInput = { seller: scrub(raw.seller), context: scrub(raw.context), role: scrub(raw.role), buyer: scrub(raw.buyer) };
-  const ov = coreOverride(scrubbed);
-  const input: ReaderInput = weighSignals(ov.seller ? { ...scrubbed, seller: ov.seller } : scrubbed);
-  const forced = ov.vertical ?? (ov.id ? VERTICALS.find((x) => x.id === ov.id) ?? null : null);
-  let v = forced ?? detectVertical(input);
-  const m = ov.vertical ? detectModel(explicitModel, { seller: ov.seller }) : forced && !(typeof explicitModel === 'string' && explicitModel) ? { model: SECTOR_MODEL[forced.id], how: 'sector' as const } : detectModel(explicitModel, input);
+  const gs = givenSector(yourSector);
+  const ov = gs.given ? { id: null } as ReturnType<typeof coreOverride> : coreOverride(scrubbed);
+  const input: ReaderInput = gs.given ? scrubbed : weighSignals(ov.seller ? { ...scrubbed, seller: ov.seller } : scrubbed);
+  const forced = gs.given ? gs.v : ov.vertical ?? (ov.id ? VERTICALS.find((x) => x.id === ov.id) ?? null : null);
+  let v = gs.given ? gs.v : forced ?? detectVertical(input);
+  // With your_sector the model follows the sector unless the user's own words (business_model, or the seller's wording) state it.
+  const given = gs.given && forced ? (() => { const r = detectModel(explicitModel, input); if (r.how === 'sector' && detectVertical(input)?.id === forced.id) return r; return r.how === 'input' || (r.how === 'read' && (r.model !== 'saas' || /(?:saas|subscriptions?|per seat|per user|licen[cs]es?)/i.test(nonEmpty(input.seller).join(' ')))) ? r : { model: SECTOR_MODEL[forced.id], how: 'sector' as const }; })() : null;
+  const m = given ? given : gs.given ? detectModel(explicitModel, input) : ov.vertical ? detectModel(explicitModel, { seller: ov.seller }) : forced && !(typeof explicitModel === 'string' && explicitModel) ? { model: SECTOR_MODEL[forced.id], how: 'sector' as const } : detectModel(explicitModel, input);
   const source = v ? (forced ? 'seller' : explainSector(input).source) : null;
+  const chosen = gs.given && !!v;
   // A seller that manages money gets the investment notes (profileFor), and an AI native seller of support automation the support notes.
   // When only the buyer's industry points to fintech and that buyer is an investor, the seller's product may be anything: no notes are shown.
   const allText = [input.seller, input.context, input.role, input.buyer].flatMap((g) => (Array.isArray(g) ? g : [])).filter((x): x is string => typeof x === 'string').join(' \n ');
@@ -151,7 +180,7 @@ export function readContext(explicitModel: unknown, raw: ReaderInput): { v: Vert
     && !/\b(?:reconcil\w*|expenses?|month-end|close the books|payroll|invoic\w*|accounts (?:payable|receivable)|spend management|corporate cards?|prepaid cards?|reimburse\w*)\b/i.test(allText);
   // An investor buyer with no sector in the seller's own words: the seller's product may be anything, but the buyers are allocators, so the
   // investment notes (roles, measures, objections of an allocator) are the ones that fit what the buyer reads.
-  const investorOnly = !!v && v.id === 'fintech' && m.model !== 'investment' && investorBuyer;
+  const investorOnly = !gs.given && !!v && v.id === 'fintech' && m.model !== 'investment' && investorBuyer;
   const withheld = false;
   v = investorOnly ? profileFor(v, 'investment', input) : profileFor(v, m.model, input);
   // The persona's function decides the measures when the sector's own are another function's: a finance buyer of a billing product
@@ -179,7 +208,7 @@ export function readContext(explicitModel: unknown, raw: ReaderInput): { v: Vert
   }
   const from = source === 'role' ? ' (the job titles name it)' : source === 'buyer' ? ' (the buyer\'s industry names it; your own description names no sector)' : '';
   const lensNote = lens ? ` (measures and questions follow the ${lens} buyer)` : '';
-  const sector = investorOnly ? `the buyers are investors, so the investment notes are shown (your own description names no sector; ${v ? v.name : 'investment management'})` : v ? `read from your inputs as ${v.name}${from}${lensNote}` : 'not clear from your inputs (name the industry for sector notes)';
+  const sector = investorOnly ? `the buyers are investors, so the investment notes are shown (your own description names no sector; ${v ? v.name : 'investment management'})` : v ? `${chosen ? `set by your_sector as ${v.name}` : `read from your inputs as ${v.name}${from}${lensNote}`}` : gs.given ? 'not set: your_sector is other, so the wording is neutral B2B' : 'not clear from your inputs (name the industry for sector notes, or set your_sector)';
   const model = m.model
     ? `${MODEL_NAME[m.model]} (${m.how === 'input' ? 'from business_model' : m.how === 'sector' ? 'the usual model in this sector, assumed; set business_model to change it' : 'read from your inputs; set business_model to change it'})`
     : 'not clear from your inputs; set business_model (saas, services, connectivity, transactions, marketplace, hardware_software or investment) for advice that fits it';

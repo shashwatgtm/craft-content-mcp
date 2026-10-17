@@ -6,6 +6,12 @@ const BUSINESS_MODEL_FIELD = {
   description: "Optional: how you charge, so the advice fits it. If omitted, it is read from your text and the answer says how.",
   enum: ["saas", "services", "connectivity", "transactions", "marketplace", "hardware_software", "investment"]
 };
+// Run 42B: the seller's own industry, chosen by the user; it decides the sector notes. Never the customers' industry.
+const YOUR_SECTOR_FIELD = {
+  type: "string",
+  description: "Optional: your company's own industry (not your customers'). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear.",
+  enum: ["logistics_tech", "fintech", "saas", "vertical_saas", "ai_native", "ites", "telecom", "software", "cybersecurity", "other"]
+};
 const YOUR_PRODUCT_FIELD = { type: "string", description: "Optional: your product or service name, used in the answer. Without it the answer says so and shows a placeholder." };
 
 export const tools: Tool[] = [
@@ -31,7 +37,8 @@ export const tools: Tool[] = [
         results: { type: "string", description: "Measurable outcomes, one per line or per semicolon (needed in full mode)" },
         customer_quote: { type: "string", description: "Optional: a direct quote from the customer" },
         your_product: { type: "string", description: "Your product or service name" },
-        business_model: BUSINESS_MODEL_FIELD
+        business_model: BUSINESS_MODEL_FIELD,
+        your_sector: YOUR_SECTOR_FIELD
       },
       required: ["customer_name", "your_product"]
     }
@@ -64,7 +71,8 @@ export const tools: Tool[] = [
           type: "string",
           description: "Optional: recent newsletter topics, to avoid repetition and suggest connections"
         },
-        your_product: YOUR_PRODUCT_FIELD
+        your_product: YOUR_PRODUCT_FIELD,
+        your_sector: YOUR_SECTOR_FIELD
       },
       required: ["topic", "cta_goal"]
     }
@@ -96,7 +104,8 @@ export const tools: Tool[] = [
           enum: ["none", "subtle", "moderate", "heavy"]
         },
         your_product: YOUR_PRODUCT_FIELD,
-        business_model: BUSINESS_MODEL_FIELD
+        business_model: BUSINESS_MODEL_FIELD,
+        your_sector: YOUR_SECTOR_FIELD
       },
       required: ["topic", "target_audience", "webinar_type"]
     }
@@ -122,7 +131,8 @@ export const tools: Tool[] = [
           description: "The brand voice to keep",
           enum: ["professional", "casual", "authoritative", "friendly", "bold"]
         },
-        key_message: { type: "string", description: "Optional: the core message to emphasize in every format" }
+        key_message: { type: "string", description: "Optional: the core message to emphasize in every format" },
+        your_sector: YOUR_SECTOR_FIELD
       },
       required: ["source_content", "source_type"]
     }
@@ -148,7 +158,8 @@ export const tools: Tool[] = [
           type: "string",
           description: "The style of the articles",
           enum: ["contrarian", "how_to", "lessons_learned", "prediction", "framework"]
-        }
+        },
+        your_sector: YOUR_SECTOR_FIELD
       },
       required: ["topic", "your_take", "target_reader"]
     }
@@ -172,7 +183,8 @@ export const tools: Tool[] = [
         use_case: { type: "string", description: "Where the testimonial will be used (the website or a sales deck, for example)" },
         incentive: { type: "string", description: "Optional: what you are offering in return" },
         your_product: YOUR_PRODUCT_FIELD,
-        business_model: BUSINESS_MODEL_FIELD
+        business_model: BUSINESS_MODEL_FIELD,
+        your_sector: YOUR_SECTOR_FIELD
       },
       required: ["customer_name", "customer_company", "success_story", "testimonial_type"]
     }
@@ -195,7 +207,8 @@ export const tools: Tool[] = [
           description: "The stage of the sales funnel",
           enum: ["prospecting", "discovery", "demo", "negotiation", "closing"]
         },
-        business_model: BUSINESS_MODEL_FIELD
+        business_model: BUSINESS_MODEL_FIELD,
+        your_sector: YOUR_SECTOR_FIELD
       },
       required: ["product", "target_persona", "proof_points"]
     }
@@ -218,7 +231,8 @@ export const tools: Tool[] = [
           type: "string",
           description: "The tone you want. Only more_formal and more_casual are checked in the text; any other value is named in the answer as not used",
           enum: ["more_formal", "more_casual", "more_urgent", "more_friendly", "more_authoritative", "keep_same"]
-        }
+        },
+        your_sector: YOUR_SECTOR_FIELD
       },
       required: ["content", "content_type"]
     }

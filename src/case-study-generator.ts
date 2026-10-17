@@ -5,6 +5,7 @@ import { parseProof, fixNumbers, endSentence, lowerFirstWord, isGenericName, pro
 type Ctx = { v: Vertical | null; model: BusinessModel | null; line: string };
 
 export function generateCaseStudy(args: {
+  your_sector?: string;
   customer_name: string;
   customer_industry?: string;
   mode?: string;
@@ -22,7 +23,7 @@ export function generateCaseStudy(args: {
   const mode = args.mode || (args.challenge && args.solution && args.results ? 'full' : 'discovery');
   const product = args.your_product;
   // Run 19 (D80, problems 4 and 8): the sector and the business model are read from every text the user gave.
-  const ctx = readContext(args.business_model, { seller: [product, args.solution], context: [args.challenge, args.results, args.interview_notes], buyer: [args.customer_industry, args.customer_name] });
+  const ctx = readContext(args.business_model, { seller: [product, args.solution], context: [args.challenge, args.results, args.interview_notes], buyer: [args.customer_industry, args.customer_name] }, args.your_sector);
 
   // Run 15 (R15-11, D35): mode "full", no interview notes, and a fact left out: the discovery interview kit,
   // with a first line that names what is missing. A part that is only spaces counts as missing.

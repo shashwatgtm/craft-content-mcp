@@ -19,6 +19,7 @@ interface W {
 }
 
 export function generateWebinarScript(args: {
+  your_sector?: string;
   topic: string;
   target_audience: string;
   webinar_type: string;
@@ -51,7 +52,7 @@ export function generateWebinarScript(args: {
   const given = (args.your_product || '').trim();
   const company = parts.company && parts.company.split(/\s+/).length <= 4 ? parts.company : (companyFrom(topic) || parts.company);
   const product = given || (productLevel === 'none' ? '' : company);
-  const ctx: Ctx = readContext(args.business_model, { seller: [given || parts.company || company, parts.problem || topic], context: [args.key_takeaways, args.speakers], role: [audienceFull], buyer: [parts.audience, audienceFull] });
+  const ctx: Ctx = readContext(args.business_model, { seller: [given || parts.company || company, parts.problem || topic], context: [args.key_takeaways, args.speakers], role: [audienceFull], buyer: [parts.audience, audienceFull] }, args.your_sector);
 
   // the takeaways: read for what each one is; the problem the topic names is said once, as the problem
   const haveTakeaways = !!(args.key_takeaways && args.key_takeaways.trim());

@@ -78,6 +78,7 @@ Generated on 27 September 2026 from the server's own tool list and checked again
 | `solution` | No | string | How your product solved it (required for full mode) |
 | `results` | No | string | Quantifiable outcomes (required for full mode) |
 | `customer_quote` | No | string | Optional: Direct quote from customer |
+| `your_sector` | No | one of: `logistics_tech`, `fintech`, `saas`, `vertical_saas`, `ai_native`, `ites`, `telecom`, `software`, `cybersecurity`, `other` | Optional: your company's own industry (not your customers'). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear. |
 
 #### 2. Newsletter Builder (`newsletter_builder`)
 
@@ -90,6 +91,7 @@ Generated on 27 September 2026 from the server's own tool list and checked again
 | `newsletter_type` | No | one of: `educational`, `product_update`, `industry_news`, `thought_leadership`, `curated_links` | Type of newsletter |
 | `tone` | No | one of: `professional`, `conversational`, `authoritative`, `friendly`, `urgent` | Writing tone |
 | `previous_topics` | No | string | Optional: Recent newsletter topics to avoid repetition and suggest connections |
+| `your_sector` | No | one of: `logistics_tech`, `fintech`, `saas`, `vertical_saas`, `ai_native`, `ites`, `telecom`, `software`, `cybersecurity`, `other` | Optional: your company's own industry (not your customers'). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear. |
 
 #### 3. Webinar Script (`webinar_script`)
 
@@ -103,6 +105,7 @@ Generated on 27 September 2026 from the server's own tool list and checked again
 | `speakers` | No | string | Optional: Speaker names and titles (comma-separated) |
 | `include_polls` | No | boolean | Include interactive poll suggestions |
 | `product_mention_level` | No | one of: `none`, `subtle`, `moderate`, `heavy` | Whether to add product tie-in placeholders to the script ('none' leaves them out) |
+| `your_sector` | No | one of: `logistics_tech`, `fintech`, `saas`, `vertical_saas`, `ai_native`, `ites`, `telecom`, `software`, `cybersecurity`, `other` | Optional: your company's own industry (not your customers'). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear. |
 
 #### 4. Content Repurposer (`content_repurposer`)
 
@@ -113,6 +116,7 @@ Generated on 27 September 2026 from the server's own tool list and checked again
 | `target_formats` | No | string | OPTIONAL: Formats to generate (comma-separated). Defaults to: linkedin_post, twitter_thread, email, blog_summary, quote_cards. Other options: infographic_outline, video_script, podcast_talking_points, slide_deck_outline, newsletter_section |
 | `brand_voice` | No | one of: `professional`, `casual`, `authoritative`, `friendly`, `bold` | Brand voice to maintain |
 | `key_message` | No | string | Optional: Core message to emphasize across all formats |
+| `your_sector` | No | one of: `logistics_tech`, `fintech`, `saas`, `vertical_saas`, `ai_native`, `ites`, `telecom`, `software`, `cybersecurity`, `other` | Optional: your company's own industry (not your customers'). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear. |
 
 #### 5. Thought Leadership Series (`thought_leadership_series`)
 
@@ -125,6 +129,7 @@ Generated on 27 September 2026 from the server's own tool list and checked again
 | `author_background` | No | string | Optional: Your role and why you're credible (e.g., '15 years in enterprise sales') |
 | `num_articles` | No | integer (1 to 5) | How many articles to outline, a whole number from 1 to 5. If left out, the series has three articles |
 | `article_type` | No | one of: `contrarian`, `how_to`, `lessons_learned`, `prediction`, `framework` | Style of articles |
+| `your_sector` | No | one of: `logistics_tech`, `fintech`, `saas`, `vertical_saas`, `ai_native`, `ites`, `telecom`, `software`, `cybersecurity`, `other` | Optional: your company's own industry (not your customers'). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear. |
 
 #### 6. Testimonial Capture (`testimonial_capture`)
 
@@ -138,6 +143,7 @@ Generated on 27 September 2026 from the server's own tool list and checked again
 | `relationship_context` | No | string | How long they've been a customer, key interactions |
 | `use_case` | No | string | Where will this testimonial be used? (website, sales deck, etc.) |
 | `incentive` | No | string | Optional: What you're offering in return |
+| `your_sector` | No | one of: `logistics_tech`, `fintech`, `saas`, `vertical_saas`, `ai_native`, `ites`, `telecom`, `software`, `cybersecurity`, `other` | Optional: your company's own industry (not your customers'). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear. |
 
 #### 7. Sales Enablement Content (`sales_enablement_content`)
 
@@ -151,6 +157,7 @@ Generated on 27 September 2026 from the server's own tool list and checked again
 | `competitor_objections` | No | string | Optional: 'Why not [competitor]' objections |
 | `price_context` | No | string | Optional: Your pricing vs market (e.g., 'Premium, 20% above market', 'Budget option', 'Mid-market') |
 | `sales_stage` | No | one of: `prospecting`, `discovery`, `demo`, `negotiation`, `closing` | What stage of sales funnel |
+| `your_sector` | No | one of: `logistics_tech`, `fintech`, `saas`, `vertical_saas`, `ai_native`, `ites`, `telecom`, `software`, `cybersecurity`, `other` | Optional: your company's own industry (not your customers'). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear. |
 
 #### 8. CRAFT Content Improver (`craft_content_improver`)
 
@@ -161,6 +168,7 @@ Generated on 27 September 2026 from the server's own tool list and checked again
 | `goal` | No | string | OPTIONAL: What should this content achieve? (e.g., 'drive signups', 'educate readers'). If not given, a goal is chosen from the content type (for example 'Get meetings booked' for a sales email) |
 | `audience` | No | string | OPTIONAL: Who is this content for? Helps tailor improvements. |
 | `tone_preference` | No | one of: `more_formal`, `more_casual`, `more_urgent`, `more_friendly`, `more_authoritative`, `keep_same` | Desired tone (accepted for compatibility; it does not change the analysis) |
+| `your_sector` | No | one of: `logistics_tech`, `fintech`, `saas`, `vertical_saas`, `ai_native`, `ites`, `telecom`, `software`, `cybersecurity`, `other` | Optional: your company's own industry (not your customers'). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear. |
 
 ## Input Design Principles
 

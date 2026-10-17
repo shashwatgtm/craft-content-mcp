@@ -1,53 +1,54 @@
 # Case Study: FlowOps
 
-## Late deliveries down 60% with RouteIQ
+## Late deliveries down 60%
+
+*Sector: read from your inputs as logistics tech. Business model: software subscription (the usual model in this sector, assumed; set business_model to change it).*
+
+*Built from: challenge: given; solution: given; results: 3 items (3 outcomes); customer quote: given; industry: given.*
 
 ---
 
 ### About FlowOps
 
-**Industry:** Logistics
-**Challenge:** Dispatchers spent four hours a day planning routes by hand...
-**Solution:** RouteIQ
-**Key Result:** Late deliveries down 60%
+| | |
+|---|---|
+| **Customer** | FlowOps |
+| **Industry** | Logistics |
+| **Product** | RouteIQ |
+| **Lead result** | Late deliveries down 60%. |
 
 ---
 
 ## The Challenge
 
-Dispatchers spent four hours a day planning routes by hand and late deliveries hit 18 percent.
+What the team was dealing with: Dispatchers spent four hours a day planning routes by hand and late deliveries hit 18 percent.
 
-[What the problem cost them, in their words]
+**To finish this section** (ask the customer, and use their words):
+- What the problem cost them, with the starting value of one of: on time delivery, cost per shipment or per order and order cycle time.
+- Interview question in the sector's language: "Which systems hold your orders, shipments and stock today, and who owns the data in them?"
 
 ---
 
 ## The Solution
 
-RouteIQ planned routes automatically and sent drivers live updates.
+What was put in place: RouteIQ planned routes automatically and sent drivers live updates.
 
-### Why FlowOps Chose RouteIQ
-
-[Why they chose you, in their words]
-
-### Implementation
-
-[How the rollout went, in their words]
+**To finish this section:**
+- Why FlowOps chose RouteIQ, and which alternative it weighed (a common reaction in logistics tech: "We already have a system for this").
+- How the implementation went, and how long it took to see value. Use only a duration the customer confirms.
+- Words to use as the customer says them: shipment, carrier, consignment, lead time, exception.
 
 ---
 
 ## The Results
 
-### 1. Late deliveries down 60%
+**Outcomes**
 
-[What this result changed for them, in their words]
+- Late deliveries down 60%.
+- Planning time cut from 4 hours to 30 minutes.
+- 12% lower fuel cost.
 
-### 2. planning time cut from 4 hours to 30 minutes
-
-[What this result changed for them, in their words]
-
-### 3. 12% lower fuel cost
-
-[What this result changed for them, in their words]
+**To finish this section:** for each figure, give the value before, the value after and the period it was measured over. A strong proof point here: A before and after of on time delivery or cost per shipment on one lane, site or region, measured over a full cycle of busy and quiet weeks. Measures of this sector that the results do not yet show: on time delivery, cost per shipment or per order, order cycle time and exception rate. Add one if the customer tracks it.
 
 ---
 
@@ -59,39 +60,43 @@ RouteIQ planned routes automatically and sent drivers live updates.
 
 ---
 
-## Key Takeaways
+## Where This Goes Next
 
-1. **Challenge:** Dispatchers spent four hours a day planning routes by hand...
-2. **Solution:** RouteIQ planned routes automatically and sent drivers live updates.
-3. **Impact:** Late deliveries down 60%
+Close with one action for the reader. Deals in logistics tech usually start like this: enterprise sales with a pilot at one site, lane or region, often timed around peak season planning. Write the reader's next step to match, for example a pilot request.
 
 ---
 
-## Ready to Achieve Similar Results?
+## Sector Notes: Logistics tech
 
-[CTA: Schedule a demo / Get started / Talk to sales]
+- **A strong proof point here:** A before and after of on time delivery or cost per shipment on one lane, site or region, measured over a full cycle of busy and quiet weeks.
+- **What readers in this sector measure:** on time delivery, cost per shipment or per order, order cycle time, exception rate, delay and damage claims, service level attainment, manual planning time.
+- **Terms this sector's buyers use:** shipment, carrier, consignment, lead time, exception, service level, proof of delivery, third party logistics provider, transport management system, warehouse management system.
+- **Your results:** they carry a figure.
 
 ---
 
 ## Distribution Formats
 
-### One-Line Version (for testimonial pages):
-"FlowOps: late deliveries down 60% after implementing RouteIQ."
+### One-line version (testimonial pages)
+Late deliveries down 60% (RouteIQ).
 
-### Social Media Version:
-FlowOps was struggling with dispatchers spent four hours a day planning routes by hand....
+### Social media version
+Late deliveries down 60%.
 
-Then they implemented RouteIQ.
+Product: RouteIQ.
 
-The results?
-- Late deliveries down 60%
-- planning time cut from 4 hours to 30 minutes
-- 12% lower fuel cost
+> "We got our afternoons back."
 
-"We got our afternoons back...."
+Read the full story: add the link when the case study is published.
 
-Read the full story: [link]
+### Email snippet
+Quick success story: Late deliveries down 60%. Add the link to the full story when it is published.
 
-### Email Snippet:
-Quick success story: FlowOps (Logistics) faced dispatchers spent four hours a day planning routes by hand.... After implementing RouteIQ, they saw late deliveries down 60%. [Read the full story →]
+---
+
+## Check Before You Publish
+
+- The customer has approved the story, every figure and the quote in writing.
+- Every figure comes from the customer or a page you can cite; page claims stay labelled as the vendor's own claims.
+- Nothing in the recognition or company-wide claims is shown as this customer's result.
 

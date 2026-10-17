@@ -1,4 +1,15 @@
-import { parseListItems, generateHook, lowerCommonWords, lowerFirstIfCommon, cap, SUGGESTION_FOOTER } from './utils.js';
+import { lowerFirstIfCommon, cap } from './utils.js';
+import { readContext, audienceLine, isClause, type Vertical } from './sector.ts';
+import { splitList, unpackTopic, fixNumbers, endSentence, capFirst, proseJoin, productParts, toYou, bestQuestion, softenClaims } from './draft.ts';
+import { cleanSectorLine, looksClause, readPoints, groupPhrases, sentenceOf, renderGroup, readersFit, isStatistic, companyFrom, shorten, shortReaders, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, nk, quotedEnd, lowerFirstSafe, type Pt } from './rw-content.ts';
+
+// Run 22 (rewrite): the issue is written, not assembled. The key points are read for what they are (the problem, what changes, how it
+// works, the evidence), each is said in a whole sentence, and the sector file adds the measures, the proof to ask for and the questions
+// a reader can put to their own team. No figure, customer, quote or promise is added (B82); what was not given is named once at the end.
+
+const lower = (s: string) => lowerFirstSafe(s);
+const VERB_START = /^(?:book|see|register|read|download|request|start|join|reply|share|try|get|talk|schedule|subscribe|sign|watch|explore|learn|contact|call|visit|take|view|ask|send|forward|review|apply|buy|order|claim|speak|meet|discover|compare|check|find|build|create|set|add|use|come|hear|listen|plan)\b/i;
+const LABEL_CLAUSE = /\b(?:is|are|was|were|run|runs|combine|combines|means|rely|relies|chain|chains|sits|happens|hand|hands|can|will|must|should|have|has|do|does|break|breaks|fragments|drift|drifts)\b/i;
 
 export function generateNewsletter(args: {
   topic: string;
@@ -8,520 +19,285 @@ export function generateNewsletter(args: {
   newsletter_type?: string;
   tone?: string;
   previous_topics?: string;
+  your_product?: string;
 }): string {
-  const topic = args.topic;
+  const topic = fixNumbers(args.topic.trim());
   const segment = args.audience_segment || 'general';
   const type = args.newsletter_type || 'educational';
   const tone = args.tone || 'professional';
-  const previousTopics = args.previous_topics ? parseListItems(args.previous_topics) : [];
-  const ctaGoal = args.cta_goal;
-  
-  // DERIVE key points from topic if not provided
-  let keyPoints: string[];
-  let keyPointsNote = '';
-  if (args.key_points) {
-    keyPoints = parseListItems(args.key_points);
-  } else {
-    keyPoints = generateKeyPointsFromTopic(topic, type, segment);
-    keyPointsNote = '*(Suggested from the topic: replace with your own)*';
+  const previous = args.previous_topics ? splitList(stripGuardQuotes(args.previous_topics)) : [];
+  const ctaGoal = args.cta_goal.trim();
+  const product = (args.your_product || '').trim();
+  const parts = unpackTopic(topic);
+  const ctaProduct = /\babout\s+(.+)$/i.exec(ctaGoal)?.[1]?.trim() || '';
+  const firstClause = (parts.problem || '').split(/[,;:]| \(/)[0].trim();
+  const label = parts.short ? topic.replace(/ +/g, ' ') : (firstClause && firstClause.length <= 110 && firstClause.length > parts.label.length && firstClause.toLowerCase().startsWith(parts.label.toLowerCase()) ? firstClause : parts.label);
+  const ctx = readContext(undefined, { seller: [product, args.cta_goal], context: [topic, args.key_points, args.previous_topics], buyer: [parts.audience] });
+  const vFull = ctx.v;
+  const casual = /conversational|casual|friendly|warm|informal|relaxed/i.test(tone);
+  const productName = product ? productParts(product).name : '';
+  const productDescription = product ? productParts(product).description : '';
+  const who = productName || (parts.company && parts.company.split(/\s+/).length <= 4 ? parts.company : (companyFrom(topic) || parts.company)) || (ctaProduct ? productParts(ctaProduct).name : '');
+  const readers = parts.audience ? shortReaders(parts.audience) : '';
+  const fits = !vFull || !readers || readersFit(readers, vFull);   // the readers the user named win over the sector's default readers
+  // a general software reading (SaaS, software) that does not fit the readers named is not used in the draft at all: its measures belong to other readers
+  const v = vFull && !fits && !vFull.subtype && ['saas', 'software'].includes(vFull.id) ? null : vFull;
+  // do the readers named share a word with the sector's own buyer roles? When they do not (online sellers against heads of supply chain), the sector's
+  // measures still help but its questions and proof about systems, sites and lanes are left out
+  const stemsOf = (t: string) => new Set((t.toLowerCase().match(/[a-z]{4,}/g) || []).map((x) => x.replace(/(?:ing|ed|es|s)$/, '').slice(0, 6)));
+  const rolesFit = !v || !readers || [...stemsOf(readers)].some((x) => stemsOf(v.buyerRoles.join(' ')).has(x));
+  const ENTERPRISE = /\b(?:systems?|data|owns?|owners?|lanes?|contracts?|vendors?|tenders?|procure\w*|erp|wms|tms|audit\w*|approv\w*|committee|stakeholders?|sign(?:s|ed)? off)\b/i;
+  const kind = v ? (v.name.includes(',') ? v.name.split(',').slice(1).join(',').trim() : v.name) : '';
+  const forWhom = readers || (kind ? `teams in ${kind}` : 'your team');
+
+  // ---- the points --------------------------------------------------------------------------------------------------
+  const given = !!(args.key_points && args.key_points.trim());
+  const soft0 = softenClaims(args.key_points || '');
+  const soft = soft0.removed.length ? soft0 : { text: args.key_points || '', removed: [] as string[] };
+  const softP = softenClaims(parts.problem || '');
+  const all = readPoints(soft.text, { problem: soft0.removed.length || softP.removed.length ? softP.text : parts.problem || '' });
+  const orders = all.filter((p) => p.role === 'instruction').map((p) => p.text);
+  const pts = all.filter((p) => p.role !== 'instruction');
+  const problems = pts.filter((p) => p.role === 'problem');
+  const outcomes = pts.filter((p) => p.role === 'outcome');
+  const hows = groupPhrases(pts.filter((p) => p.role === 'capability'));
+  const evidence = pts.filter((p) => ['result', 'quote', 'recognition', 'scale', 'story'].includes(p.role));
+  const figures = pts.filter((p) => p.figure && p.role !== 'problem');
+  const unsourced = figures.filter((p) => !p.label);
+  const opening = problems[0];
+  const laterProblems = problems.slice(1);
+
+  // ---- sections ----------------------------------------------------------------------------------------------------
+  const usedMetric = new Set<string>();
+  const metricFor = (p: Pt[]): string => {
+    if (!v) return '';
+    const words = new Set((p.map((x) => x.text).join(' ').toLowerCase().match(/[a-z]{4,}/g) || []).map((w) => w.replace(/(?:ing|ed|es|s)$/, '')));
+    let best = ''; let bestN = 0;
+    for (const m of v.metrics) { if (usedMetric.has(m)) continue; const n = (m.toLowerCase().match(/[a-z]{4,}/g) || []).filter((w) => words.has(w.replace(/(?:ing|ed|es|s)$/, ''))).length; if (n > bestN) { best = m; bestN = n; } }
+    if (!best) best = v.metrics.find((m) => !usedMetric.has(m)) || '';
+    if (best) usedMetric.add(best);
+    return best;
+  };
+  const NAMES: Record<string, { problem: string; how: string; evidence: string; check: string }> = {
+    educational: { problem: 'Where it goes wrong', how: 'How it works', evidence: 'What the evidence shows', check: 'What to check in your own operation' },
+    product_update: { problem: 'What this fixes', how: "What's new", evidence: 'What the evidence shows', check: 'What to check before you switch anything on' },
+    industry_news: { problem: 'What is happening', how: 'What it adds', evidence: 'What the evidence shows', check: 'What to check in your own operation' },
+    thought_leadership: { problem: 'The problem', how: 'How it works', evidence: 'What the evidence shows', check: 'What to ask your own team' },
+    curated_links: { problem: 'Why it matters', how: 'How it works', evidence: 'What the evidence shows', check: 'Questions for your own team' }
+  };
+  const nm = NAMES[type] || NAMES.educational;
+  const sections: { heading: string; body: string }[] = [];
+  const bring = who ? `What ${who} brings:` : 'What it brings:';
+
+  if (laterProblems.length) {
+    const m = metricFor(laterProblems);
+    sections.push({ heading: nm.problem, body: [renderGroup(laterProblems, who, 'Where it goes wrong:'), m ? `${cap(forWhom)} read it in ${m}.` : ''].filter(Boolean).join('\n\n') });
+  }
+  if (outcomes.length) {
+    const m = metricFor(outcomes);
+    sections.push({ heading: 'What changes', body: [renderGroup(outcomes, who, 'What readers can expect:'), m ? `To judge a claim like this, put it next to ${m}.` : ''].filter(Boolean).join('\n\n') });
+  }
+  if (hows.length) {
+    const m = outcomes.length ? '' : metricFor(hows);
+    sections.push({ heading: nm.how, body: [renderGroup(hows, who, bring, 1), m ? `${cap(forWhom)} would judge it on ${m}.` : ''].filter(Boolean).join('\n\n') });
+  }
+  if (evidence.length) {
+    const proof = v ? (rolesFit ? `When a vendor shows you results like these, ${forWhom === 'your team' ? 'look for' : 'the evidence to ask for is'} ${lower(toYou(v.proofShape.replace(/\.$/, '')))}.` : 'When a vendor shows you results like these, ask for the same measure before and after, over the same period, for a group of a size you can compare with yours.') : '';
+    sections.push({ heading: nm.evidence, body: [renderGroup(evidence, who, 'The results on record:'), proof].filter(Boolean).join('\n\n') });
+  }
+  // the reader's own check: the sector's questions, said to the reader
+  if (v) {
+    const free = v.discovery.filter((d) => !/\bclient'?s?\b|current provider|signs off each|governed|\bme\b|\bour\b|\bwe\b/i.test(d) && (rolesFit || !ENTERPRISE.test(d)));
+    const hookFirst = free[0] || '';
+    const used = new Set<string>(hookFirst ? [hookFirst] : []);
+    const n = segment === 'executives' ? 1 : 2;
+    const asked: string[] = [];
+    for (let i = 0; i < n; i++) { const q = bestQuestion(`${label} ${pts.map((p) => p.text).join(' ')}`, free, used); if (q) asked.push(toYou(q)); }
+    const ms = v.metrics.filter((m) => !usedMetric.has(m)).slice(0, 2);
+    const lead = asked.length === 1 ? 'Put this question to your own team' : 'Put these two questions to your own team';
+    const qs = asked.length === 1 ? `"${asked[0]}"` : `First, "${asked[0]}" Second, "${asked[1]}"`;
+    const body = asked.length ? [`${lead} this week. ${qs}`, ms.length ? `Whatever the answers, write down where you stand today on ${proseJoin(ms)}, so that the next change has a number to beat.` : ''].filter(Boolean).join(' ') : ms.length ? `Put this to your own team this week: where do you stand today on ${proseJoin(ms)}, and who looks at those numbers? Write the answers down, so that the next change has a number to beat.` : '';
+    if (body) sections.push({ heading: nm.check, body });
+  }
+  if (!v && given && (hows.length || outcomes.length || evidence.length)) {
+    sections.push({ heading: nm.check, body: 'Put these two questions to your own team this week. First, "Where does this happen in your own work today, and who feels it first?" Second, "Which one number would tell you whether it is getting better?" Whatever the answers, write them down, so that the next change has a baseline to beat.' });
+  }
+  const pushWho = readers ? cap(readers) : kind ? `Teams in ${kind}` : 'Readers';
+  // where readers push back: the sector objection that shares most words with the points, and a way to test it
+  if (v && given && fits) {
+    const text = ` ${label} ${pts.map((p) => p.text).join(' ')} `.toLowerCase();
+    let best = v.objections[0]; let bestN = -1;
+    for (const o of v.objections) { const n = (o.objection.toLowerCase().match(/[a-z]{5,}/g) || []).filter((w) => text.includes(w.slice(0, 5))).length; if (n > bestN) { best = o; bestN = n; } }
+    const settle = waysToSettle(best.response);
+    if (settle) sections.splice(Math.max(0, sections.length - 1), 0, { heading: 'Where readers push back', body: `${pushWho} often say: ${quotedEnd(best.objection)} ${settle}` });
+  }
+  // no key points: the sector's own objection, in the reader's voice, is the first section
+  if (!given && v) {
+    const o = v.objections[0];
+    const settle = waysToSettle(o.response);
+    sections.unshift({ heading: 'The question you will hear', body: `${readers ? cap(readers) : `Teams in ${kind}`} often say: ${quotedEnd(o.objection)} ${settle}`.trim() });
   }
 
-  // Generate multiple subject line options
-  const subjectLines = generateSubjectLines(topic, type, segment);
-  
-  // Generate hooks
-  const hooks = [
-    generateHook(topic, 'question'),
-    generateHook(topic, 'statistic'),
-    generateHook(topic, 'story'),
-    generateHook(topic, 'bold_statement')
-  ];
+  // ---- subject, preview, opening ------------------------------------------------------------------------------------
+  const headSource = parts.problem ? parts.problem.split(/;\s+/)[0] : label;
+  const headMax = parts.short ? 90 : 72;
+  const pieceHeads = (parts.problem ? parts.problem.split(/;\s+|,\s+(?:and\s+)?(?=[a-z])/) : []).concat(problems.flatMap((p) => p.text.split(/;\s+|,\s+(?:and\s+)?(?=[a-z])/))).map((x) => x.trim()).filter(Boolean);
+  const head = shorten(headSource, headMax, true) || pieceHeads.map((x) => shorten(x, headMax, true)).find((x) => x && x.split(/\s+/).length >= 4) || (v ? `Where do you stand with ${v.metrics[0]}?` : who && readers ? `${who} for ${readers}` : shorten(label, 66));
+  const clause = !parts.short || isClause(topic) || LABEL_CLAUSE.test(label);
+  const subjects = subjectLines(head, type, who, v, forWhom, ctaGoal, readers, clause);
+  const roadmap = sections.length ? `${casual ? 'Here is what is in this issue' : 'In this issue'}: ${proseJoin(sections.map((s) => lower(s.heading)))}.` : '';
+  const openLines: string[] = [];
+  if (opening) openLines.push(openingSentences(opening, who));
+  else openLines.push(parts.short ? `This issue is about ${clause ? `"${label}"` : lower(label)}.` : `This issue is about ${lower(head)}.`);
+  if (v) openLines.push(`For ${forWhom}, the numbers to watch are ${proseJoin(v.metrics.slice(0, 2))}.`);
+  if (previous.length) {
+    const list = proseJoin(previous.map((x) => `"${x.replace(/[.\s]+$/, '')}"`));
+    openLines.push(casual ? `Last time we looked at ${list}. This time it is ${clause ? 'a different question' : 'a different topic'}.` : `Recent issues covered ${list}. This one moves on to ${clause ? 'a new question' : 'a new topic'}.`);
+  }
+  if (roadmap) openLines.push(roadmap);
+  const previewPool = [v ? `For ${forWhom}, the numbers to watch are ${proseJoin(v.metrics.slice(0, 2))}.` : '', firstSentence(openLines[0]), sections.length ? `Inside: ${proseJoin(sections.map((x) => lower(x.heading)))}.` : '', who ? `From ${who}: ${lower(head)}.` : '', `${cap(head)}.`,
+    sections.length >= 2 ? `${sections.length} short sections and one next step.` : '', `A ${type.replace(/_/g, ' ')} issue for ${forWhom}.`, sections[0] ? `Starting with ${lower(sections[0].heading)}.` : ''];
+  const previewOptions: string[] = [];
+  for (const c of previewPool) { const x = c.trim(); if (x && x.length >= 28 && x.length <= 125 && !previewOptions.some((y) => nk(y) === nk(x))) previewOptions.push(x); }
+  const preview = (i: number) => previewOptions[i % previewOptions.length];
 
-  // Segment-specific adjustments
-  const segmentConfig = {
-    executives: { depth: 'high-level', length: 'concise', focus: 'business impact' },
-    practitioners: { depth: 'tactical', length: 'detailed', focus: 'how-to' },
-    technical: { depth: 'deep', length: 'comprehensive', focus: 'implementation' },
-    general: { depth: 'accessible', length: 'moderate', focus: 'value' },
-    prospects: { depth: 'introductory', length: 'short', focus: 'benefits' },
-    customers: { depth: 'advanced', length: 'moderate', focus: 'optimization' }
-  };
-  
-  const config = segmentConfig[segment as keyof typeof segmentConfig] || segmentConfig.general;
+  // ---- closing -----------------------------------------------------------------------------------------------------
+  const about = productName && productDescription && productDescription !== productName && productDescription.length > productName.length + 3 ? `${productName} is ${lower(productDescription.replace(/\.$/, ''))}. ` : '';
+  const next = VERB_START.test(ctaGoal) ? `you can ${lower(ctaGoal)}` : `the next step is ${lower(ctaGoal)}`;
+  const closing = `${about}${casual ? 'If this made you think, ' : 'If you would like to take this further, '}${next}.`;
+  // the button says the action in a few words: a bracket note is left out, and a long product name is the short name the issue already uses
+  const buttonText = ((): string => {
+    let b = ctaGoal.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+    if (who && b.length > 45) { const m = b.match(/^(.*?\b(?:about|with|from|for|to)\s+)(\S.*)$/i); if (m && m[2].toLowerCase().startsWith(who.toLowerCase()) && m[2].length > who.length + 3) b = `${m[1]}${who}`; }
+    return cap(b);
+  })();
 
-  let output = `# Newsletter Builder: ${topic}
+  // ---- what was not given ------------------------------------------------------------------------------------------
+  const missing: { field: string; change: string }[] = [];
+  if (!given) missing.push({ field: 'key_points', change: v ? "the sections, which now come from the sector's own objection, measures and questions instead of your points" : 'the sections, which cannot be written without points or a sector' });
+  if (!who) missing.push({ field: 'your_product', change: 'the closing paragraph and every place the draft names what you sell' });
+  const notes: string[] = [];
+  if (soft.removed.length) notes.push(`Claims to source before you publish: your key points use ${proseJoin(soft.removed.map((c) => `"${c}"`))}. The issue leaves them out; add one back only with a source a reader can check.`);
+  if (unsourced.length) notes.push(`Figures with no source label: ${proseJoin(unsourced.map((p) => `"${p.text}"`))}. Add where each one comes from before the issue goes out.`);
+  if (orders.length) notes.push(instructionNote(orders));
+  notes.push('Link the button to the page or the reply address that does what the call to action says.');
 
-## Newsletter Configuration
+  // ---- the hooks ---------------------------------------------------------------------------------------------------
+  // alternative openings: a question the issue does not already ask, and the figure as the first line
+  const askedInDraft = new Set(sections.flatMap((x) => x.body.split('"')));
+  const hookQuestion = v ? toYou(v.discovery.filter((d) => !/\bclient'?s?\b|current provider|signs off each|governed|\bme\b|\bour\b|\bwe\b/i.test(d) && (rolesFit || !ENTERPRISE.test(d)))[0] || '') : '';
+  const hooks: { name: string; text: string }[] = [];
+  if (hookQuestion) hooks.push({ name: 'Question', text: hookQuestion });
+  const fig = figures.find((p) => p.label && isStatistic(p.text)) || figures.find((p) => isStatistic(p.text));
+  if (fig) hooks.push({ name: 'Statistic', text: `Open with the figure from the evidence section, "${fig.text}"${fig.label ? ` (${fig.label})` : ''}, and state the problem second.${fig.label ? '' : ' Its source is not given yet, so add it before you use the figure.'}` });
 
-| Setting | Value |
+  const sectorBlock = vFull ? `## Sector Notes: ${cap(vFull.name)}
+
+${cleanSectorLine(ctx.line)}
+
+- ${fits ? audienceLine(vFull) : `Readers named in your input: ${readers}. The notes below were written for ${vFull.name}, whose usual readers are ${vFull.buyerRoles.slice(0, 3).join(', ')}; they do not match your readers, so the draft does not use them.`}
+- **Terms this audience uses:** ${vFull.vocabulary.slice(0, 6).join(', ')}.
+- **Objections the sector file lists${fits ? '' : ' (written for its own readers, so check them against yours)'}, and how to settle each:** ${vFull.objections.map((o) => `"${o.objection}" (${lower(o.response.replace(/\.$/, ''))})`).join('; ')}.
+- **A proof point that lands:** ${vFull.proofShape}` : `## Sector notes
+
+${cleanSectorLine(ctx.line)}`;
+
+  const table = `| Setting | Value |
 |---------|-------|
 | **Topic** | ${topic} |
-| **Segment** | ${segment} |
-| **Type** | ${type.replace(/_/g, ' ')} |
-| **Tone** | ${tone} |
-| **CTA Goal** | ${ctaGoal} |
+| **Product** | ${product || (ctaProduct ? `${ctaProduct} (read from the call to action)` : parts.company ? `${parts.company} (read from the topic)` : 'not given')} |
+| **Segment** | ${segment}${args.audience_segment ? '' : ' (default)'} |
+| **Type** | ${type.replace(/_/g, ' ')}${args.newsletter_type ? '' : ' (default)'} |
+| **Tone** | ${tone}${args.tone ? '' : ' (default)'} |
+| **CTA Goal** | ${ctaGoal} |`;
+
+  const out = `# Newsletter issue draft
+
+**Subject:** ${subjects[0]}
+
+**Preview:** ${preview(0)}
+
+---
+
+${openLines.join('\n\n')}
+
+${sections.map((s, i) => `### ${i + 1}. ${s.heading}\n\n${s.body}`).join('\n\n')}
+
+---
+
+${closing}
+
+Button: ${buttonText}
 
 ---
 
 ## Subject Lines (A/B Test These)
 
-### Option A: Curiosity-Driven
-**${subjectLines[0]}**${subjectLineLabel(type, 0)}
-- Preview text: ${generatePreviewText(subjectLines[0], topic)}
+The subject above is the first option. Test it against these three:
 
-### Option B: Benefit-Focused  
-**${subjectLines[1]}**${subjectLineLabel(type, 1)}
-- Preview text: ${generatePreviewText(subjectLines[1], topic)}
-
-### Option C: Number/List Style
-**${subjectLines[2]}**${subjectLineLabel(type, 2)}
-- Preview text: ${generatePreviewText(subjectLines[2], topic)}
-
-### Option D: Personal/Direct
-**${subjectLines[3]}**${subjectLineLabel(type, 3)}
-- Preview text: ${generatePreviewText(subjectLines[3], topic)}
-
+${subjects.slice(1, 4).map((s, i) => `**${s}**\n- Preview text: ${preview(i + 1)}`).join('\n\n')}
+${hooks.length ? `\n---\n\n## Opening Hooks (Pick One)\n\n${hooks.map((h, i) => `### Hook ${i + 1}: ${h.name}\n> ${h.text}`).join('\n\n')}\n` : ''}
 ---
 
-## Opening Hooks (Pick One)
+## Notes for you
 
-### Hook 1: Question
-> ${hooks[0]}
+${notes.map((n) => `- ${n}`).join('\n')}
 
-### Hook 2: Statistic
-> ${hooks[1]}
+${sectorBlock}
 
-### Hook 3: Story
-> ${hooks[2]}
+### What this draft was built from
 
-### Hook 4: Bold Statement
-> ${hooks[3]}
-
----
-
-## Newsletter Content
-
-### Version: ${segment.charAt(0).toUpperCase() + segment.slice(1)} Focus
-
----
-
-**Subject:** ${subjectLines[0]}
-
-**Preview:** ${generatePreviewText(subjectLines[0], topic)}
-
----
-
-${hooks[0]}
-
-${generateBodyContent(keyPoints, config, tone, args.key_points ? '' : type)}
-
-${generateCtaSection(ctaGoal, segment)}
-
----
-
-${previousTopics.length > 0 ? `
-## Connection to Previous Content
-
-Your recent topics: ${previousTopics.join(', ')}
-
-**Thread this together:**
-- Reference: "Last week we talked about ${lowerFirstIfCommon(previousTopics[0])}. This week, let's go deeper into ${lowerFirstIfCommon(topic)}..."
-- Callback: "Remember the ${lowerFirstIfCommon(previousTopics[0])} framework? Here's how it applies to ${lowerFirstIfCommon(topic)}..."
-- Series (only if these issues form a series): "This continues our ${lowerFirstIfCommon(topic)} series..."
-
----` : ''}
-
-## Content Structure Recommendation
-
-Based on ${type.replace(/_/g, ' ')} type and ${segment} audience:
-
-${getStructureRecommendation(type, segment)}
-
----
-
-## Pre-Send Checklist
-
-- [ ] Subject line A/B test set up
-- [ ] Preview text complements (not repeats) subject
-- [ ] All links tested and tracked
-- [ ] Mobile preview checked
-- [ ] Personalization tokens verified
-- [ ] Unsubscribe link present
-- [ ] CTA button is primary color, above fold
-- [ ] Images have alt text
-- [ ] Plain text version generated
-
----
-
-## Optimization Tips for ${segmentPhrase(segment)}
-
-${getSegmentTips(segment)}
-
----
-
-## Best Send Times for ${segmentPhrase(segment)}
-
-${getSendTimesForSegment(segment)}
-
----
-
-${SUGGESTION_FOOTER}
-`;
-
-  return output;
+${table}
+${missing.length ? `\n${sharpenLine(missing)}\n` : ''}`;
+  return out.replace(/\n{3,}/g, '\n\n');
 }
 
-// Words that cannot end a shortened topic: cutting "Onboarding checklists for SaaS teams"
-// to its first 3 words gave "Onboarding checklists for", which broke every subject line.
-const TRAILING_CONNECTORS = new Set(['a', 'an', 'the', 'and', 'or', 'for', 'of', 'to', 'in', 'on', 'at', 'by', 'with', 'from', 'about', 'into', 'vs', 'vs.', '&']);
-
-function shortenTopic(topic: string): string {
-  const words = topic.split(' ').slice(0, 3);
-  while (words.length > 1 && TRAILING_CONNECTORS.has(words[words.length - 1].toLowerCase())) {
-    words.pop();
+// The problem as the issue opens: a run of clauses is said as sentences of their own; a run of phrases is said as a list of problems.
+function openingSentences(opening: Pt, who: string): string {
+  for (const cut of [/;\s+/, /;\s+|,\s+(?:and\s+)?(?=[a-z])/]) {
+    const pieces = opening.text.split(cut).map((x) => x.trim()).filter(Boolean);
+    if (opening.clause && pieces.length >= 2 && pieces.every((x) => x.split(/\s+/).length >= 5 && looksClause(x))) return pieces.map((x) => endSentence(capFirst(x))).join(' ');
   }
-  return words.join(' ');
+  const phrases = opening.text.split(/;\s+/).map((x) => x.trim()).filter(Boolean);
+  if (!opening.clause && phrases.length >= 2) return endSentence(`${phrases.length === 2 ? 'Two problems' : phrases.length === 3 ? 'Three problems' : 'Several problems'} come up: ${phrases.map(lower).join('; ')}`);
+  return sentenceOf(opening, who);
+}
+// The first whole sentence of a paragraph, short enough for a preview line.
+function firstSentence(text: string): string {
+  const one = text.split(/(?<=[.!?])\s+(?=[A-Z"])/)[0].trim();
+  return one.length <= 125 ? one : shorten(one, 110, true);
+}
+// A way to settle an objection, said to the reader; the sector's answer pattern is written for the seller.
+function settleFor(response: string): string {
+  const r = response.trim().replace(/\.$/, '');
+  return `The way to test it is to ${r.charAt(0).toLowerCase()}${r.slice(1)}.`.replace(/\bthe buyer'?s own\b/gi, 'your own').replace(/\bthe buyer'?s\b/gi, 'your').replace(/\bthe buyer\b/gi, 'you');
 }
 
-// Option indexes of the subject lines that open with an example count ("5 ... mistakes"), per newsletter type.
-// Unknown types use the educational subject lines, as generateSubjectLines does.
-const EXAMPLE_COUNT_SUBJECTS: Record<string, number[]> = {
-  educational: [2],
-  product_update: [],
-  industry_news: [],
-  thought_leadership: [],
-  curated_links: [1]
-};
-
-function subjectLineLabel(type: string, index: number): string {
-  const indexes = Object.prototype.hasOwnProperty.call(EXAMPLE_COUNT_SUBJECTS, type)
-    ? EXAMPLE_COUNT_SUBJECTS[type]
-    : EXAMPLE_COUNT_SUBJECTS.educational;
-  return indexes.includes(index) ? ' (Example figure: replace with your own)' : '';
-}
-
-function generateSubjectLines(topic: string, type: string, segment: string): string[] {
-  const topicWords = shortenTopic(topic);
-  // Text only (run 10, R10-28): the topic placed after leading words follows the first-word rule
-  // ("5 faster contract review mistakes"; names and acronyms keep their capitals). Product updates keep it as typed.
-  const topicMid = lowerFirstIfCommon(topicWords);
-  
-  const templates = {
-    educational: [
-      `The truth about ${topicMid} (nobody talks about this)`,
-      `How to master ${topicMid} in ${new Date().getFullYear()}`,
-      `5 ${topicMid} mistakes even experts make`,
-      `${cap(topicMid)}: Your complete guide`
-    ],
-    product_update: [
-      `New: The ${topicWords} feature you asked for [only if customers asked for it]`,
-      `You asked, we built: ${topicWords} [only if customers asked for it]`,
-      `Just shipped: ${topicWords} (+ what's next)`,
-      `[Product Update] ${topicWords} is here`
-    ],
-    industry_news: [
-      `This week in ${topicMid}: What you need to know`,
-      `Breaking: ${topicWords} is changing (here's how)`,
-      `${topicWords} news: 3 stories that matter`,
-      `The ${topicMid} update everyone's talking about [only if true]`
-    ],
-    thought_leadership: [
-      `Why ${topicMid} is broken (and how to fix it)`,
-      `Unpopular opinion: ${topicWords}`,
-      `The future of ${topicMid} (my prediction)`,
-      `What I learned about ${topicMid} the hard way [only if true]`
-    ],
-    curated_links: [
-      `${topicWords}: Best reads this week`,
-      `5 must-read ${topicMid} articles`,
-      `Your ${topicMid} reading list`,
-      `This week's best ${topicMid} content`
-    ]
+// Four different subject lines, each short and whole. The first one is the subject of the draft; no two of the others repeat one phrase.
+function subjectLines(head: string, type: string, who: string, v: Vertical | null, forWhom: string, ctaGoal: string, readers: string, clause: boolean): string[] {
+  const mid = lower(head);
+  const m0 = v ? v.metrics[0] : '';
+  const m1 = v ? v.metrics[1] : '';
+  const readerHead = readers && readers.length <= 40 ? `For ${readers}: ${mid}` : '';
+  const base: Record<string, string[]> = {
+    educational: [head, m0 ? `Where do you stand with ${m0}?` : '', who ? `${who}: ${mid}` : '', readerHead, m0 && m1 ? `${cap(m0)} and ${m1}: what to check` : ''],
+    product_update: [who ? `New from ${who}: ${mid}` : `New: ${mid}`, head, m0 ? `What this changes for ${m0}` : '', readerHead, who ? `${who}: ${mid}` : ''],
+    industry_news: [head, `Industry news: ${mid}`, m0 ? `What this means for ${m0}` : '', readerHead, who ? `${who} on ${mid}` : ''],
+    thought_leadership: [head, m0 ? `Thinking about ${m0}` : '', who ? `${who}: ${mid}` : '', readerHead, m0 ? `Where do you stand with ${m0}?` : ''],
+    curated_links: [`${head}: this week's reading`, head, readerHead, m0 ? `Reading about ${m0}` : '', who ? `${who}: ${mid}` : '']
   };
-  
-  return templates[type as keyof typeof templates] || templates.educational;
-}
-
-function generatePreviewText(subject: string, topic: string): string {
-  // Preview should complement, not repeat subject
-  const previews = [
-    `Plus: [the one thing most people get wrong about ${lowerFirstIfCommon(topic)}]`,
-    `Inside: [the tips readers can use today]`,
-    `Spoiler: [the answer, only if it is not what readers expect]`,
-    `Plus: [one thing you learned about ${lowerFirstIfCommon(topic)}]`,
-    `Read time: 4 minutes (Example figure: replace with your own)`
-  ];
-  return previews[Math.floor(Math.random() * previews.length)];
-}
-
-// Run 12 (R12-20): one writing prompt per section instead of the same body under every heading. The prompts follow the
-// suggested key points of each newsletter type, in order; key points the user gave get one general prompt each.
-const SECTION_PROMPTS: Record<string, string[]> = {
-  educational: [
-    '[One fact from your market that shows why this matters now]',
-    '[The two or three mistakes you see most]',
-    '[Your steps, in order]',
-    '[A real example: a customer or your own]',
-    '[One line to remember, and the next step]'
-  ],
-  product_update: [
-    '[What changed, in one or two sentences]',
-    '[The benefit for the reader]',
-    '[The first steps to try it]',
-    '[Two or three tips from your team]',
-    '[Only if you can share it: what comes next]'
-  ],
-  industry_news: [
-    '[The news, with its source]',
-    '[What it means for the reader]',
-    '[A view from someone you can name, with their permission]',
-    '[The signals to watch]',
-    '[One or two actions to take]'
-  ],
-  thought_leadership: [
-    '[Your view, in one or two sentences]',
-    '[Your evidence: a story, a number or a source]',
-    '[What you have seen them do differently]',
-    '[Your framework, in a few lines]',
-    '[One to three actions for this week]'
-  ],
-  curated_links: [
-    '[Title, link and one line on why it is worth reading]',
-    '[Title, link and one line on why it is worth watching]',
-    '[Name, link and what it does]',
-    '[The take, its source and your view]',
-    '[Your note]'
-  ]
-};
-
-// How deep to write for the chosen audience: printed once above the sections.
-const DEPTH_NOTE: Record<string, string> = {
-  'high-level': 'Keep each section to its business impact: outcomes over activities.',
-  'tactical': 'Give each section one step the reader can take this week.',
-  'deep': 'Give each section the mechanism and the details: [specific settings], [specific steps], [specific tests].',
-  'accessible': 'Keep each section simple: one idea, in plain words.',
-  'introductory': 'Assume the reader is new to this: start from the basics.',
-  'advanced': 'Assume the reader knows the basics: go straight to [advanced use case].'
-};
-
-function generateBodyContent(keyPoints: string[], config: { depth: string; length: string; focus: string }, tone: string, type: string): string {
-  const prompts = type ? (SECTION_PROMPTS[type] || SECTION_PROMPTS.educational) : [];
-  let content = `*Writing note: ${DEPTH_NOTE[config.depth] || DEPTH_NOTE.accessible}*
-
-`;
-
-  keyPoints.forEach((point, index) => {
-    content += `### ${index + 1}. ${point}
-
-${prompts[index] || '[Your two or three sentences on this point]'}
-
-`;
-  });
-
-  return content;
-}
-
-function generateCtaSection(ctaGoal: string, segment: string): string {
-  const goalLower = ctaGoal.toLowerCase();
-  
-  if (goalLower.includes('demo') || goalLower.includes('call')) {
-    return `---
-
-**Ready to see this in action?**
-
-[Book a 15-minute demo →]
-
-No pressure, just answers.`;
+  const pool = [...(base[type] || base.educational), m0 && m1 ? `${cap(m0)} and ${m1}: what to check` : '', m0 ? `Questions to ask your team about ${m0}` : '', ctaGoal ? `Next step: ${lower(ctaGoal)}` : '', `${head}: the issue`, clause ? `A question for ${forWhom}` : `${head}: read on`, `A short read for ${forWhom}`, `What to check this week, for ${forWhom}`];
+  const out: string[] = [];
+  let withHead = 0;
+  for (const c of pool) {
+    const s = c.trim();
+    if (!s || s.length > Math.max(76, head.length + 4)) continue;
+    if (out.some((x) => x.toLowerCase() === s.toLowerCase())) continue;
+    // an alternative repeats the subject's own words at most once; a name is never said twice in one line
+    if (out.length && s.toLowerCase().includes(mid)) { if (withHead >= 1) continue; withHead++; }
+    if (who && s.toLowerCase().split(who.toLowerCase()).length > 2) continue;
+    out.push(s);
   }
-  
-  if (goalLower.includes('download') || goalLower.includes('guide')) {
-    return `---
-
-**Want the complete playbook?**
-
-[Download the free guide →]
-
-[What the guide adds to this issue]`;
-  }
-  
-  if (goalLower.includes('reply') || goalLower.includes('feedback')) {
-    return `---
-
-**What do you think?**
-
-Hit reply and let me know.`;
-  }
-  
-  if (goalLower.includes('share')) {
-    return `---
-
-**Found this useful?**
-
-Forward to a colleague who needs to see this.
-
-[Share on LinkedIn →]`;
-  }
-  
-  return `---
-
-**${cap(ctaGoal)}**
-
-[Take action now →]`;
-}
-
-function getStructureRecommendation(type: string, segment: string): string {
-  const structures: Record<string, string> = {
-    educational: `
-1. **Hook** (1-2 sentences): Draw them in
-2. **Context** (1 paragraph): Why this matters now
-3. **Main content** (3-5 points): The meat
-4. **Summary** (1 paragraph): Key takeaway
-5. **CTA** (1 line): What to do next`,
-    product_update: `
-1. **Announcement** (1 sentence): What's new
-2. **Why it matters** (1 paragraph): User benefit
-3. **How it works** (2-3 bullets): Quick overview
-4. **Getting started** (1 paragraph): How to use it
-5. **CTA** (1 line): Try it now`,
-    industry_news: `
-1. **Lead story** (1 paragraph): Most important news
-2. **Analysis** (2-3 sentences): What it means
-3. **Supporting stories** (2-3 bullets): Other news
-4. **Your take** (1 paragraph): Expert perspective
-5. **CTA** (1 line): Share your thoughts`,
-    thought_leadership: `
-1. **Contrarian hook** (1-2 sentences): Challenge assumption
-2. **The problem** (1 paragraph): What's broken
-3. **Your thesis** (1 paragraph): Your perspective
-4. **Evidence** (2-3 points): Support your view
-5. **Call to action** (1 paragraph): What to do differently`,
-    curated_links: `
-1. **Intro** (1-2 sentences): Theme of this edition
-2. **Featured article** (1 paragraph + link): Best of the week
-3. **Quick reads** (3-5 bullets + links): Other good content
-4. **Your commentary** (1 paragraph): Why these matter
-5. **CTA** (1 line): Suggest content for next week`
-  };
-  
-  return structures[type] || structures.educational;
-}
-
-function getSegmentTips(segment: string): string {
-  const tips: Record<string, string> = {
-    executives: `
-- Keep it under 300 words
-- Lead with business impact
-- Use bullet points for scanning
-- Include executive summary at top
-- ROI and metrics matter most`,
-    practitioners: `
-- Include specific how-to steps
-- Link to resources and templates
-- Use real examples
-- Be generous with details
-- They want to DO something`,
-    technical: `
-- Depth is expected: don't oversimplify
-- Include code snippets if relevant
-- Link to documentation
-- Be precise with terminology
-- They'll fact-check you`,
-    general: `
-- Balance accessibility with substance
-- Mix short and longer paragraphs
-- Use analogies to explain complex ideas
-- Include visuals when possible
-- One clear CTA`,
-    prospects: `
-- Focus on benefits, not features
-- Social proof is essential
-- Soft CTAs work better
-- Educational > promotional
-- Build trust first`,
-    customers: `
-- Assume baseline knowledge
-- Focus on advanced use cases
-- New features and updates matter
-- Community and best practices
-- They want to optimize`
-  };
-  
-  return tips[segment] || tips.general;
-}
-
-function getSendTimesForSegment(segment: string): string {
-  const times: Record<string, string> = {
-    executives: '**Tuesday or Thursday, 7-8am** (before their day gets busy) (Example figure: replace with your own)',
-    practitioners: '**Tuesday-Thursday, 10-11am** (mid-morning productive time) (Example figure: replace with your own)',
-    technical: '**Tuesday-Wednesday, 2-3pm** (afternoon coding break) (Example figure: replace with your own)',
-    general: '**Tuesday, 10am** (highest average open rates) (Example figure: replace with your own)',
-    prospects: '**Tuesday or Thursday, 9-10am** (early but not too early) (Example figure: replace with your own)',
-    customers: '**Wednesday, 10am** (mid-week, good engagement) (Example figure: replace with your own)'
-  };
-  
-  return times[segment] || times.general;
-}
-
-// Generate key points from topic when not provided
-function generateKeyPointsFromTopic(topic: string, type: string, segment: string): string[] {
-  // Text only (run 10, R10-28): "Why faster contract review matters now", not "Why Faster contract review ...".
-  const t = lowerFirstIfCommon(topic);
-  // Base points that apply to most topics
-  const basePoints: Record<string, string[]> = {
-    educational: [
-      `Why ${t} matters now`,
-      `Common mistakes with ${t}`,
-      `Step-by-step approach to ${t}`,
-      `Real examples of ${t} in action`,
-      `Key takeaway and next steps`
-    ],
-    product_update: [
-      `What's new with ${lowerFirstIfCommon(topic)}`,
-      `How this helps you`,
-      `How to get started`,
-      `Tips for best results`,
-      `What's coming next`
-    ],
-    industry_news: [
-      `Latest developments in ${t}`,
-      `Why this matters to you`,
-      `Expert perspectives`,
-      `What to watch for`,
-      `How to prepare`
-    ],
-    thought_leadership: [
-      `The contrarian view on ${t}`,
-      `Evidence that challenges conventional wisdom`,
-      `What top performers do differently`,
-      `Framework for thinking about ${t}`,
-      `Actions to take this week`
-    ],
-    curated_links: [
-      `Best read on ${t} this week`,
-      `Must-watch video on ${t}`,
-      `Tool/resource for ${t}`,
-      `Hot take worth considering`,
-      `What we're thinking about`
-    ]
-  };
-
-  // Adjust based on segment
-  const points = basePoints[type] || basePoints.educational;
-  
-  // For executives, make more strategic
-  if (segment === 'executives') {
-    return points.map(p => p.replace('Step-by-step', 'Strategic').replace('How to', 'Why to'));
-  }
-  
-  // For technical, make more detailed
-  if (segment === 'technical') {
-    return points.map(p => p.replace('approach', 'implementation').replace('tips', 'best practices'));
-  }
-  
-  return points;
-}
-
-// Run 12 (R12-20): "Tips for a general audience", not "Tips for general".
-function segmentPhrase(segment: string): string {
-  return segment === 'general' ? 'a general audience' : segment;
+  while (out.length < 4) out.push(`${head} (${out.length + 1})`);
+  return out.slice(0, 4);
 }

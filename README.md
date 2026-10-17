@@ -123,7 +123,7 @@ Generated on 27 September 2026 from the server's own tool list and checked again
 | `target_reader` | Yes | string | Who should read this? Be specific (e.g., 'B2B SaaS founders struggling with churn' not just 'marketers') |
 | `proof_points` | No | string | OPTIONAL: Evidence supporting your take: personal stories, client examples, data/stats (comma-separated). If not provided, we'll suggest proof points to gather |
 | `author_background` | No | string | Optional: Your role and why you're credible (e.g., '15 years in enterprise sales') |
-| `num_articles` | No | number (1 or more) | Number of articles to generate (1-5) |
+| `num_articles` | No | integer (1 to 5) | How many articles to outline, a whole number from 1 to 5. If left out, the series has three articles |
 | `article_type` | No | one of: `contrarian`, `how_to`, `lessons_learned`, `prediction`, `framework` | Style of articles |
 
 #### 6. Testimonial Capture (`testimonial_capture`)

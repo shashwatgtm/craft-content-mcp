@@ -2,7 +2,7 @@ import { cap, lowerFirstIfCommon, titleWords } from './utils.js';
 import { cleanClaims, tagsFor } from './content-repurposer.ts';
 import { readContext, isClause, clipWords, type Vertical } from './sector.ts';
 import { parseProof, fixNumbers, RECOGNITION, endSentence, capFirst, shortenClauses, proseJoin, brandFrom, claimsToSource, headlineSubject, KIND_NOTE, bestQuestion, clipAtWord, dropTail, type ProofItem } from './draft.ts';
-import { cleanSectorLine, looksClause, isInstruction, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, shorten, quotedEnd, readersFit, shortReaders, splitQuoteRuns, isStatistic, lowerFirstSafe, toReader as toYou } from './rw-content.ts';
+import { cleanSectorLine, looksClause, isInstruction, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, shorten, quotedEnd, readersFit, shortReaders, splitQuoteRuns, isStatistic, lowerFirstSafe, stripDisclaimers, isDisclaimer, toReader as toYou } from './rw-content.ts';
 
 // Run 21c (draft rewrite): the series is a first draft built from the inputs. Each article is written out in full sentences: an opening
 // that states one part of the take, sections built from the proof points, the sector's objections and measures, and a closing line.
@@ -30,15 +30,24 @@ export function generateThoughtLeadership(args: {
   const g = (x?: string) => stripGuardQuotes((x || '').trim());
   const gk = (x?: string) => stripGuardQuotes((x || '').trim(), true);
   const orders: string[] = [];
-  const topic = fixNumbers(gk(args.topic));
+  const topicTyped = fixNumbers(gk(args.topic));
+  const droppedLegal: string[] = [];
+  // Run 42B: a regulatory or legal line is never the topic or a point (it is named once in the notes)
+  const noLegal = (t: string): string => { const r = stripDisclaimers(t); if (r !== t) droppedLegal.push(t); return r; };
+  let topic = noLegal(topicTyped);
   // sentences of the take that read like an order to the writing tool are kept aside, quoted, and never built into an article
-  const takeRaw = fixNumbers(g(args.your_take).replace(/^"|"$/g, ''));
+  const takeRaw = noLegal(fixNumbers(g(args.your_take).replace(/^"|"$/g, '')));
   const takeKept = takeRaw.split(/(?<=[.!?])\s+(?=[A-Z0-9"])/).filter((sn) => { if (isInstruction(sn)) { orders.push(sn.trim()); return false; } return true; });
   const yourTake = takeKept.join(' ').trim() || topic;
   const targetReader = gk(args.target_reader);
   const proofRaw = g(args.proof_points);
   const hasAuthor = !!(args.author_background && g(args.author_background));
-  const authorBackground = hasAuthor ? gk(args.author_background) : '';
+  const authorBackground = hasAuthor ? noLegal(gk(args.author_background)).replace(/\(\s*\)/g, '').replace(/\s+/g, ' ').trim() : '';
+  // a topic that was only a legal line, or too thin to be a topic once it is out, becomes the seller's own name
+  if (topic !== topicTyped && topic.split(/\s+/).length < 4) {
+    const b = brandFrom(takeRaw, authorBackground, topicTyped);
+    topic = b ? `working with ${b}` : topic || 'this approach';
+  }
   const numArticles = args.num_articles || 3;
   const articleType = args.article_type && TYPE_VERB[args.article_type] ? args.article_type : 'contrarian';
   // Run 19 (D80, problems 4 and 8): the sector is read from every text the user gave.
@@ -54,7 +63,7 @@ export function generateThoughtLeadership(args: {
   const removedClaims: string[] = [];
   const soft = (t: string) => { const r = cleanClaims(t); removedClaims.push(...r.removed); return r.text; };
   const SAYS = /^(.{3,90}?)\s+says?:\s*['"“](.+?)['"”]\.?$/;
-  const items: ProofItem[] = proofRaw ? parseProof(splitQuoteRuns(proofRaw).replace(/\bon the (home|about|pricing|product|customers?) page card\b/gi, 'on the $1-page card').replace(/,\s+(?=(?:Named an?|Named as|Recogni[sz]ed as|Featured in|Winner of)\b)/g, '; ')).filter((i) => { if (isInstruction(i.text)) { orders.push(i.text); return false; } return true; }).map((i) => ({ ...i, text: soft(i.text), shown: soft(i.shown) })).map((i): ProofItem => {
+  const items: ProofItem[] = proofRaw ? parseProof(splitQuoteRuns(proofRaw).replace(/\bon the (home|about|pricing|product|customers?) page card\b/gi, 'on the $1-page card').replace(/,\s+(?=(?:Named an?|Named as|Recogni[sz]ed as|Featured in|Winner of)\b)/g, '; ')).filter((i) => { if (isInstruction(i.text)) { orders.push(i.text); return false; } if (isDisclaimer(i.text)) { droppedLegal.push(i.text); return false; } return true; }).map((i) => ({ ...i, text: soft(i.text), shown: soft(i.shown) })).map((i): ProofItem => {
     // a customer who "says: '...'" is a quote; a story title that holds a figure reports a result, so it is not "a headline with no result"
     if (i.kind === 'result' && SAYS.test(i.text)) return { ...i, kind: 'quote' };
     if (i.kind === 'title' && isStatistic(i.text)) return { ...i, kind: 'result' };
@@ -110,6 +119,7 @@ export function generateThoughtLeadership(args: {
   if (notUsed.length) notes.push(`Not used as examples: ${proseJoin(notUsed.map((i) => `"${clipEcho(i.text, 80)}"`))}, because ${numArticles === 1 ? 'the article has' : `the ${numArticles} articles have`} room for only so many; ${notUsed.length === 1 ? 'it is' : 'they are'} listed under the proof points below.`);
   if (conflicts.length) notes.push(`Two different figures are given for one result: ${proseJoin(conflicts.map((c) => `"${clipEcho(c.shown, 200)}"`))}. They differ, so the articles show both as typed and mark the case.`);
   if (orders.length) notes.push(instructionNote(orders));
+  if (droppedLegal.length) notes.push(`Legal or regulatory wording left out of the articles: ${proseJoin([...new Set(droppedLegal)].map((x) => `"${clipEcho(x, 160)}"`))}. A disclaimer is not a topic or a point; keep it as the footer of the page it belongs to.`);
 
   let output = `# Thought Leadership Series
 `;
@@ -397,6 +407,23 @@ function componentItems(part: string): string[] {
   if (items.some((x) => /\b(?:is|are|was|were|has|have|can|will|would|must|should)\b/i.test(x))) return [];
   return items;
 }
+// The steps of the framework, each named for what the user's own point is: the position, its other parts, the proof, the measure.
+function frameworkSteps(a: Art, v: Vertical | null): { name: string; text: string }[] {
+  const steps: { name: string; text: string }[] = [];
+  const add = (name: string, rest: string) => steps.push({ name: lowerFirst(name), text: `**${name}:** ${rest}` });
+  const one = (t: string, max = 170) => lowerFirst(clipEcho(t, max).replace(/[.!?]+$/, ''));
+  add('Start from the position', `${one(a.parts[0])}.`);
+  if (a.parts[1]) add('Add the next part', `${one(a.parts[1])}.`);
+  const proof = a.evidence.find((e) => e.kind !== 'quote') || a.evidence[0] || a.stories[0];
+  if (proof) {
+    if (proof.kind === 'quote') { const w = quoteParts(proof).words.replace(/[.]$/, ''); add('Check it against what a customer says', `"${w}."${proof.label ? ` (${proof.label})` : ''}`); }
+    else add('Check it against the proof on record', `${one(proof.shown, 200)}.`);
+  }
+  const m = rankMetrics(v, a.takeText).find((x) => x.ok)?.m || '';
+  if (m) add(`Read it on ${toYou(m)}`, 'for one live piece of work, before and after the change.');
+  else add('Write down where one live piece of work stands today', 'so that the change has a number to beat.');
+  return steps.slice(0, 4);
+}
 function buildArticle(a: Art, authorBackground: string, targetReader: string, credibility: ProofItem[]): { head: Angle; text: string; lead: string; objection: string; leadItem?: ProofItem } {
   const head = a.heads[a.index];
   const { v } = a;
@@ -495,6 +522,21 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
     }
     if (body.length) sections.push(`## ${heading}\n\n${kind === 'position' ? body.join('\n') : body.join('\n\n')}`);
   });
+
+  // Run 42B: a framework article lays out the framework itself, in named steps built only from the user's own points: the position and its parts,
+  // the proof on record, and the sector's measure to read it on. Nothing is added that was not typed or is not in the sector file.
+  if (a.type === 'framework') {
+    const steps = frameworkSteps(a, v);
+    if (steps.length >= 2) {
+      const mine = (a.index % steps.length) + 1;
+      const body = a.index === 0
+        ? `${steps.map((s, i) => `${i + 1}. ${s.text}`).join('\n')}\n\nThe articles that follow take the steps one at a time.`
+        : `This article works on step ${mine} of ${steps.length} in the framework from the first article: "${steps[mine - 1].name}".`;
+      sections.splice(Math.min(1, sections.length), 0, `## ${a.index === 0 ? `The framework in ${steps.length} steps` : `Step ${mine} of the framework`}
+
+${body}`);
+    }
+  }
 
   const isFirst = a.index === 0;
   const aboutAuthor = authorBackground ? clipEcho(authorBackground.replace(/[.!?]+\s*$/, ''), 200) : 'the author';

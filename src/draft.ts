@@ -203,6 +203,20 @@ function rejoinAttributed(list: string[]): string[] {
 
 // Splits a list of proof points or results. A bracketed source label at the end of an item ("(page claim)") marks where it ends,
 // so a comma or a semicolon inside an item never splits it. Without labels, the general list rule applies.
+// The text before a piece ends on words after a colon that never reach a full stop: a speaker line cut inside the words, or a source line cut before its result.
+const SOURCE_LINE = /^[^:]{3,80}\b(?:quote|quoted|says?|said|headline|press|article|report|review)\b[^:]{0,60}:\s+\S/i;
+function cutAfterColon(prev: string, next: string): boolean {
+  const colon = prev.indexOf(': ');
+  if (colon < 0) return false;
+  const after = prev.slice(colon + 2).trim();
+  if (!after || /[.!?]["”'’]?$/.test(after) || /\)\s*$/.test(after) || after.split(/\s+/).length > 12) return false;
+  const before = prev.slice(0, colon + 1);
+  const speaker = isAttributed(before.replace(/;/g, ','));
+  if (speaker) return after.split(/\s+/).length <= 8;
+  // the next piece is a named company's result ("Acme picked up ...") and the source line has no result of its own
+  const RESULT = /\b(?:picked up|retained|saved|reduced|grew|increased|cut|achieved|reached|gained|raised|added|won|processed)\b/;
+  return SOURCE_LINE.test(prev) && !/^(?:customer|partner) (?:quote|words)/i.test(prev) && !RESULT.test(after) && /^[A-Z][\w&.-]*(?:\s[A-Z][\w&.-]*){0,2}\s+(?:picked up|retained|saved|reduced|grew|increased|cut|achieved|reached|gained|raised|added|won|processed)\b/.test(next);
+}
 export function splitProof(raw: unknown): string[] { return weldNames(splitProofRaw(raw)); }
 function splitProofRaw(raw: unknown): string[] {
   if (typeof raw !== 'string') return [];
@@ -239,12 +253,21 @@ function splitProofRaw(raw: unknown): string[] {
       const prevTail = pieces.length ? pieces[pieces.length - 1].split(/,\s+/).pop() ?? '' : '';
       const inAttribution = /\b(?:per|by|from|according to|said|says) [A-Z][\p{L}.'’-]+(?: [A-Z][\p{L}.'’-]+)+(?:, [^,]{1,40}){0,4}$/u.test(pieces.length ? pieces[pieces.length - 1] : '') || (TITLE_START.test(prevTail) && !/[.!?:]$/.test(prevTail) && prevTail.split(/\s+/).length <= 8);
       if (inAttribution && bare.split(/\s+/).length <= 6 && !/\d|:/.test(bare) && !OUTCOME_VERB.test(piece) && (TITLE_START.test(piece) || /^[A-Z][a-z]+(?: (?:and|of|&) [A-Z][a-z]+| [A-Z][a-z]+)*$/.test(bare))) { pieces[pieces.length - 1] += ', ' + piece; continue; }
+      // Run 42B: a source line ("Press quote: within days of an event") keeps the result that follows it ("; Acme picked up ..."), and a quote typed with
+      // a speaker stays whole when a semicolon cuts it before its sentence ends (the second pass below): neither becomes a fragment and a separate item
+      if (pieces.length && /^[A-Z]/.test(piece) && cutAfterColon(pieces[pieces.length - 1], piece)) { pieces[pieces.length - 1] += (isAttributed(pieces[pieces.length - 1].replace(/;/g, ',')) ? ', ' : '; ') + piece; continue; }
       if (pieces.length && (pieces[pieces.length - 1].length < 60 || (/^\d/.test(piece) && bare.split(/\s+/).length < 5))) pieces[pieces.length - 1] += ', ' + piece;
       else pieces.push(piece);
     }
     for (const piece of pieces.length ? pieces : [chunk]) items.push(piece.replace(/;\s+(?=[\d a-z])/g, ', '));
   }
-  return rejoinAttributed(items.map((x) => x.replace(/[;,]\s*$/, '').trim()).filter(Boolean)).map(unmaskQuoted);
+  const joined: string[] = [];
+  for (const it of rejoinAttributed(items.map((x) => x.replace(/[;,]\s*$/, '').trim()).filter(Boolean))) {
+    const prev = joined[joined.length - 1];
+    if (prev !== undefined && /^[A-Z]/.test(it) && cutAfterColon(prev, it)) joined[joined.length - 1] = prev + (isAttributed(prev.replace(/;/g, ',')) ? ', ' : '; ') + it;
+    else joined.push(it);
+  }
+  return joined.map(unmaskQuoted);
 }
 
 export const RECOGNITION = /\b(?:recogni[sz]ed|recognition|named (?:a |an |as )?(?:leader|major contender|contender|challenger|visionary|enterprise innovator|top)|leader in|leaders? in|ranked|ranking|award(?:s|ed)?|winner|magic quadrant|gartner|forrester|\bg2\b|everest|hfs|frost radar|frost & sullivan|idc\b|cio choice|enterprise innovator|best (?:[A-Za-z&\-]+ ){1,6}(?:platform|solution|tool|provider|vendor|product)|top \d+)\b/i;

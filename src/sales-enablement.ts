@@ -1,6 +1,6 @@
 import { lowerFirstIfCommon, cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { q, qs, readContext, answerFor, objectionKind, proofFor, sectorNotes, startWords, type ObjectionKind, type Vertical } from './sector.ts';
-import { splitList, splitObjections, parseProof, productParts, fixNumbers, endSentence, capFirst, proseJoin, roleOf, shortenClauses, KIND_NOTE, type ProofItem } from './draft.ts';
+import { splitList, splitObjections, parseProof, productParts, fixNumbers, endSentence, capFirst, proseJoin, roleOf, shortenClauses, KIND_NOTE, RECOGNITION, type ProofItem } from './draft.ts';
 
 // Text only (run 8): an input phrase used as a whole sentence inside a script ends with a full stop.
 function asSentence(text: string | undefined): string {
@@ -47,7 +47,11 @@ const SYNONYMS: [string, RegExp][] = [
   ['#uptime', /uptime|availab|\bsla\b|outage/i],
   ['#onesystem', /one (?:platform|system|login|network|place|view)|single (?:platform|system|codebase|view|source)|unified|all[- ]in[- ]one|multi-tenant|cloud-based|every property|all properties|across (?:sites|properties|teams)/i]
 ];
-function wordSet(s: string): Set<string> {
+// A line about the company itself (its size, revenue, ranking, group or customer count), not a value it offers.
+const COMPANY_FACT = /\b(?:revenues?|turnover|ebit(?:da)?|profits?|market cap\w*|valuation|valued at|employees|headcount|ranked|ranking|strongest (?:\w+ ){0,3}brand|brand finance|a member of|part of the .{0,40}group|founded in|since \d{4}|\d[\d,.]*\+?\s*(?:million|billion|crore|lakh)?\s*(?:customers|users|companies|clients|countries|employees))\b/i;
+export const isCompanyFact =(p: string): boolean => COMPANY_FACT.test(p) || RECOGNITION.test(p);
+function wordSet(s0: string): Set<string> {
+  const s = s0.replace(/\([^)]*\)/g, ' ');
   const out = new Set((s.toLowerCase().match(/[a-z0-9]{4,}/g) || []).filter((w) => !GENERIC.has(w) && !SHORT_STOP.has(w)).map(stem));
   for (const [tag, re] of SYNONYMS) if (re.test(s)) out.add(tag);
   return out;
@@ -110,7 +114,9 @@ export function generateSalesEnablement(args: {
     objectionsNote = `\n**NOTE:** You didn't provide objections and no sector could be read from your inputs, so no objection handlers are written (a generic list would be invented). Add common_objections, or name the industry, to get them.\n`;
   }
 
-  const valueProps = args.value_props ? splitList(args.value_props).map((p) => clipEcho(p)) : [];
+  const allValueProps = args.value_props ? splitList(args.value_props).map((p) => clipEcho(p)) : [];
+  // Run 42B: a company size figure, revenue, membership or ranking says who the seller is, not what it offers the buyer: it is never "the help offered"
+  const valueProps = allValueProps.filter((p) => !isCompanyFact(p));
   const competitorObjections = args.competitor_objections ? splitObjections(args.competitor_objections) : [];
 
   // Generate objection handlers: each objection is read on its own, answered with the sector's pattern and the proof point that fits it.
@@ -120,8 +126,8 @@ export function generateSalesEnablement(args: {
   const competitorHandlers = competitorObjections.map((obj, i) => generateCompetitorHandler(obj, usableTexts, pp.facts, v, i));
 
   // A value proposition with the proof that bears on it (by shared words, then by kind) and the sector measure it ties to.
-  const valueRows = valueProps.map((vp) => {
-    const proof = relevant(vp, usableTexts)[0];
+  const valueRows = allValueProps.map((vp) => {
+    const proof = isCompanyFact(vp) ? undefined : relevant(vp, usableTexts)[0];
     const metric = v ? v.metrics.find((m) => [...wordSet(m)].some((x) => wordSet(vp).has(x))) : undefined;
     const obj = v ? v.objections.find((o) => relevant(vp, [o.objection]).length > 0) : undefined;
     const why = metric ? `it ties to ${metric}, a measure ${v!.name} buyers track` : obj ? `it answers an objection this sector raises: "${obj.objection}"` : '';

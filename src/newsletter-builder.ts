@@ -1,7 +1,7 @@
 import { lowerFirstIfCommon, cap } from './utils.js';
 import { readContext, audienceLine, isClause, type Vertical } from './sector.ts';
 import { splitList, unpackTopic, fixNumbers, endSentence, capFirst, proseJoin, productParts, toYou, bestQuestion, softenClaims } from './draft.ts';
-import { cleanSectorLine, looksClause, readPoints, groupPhrases, sentenceOf, renderGroup, readersFit, isStatistic, companyFrom, shorten, shortReaders, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, nk, quotedEnd, lowerFirstSafe, type Pt } from './rw-content.ts';
+import { cleanSectorLine, looksClause, readPoints, groupPhrases, sentenceOf, renderGroup, readersFit, isStatistic, companyFrom, shorten, shortReaders, instructionNote, sharpenLine, stripGuardQuotes, waysToSettle, nk, quotedEnd, lowerFirstSafe, JOIN_START, PARTICIPLE_START, type Pt } from './rw-content.ts';
 
 // Run 22 (rewrite): the issue is written, not assembled. The key points are read for what they are (the problem, what changes, how it
 // works, the evidence), each is said in a whole sentence, and the sector file adds the measures, the proof to ask for and the questions
@@ -260,6 +260,9 @@ function openingSentences(opening: Pt, who: string): string {
     if (opening.clause && pieces.length >= 2 && pieces.every((x) => x.split(/\s+/).length >= 5 && looksClause(x))) return pieces.map((x) => endSentence(capFirst(x))).join(' ');
   }
   const phrases = opening.text.split(/;\s+/).map((x) => x.trim()).filter(Boolean);
+  // Run 42B: pieces that are each a statement of their own (five words or more, none opening on a joining word) are said as sentences; a count is promised
+  // only for a list of short problem phrases, so the issue never says "two problems" over one problem.
+  if (phrases.length >= 2 && phrases.every((x) => x.split(/\s+/).length >= 5 && !JOIN_START.test(x) && !PARTICIPLE_START.test(x))) return phrases.map((x) => endSentence(capFirst(x))).join(' ');
   if (!opening.clause && phrases.length >= 2) return endSentence(`${phrases.length === 2 ? 'Two problems' : phrases.length === 3 ? 'Three problems' : 'Several problems'} come up: ${phrases.map(lower).join('; ')}`);
   return sentenceOf(opening, who);
 }

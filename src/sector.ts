@@ -164,9 +164,19 @@ export function givenSector(yourSector: unknown): { given: boolean; v: Vertical 
 // Run 42B (addendum 8): the sub industry named by the seller's own category words. The category phrase of each seller text (the words before the first
 // colon, else the first sentence) is read alone; a word inside the long description or a feature list does not name the seller's sub industry.
 const SUBINDUSTRY_MODEL = new Set(['telecom']);
+// Run 42B: with your_sector given, the business model is the sector's own unless the seller's own words state a model (words that name how it is
+// charged, not words that name what it sells or who it sells to). A product list that mentions "network services" does not make an IT services firm a connectivity business.
+const STATED_MODEL = /\b(?:saas|subscriptions?|per seat|per user|licen[cs]es?|per[- ]transactions?|transaction fees?|take rate|commission|per site|per link|bandwidth plans?|term contract|per (?:fte|ticket|hour|unit of work)|retainers?|fixed[- ]price|outcome[- ]based|pay as you go|usage[- ]based)\b/i;
+// A sub industry whose notes are written for one region or one sub industry is used only when the seller's own words name that region or sub industry,
+// not when only the broad category words match (a global multi carrier shipping API is not an Indian courier aggregator).
+const SUBTYPE_GATE: Record<string, RegExp> = {
+  'seller-shipping': /\b(?:india\w*|pin ?codes?|cash on delivery|cod remittance|courier (?:aggregators?|partners?)|shipping aggregators?|multi.?courier|d2c|rto|rupees?|lakh|crore)\b|₹/i
+};
 function subIndustryClear(base: Vertical, full: Vertical, model: BusinessModel | null, input: ReaderInput, own: unknown[] = []): boolean {
   const heads = [...nonEmpty(input.seller), ...nonEmpty(own)].filter((t) => t.includes(':') || t.length <= 200).map((t) => categoryHead(t)).filter((h) => h.length >= 8 && h.split(LIST_COMMA).length < 4);
   if (!heads.length) return false;
+  const gate = full.subtype ? SUBTYPE_GATE[full.subtype] : undefined;
+  if (gate && !gate.test([...nonEmpty(input.seller), ...nonEmpty(own)].join(' \n '))) return false;
   const probe = profileFor(base, model, { seller: heads });
   if (!probe || probe === base) return false;
   return full.subtype ? probe.subtype === full.subtype : probe.name === full.name;
@@ -192,7 +202,7 @@ export function readContext(explicitModel: unknown, raw: ReaderInput, yourSector
   const forced = gs.given ? gs.v : ov.vertical ?? (ov.id ? VERTICALS.find((x) => x.id === ov.id) ?? null : null);
   let v = gs.given ? gs.v : forced ?? detectVertical(input);
   // With your_sector the model follows the sector unless the user's own words (business_model, or the seller's wording) state it.
-  const given = gs.given && forced ? (() => { const r = detectModel(explicitModel, input); if (r.how === 'sector' && detectVertical(input)?.id === forced.id) return r; return r.how === 'input' || (r.how === 'read' && (r.model !== 'saas' || /(?:saas|subscriptions?|per seat|per user|licen[cs]es?)/i.test(nonEmpty(input.seller).join(' ')))) ? r : { model: SECTOR_MODEL[forced.id], how: 'sector' as const }; })() : null;
+  const given = gs.given && forced ? (() => { const r = detectModel(explicitModel, input); if (r.how === 'sector' && detectVertical(input)?.id === forced.id) return r; return r.how === 'input' || (r.how === 'read' && STATED_MODEL.test(nonEmpty(input.seller).join(' '))) ? r : { model: SECTOR_MODEL[forced.id], how: 'sector' as const }; })() : null;
   let m = given ? given : gs.given ? detectModel(explicitModel, input) : ov.vertical ? detectModel(explicitModel, { seller: ov.seller }) : forced && !(typeof explicitModel === 'string' && explicitModel) ? { model: SECTOR_MODEL[forced.id], how: 'sector' as const } : detectModel(explicitModel, input);
   const source = v ? (forced ? 'seller' : explainSector(input).source) : null;
   const chosen = gs.given && !!v;

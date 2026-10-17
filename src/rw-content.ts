@@ -8,6 +8,33 @@ import { cap, lowerFirstIfCommon, isCommonWord } from './utils.js';
 import { neutraliseText } from './echo-safe.ts';
 import { weldNames } from './sector.ts';
 
+// Run 42B: a regulatory or legal line ("X is not a bank; banking services provided by Y", "member FDIC") is a disclaimer: it is never a topic, a point or a
+// proof item. A piece of a typed text that is one is taken out (what follows its colon stays); the rest of the text is kept as typed.
+const DISCLAIMER = /\b(?:not (?:an? )?(?:[\w-]+ ){0,2}(?:bank|lender|broker|dealer|insurer|insurance (?:company|provider)|investment advis[eo]r|law firm|financial institution|credit union)|(?:banking|financial|insurance|brokerage|lending|payment|investment) services (?:are |is )?(?:provided|offered|made available|issued) (?:by|through)|member,? fdic|fdic[- ]insured|not (?:financial|legal|investment|tax|medical) advice|past performance (?:is|does)|all rights reserved|terms and conditions apply|subject to (?:credit )?approval)\b/i;
+export const isDisclaimer = (s: string): boolean => DISCLAIMER.test(s);
+export function stripDisclaimers(text: string): string {
+  if (!DISCLAIMER.test(text)) return text;
+  const parts = text.split(/([;,]\s+)/);
+  let out = '';
+  let sep = '';
+  for (let i = 0; i < parts.length; i += 2) {
+    const piece = parts[i];
+    const next = i + 1 < parts.length ? parts[i + 1] : '';
+    if (DISCLAIMER.test(piece)) {
+      const colon = piece.indexOf(': ');
+      if (colon >= 0 && out) out += `: ${piece.slice(colon + 2)}`;
+      else if (colon >= 0) out = piece.slice(colon + 2);
+      sep = next;
+      continue;
+    }
+    out += (out ? sep : '') + piece;
+    sep = next;
+  }
+  out = out.replace(/[;,\s]+$/, '').trim();
+  const open = (out.match(/\(/g) || []).length - (out.match(/\)/g) || []).length;
+  return open > 0 ? out + ')'.repeat(open) : out;
+}
+
 // ---- the text as typed -------------------------------------------------------------------------------------------------------
 
 // The entry safeguard quotes a whole field in curly quotes when a part of it looks like an instruction. The quotes are not the user's, so they are taken off
@@ -95,7 +122,12 @@ export function looksClause(text: string): boolean {
 const fragment0 = (t: string): boolean => /^[a-z]/.test(t) && !looksClause(t) && !PARTICIPLE_START.test(t) && !/\d/.test(t);
 // A point that opens on a past participle ("built from the ground up for ...") or a joining word continues a sentence; it is never one.
 export const PARTICIPLE_START = /^(?:(?:built|designed|made|powered|backed|trusted|operated|delivered|offered|priced|billed|written|hosted|managed|used)\s+(?:by|for|from|on|in|with|to|around|as|across)|available\s+(?:in|on|for|as|across))\b/i;
-export const JOIN_START = /^(?:with|without|including|plus|and|but|or|so|which|that|because|while|instead|rather|not|then|yet)\b/i;
+export const JOIN_START = /^(?:with|without|including|plus|and|but|or|so|which|that|because|while|instead|rather|not|then|yet|where|whose)\b/i;
+// Run 42B: a point that says what the product is or does ("One platform built from the start for convergence instead of bundling fragmented tools")
+// names a problem only as the thing it replaces; the words after "instead of" or "rather than" are not read as the problem the point states.
+const REPLACED_TAIL = /\b(?:instead of|rather than|replac(?:es|ing)|eliminat(?:es|ing)|ends?)\b[\s\S]*$/i;
+const CAPABILITY_LEAD = /^(?:(?:one|an?)\s+(?:[\w-]+\s+){0,3}(?:built|designed|powered)\b|(?:purpose-built|built|designed|powered)\s+(?:by|for|from|on|in|with|to|around|as|across)\b)/i;
+const notProblemPoint = (t: string): boolean => CAPABILITY_LEAD.test(t.trim());
 const OUTCOMEISH = /^(?:measurable |significant |up to |about |over |more than |much |clear |faster |lower )?(?:gains?|reductions?|faster|fewer|less|lower|higher|more|increases?|improvements?|savings?|growth|drops?|launch|keep|see|pay only|expand|release)\b/i;
 
 function roleOf(p: { text: string; label: string; clause: boolean; figure: boolean }, problemLike: boolean, known = false): Role {
@@ -215,13 +247,13 @@ export function readPoints(raw: string | undefined, known: { problem?: string } 
     carry = '';
     const prev = merged[merged.length - 1];
     const words = it.text.split(/\s+/).length;
-    const joins = /^(?:with|without|including|plus|which|that|because|instead|not|so|combined|such as|for example|e\.g\.|at|than|under|per|within|via|using|through)\b/i.test(it.text);
+    const joins = /^(?:with|without|including|plus|which|that|because|instead|not|so|where|whose|combined|such as|for example|e\.g\.|at|than|under|per|within|via|using|through)\b/i.test(it.text);
     // a name or a short run of names after a piece that ends on a name ("partnerships with Google; WhatsApp; Meta") continues that list
     const nameList = !!prev && !prev.label && prev.text.split(/\s+/).length >= 2 && /[A-Z][A-Za-z0-9.+-]*$/.test(prev.text) && /^[A-Z0-9]/.test(it.text) && it.text.split(/\s+/).length <= 5 && !looksClause(it.text) && !it.label && !isImperative(it.text);
     // a piece that ends on a joining word ("partnerships with") runs on into the next one
     const dangling = !!prev && !prev.label && /\b(?:with|including|such as|and|or|of|from|by|to|for|across)$/i.test(prev.text);
     // a list-taking verb with no object yet ("that adapts simulations, coaching") takes the plain phrases that follow
-    const verbList = !!prev && !prev.label && /\b(?:adapts|covers|includes|connects|combines|supports|handles|offers|provides|unifies|spans|tracks|monitors|automates)\s+[^;]{0,70}$/i.test(prev.text) && fragment0(it.text) && it.text.split(/\s+/).length <= 24;
+    const verbList = !!prev && !prev.label && /\b(?:adapts|covers|includes|connects|combines|supports|handles|offers|provides|unifies|spans|tracks|monitors|automates|sees|shows|reads|pulls|brings|links|gives|lists|holds|keeps|joins)\s+[^;]{0,70}$/i.test(prev.text) && fragment0(it.text) && it.text.split(/\s+/).length <= 24;
     const fragment = /^[a-z]/.test(it.text) && !looksClause(it.text) && !PARTICIPLE_START.test(it.text) && !it.label && !/\d/.test(it.text);
     if (fragment && words <= 3 && /^(?:an?|the|its|their|our|one)\b/i.test(it.text) && !it.problem) { carry = it.text; continue; }
     if (prev && !it.problem && !prev.label && ((joins && !/^(?:with|without|including|plus|combined|at|than|under|per|within|via|using|through)\b/i.test(it.text)) || !prev.problem && (joins || nameList || dangling || verbList || (fragment && (words <= 3 || inList))))) {
@@ -246,7 +278,7 @@ export function readPoints(raw: string | undefined, known: { problem?: string } 
     const figure = (STAT.test(it.text) || FIGURE.test(it.text) || /\bper cent\b/i.test(it.text)) && /\d/.test(it.text);
     const clause = looksClause(it.text) && !PARTICIPLE_START.test(it.text) && !JOIN_START.test(it.text);
     const base = { text: it.text, label: it.label, clause, figure };
-    const problemLike = it.problem || (clause && PROBLEM_WORD.test(it.text) && !figure && !isImperative(it.text) && !/^(?:it|we|our|its|this|these)\b/i.test(it.text));
+    const problemLike = it.problem || (clause && PROBLEM_WORD.test(it.text.replace(REPLACED_TAIL, '')) && !notProblemPoint(it.text) && !figure &&!isImperative(it.text) && !/^(?:it|we|our|its|this|these)\b/i.test(it.text));
     return { ...base, role: roleOf(base, problemLike, it.problem) };
   });
 }

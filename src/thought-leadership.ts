@@ -564,7 +564,7 @@ ${body}`);
   const ms = v ? rankMetrics(v, a.takeText).filter((x) => x.ok).map((x) => toYou(x.m)) : [];
   const argFrames = [
     `The argument of this piece rests on one point: ${lowT}. ${ms.length ? `For ${a.readerNoun}, an idea like this is only worth the time if it shows up in the numbers the work is judged on, ${proseJoin(ms.slice(0, 2))}, so that is where it is tested here.` : `It is tested here the way ${a.readerNoun} would test it: against the evidence on record and against the pushback it will meet.`} The sections below take it in order: how the parts fit, what the evidence shows, the objection it has to survive and a way to try it on your own work.`,
-    `This piece makes one claim, about ${lowT.length <= 160 ? lowT : 'the part of the position named above'}. ${ms.length ? `It stands or falls on ${proseJoin(ms.slice(0, 2))}, the measures ${a.readerNoun} already report on.` : `It stands or falls on whether ${a.readerNoun} can check it on their own work.`} What follows sets the claim next to the rest of the position, the proof and the strongest objection, and ends with a test you can run.`,
+    `This piece makes one claim, about ${a.index < n && lowT.length <= 160 ? lowT : 'the position set out in the first article'}. ${ms.length ? `It stands or falls on ${proseJoin(ms.slice(0, 2))}, the measures ${a.readerNoun} already report on.` : `It stands or falls on whether ${a.readerNoun} can check it on their own work.`} What follows sets the claim next to the rest of the position, the proof and the strongest objection, and ends with a test you can run.`,
     `Here the claim is narrower than in the pieces before. ${ms.length ? `The reason it matters is practical. ${cap(a.readerNoun)} are asked about ${proseJoin(ms.slice(0, 2))}, and a change that does not move those is hard to defend in a review.` : `The reason it matters is practical: a change that cannot be checked is hard to defend in a review.`} The rest of this piece shows how the claim connects to the other parts, where the evidence stops and how to put it to work.`,
   ];
   if (a.index < 3) sections.unshift(`## ${['The argument', 'The claim', 'Why it matters'][a.index % 3]}\n\n${argFrames[a.index % argFrames.length]}`);
@@ -631,7 +631,7 @@ ${work[a.index - 1]}`);
   if (a.index === 0 && list.length >= 2) first = a.view ? `${a.view} has ${list.length} ${list.length === 2 ? 'parts' : 'parts'}.` : '';
   else if (a.index === 0) first = a.view ? `${a.view} is this: ${lowThesis}.` : sentence(clipEcho(thesis, ECHO));
   else if (!repeat && multi) first = `Take ${ON_ITS_OWN[a.type] || ON_ITS_OWN.contrarian} on its own: ${lowThesis}.`;
-  else first = `This picks up from "${a.heads[a.index - 1].title}" and takes the same position one step further: ${asClaim(lowThesis, a.brand)}.`;
+  else first = `This picks up from "${a.heads[a.index - 1].title}" and takes the same position one step further.`;
   // the measure this reader watches, only when the sector's measure shares words with the take
   const mm = v ? rankMetrics(v, a.takeText).find((x) => x.ok && !a.metricsSeries.has(x.m)) : undefined;
   if (mm) a.metricsSeries.add(mm.m);

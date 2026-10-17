@@ -113,3 +113,53 @@ test("sales kit: a sector objection ends on the sector's own way to settle it, s
   assert.ok(new Set(scripts.map((s) => s.replace(/^> "I hear you: '[^']*'\. /, "").replace(/'[^']*'/g, "''"))).size === scripts.length, "every script is its own");
   assert.ok(closes.length > 0);
 });
+
+// Round S2: full thought leadership articles, the case study as a story, value propositions matched to their own proof.
+test("thought leadership: each article is a full piece with a named framework, an argument and a close, and no invented proof", async () => {
+  const out = await call("thought_leadership_series", {
+    topic: "a leading provider of planning software for builders",
+    your_take: "Acme's view on planning: one live plan beats weekly status meetings, every change order posts to the budget the day it is signed, and site teams work from the same numbers as finance",
+    target_reader: "operations heads at residential builders",
+    proof_points: "Jane Roe; Head of Operations; Acme Homes: Since every change posts the same day; we stopped arguing about which budget is right.",
+    num_articles: 3, article_type: "framework", your_sector: "vertical_saas"
+  });
+  const words = [...out.matchAll(/about (\d+) words/g)].map((m) => +m[1]);
+  assert.equal(words.length, 3);
+  for (const w of words) assert.ok(w >= 300, `an article of ${w} words`);
+  assert.match(out, /position-to-measure framework/);
+  assert.match(out, /### The (?:argument|claim)/);
+  assert.match(out, /### (?:The takeaway|In short|The bottom line)/);
+  assert.doesNotMatch(out, /\*\*Headline:\*\* A Framework for A Leading/);
+  assert.ok((out.match(/To add before publishing/g) || []).length <= 3);
+});
+
+test("case study: the story comes first as prose, also for an unnamed customer, and other customers' words stay theirs", async () => {
+  const out = await call("case_study_generator", {
+    customer_name: "an Acme customer (freight forwarders)", customer_industry: "freight forwarders", your_product: "Acme Freight", mode: "full",
+    challenge: "Operations run on fragmented systems with duplicated data",
+    solution: "One platform for bookings, customs and invoices",
+    results: "Jane Roe, CIO, Northwind Cargo: The platform is the backbone of our operations.; Over 1,000 organizations trust Acme Freight (page claim).",
+    your_sector: "logistics_tech"
+  });
+  const story = out.slice(out.indexOf("## The Story (draft)"), out.indexOf("### About"));
+  for (const part of ["The situation", "The challenge", "The approach", "The result"]) assert.ok(story.includes(`**${part}.**`), part);
+  assert.match(story, /An Acme customer is in the freight forwarders segment/);
+  assert.match(story, /Jane Roe, CIO, Northwind Cargo puts it this way: "The platform is the backbone of our operations\."/);
+  assert.match(story, /own figures are not given yet/);
+  assert.doesNotMatch(story, /1,000 organizations/);
+  assert.ok(((story.match(/\(\d\) /g) || []).length) <= 3);
+});
+
+test("sales kit: each value proposition gets the proof that shares its words, and one with no match borrows none", async () => {
+  const out = await call("sales_enablement_content", {
+    product: "Acme Build, estimating software for residential builders",
+    target_persona: "Owner of a residential building firm",
+    proof_points: "Jane Roe, Roe Homes: Estimates that took two days now take two hours.; Sam Poe, Poe Builders: Supplier pricing updates itself in every quote.",
+    value_props: "Faster estimates; live supplier pricing; a mobile app for site crews",
+    sales_stage: "discovery", your_sector: "vertical_saas"
+  });
+  const rows = out.split("\n").filter((l) => /^\*\*\d\.|^- \*Proof:\*/.test(l)).join("\n");
+  assert.match(rows, /Faster estimates\*\*\n- \*Proof:\* Jane Roe/);
+  assert.match(rows, /live supplier pricing\*\*\n- \*Proof:\* Sam Poe/i);
+  assert.match(rows, /mobile app for site crews\*\*\n- \*Proof:\* none of your proof points speaks to this one, so none is borrowed/);
+});

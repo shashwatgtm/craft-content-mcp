@@ -135,10 +135,20 @@ export function generateSalesEnablement(args: {
   const RANKING = /(?<![\w&])#\s?1\b|\bno\.? ?1\b|\bnumber (?:one|1)\b|\bfirst and only\b|\branked\b|\bbest[- ]in[- ]class\b/i;
   const orderedProps = [...allValueProps.filter((p) => !RANKING.test(p)), ...allValueProps.filter((p) => RANKING.test(p))];
   const strongest = usable.find((i) => i.figure) || usable.find((i) => i.kind === 'result') || usable[0];
+  // Run 42B round S2: a proof point is matched to a value proposition by the words of what it says (the speaker's name and title are not
+  // matched), a proof point already matched to another value proposition comes second, and a value proposition that no proof point
+  // speaks to says so plainly: unrelated proof is never borrowed for it.
+  const proofBody = (t: string) => t.replace(/^[^:"“]{3,120}:\s+/, '');
+  const vpUsed = new Set<string>();
+  let noMatch = 0;
   const valueRows = orderedProps.map((vp) => {
     const ranking = RANKING.test(vp);
-    const near = isCompanyFact(vp) || ranking ? undefined : relevant(vp, usableTexts)[0];
-    const proof = near || (ranking ? 'a ranking claim from a page is not proof: cite who ranked it and when before you say it' : strongest ? `none of your proof points bears on this one (the strongest you gave is: ${clipEcho(strongest.shown, 200)})` : undefined);
+    const vw = wordSet(vp);
+    const scored = isCompanyFact(vp) || ranking ? [] : usableTexts.map((t) => ({ t, n: [...wordSet(proofBody(t))].filter((x) => vw.has(x)).length })).filter((x) => x.n > 0).sort((x, y) => (y.n - x.n) || (Number(vpUsed.has(x.t)) - Number(vpUsed.has(y.t))));
+    const fresh = scored.find((x) => !vpUsed.has(x.t) && x.n === scored[0].n) || scored[0];
+    const near = fresh ? fresh.t : undefined;
+    if (near) vpUsed.add(near);
+    const proof = near || (ranking ? 'a ranking claim from a page is not proof: cite who ranked it and when before you say it' : strongest ? (noMatch++ === 0 ? "none of your proof points speaks to this one, so none is borrowed for it; add a customer result that does (the figure, the period and the customer's approval) before you lead with it" : 'none of your proof points speaks to this one either') : undefined);
     const metric = v ? v.metrics.find((m) => [...wordSet(m)].some((x) => wordSet(vp).has(x))) : undefined;
     const obj = v ? v.objections.find((o) => relevant(vp, [o.objection]).length > 0) : undefined;
     const why = metric ? `it ties to ${metric}, a measure ${v!.name} buyers track` : obj ? `it answers an objection this sector raises: "${obj.objection}"` : '';

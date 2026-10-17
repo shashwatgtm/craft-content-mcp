@@ -1,7 +1,7 @@
 import { analyzeContent, generateImprovedVersion, editSentence, toneCheck, annotateText, bodyOf, countWords, avgWordsPerSentence, calculateReadability, ContentAnalysis, SUGGESTION_FOOTER, clipEcho, ASK } from './utils.js';
-import { lowerFirstIfCommon } from './utils.js';
+import { lowerFirstIfCommon, isCommonWord } from './utils.js';
 import { readContext, audienceLine, sentencesOf } from './sector.ts';
-import { shortenClauses, clipAtWord, endSentence, fixNumbers, FIGURE } from './draft.ts';
+import { shortenClauses, clipAtWord, endSentence, fixNumbers, FIGURE, dropTail } from './draft.ts';
 
 // Default goals by content type
 const DEFAULT_GOALS: Record<string, string> = {
@@ -43,6 +43,14 @@ export function generateContentImprover(args: {
   const slipRead = fixSlips(content);
   const improved0 = generateImprovedVersion(slipRead.text, analysis);
   const improved = { text: improved0.text, edits: [...slipRead.slips.filter((x) => x.after !== null).map((x) => ({ before: x.before, after: x.after as string })), ...improved0.edits] };
+  // Run 42B round S3: a long subject line that holds a whole sentence pasted after "about" ("Quick question about Vulnerabilities go
+  // unnoticed ...") is a paste slip: the improved version cuts it to that sentence's first clause (the user's own words, at most nine)
+  if (contentType === 'sales_email' || contentType === 'email') {
+    const subj = improved.text.split('\n').find((l) => /^\s*subject:/i.test(l));
+    const pasted = subj ? /\b(?:about|on|re:?)\s+([A-Z][a-z']+)\s+[a-z]/.exec(subj.replace(/^\s*subject:\s*/i, '')) : null;
+    const cut = subj && pasted && !/[A-Z]/.test(pasted[1].slice(1)) && SUBJECT_VERB.test(subj.split(/,|;/)[0]) ? cutSubject(subj.replace(/^\s*subject:\s*/i, '')) : null;
+    if (subj && cut) { improved.text = improved.text.replace(subj, `Subject: ${cut}`); improved.edits.push({ before: subj.trim(), after: `Subject: ${cut}` }); }
+  }
   const tone = toneCheck(content, args.tone_preference);
   const emailLike = contentType === 'sales_email' || contentType === 'email';
   const shorter = emailLike && (wordCount > 120 || analysis.findings.some((f) => f.rule === 'subject-length' || f.rule === 'sentence-length' || f.rule === 'run-on')) ? shorterEmail(slipRead.text) : null;
@@ -135,7 +143,7 @@ ${improved.edits.length > 0 ? `
 ${improved.edits.slice(0, 20).map((e, i) => `${i + 1}. Before: "${clipEcho(e.before, 200)}"
    After: "${clipEcho(e.after, 200)}"`).join('\n')}${improved.edits.length > 20 ? `\n\n*The first 20 of ${improved.edits.length} edits are listed; the improved version below has all of them.*` : ''}
 
-*Each edit replaces a buzzword with a plainer word, or removes a claim that needs proof (add it back only with proof), or splits a very long sentence, or fixes a grammar or paste slip listed above. Nothing else in your text was changed.*
+*Each edit replaces a buzzword with a plainer word, or removes a claim that needs proof (add it back only with proof), or splits a very long sentence, or cuts a long subject line to its first clause, or fixes a grammar or paste slip listed above. Nothing else in your text was changed.*
 
 ---
 ` : ''}
@@ -241,7 +249,7 @@ function suggestOpening(content: string): string {
 type Slip = { before: string; after: string | null; note: string };
 // a customer quote with its speaker ("Name, Role, Company: words"), kept whole as the proof of a shorter email when no figure is given
 const QUOTED_PROOF = /^[A-Z][^:]{3,90}:\s+\S/;
-const SLIP_VERBS = '(?:is|are|was|were|use|uses|want|wants|need|needs|juggle|juggles|lack|lacks|have|has|sit|sits|run|runs|get|gets|ship|ships|evolve|evolve|leave|leaves|lose|loses|struggle|struggles|spend|spends|face|faces|make|makes|can|cannot|must|should|will|rely|relies|grow|grows|take|takes|depend|depends|move|moves|fail|fails|break|breaks|cost|costs|stay|stays)';
+const SLIP_VERBS = '(?:is|are|was|were|use|uses|want|wants|need|needs|juggle|juggles|lack|lacks|have|has|sit|sits|run|runs|get|gets|ship|ships|evolve|evolve|leave|leaves|lose|loses|struggle|struggles|spend|spends|face|faces|make|makes|can|cannot|must|should|will|rely|relies|grow|grows|take|takes|depend|depends|move|moves|fail|fails|break|breaks|cost|costs|stay|stays|go|goes|pile|piles|slip|slips|happen|happens|arrive|arrives|change|changes|come|comes|drift|drifts|remain|remains|lag|lags|vary|varies|wait|waits|miss|misses|add|adds|live|lives|spread|spreads|sprawl|sprawls|end|ends|keep|keeps|feel|feels|see|sees|find|finds|work|works|pay|pays|wait|waits)';
 const PASTED_CLAUSE = new RegExp(`\\b(deal|deals|dealing|struggle|struggles|struggling) with ((?:[A-Z][a-z]+|[A-Z]{2,5}\\s+[a-z]+)(?:\\s+[A-Za-z][\\w'-]*,?){0,8}?\\s+${SLIP_VERBS}\\b)`, 'g');
 export function fixSlips(content: string): { text: string; slips: Slip[] } {
   const slips: Slip[] = [];
@@ -253,6 +261,15 @@ export function fixSlips(content: string): { text: string; slips: Slip[] } {
     // a capital article after "is" ("Snyk is An AI-native platform")
     out = out.replace(/\b(is|are|was|were|as) (A|An|The) ([A-Za-z][\w-]*)/g, (m, v: string, art: string, nx: string) => {
       const fixed = `${v} ${art.toLowerCase()} ${nx}`;
+      slips.push({ before: m, after: fixed, note: 'a capital letter in the middle of a sentence' });
+      return fixed;
+    });
+    // Run 42B round S3: a capital common word after "is" ("connectivity is Reliable high-speed connectivity"); a word that is capitalised
+    // elsewhere in the middle of the text is a name and stays
+    if (!/^\s*subject:/i.test(out)) out = out.replace(/\b(is|are|was|were) ([A-Z][a-z]{2,})(?= [a-z])/g, (m, v: string, w: string) => {
+      if (/^(?:An|The)$/.test(w) || !(isCommonWord(w) || /(?:able|ible|ful|ous|ive|less|ent|ant|ic|ly|ing|ed|al)$/.test(w))) return m;
+      if (new RegExp(`[a-z,;] ${w}\\b`).test(content.split(m).join(' '))) return m;
+      const fixed = `${v} ${w.toLowerCase()}`;
       slips.push({ before: m, after: fixed, note: 'a capital letter in the middle of a sentence' });
       return fixed;
     });
@@ -274,6 +291,24 @@ export function fixSlips(content: string): { text: string; slips: Slip[] } {
     return out;
   });
   return { text: lines.join('\n'), slips };
+}
+
+// Run 42B round S3: a subject line over twelve words (or 70 characters) cut to its first clause, at most nine words, never with "...". A clause
+// pasted after "Quick question about" reads as its own subject ("Vulnerabilities go unnoticed across web apps"). Null when it is short already.
+const SUBJECT_VERB = new RegExp(`\\b${SLIP_VERBS}\\b`, 'i');
+export function cutSubject(full: string): string | null {
+  const t = full.trim().replace(/[.!?]+$/, '');
+  if (countWords(t) <= 12 && t.length <= 70) return null;
+  const lead = /^((?:a )?quick question (?:about|on)|question (?:about|on)|a thought on|thoughts on|about|re:?)\s+/i.exec(t);
+  let core = lead ? t.slice(lead[0].length) : t;
+  core = core.split(/\s*[,;:(]\s*|\s+(?:so|but|while|because|instead of|and then|which|where)\s+/)[0].trim();
+  const clause = SUBJECT_VERB.test(core);
+  const room = lead && !clause ? 9 - countWords(lead[1]) : 9;
+  const w = core.split(/\s+/);
+  if (w.length > room) core = dropTail(w.slice(0, room).join(' '));
+  if (countWords(core) < 3) return null;
+  if (lead && !clause) return `${lead[1].charAt(0).toUpperCase()}${lead[1].slice(1)} ${lowerFirstIfCommon(core)}`;
+  return core.charAt(0).toUpperCase() + core.slice(1);
 }
 
 // A shorter email cut from the user's own text: a subject line of about eight words, the opening problem, the first thing the
@@ -307,14 +342,17 @@ function shorterEmail(content: string): { text: string; left: string[] } | null 
   const out: string[] = [];
   if (subjectLine) {
     const full = subjectLine.replace(/^subject:\s*/i, '');
-    const sub = shortenClauses(full, 60);
+    const sub = cutSubject(full) ?? shortenClauses(full, 60);
     out.push(`Subject: ${sub}`);
     note(full, sub);
   }
   if (greeting) out.push(greeting);
   for (const s of [opening, product]) {
     if (!s) continue;
-    const sh = shortenClauses(s, 170);
+    let sh = shortenClauses(s, 170);
+    // a cut that ends on the name the sentence starts with ("X is a service plus X.") takes the next clause, which says what that name is
+    const lead = (s.match(/^[A-Z][\w-]*/) || [''])[0];
+    if (lead && sh.length < s.length && new RegExp(`\\b(?:plus|and|with|by|from|of)\\s+${lead}$`).test(sh.replace(/[.!?]+$/, ''))) { const nxt = s.indexOf(', ', sh.length + 2); sh = nxt > 0 ? s.slice(0, nxt) : s; }
     out.push(endSentence(sh)); kept.push(s); note(s, sh);
   }
   if (proof) { out.push(endSentence(shortenClauses(proof, 200))); kept.push(proof); }

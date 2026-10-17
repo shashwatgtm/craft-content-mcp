@@ -92,7 +92,8 @@ export function generateThoughtLeadership(args: {
   // Run 42B round S: a topic typed as the company's own description ("a leading developer of ...") is not a headline subject; the headline
   // names the first part of the take instead (or the readers), and an unsourced claim word in the topic is never in a headline
   const topicLabel0 = cleanClaims(shortTopic(topic)).text.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
-  const firstPart = parts[0] ? shortTopic(parts[0]).replace(/\s*\([^)]*\)/g, '').replace(/[.]$/, '') : '';
+  const firstPart0 = parts[0] ? shortTopic(parts[0]).replace(/\s*\([^)]*\)/g, '').replace(/[.]$/, '') : '';
+  const firstPart = gerundSubject(firstPart0);
   const readerHead = readerNoun.replace(/\s*\([^)]*\)/g, '').split(/,\s+|:\s+|\s+and\s+/)[0];
   const claimInTopic = claims.some((c) => topicLabel0.toLowerCase().includes(c.toLowerCase()));
   const topicLabel = /^(?:a|an)\s/i.test(topicLabel0) || !topicLabel0 || claimInTopic
@@ -417,7 +418,19 @@ function componentItems(part: string): string[] {
   return items;
 }
 // a point typed as what the product does ("connects the banks ...") is said with its subject, so it reads as a claim
-const VERB_PHRASE = /^[a-z]+s\s+(?:the|a|an|every|all|one|your|their|its|each|any|more|less|data|teams?|work)\b/;
+const VERB_PHRASE = /^(?:[a-z]+s\s+(?:the|a|an|every|all|one|your|their|its|each|any|more|less|data|teams?|work)\b|(?:connects|enables|helps|lets|gives|turns|makes|brings|unifies|combines|automates|removes|cuts|reduces|offers|provides|delivers|powers|runs|builds|puts|keeps|moves|joins|links|replaces|scans|ranks|finds|tracks|plans|manages|handles|gets|saves|ensures|allows|supports|creates|integrates|simplifies|streamlines|transforms|centrali[sz]es|consolidates|embeds|accepts|sends|protects|secures|detects|monitors|answers|resolves|routes|matches|predicts|captures|gathers|replaces)\s+[a-z])/;
+// Run 42B round S3: a headline subject typed as what the product does ("Connects local payment rails") is said as an activity
+// ("Connecting Local Payment Rails"), so "A Framework for ..." reads; the words stay the user's own.
+export function gerundSubject(t: string): string {
+  const m = /^(\S+?)(ies|es|s)(\s.*)?$/.exec(t.trim());
+  const low = t.trim().replace(/^(\S+)\s+(\S+)/, (_x: string, a: string, b: string) => `${a.toLowerCase()} ${b.toLowerCase()}`);
+  if (!m || !VERB_PHRASE.test(low)) return t;
+  const stem = m[1].toLowerCase();
+  let base = m[2] === 'ies' ? stem + 'y' : m[2] === 'es' && /(?:s|x|z|ch|sh)$/.test(stem) ? stem : m[2] === 'es' ? stem + 'e' : stem;
+  let ing = base.endsWith('ie') ? base.slice(0, -2) + 'ying' : /[^aeiou]e$/.test(base) && base !== 'see' ? base.slice(0, -1) + 'ing' : /^[^aeiou]*[aeiou][bdgmnprt]$/.test(base) ? base + base.slice(-1) + 'ing' : base + 'ing';
+  if (m[2] === 'ies') ing = stem + 'ying';
+  return ing.charAt(0).toUpperCase() + ing.slice(1) + (m[3] || '');
+}
 function asClaim(t: string, brand?: string): string { return VERB_PHRASE.test(t) && !/^(?:this|its|has|is|was)\b/.test(t) ? `${brand || 'the approach'} ${t}` : t; }
 const frameworkName = (n: number): string => `the ${['', 'one', 'two', 'three', 'four', 'five'][n] || n}-step position-to-measure framework`;
 // The steps of the framework, each named for what the user's own point is: the position, its other parts, the proof, the measure.

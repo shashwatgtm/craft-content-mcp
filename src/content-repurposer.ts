@@ -264,6 +264,9 @@ const proofLineOf = (p: ProofItem, label: string): string => {
   const tag = p.label ? ` (${p.label})` : '';
   if (m) { const who = m[1].trim().replace(/^from\s+/i, ''); return endSentence(`A customer${who ? `, ${who},` : ''} says: "${m[2]}"${tag}`); }
   if (/^customer (?:quote|words):/i.test(p.text)) return endSentence(p.shown);
+  // Run 42B round S3: "Quote from Jo Smith, VP of Transport: words" is shown as the words with the person named, never as a result
+  const from = /^(?:quotes?|words|testimonial) (?:from|by) (.+?):\s+(.+)$/i.exec(p.text);
+  if (from) return endSentence(`Customer quote, ${from[1].trim()}: "${from[2].replace(/[.]$/, '')}"${tag}`);
   return `${p.kind === 'title' ? 'Customer story' : p.kind === 'quote' ? 'Customer quote' : label}: ${endSentence(p.shown)}`;
 };
 // A line for a tweet: complete, at most 270 characters, ending at a clause boundary.

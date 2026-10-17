@@ -280,6 +280,9 @@ const OUTCOME_VERB = /\b(?:reduc\w+|cut|cuts|saved?|saves|improv\w+|increas\w+|g
 // Run 42B round S: a before and after figure with its unit ("from 1.25 Gbps to 5 Gbps") says what changed
 const FROM_TO_FIGURE = /\bfrom [\d.,]+\s*[A-Za-z%]*\s+to [\d.,]+/;
 const PROMO_OFFER =/\b(?:financ(?:e|es|ing)|loans?|credit lines?|working capital|[a-z]+ capital to fund|pay later|buy now|apply now|get funded|0% (?:apr|interest)|special offer|limited[- ]time)\b/i;
+const CERTIFIED = /\b(?:certified|certifications?|accredited|compliant with|soc ?2\+?|iso ?27001|pci[- ]?dss)\b/i;
+// Run 42B round S3: "Quote from Jo Smith, VP of Transport: words" and "Hillside School, The Czech Republic: words" are customer quotes
+const SPEAKER_QUOTE = /^(?:(?:[Qq]uotes?|[Ww]ords|[Tt]estimonial) (?:from|by) [A-Za-z][^:;]{1,120}|[A-Z][\w&.'-]*(?:\s+(?:[A-Z][\w&.'-]*|of|the|and|&)){0,6},\s+(?:The\s+)?[A-Z][\w&.'-]*(?:\s+[A-Z][\w&.'-]*){0,3}):\s+\S+(?:\s+\S+){5,}/;
 export function parseProof(raw: unknown): ProofItem[] {
   return splitProof(raw).map((item) => {
     const m = LABEL_END.exec(item);
@@ -289,11 +292,13 @@ export function parseProof(raw: unknown): ProofItem[] {
     const figure = FIGURE.test(text);
     let kind: ProofKind;
     if (RECOGNITION.test(text) && !/\bcustomer quote\b/.test(l)) kind = 'recognition';
-    else if (/quote/.test(l) || isAttributed(text)) kind = 'quote';
+    else if (/quote/.test(l) || isAttributed(text) || SPEAKER_QUOTE.test(text)) kind = 'quote';
     // Run 42B round S: a story summary that states a figure and what changed ("upgraded bandwidth from 1.25 Gbps to 5 Gbps") is a result,
     // not a title; a news item or launch is the vendor's own announcement, never a customer result
     else if (/\bnews\b|press release|announcement/.test(l) || /\((?:[^()]*\s)?news item\)\s*$/i.test(text)) kind = 'claim';
-    else if ((/title|story|teaser|banner|promo/.test(l) || /^(?:how|why)\b/i.test(text)) && !(/summary|\bstory\b/.test(l) && figure && (OUTCOME_VERB.test(text) || FROM_TO_FIGURE.test(text)) && !/headline|title|teaser|banner|promo/.test(l))) kind = 'title';
+    // Run 42B round S3: a certification or compliance status is the vendor's own claim, never a customer result
+    else if (CERTIFIED.test(text) && !OUTCOME_VERB.test(text)) kind = 'claim';
+    else if ((/title|story|teaser|banner|promo|headline/.test(l) || /^(?:how|why)\b/i.test(text)) && !(/summary|\bstory\b/.test(l) && figure && (OUTCOME_VERB.test(text) || FROM_TO_FIGURE.test(text)) && !/headline|title|teaser|banner|promo/.test(l))) kind = 'title';
     // Run 42B (round P): a financing or promotional offer with no outcome is never proof of the platform
     else if (PROMO_OFFER.test(text) && !figure && !OUTCOME_VERB.test(text)) kind = 'claim';
     else if (SCALE.test(text) && !OUTCOME_VERB.test(text)) kind = 'scale';

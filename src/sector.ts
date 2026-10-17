@@ -26,16 +26,28 @@ export function weldNames(parts: string[]): string[] {
     const company = /^[A-Z][^:;.]{1,40}:\s+\S/.test(p) && p.split(':')[0].split(/\s+/).length >= 2 && p.split(':')[0].split(/\s+/).length <= 5 && !/\b(?:quotes?|stor(?:y|ies)|headlines?|case|results?|press|proof|source|customers?|claims?|recognition|award|named|featured)\b/i.test(p.split(':')[0]);
     const personName = prev !== undefined && /^[A-Z][\p{L}.'-]+(?:\s+[A-Z][\p{L}.'-]+){1,2}$/u.test(prev.trim()) && !/\d/.test(prev);
     if (prev !== undefined && personName && company && !/[.!?:]$/.test(prev)) { out[out.length - 1] = `${prev}, ${p}`; continue; }
+    // Run 42B round S3: "Quote from Jo Smith" + "VP of Transport: words" and "Hillside School of Prague" + "The Czech Republic: words" are one quote
+    const speakerHead = /^(?:[Qq]uotes?|[Ww]ords|[Tt]estimonial) (?:from|by) [A-Za-z][^:;,.]{1,60}$/.test((prev ?? '').trim());
+    const placeOrTitle = /^(?:The\s+)?[A-Z][\w&.'-]*(?:\s+(?:[A-Z][\w&.'-]*|of|and|at|for|the|&)){0,6}:\s+\S+(?:\s+\S+){4,}/.test(p) && !QUOTE_LABEL.test(p.split(':')[0]);
+    if (prev !== undefined && !/[.!?:]$/.test(prev) && !/\d/.test(prev) && placeOrTitle && (speakerHead || (NAME_PHRASE.test(prev.trim()) && prev.trim().split(/\s+/).length <= 5))) { out[out.length - 1] = `${prev}, ${p}`; continue; }
     if (prev !== undefined && !/[.!?:]$/.test(prev) && !/\d/.test(prev) && NAME_PHRASE.test(prev.trim()) && prev.trim().split(/\s+/).length <= 5 && (apposition || title)) out[out.length - 1] = `${prev}, ${p}`;
     else out.push(p);
   }
   return out;
+}
+// Run 42B round S3: a quote with its speaker ("Quote from Jo Smith, VP of Operations: words, more words"; "Acme School, The Czech
+// Republic: with X, goals ...") is one item: its commas are the speaker's and the quote's own, never list breaks.
+const QUOTE_ITEM = /^(?:(?:[Qq]uote|[Qq]uoted|[Tt]estimonial|[Ww]ords) (?:from|by) [A-Za-z][^:;]{1,100}|[A-Z][\w&.'-]*(?:\s+(?:[A-Z][\w&.'-]*|of|the|and|&|de)){0,6},\s+[A-Z][^:;]{1,80}):\s+\S/;
+const QUOTE_LABEL = /\b(?:results?|outcomes?|proof|metrics?|claims?|figures?|numbers?|stats?|highlights?|key points?|benefits?|features?|products?|services?|capabilit(?:y|ies)|modules?|includes?|pricing|plans?)\b/i;
+export function isQuoteItem(line: string): boolean {
+  return QUOTE_ITEM.test(line) && !QUOTE_LABEL.test(line.split(':')[0]) && line.slice(line.indexOf(':') + 1).trim().split(/\s+/).length >= 5;
 }
 export function splitItems(s: unknown): string[] {
   if (typeof s !== 'string') return [];
   const lines = s.split(/\n|;/).map((x) => x.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
   const out: string[] = [];
   for (const line of lines) {
+    if (isQuoteItem(line)) { out.push(line); continue; }
     const parts = line.split(LIST_COMMA).map((x) => x.trim()).filter(Boolean);
     parts.forEach((p, i) => {
       if (i > 0 && JOINER.test(p)) out[out.length - 1] += ', ' + p;
@@ -214,6 +226,112 @@ function generalNotes(v: Vertical): Vertical {
     discovery: v.discovery.map((d) => /cases or decisions/i.test(d) ? 'Which tasks would you trust the AI to handle first, and which never?' : /case or a decision cost/i.test(d) ? 'What does this work cost you today, and how long does it take?' : d),
   };
 }
+// Run 42B round S3: the general notes of some sectors carry a hidden picture of one kind of buyer (vertical SaaS: an owner run trade or small
+// business with a finance head and an ERP; SaaS: a company with a team, finance, IT and security; logistics tech: shipments and orders;
+// software: developer pipelines). When the inputs name another kind of buyer, those lines are made neutral or are worded from the
+// inputs' own words (the industry served, the role typed, the measures the inputs name). Words only: no figure, claim or name is added.
+const SMALL_OR_TRADES = /\b(?:trades?(?:people|men|man)?|tradespeople|contractors?|small (?:and (?:medium|mid)[- ]sized )?business(?:es)?|smbs?|smes?|owner[- ](?:operators?|run|managed)|sole traders?|freelancers?|solopreneurs?|self[- ]employed|micro[- ]?business(?:es)?|home services?|field services?)\b/i;
+const SOLO_SMALL = /\b(?:freelancers?|solopreneurs?|sole traders?|self[- ]employed|independent (?:professionals?|contractors?)|small (?:and (?:medium|mid)[- ]sized )?business(?:es)?|micro[- ]?business(?:es)?|smbs?|owner[- ]operators?)\b/gi;
+const GENERIC_SERVED = /^(?:the|a|an|your|you|every|all|any|teams?|businesses|business|companies|company|organi[sz]ations?|enterprises?|people|customers?|users?|them|it|this|that|more|less|free|up|over|use|each|modern|growing|leading|global|any|work|growth|speed|scale|less|those|its|their|our|everyone|anyone|not given)\b/i;
+const SERVED_STOP = /\s+(?:that|to|with|who|which|so|in|by|on|from|across|where|while|plus|including|like|such)\b.*$/i;
+function servedFrom(raw: string): string {
+  const t = raw.replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim().replace(SERVED_STOP, '').replace(/[.,;:!?]+$/, '').trim();
+  const w = t.split(/\s+/);
+  if (!t || w.length > 5 || GENERIC_SERVED.test(t) || /^[A-Z][a-z]+[A-Z]|\d{3,}/.test(t) || !/[a-z]s\b/.test(t)) return '';
+  return t;
+}
+export function servedIndustry(input: ReaderInput, own: unknown[] = []): { served: string; role: string } {
+  let role = '';
+  let served = '';
+  for (const r of [...nonEmpty(input.role), ...nonEmpty(input.buyer)]) {
+    const m = /^(.{2,50}?)\s+at\s+(?:an?\s+|the\s+)?([^;:()]{3,80})$/.exec(r.trim());
+    if (!m) continue;
+    const who = m[1].replace(/\(not given\)/i, '').trim();
+    if (!role && who && !/customer|contact|not given/i.test(who) && who.split(/\s+/).length <= 5) role = who;
+    if (!served) served = servedFrom(m[2].split(',')[0]);
+  }
+  if (!served) {
+    for (const t of [...nonEmpty(input.seller), ...nonEmpty(own)]) {
+      const m = /\bfor ([A-Za-z0-9][\w&'-]*(?:\s+[A-Za-z0-9][\w&'-]*){0,5})/.exec(t.slice(0, 400));
+      if (m && (served = servedFrom(m[1]))) break;
+    }
+  }
+  if (!served) for (const b of nonEmpty(input.buyer)) { served = servedFrom(b.split(/[,;]/)[0]); if (served) break; }
+  return { served, role };
+}
+const FLEET_WORDS = /\b(?:fleets?|telematics|vehicles?|drivers?|dash ?cams?|eld|gps tracking|trailers?|equipment|assets? tracking)\b/gi;
+const SHIPMENT_WORDS = /\b(?:shipments?|freight|consignments?|parcels?|orders?|loads?|lanes?|shippers?|carriers?|warehous\w*|fulfil\w*|last[- ]mile)\b/gi;
+const OWN_MEASURES = /\b(?:accidents?|fuel(?: costs?| use| spend)?|maintenance(?: costs?)?|compliance|downtime|idle time|safety|repair time|utili[sz]ation|dev(?:elopment)? time|development speed|hours saved|time saved)\b/gi;
+function ownMeasures(text: string): string[] {
+  return [...new Set((text.match(OWN_MEASURES) || []).map((x) => x.toLowerCase()))].filter((x, i, a) => !a.some((y, j) => j !== i && y !== x && y.startsWith(x))).slice(0, 4);
+}
+export function servedNotes(v: Vertical, input: ReaderInput, own: unknown[] = []): Vertical {
+  const seller = [...nonEmpty(input.seller), ...nonEmpty(own)].join(' \n ');
+  const people = [...nonEmpty(input.role), ...nonEmpty(input.buyer)].join(' \n ');
+  const all = [seller, people, ...nonEmpty(input.context)].join(' \n ');
+  if (v.id === 'vertical-saas' && !v.subtype && !SMALL_OR_TRADES.test(all)) {
+    const { served, role } = servedIndustry(input, own);
+    const at = served ? ` at ${served}` : '';
+    return {
+      ...v,
+      buyerRoles: [...(role ? [role] : []), `leaders who own the work the software changes${at}`, `the people${at} who use it every day`, 'the head of IT or whoever runs the systems already in place', 'the implementation lead'],
+      committee: `The leader${at} who owns the work the software changes signs; the people who use it every day decide whether it sticks; whoever holds the budget checks cost and payback; IT checks the fit with the systems already in place.`,
+      vocabulary: v.vocabulary.filter((x) => x !== 'field and office'),
+      objections: v.objections.map((o) => ({ ...o, response: o.response.replace(/particular to the trade/g, 'particular to their industry') })),
+      discovery: v.discovery.map((d) => /accounting, ERP/i.test(d) ? `Which systems already in use${at} must it connect to, and who owns that integration?` : d),
+    };
+  }
+  if (v.id === 'saas' && !v.subtype) {
+    const solo = [...new Set((`${seller} \n ${people}`.match(SOLO_SMALL) || []).map((x) => x.toLowerCase()))];
+    if (!solo.length) return v;
+    const who = solo.length > 1 ? `${solo.slice(0, -1).join(', ')} and ${solo[solo.length - 1]}` : solo[0];
+    return {
+      ...v,
+      buyerRoles: ['the owner, who often chooses and pays alone', 'the person who does the work day to day', 'anyone they already work with on it'],
+      committee: `For ${who}, the person who does the work usually chooses and pays, often alone; anyone they already work with on it may weigh in.`,
+      metrics: v.metrics.filter((x) => !/target team|seats|expansion revenue/i.test(x)),
+      vocabulary: v.vocabulary.filter((x) => !/admin controls|single sign on|seats|security review/i.test(x)),
+      objections: v.objections.filter((o) => !/security and it review/i.test(o.objection)),
+      discovery: v.discovery.map((d) => /who must approve/i.test(d) ? 'Who else, if anyone, has a say before a new tool is paid for?' : d),
+      proofShape: 'A cohort of customers like the reader before and after, on time saved or retention, with the period named.',
+    };
+  }
+  if (v.id === 'logistics-tech' && (!v.subtype || v.subtype === 'transport-management')) {
+    const fleet = [...new Set((all.match(FLEET_WORDS) || []).map((x) => x.toLowerCase().replace(/(?<!ic)s$/, '')))];
+    const ship = new Set((all.match(SHIPMENT_WORDS) || []).map((x) => x.toLowerCase().replace(/s$/, '')));
+    if (fleet.length < 2 || ship.size * 2 >= fleet.length) return v;
+    const measures = ownMeasures(all);
+    const fw = fleet.slice(0, 3).join(', ');
+    const SHIP = /shipment|order|goods|carrier|loads?\b|lanes?|freight|consignment|warehouse|proof of delivery|third party logistics|tender|rate management|empty miles|on time delivery|damage/i;
+    return {
+      ...v,
+      vocabulary: [...v.vocabulary.filter((x) => !SHIP.test(x)), ...fleet.slice(0, 4)],
+      buyerRoles: v.buyerRoles.filter((x) => !/supply chain|transport procurement|transport planning|procurement/i.test(x)),
+      committee: `The head of operations signs; the lead who runs the ${fleet[0]} day to day champions; the people who work with it every day use it; IT checks the fit with the systems already in place; finance checks the cost case.`,
+      objections: v.objections.filter((o) => !SHIP.test(o.objection) && !SHIP.test(o.response)),
+      metrics: [...measures, ...v.metrics.filter((x) => !SHIP.test(x) && !measures.some((m) => x.includes(m)))],
+      proofShape: `A before and after on ${measures.length ? measures.slice(0, 2).join(' or ') : 'one measure the buyer already tracks'} at one site, depot or region, measured over a full cycle of busy and quiet weeks.`,
+      discovery: [`Which systems hold your ${fw} data today, and who owns them?`, ...(measures.length ? [`How do you measure ${measures.slice(0, 2).join(' and ')} today, and who owns those numbers?`] : []), 'Where do the most manual reports and workarounds sit today?', ...v.discovery.filter((d) => !SHIP.test(d))],
+    };
+  }
+  if (v.id === 'software' && !v.subtype) {
+    const pipeline = /\b(?:ci\/cd|pipelines?|devops|release (?:frequency|cycles?)|build (?:minutes|times?)|observability|kubernetes|test automation|developer experience|deploy(?:ments?)?)\b/i.test(all);
+    const otherFn = /\b(?:internal (?:tools?|software|apps?)|low-code|no-code|app builders?)\b/i.test(seller) || ((/(?:^|[\s(])IT(?=[\s,)]|$)/.test(people) || /\b(?:operations|supply chain|finance|sales|support|marketing|hr)\b/i.test(people)) && !/\b(?:engineer\w*|developers?|devops|cto|platform)\b/i.test(people));
+    if (pipeline || !otherFn) return v;
+    const measures = ownMeasures(all);
+    const DEV = /release|lead time for changes|build time|mean time to recovery|incidents after a release|pipeline/i;
+    return {
+      ...v,
+      vocabulary: v.vocabulary.filter((x) => !DEV.test(x)),
+      metrics: [...measures, ...v.metrics.filter((x) => !DEV.test(x) && !measures.some((m) => x.includes(m)))],
+      proofShape: 'One team before and after on a measure it already tracks, taken from the team\'s own records.',
+      buyerRoles: ['Head of the team whose work the tools change', 'Head of IT', 'Whoever builds and maintains the tools', 'Security Lead'],
+      committee: 'The head of the team whose work the tools change signs; whoever builds and maintains the tools champions; IT and security review access and data; the people who use what is built decide whether it sticks.',
+      discovery: v.discovery.map((d) => /who must approve a new developer tool/i.test(d) ? 'Who must approve a new tool (IT, security, procurement)?' : /how often do you release/i.test(d) ? 'Which work is still done by hand or in spreadsheets today, and who builds the tools for it?' : /in the pipeline today/i.test(d) ? 'Which tools does the team use today, and which would this replace or join?' : d),
+    };
+  }
+  return v;
+}
 export function readContext(explicitModel: unknown, raw: ReaderInput, yourSector?: unknown, ownWords?: unknown[]): { v: Vertical | null; model: BusinessModel | null; how: string; line: string; source: string | null } {
   const scrubbed: ReaderInput = { seller: scrub(raw.seller), context: scrub(raw.context), role: scrub(raw.role), buyer: scrub(raw.buyer) };
   const gs = givenSector(yourSector);
@@ -244,6 +362,7 @@ export function readContext(explicitModel: unknown, raw: ReaderInput, yourSector
   }
   if (v && v === baseV && !investorOnly && m.how === 'sector' && SUBINDUSTRY_MODEL.has(baseV.id)) m = { model: null, how: 'unknown' };
   if (v && v === baseV) v = generalNotes(v);
+  if (v && !investorOnly) v = servedNotes(v, input, ownWords);
   // The persona's function decides the measures when the sector's own are another function's: a finance buyer of a billing product
   // reads finance measures, an IT buyer of a sales app reads integration and access measures. Existing words only; no figure.
   let lens = '';
@@ -252,12 +371,13 @@ export function readContext(explicitModel: unknown, raw: ReaderInput, yourSector
     if (FINANCE_ROLE.test(roleText) && !/billing/i.test(v.name)) {
       const fin = VERTICALS.find((x) => x.id === 'fintech');
       if (fin) { v = { ...v, metrics: fin.metrics, buyerRoles: fin.buyerRoles, discovery: fin.discovery, vocabulary: [...v.vocabulary.filter((x) => !/activation|time to value|net revenue retention|onboarding|customer success/i.test(x)), ...fin.vocabulary], proofShape: fin.proofShape }; lens = 'finance'; }
-    } else if (IT_ROLE.test(roleText) && ['vertical-saas', 'saas', 'logistics-tech'].includes(v.id)) {
+    } else if ((IT_ROLE.test(roleText) || /(?:^|[\s(])IT(?=[\s,)]|$)/.test(roleText)) && ['vertical-saas', 'saas', 'logistics-tech', 'software'].includes(v.id)) {
+      const systems = v.subtype === 'fmcg-retail-execution' ? ' (ERP, DMS and the like)' : v.subtype || ['saas', 'logistics-tech'].includes(v.id) ? ' (ERP and the like)' : '';
       v = {
         ...v,
         metrics: ['integration effort with the systems already in place', 'security and access review outcome', 'time to go live', 'support effort after go-live'],
         buyerRoles: ['Head of IT', 'IT Manager', 'Security Lead', ...v.buyerRoles.slice(0, 1)],
-        committee: `The business owner of the function signs; IT checks how it fits the systems already in place (${v.subtype === 'fmcg-retail-execution' ? 'ERP, DMS and the like' : 'ERP and the like'}), security and access, and who supports it after go-live.`,
+        committee: `The business owner of the function signs; IT checks how it fits the systems already in place${systems}, security and access, and who supports it after go-live.`,
         discovery: [...v.discovery.filter((d) => /system|erp|dms|tms|wms|integrat|data/i.test(d)), ...v.discovery.filter((d) => !/system|erp|dms|tms|wms|integrat|data/i.test(d))],
       };
       lens = 'IT';

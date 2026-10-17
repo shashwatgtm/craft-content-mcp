@@ -1,5 +1,5 @@
 import { lowerFirstIfCommon, cap, aOrAn } from './utils.js';
-import { q, readContext, startWords, audienceLine, isClause, type Vertical, type BusinessModel } from './sector.ts';
+import { q, readContext, startWords, audienceLine, isClause, AI_TASK_METRICS, type Vertical, type BusinessModel } from './sector.ts';
 import { splitList, bestQuestion, unpackTopic, fixNumbers, endSentence, capFirst, proseJoin, roleOf, clipAtWord, productParts, softenClaims } from './draft.ts';
 import { looksClause, cleanSectorLine, readPoints, groupPhrases, sentenceOf, withLabel, shorten, waysToSettle, settleBare, quotedEnd, instructionNote, sharpenLine, stripGuardQuotes, lowerFirstSafe, audienceShort, shapeOf, startsImperative, companyFrom, toReader as toYou, PARTICIPLE_START, nk, type Pt } from './rw-content.ts';
 
@@ -78,6 +78,8 @@ export function generateWebinarScript(args: {
     const tw = new Set((hay.toLowerCase().match(/[a-z]{5,}/g) || []).map(stemOf5));
     const ranked = ctx.v.metrics.map((m) => ({ m, n: (m.toLowerCase().match(/[a-z]{5,}/g) || []).filter((x) => tw.has(stemOf5(x))).length + themeScore(hay, m) + themeScore(topic, m, 2) })).filter((x) => x.n > 0).sort((a, b) => b.n - a.n);
     w.metrics = !haveTakeaways ? ctx.v.metrics.slice(0, 4) : ranked.slice(0, 4).map((x) => x.m);
+    // Run 42B round S3: a session about putting AI to work in another sector also reads the measures of AI work (the same words the AI native notes use)
+    if (ctx.v.id !== 'ai-native' && w.metrics.length < 3 && /\b(?:ai|genai|gen ai|generative ai|agentic|llms?|machine learning)\b/i.test(topic)) w.metrics = [...w.metrics, ...AI_TASK_METRICS.filter((m) => !w.metrics.includes(m)).slice(0, 3 - w.metrics.length + 1)];
     const ow = (x: string) => new Set((x.toLowerCase().match(/[a-z]{5,}/g) || []).map(stemOf5));
     const objRank = ctx.v.objections.map((o) => ({ o: o.objection, n: [...ow(`${o.objection} ${o.response}`)].filter((x) => tw.has(x)).length + themeScore(hay, `${o.objection} ${o.response}`) })).sort((a, b) => b.n - a.n)[0];
     w.objectionHeld = !haveTakeaways ? ctx.v.objections[0].objection : objRank && objRank.n > 0 ? objRank.o : '';

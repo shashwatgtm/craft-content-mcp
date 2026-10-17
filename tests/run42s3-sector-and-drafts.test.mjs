@@ -114,3 +114,14 @@ test("sales kit: the strongest proof is named once, and a data question is read 
   const named = t.match(/The strongest proof you gave is/g) || [];
   assert.ok(named.length <= 1, String(named.length));
 });
+
+test("newsletter subject keeps the problem's opening clause, not a list item from its end", async () => {
+  const t = await call("newsletter_builder", { topic: "How freelancers and small businesses can tackle Small business owners lose time chasing payments and juggling separate tools for invoicing, expenses, payroll and tax time, from Billo", key_points: "Small business owners lose time chasing payments, Get paid faster with automated invoices", cta_goal: "book a conversation about Billo", newsletter_type: "thought_leadership", your_sector: "saas" });
+  assert.match(t, /^\*\*Subject:\*\* Small business owners lose time chasing payments$/m);
+  assert.doesNotMatch(t, /they do not match your readers/);
+});
+
+test("webinar on putting AI to work in a services sector names the measures of AI work beside the sector's own", async () => {
+  const t = await call("webinar_script", { topic: "How global enterprises can move AI from pilot to measurable value, with Servico", target_audience: "CIOs at global 2000 enterprises", webinar_type: "educational", duration: "45_min", key_takeaways: "AI pilots stall before production, A managed service that runs AI in production", include_polls: true, product_mention_level: "subtle", your_sector: "ites" });
+  assert.match(t, /usual yardsticks are [^.]*accuracy on the buyer's own data/);
+});

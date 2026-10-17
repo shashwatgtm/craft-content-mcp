@@ -215,13 +215,14 @@ function subIndustryClear(base: Vertical, full: Vertical, model: BusinessModel |
 }
 // The AI native sector's text leans on decisions and cases (a decision AI product); for an AI seller without a clear sub industry the same notes are
 // worded for any task the AI does. Only words change; no figure or claim is added.
+export const AI_TASK_METRICS = ["accuracy on the buyer's own data", 'how often a person has to step in', 'time to a working pilot', 'time saved on the task', 'cost to run the task'];
 function generalNotes(v: Vertical): Vertical {
   const ai = VERTICALS.find((x) => x.id === 'ai-native');
   if (!ai || v.id !== 'ai-native' || v.subtype || v.vocabulary !== ai.vocabulary) return v;
   return {
     ...v,
     vocabulary: ['accuracy on your own data', 'human in the loop', 'guardrails', 'explainability', 'data privacy', 'pilot', 'inference cost'],
-    metrics: ["accuracy on the buyer's own data", 'how often a person has to step in', 'time to a working pilot', 'time saved on the task', 'cost to run the task'],
+    metrics: AI_TASK_METRICS,
     objections: v.objections.map((o) => /explain its decisions/i.test(o.objection) ? { ...o, objection: 'We cannot explain what it produced', response: 'Show, for each output, the inputs it used and the reason in words a reviewer can read, and agree what is logged.' } : /answers wrong/i.test(o.objection) ? { ...o, response: "Agree a pilot on the buyer's own data before go-live, score it against the way the work is judged today, and keep a person approving any step that changes a record or goes out to a customer." } : o),
     discovery: v.discovery.map((d) => /cases or decisions/i.test(d) ? 'Which tasks would you trust the AI to handle first, and which never?' : /case or a decision cost/i.test(d) ? 'What does this work cost you today, and how long does it take?' : d),
   };
@@ -290,7 +291,7 @@ export function servedNotes(v: Vertical, input: ReaderInput, own: unknown[] = []
       buyerRoles: ['the owner, who often chooses and pays alone', 'the person who does the work day to day', 'anyone they already work with on it'],
       committee: `For ${who}, the person who does the work usually chooses and pays, often alone; anyone they already work with on it may weigh in.`,
       metrics: v.metrics.filter((x) => !/target team|seats|expansion revenue/i.test(x)),
-      vocabulary: v.vocabulary.filter((x) => !/admin controls|single sign on|seats|security review/i.test(x)),
+      vocabulary: v.vocabulary.filter((x) => !/admin controls|single sign on|seats|security review/i.test(x)).concat(solo),
       objections: v.objections.filter((o) => !/security and it review/i.test(o.objection)),
       discovery: v.discovery.map((d) => /who must approve/i.test(d) ? 'Who else, if anyone, has a say before a new tool is paid for?' : d),
       proofShape: 'A cohort of customers like the reader before and after, on time saved or retention, with the period named.',

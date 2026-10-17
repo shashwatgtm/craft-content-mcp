@@ -145,7 +145,11 @@ export function generateNewsletter(args: {
   const headSource = parts.problem ? parts.problem.split(/;\s+/)[0] : label;
   const headMax = parts.short ? 90 : 72;
   const pieceHeads = (parts.problem ? parts.problem.split(/;\s+|,\s+(?:and\s+)?(?=[a-z])/) : []).concat(problems.flatMap((p) => p.text.split(/;\s+|,\s+(?:and\s+)?(?=[a-z])/))).map((x) => x.trim()).filter(Boolean);
-  const head = shorten(headSource, headMax, true) || pieceHeads.map((x) => shorten(x, headMax, true)).find((x) => x && x.split(/\s+/).length >= 4) || (v ? `Where do you stand with ${v.metrics[0]}?` : who && readers ? `${who} for ${readers}` : shorten(label, 66));
+  // Run 42B round S3: a problem too long for a subject keeps its own opening clause ("Small business owners lose time chasing payments"),
+  // cut before its first "and", rather than a list item from its end ("Payroll and tax time")
+  const headClause = headSource.replace(/\s+/g, ' ').trim().split(/,\s+|\s+and\s+/)[0].trim();
+  const openHead = headClause.split(/\s+/).length >= 5 && headClause.length <= headMax && /\b[a-z]+(?:s|ed)\b/.test(headClause) ? cap(headClause.replace(/[.,;:]+$/, '')) : '';
+  const head = shorten(headSource, headMax, true) || openHead || pieceHeads.map((x) => shorten(x, headMax, true)).find((x) => x && x.split(/\s+/).length >= 4) || (v ? `Where do you stand with ${v.metrics[0]}?` : who && readers ? `${who} for ${readers}` : shorten(label, 66));
   const clause = !parts.short || isClause(topic) || LABEL_CLAUSE.test(label);
   const subjects = subjectLines(head, type, who, v, forWhom, ctaGoal, readers, clause);
   const roadmap = sections.length ? `${casual ? 'Here is what is in this issue' : 'In this issue'}: ${proseJoin(sections.map((s) => lower(s.heading)))}.` : '';

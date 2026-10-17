@@ -343,6 +343,11 @@ function generateFullCaseStudy(
   // the lead result: a result with a figure, else a customer quote, else a story title that states an outcome
   const lead = outcomes.find((i) => i.figure) || quotes.find((i) => i.figure) || titles.find((i) => i.figure) || outcomes[0] || quotes[0] || titles[0];
   const hasCustomerOutcome = !!lead;
+  // Run 42B round S: whether the results carry a figure is read from the customer's own results and quotes (a figure written in words,
+  // "from a week to a day", counts), never from a company-wide count or an award year, so the notes do not contradict The Results.
+  const WORD_FIGURE = /\bfrom (?:a|an|one|two|three|four|five|six|seven|eight|nine|ten|several)\s+\w+\s+to (?:a|an|one|two|three|four|five|six|seven|eight|nine|ten|minutes|hours|days|seconds)\b|\b(?:half|double|twice|tripled|doubled|halved)\b/i;
+  const customerItems = [...outcomes, ...quotes, ...titles];
+  const figureState: 'figure' | 'none' | 'no-customer' = !items.length ? (/\d/.test(results) || WORD_FIGURE.test(results) ? 'figure' : 'none') : !customerItems.length ? 'no-customer' : customerItems.some((i) => i.figure || /\d/.test(i.text) || WORD_FIGURE.test(i.text)) ? 'figure' : 'none';
   const challengeText = challenge && challenge !== 'not supplied' ? fixNumbers(challenge.trim()) : '';
   const solutionText = solution && solution !== 'not supplied' ? fixNumbers(solution.trim()) : '';
   const industryText = industry || '';
@@ -395,6 +400,10 @@ function generateFullCaseStudy(
     ? `> "${quote.replace(/^"|"$/g, '')}"\n>\n> ${customerName}`
     : pullable.length
       ? `No customer_quote was given. A quote in your results can serve as the pull quote once the customer has approved it:\n\n${bullets(pullable.slice(0, 2))}`
+      : quotes.length
+        ? `No customer_quote was given, so the quotes listed under The Results stay with the people who said them. Use one as the pull quote only in a story about that speaker's company, once they approve it:
+
+${bullets(quotes.slice(0, 2))}`
       : `No customer_quote was given. Ask for one line the customer would say aloud about what changed${v ? ` in ${v.metrics[0]}` : ''}, and get written approval before you print it.`;
 
   return `# Case Study: ${customerName}
@@ -458,7 +467,7 @@ ${pull}
 ${cta}
 
 ---
-${v ? sectorBlock(v, results) : ''}${notUsed}
+${v ? sectorBlock(v, results, figureState) : ''}${notUsed}
 ## Distribution Formats
 
 ${manySources ? `### Until one customer is chosen
@@ -491,15 +500,15 @@ Quick success story: ${headline.replace(/[.!?]+$/, '')}. Add the link to the ful
 `;
 }
 
-function sectorBlock(v: Vertical, results: string): string {
-  const hasNumber = /\d/.test(results);
+function sectorBlock(v: Vertical, results: string, figureState: 'figure' | 'none' | 'no-customer' = /\d/.test(results) ? 'figure' : 'none'): string {
+  const hasNumber = figureState === 'figure';
   return `
 ## Sector Notes: ${capFirst(v.name)}
 
 - **A strong proof point here:** ${v.proofShape}
 - **What readers in this sector measure:** ${v.metrics.join(', ')}.
 - **Terms this sector's buyers use:** ${v.vocabulary.join(', ')}.
-- **Your results:** ${hasNumber ? 'they carry a figure.' : 'they carry no figure. A case study without a number is easy to ignore: ask the customer for the starting value, the end value and the timeframe of one measure.'}
+- **Your results:** ${figureState === 'no-customer' ? "none of them is this customer's own result yet, so there is no figure to lead with: ask the customer for the starting value, the end value and the timeframe of one measure." : hasNumber ? 'they carry a figure.' : 'they carry no figure. A case study without a number is easy to ignore: ask the customer for the starting value, the end value and the timeframe of one measure.'}
 
 ---
 `;

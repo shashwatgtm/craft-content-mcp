@@ -277,7 +277,9 @@ export const RECOGNITION = /\b(?:recogni[sz]ed|recognition|named (?:a |an |as )?
 export const SCALE = /\b(?:\d[\d,.]*\+?\s*(?:m|mn|million|k|thousand|lakh|crore)?\+?\s+(?:businesses|customers|teams|companies|users|brands|enterprises|organi[sz]ations|developers|clients|countries)\b|(?:more than|over|up to)\s+\d[\d,.]*\+?\s*(?:million|thousand|k|m)?\s+\w+\s+(?:use|trust|rely)|\d[\d,.]*\+?\s*(?:million|mn|m|thousand|k)?\+?\s+\w+\s+(?:trust|use)\b)/i;
 const OUTCOME_VERB = /\b(?:reduc\w+|cut|cuts|saved?|saves|improv\w+|increas\w+|grew|grow|boost\w*|achiev\w+|automat\w+|consolidat\w+|digiti[sz]ed|expanded|scaled|deliver\w+|lower\w*|rais\w+|doubl\w+|halv\w+|faster|shorter|from \d[\d.,]*%? to|up from|down from|resulted in)\b/i;
 
-const PROMO_OFFER = /\b(?:financ(?:e|es|ing)|loans?|credit lines?|working capital|[a-z]+ capital to fund|pay later|buy now|apply now|get funded|0% (?:apr|interest)|special offer|limited[- ]time)\b/i;
+// Run 42B round S: a before and after figure with its unit ("from 1.25 Gbps to 5 Gbps") says what changed
+const FROM_TO_FIGURE = /\bfrom [\d.,]+\s*[A-Za-z%]*\s+to [\d.,]+/;
+const PROMO_OFFER =/\b(?:financ(?:e|es|ing)|loans?|credit lines?|working capital|[a-z]+ capital to fund|pay later|buy now|apply now|get funded|0% (?:apr|interest)|special offer|limited[- ]time)\b/i;
 export function parseProof(raw: unknown): ProofItem[] {
   return splitProof(raw).map((item) => {
     const m = LABEL_END.exec(item);
@@ -288,11 +290,14 @@ export function parseProof(raw: unknown): ProofItem[] {
     let kind: ProofKind;
     if (RECOGNITION.test(text) && !/\bcustomer quote\b/.test(l)) kind = 'recognition';
     else if (/quote/.test(l) || isAttributed(text)) kind = 'quote';
-    else if (/title|story|teaser|banner|promo/.test(l) || /^(?:how|why)\b/i.test(text)) kind = 'title';
+    // Run 42B round S: a story summary that states a figure and what changed ("upgraded bandwidth from 1.25 Gbps to 5 Gbps") is a result,
+    // not a title; a news item or launch is the vendor's own announcement, never a customer result
+    else if (/\bnews\b|press release|announcement/.test(l) || /\((?:[^()]*\s)?news item\)\s*$/i.test(text)) kind = 'claim';
+    else if ((/title|story|teaser|banner|promo/.test(l) || /^(?:how|why)\b/i.test(text)) && !(/summary|\bstory\b/.test(l) && figure && (OUTCOME_VERB.test(text) || FROM_TO_FIGURE.test(text)) && !/headline|title|teaser|banner|promo/.test(l))) kind = 'title';
     // Run 42B (round P): a financing or promotional offer with no outcome is never proof of the platform
     else if (PROMO_OFFER.test(text) && !figure && !OUTCOME_VERB.test(text)) kind = 'claim';
     else if (SCALE.test(text) && !OUTCOME_VERB.test(text)) kind = 'scale';
-    else if (/page claim/.test(l) && !OUTCOME_VERB.test(text)) kind = 'claim';
+    else if (/page claim/.test(l) && !OUTCOME_VERB.test(text) && !(figure && FROM_TO_FIGURE.test(text))) kind = 'claim';
     else kind = 'result';
     return { text, label, kind, figure, shown: label ? `${text} (${label})` : text };
   });

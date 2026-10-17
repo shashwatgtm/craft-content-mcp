@@ -1,5 +1,6 @@
 import { lowerFirstIfCommon, cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { q, qs, clipWords, readContext, answerFor, objectionKind, proofFor, sectorNotes, startWords, type ObjectionKind, type Vertical } from './sector.ts';
+import { startsImperative } from './rw-content.ts';
 import { splitList, splitObjections, parseProof, productParts, fixNumbers, endSentence, capFirst, proseJoin, roleOf, shortenClauses, KIND_NOTE, RECOGNITION, type ProofItem } from './draft.ts';
 
 // Text only (run 8): an input phrase used as a whole sentence inside a script ends with a full stop.
@@ -457,7 +458,13 @@ function generateObjectionHandler(
       close: isQuestion ? 'Does that answer it, or is there a part that matters more to you?' : `Would it help if I showed how ${productName || 'we'} ${productName ? 'handles' : 'handle'} that, starting from your own example?`
     }
   };
-  const k = kinds[kind];
+  const k0 = kinds[kind];
+  // Run 42B round S: an objection the sector file knows ends on that sector's own way to settle it, offered to the buyer, so each
+  // script answers its own objection (never one reframe repeated for every objection)
+  const sectorResp = v ? (v.objections.find((o) => o.response === pattern)?.response || '') : '';
+  const settleOffer = sectorResp && startsImperative(sectorResp) && sectorResp.length <= 220 && !/[.;:]\s+\S/.test(sectorResp.replace(/\.$/, ''))
+    ? `Would it help to ${sectorResp.charAt(0).toLowerCase()}${sectorResp.slice(1).replace(/[.\s]+$/, '')}?` : '';
+  const k = settleOffer ? { ...k0, close: kind === 'other' && productName ? `${settleOffer} I can show how ${productName} handles that, starting from your own example.` : settleOffer } : k0;
   const factSentence = factText.length ? `From what we offer: ${factText.join('; ')}.` : '';
   const valueSentence = valueMatch && valueMatch !== proof ? `Our answer: ${asSentence(valueMatch.charAt(0).toUpperCase() + valueMatch.slice(1))}` : '';
   const fullScript = `I hear you: ${qs(objection)}. ${k.ack} ${k.reframe} ${factSentence} ${valueSentence} ${proofSentence} ${k.close}`.replace(/\s+/g, ' ').trim();

@@ -12,6 +12,7 @@ import {
 
 import { tools } from "./tools.js";
 import { neutraliseDeep } from "./echo-safe.js";
+import { reshapeLists } from "./list-shape.js";
 import { generateCaseStudy } from "./case-study-generator.js";
 import { generateNewsletter } from "./newsletter-builder.js";
 import { generateWebinarScript } from "./webinar-script.js";
@@ -167,7 +168,7 @@ export function createServer(): Server {
     // Run 20 (D086): the one place where a tools/call reaches a tool, on both the hosted path (netlify/functions/mcp.mjs and
     // api.mjs) and the stdio path (src/index.ts), because all use this server. Markup in what the user typed is made inert once,
     // here; the words stay (src/echo-safe.ts).
-    const args = neutraliseDeep(request.params.arguments);
+    const args = reshapeLists(neutraliseDeep(request.params.arguments));
 
     const problem = checkRequiredInputs(name, args as Record<string, unknown> | undefined);
     if (problem) {

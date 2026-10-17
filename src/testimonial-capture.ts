@@ -45,7 +45,7 @@ export function generateTestimonialCapture(args: {
   const greeting = first ? `Hi ${first},` : 'Hello,';
   const person = isGenericName(name) ? 'the contact' : name;
 
-  const storyBlock = items.length ? `${items.map((p, i) => `${i + 1}. ${endSentence(capFirst(clipEcho(p.shown, 300)))} *(${KIND_NOTE[p.kind]}${own.includes(p) ? `; used as ${company}'s result` : genericCo ? '; company name not given, so not put to this contact' : '; not put to this contact'})*`).join('\n')}` : '';
+  const storyBlock = items.length ? `${items.map((p, i) => `${i + 1}. ${endSentence(capFirst(clipEcho(p.shown, 300)))} *(${KIND_NOTE[p.kind]}${own.includes(p) ? `; used as ${company}'s result` : genericCo ? "; your contact's company is not named, so this is not put to them as their own" : '; not put to this contact'})*`).join('\n')}` : '';
 
   let output = `# Testimonial Capture Kit
 ## ${isGenericName(name) ? (role || 'Contact') : name} at ${company}

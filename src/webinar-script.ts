@@ -1,7 +1,7 @@
 import { lowerFirstIfCommon, cap, aOrAn } from './utils.js';
 import { q, readContext, startWords, audienceLine, isClause, type Vertical, type BusinessModel } from './sector.ts';
 import { splitList, bestQuestion, unpackTopic, fixNumbers, endSentence, capFirst, proseJoin, roleOf, clipAtWord, productParts, softenClaims } from './draft.ts';
-import { cleanSectorLine, readPoints, groupPhrases, sentenceOf, withLabel, shorten, waysToSettle, settleBare, quotedEnd, instructionNote, sharpenLine, stripGuardQuotes, lowerFirstSafe, audienceShort, shapeOf, startsImperative, companyFrom, toReader as toYou, PARTICIPLE_START, nk, type Pt } from './rw-content.ts';
+import { looksClause, cleanSectorLine, readPoints, groupPhrases, sentenceOf, withLabel, shorten, waysToSettle, settleBare, quotedEnd, instructionNote, sharpenLine, stripGuardQuotes, lowerFirstSafe, audienceShort, shapeOf, startsImperative, companyFrom, toReader as toYou, PARTICIPLE_START, nk, type Pt } from './rw-content.ts';
 
 // Run 22 (rewrite): the script is written to be read aloud. The takeaways are read for what they are and said in whole sentences, the
 // problem the topic names is said as the problem, and the sector file adds the measures, the questions for the chat and the objections.
@@ -419,7 +419,8 @@ function tk(p0: Pt, w: W, after = false): string {
       if (p.role === 'result' || p.role === 'quote' || p.role === 'recognition' || p.role === 'scale' || p.role === 'story') return sentenceOf(p, w.who);
       if (claim) return endSentence(`${after ? 'We covered' : 'We will cover'} ${lower(t)}`);
       if (p.role === 'outcome') return endSentence(`${after ? 'The outcome to expect' : 'You will hear what to expect'}: ${lower(t)}`);
-      return endSentence(`${after ? 'We covered' : 'You will see'} ${lower(t)}`);
+      // Run 42B round S: a phrase is what the session looks at, said whole (never "You will see Domain")
+      return endSentence(after ? `We looked at ${w.who ? `what ${w.who} brings: ` : ''}${lower(t)}` : `We will look at ${w.who ? `what ${w.who} brings: ` : ''}${lower(t)}`);
   }
 }
 const NUM = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen'];
@@ -489,15 +490,36 @@ function cutPhrase(text: string, max: number): string {
 }
 // A takeaway named by what it is about, for the agenda, the summary and the pointer to the next part: never by its number.
 function labelOf(p: Pt, w: W): string {
+  // Run 42B round S: a label is a whole phrase. A takeaway too long to name whole is named by what it is (the results on record, how
+  // it works), never by its first words cut off ("the point that less administrative work", "briefs and coaches before").
   const sh = shapeOf(p);
+  const whole = p.text.replace(/^["“]|["”]$/g, '').replace(/\s+/g, ' ').trim().replace(/[.!?:;,]+$/, '');
+  // the words before the first comma, when they stand as a phrase of their own (three to ten words, not ending on a joining word)
+  const head = whole.split(/,\s+|:\s+/)[0].trim();
+  const headOk = head.length < whole.length && head.split(/\s+/).length >= 3 && head.split(/\s+/).length <= 10 && !JOINER_END.test(head) && !/\b(?:on|from) the page$|^customer headlines?\b/i.test(head);
+  const byRole = (): string => {
+    switch (p.role) {
+      case 'result': case 'scale': case 'story': return 'the results on record';
+      case 'quote': return 'what customers say';
+      case 'recognition': return 'the recognition on record';
+      case 'outcome': return 'what changes for the team';
+      case 'problem': return 'where the problem starts';
+      default: return sh === 'imperative' ? 'the first steps to take' : w.who ? `what ${w.who} brings` : 'how the approach works';
+    }
+  };
   if (sh === 'imperative') {
     const full = howTo(p.text).replace(/,\s+not\s+[^,]+$/i, '');
-    return `how to ${full.length <= 80 ? full : cutPhrase(full, 80)}`;
+    if (full.length <= 80) return `how to ${full}`;
+    const h = howTo(head);
+    return headOk && startsImperative(head) ? `how to ${h}` : byRole();
   }
-  if (sh === 'clause') return `the point that ${lower(cutPhrase(p.text, 80))}`;
-  const body = cutPhrase(p.text, 70);
+  if (sh === 'clause') return whole.length <= 80 && looksClause(whole) ? `the point that ${lower(whole)}` : headOk && looksClause(head) ? `the point that ${lower(head)}` : byRole();
+  if (whole.length > 70 && !headOk) return byRole();
+  const body = whole.length > 70 ? head : whole;
+  // a phrase that opens on a verb ("connects the banks") is said as what the product does
+  if (/^[a-z]+s\s+(?:the|a|an|every|all|one|your|their|its)\b/.test(body) && !/^(?:this|its|has|is|was)\b/.test(body)) return `how ${w.who || 'it'} ${body}`;
   switch (p.role) {
-    case 'result': return /^(?:[$\u20ac\u00a3]|\d|up to|more than|over|about|around|nearly)/i.test(body) ? `the ${body} result` : `the result on ${lower(body)}`;
+    case 'result': return /^(?:[$\u20ac\u00a3]|\d|up to|more than|over|about|around|nearly)/i.test(body) ? `the ${body} result` : `the result "${body}"`;
     case 'quote': return p.text.length <= 50 ? `the quote "${body}"` : 'the customer quote';
     case 'recognition': return `the recognition "${body}"`;
     case 'scale': return `the scale figure "${body}"`;
@@ -523,11 +545,18 @@ function doOneLine(w: W): string {
 const agendaLine = (w: W): string => {
   if (!w.takeaways.length) return '';
   const blocks = 3;
-  const out: string[] = [];
+  const parts: string[] = [];
   for (let b = 0; b < blocks; b++) {
     const mine = blockTakeaways(w.takeaways, b, blocks);
     if (!mine.length) continue;
-    out.push(`Part ${NUM[out.length]} covers ${proseJoin(mine.map((p) => labelOf(p, w)))}.`);
+    parts.push(proseJoin([...new Set(mine.map((p) => labelOf(p, w)))]));
+  }
+  // parts that carry the same label are said once ("Parts one and two cover the results on record"), never the same line twice
+  const out: string[] = [];
+  for (let i = 0; i < parts.length;) {
+    let j = i; while (j + 1 < parts.length && parts[j + 1] === parts[i]) j++;
+    out.push(j === i ? `Part ${NUM[i]} covers ${parts[i]}.` : `Parts ${proseJoin(parts.slice(i, j + 1).map((_, k) => NUM[i + k]))} cover ${parts[i]}.`);
+    i = j + 1;
   }
   return `Here is how we will use the time. ${out.join(' ')}`;
 };
@@ -576,7 +605,7 @@ function generateScriptSection(section: { name: string; duration: number; purpos
         `Put your questions in the chat at any time; we have set time aside for them near the end.${w.includePolls ? ' We will run polls along the way, so keep the poll window open.' : ''}`
       ]);
     case 'Speaker Introduction':
-      return seg(section, 'Speaker slide', [w.haveSpeakers ? `With us today: ${speakersSaid(w)}.` : 'I am your host for this session.']);
+      return seg(section, 'Speaker slide', [w.haveSpeakers ? `With us today: ${speakersSaid(w)}.` : `I am your host for this session${w.who ? `, from ${w.who}` : ''}. Over the next ${w.minutes} minutes we will look at the problem, the evidence on record and what to do first. (Host: add your name and one line on the work you have done in this area.)`]);
     case 'Agenda & Learning Objectives':
       return seg(section, 'Agenda slide', [
         t.length ? agendaLine(w) : 'We will cover this topic.',
@@ -592,7 +621,7 @@ function generateScriptSection(section: { name: string; duration: number; purpos
     case 'Main Content Block 1': case 'Main Content Block 2': case 'Main Content Block 3':
       return blockScript(section, w, mine, blockIndex, blocks);
     case 'Summary & Key Takeaways':
-      return seg(section, 'Takeaways slide', [t.length ? `To sum up, you have covered ${proseJoin(t.map((p) => labelOf(p, w)))}.` : 'To sum up: that is this topic.']);
+      return seg(section, 'Takeaways slide', [t.length ? `To sum up, you have covered ${proseJoin([...new Set(t.map((p) => labelOf(p, w)))])}.` : 'To sum up: that is this topic.']);
     case 'Q&A':
       return seg(section, 'Q&A slide', [
         'Now your questions. I will read each one aloud from the chat and answer it.',
@@ -771,7 +800,7 @@ function followUps(w: W): string {
 
 **Subject:** Thank you for joining${head === "today's session" ? " today's session" : `: ${head}`}
 
-Thank you for joining.${t.length ? `\n\nThe takeaways, in short:\n${t.slice(0, 5).map((x, i) => `${i + 1}. ${capFirst(labelOf(x, w))}${x.label ? ` (${x.label})` : ''}`).join('\n')}` : ''}
+Thank you for joining.${t.length ? `\n\nThe takeaways, in short:\n${[...new Set(t.slice(0, 5).map((x) => `${capFirst(labelOf(x, w))}${x.label ? ` (${x.label})` : ''}`))].map((s, i) => `${i + 1}. ${s}`).join('\n')}` : ''}
 
 Questions? Reply to this email.
 

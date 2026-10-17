@@ -113,11 +113,13 @@ export function generateNewsletter(args: {
     const used = new Set<string>(hookFirst ? [hookFirst] : []);
     const n = segment === 'executives' ? 1 : 2;
     const asked: string[] = [];
-    for (let i = 0; i < n; i++) { const q = bestQuestion(`${label} ${pts.map((p) => p.text).join(' ')}`, free, used); if (q) asked.push(toYou(q)); }
+    // each question is asked once: when the sector has no second question left, the issue asks one (never the same one twice)
+    for (let i = 0; i < n; i++) { if (!free.some((x) => !used.has(x))) break; const q = bestQuestion(`${label} ${pts.map((p) => p.text).join(' ')}`, free, used); if (q && !asked.includes(toYou(q))) asked.push(toYou(q)); }
+    if (!asked.length && hookFirst) asked.push(toYou(hookFirst));
     const ms = v.metrics.filter((m) => !usedMetric.has(m)).slice(0, 2);
     const lead = asked.length === 1 ? 'Put this question to your own team' : 'Put these two questions to your own team';
     const qs = asked.length === 1 ? `"${asked[0]}"` : `First, "${asked[0]}" Second, "${asked[1]}"`;
-    const body = asked.length ? [`${lead} this week. ${qs}`, ms.length ? `Whatever the answers, write down where you stand today on ${proseJoin(ms)}, so that the next change has a number to beat.` : ''].filter(Boolean).join(' ') : ms.length ? `Put this to your own team this week: where do you stand today on ${proseJoin(ms)}, and who looks at those numbers? Write the answers down, so that the next change has a number to beat.` : '';
+    const body = asked.length ? [`${lead} this week${asked.length === 1 ? ':' : '.'} ${qs}`, ms.length ? `Whatever the answers, write down where you stand today on ${proseJoin(ms)}, so that the next change has a number to beat.` : ''].filter(Boolean).join(' ') : ms.length ? `Put this to your own team this week: where do you stand today on ${proseJoin(ms)}, and who looks at those numbers? Write the answers down, so that the next change has a number to beat.` : '';
     if (body) sections.push({ heading: nm.check, body });
   }
   if (!v && given && (hows.length || outcomes.length || evidence.length)) {
@@ -188,7 +190,7 @@ export function generateNewsletter(args: {
   const askedInDraft = new Set(sections.flatMap((x) => x.body.split('"')));
   const hookQuestion = v ? toYou(v.discovery.filter((d) => !/\bclient'?s?\b|current provider|signs off each|governed|\bme\b|\bour\b|\bwe\b/i.test(d) && (rolesFit || !ENTERPRISE.test(d)))[0] || '') : '';
   const hooks: { name: string; text: string }[] = [];
-  if (hookQuestion) hooks.push({ name: 'Question', text: hookQuestion });
+  if (hookQuestion && !askedInDraft.has(hookQuestion)) hooks.push({ name: 'Question', text: hookQuestion });
   const fig = figures.find((p) => p.label && isStatistic(p.text)) || figures.find((p) => isStatistic(p.text));
   if (fig) hooks.push({ name: 'Statistic', text: `Open with the figure from the evidence section, "${fig.text}"${fig.label ? ` (${fig.label})` : ''}, and state the problem second.${fig.label ? '' : ' Its source is not given yet, so add it before you use the figure.'}` });
 

@@ -1,4 +1,5 @@
 import { analyzeContent, generateImprovedVersion, editSentence, toneCheck, annotateText, bodyOf, countWords, avgWordsPerSentence, calculateReadability, ContentAnalysis, SUGGESTION_FOOTER, clipEcho, ASK } from './utils.js';
+import { lowerFirstIfCommon } from './utils.js';
 import { readContext, audienceLine, sentencesOf } from './sector.ts';
 import { shortenClauses, clipAtWord, endSentence, fixNumbers, FIGURE } from './draft.ts';
 
@@ -37,10 +38,14 @@ export function generateContentImprover(args: {
   const avgSentenceLength = avgWordsPerSentence(content);
 
   // Generate improved version: real edits, each one listed; or none, said plainly
-  const improved = generateImprovedVersion(content, analysis);
+  // Run 42B round S: grammar and paste slips (a capital letter mid-sentence, a whole sentence pasted after "deal with", stray full
+  // stops) are listed apart from the score, fixed in the improved and the shorter versions, and each fix is shown as an edit.
+  const slipRead = fixSlips(content);
+  const improved0 = generateImprovedVersion(slipRead.text, analysis);
+  const improved = { text: improved0.text, edits: [...slipRead.slips.filter((x) => x.after !== null).map((x) => ({ before: x.before, after: x.after as string })), ...improved0.edits] };
   const tone = toneCheck(content, args.tone_preference);
   const emailLike = contentType === 'sales_email' || contentType === 'email';
-  const shorter = emailLike && (wordCount > 120 || analysis.findings.some((f) => f.rule === 'subject-length' || f.rule === 'sentence-length' || f.rule === 'run-on')) ? shorterEmail(content) : null;
+  const shorter = emailLike && (wordCount > 120 || analysis.findings.some((f) => f.rule === 'subject-length' || f.rule === 'sentence-length' || f.rule === 'run-on')) ? shorterEmail(slipRead.text) : null;
   const ctx = readContext(undefined, { seller: [sellerWords(content, contentType)], context: [content, args.goal], role: [args.audience], buyer: [args.audience] }, args.your_sector);
 
   // Create specific recommendations based on analysis: the findings that cost the most points first
@@ -105,7 +110,10 @@ ${analysis.engagement.issues.length > 0
 ${analysis.goalAlignment.issues.length > 0
   ? analysis.goalAlignment.issues.map(i => `- ${i}`).join('\n')
   : '- No goal alignment issues found by these checks'}
-
+${slipRead.slips.length ? `
+### Grammar and Paste Slips (not scored; fixed in the versions below where a safe fix exists)
+${slipRead.slips.map((x) => `- "${x.before}": ${x.note}.${x.after ? ` Fixed: "${x.after}"` : ''}`).join('\n')}
+` : ''}
 ---
 
 ## Priority Fixes (Do These First)
@@ -127,7 +135,7 @@ ${improved.edits.length > 0 ? `
 ${improved.edits.slice(0, 20).map((e, i) => `${i + 1}. Before: "${clipEcho(e.before, 200)}"
    After: "${clipEcho(e.after, 200)}"`).join('\n')}${improved.edits.length > 20 ? `\n\n*The first 20 of ${improved.edits.length} edits are listed; the improved version below has all of them.*` : ''}
 
-*Each edit replaces a buzzword with a plainer word, or removes a claim that needs proof (add it back only with proof), or splits a very long sentence. Nothing else in your text was changed.*
+*Each edit replaces a buzzword with a plainer word, or removes a claim that needs proof (add it back only with proof), or splits a very long sentence, or fixes a grammar or paste slip listed above. Nothing else in your text was changed.*
 
 ---
 ` : ''}
@@ -227,6 +235,47 @@ function suggestOpening(content: string): string {
     : `Lead with the proof you already have: "${clean}".`;
 }
 
+// Run 42B round S: slips a reader sees at once, read line by line. Each is quoted with the fix made (or, where no safe fix exists,
+// the fix to make). Linear regular expressions only; no word is invented: a fix changes a capital letter, splits a sentence pasted
+// after "deal with" into "find that" plus the sentence, or removes a doubled full stop.
+type Slip = { before: string; after: string | null; note: string };
+// a customer quote with its speaker ("Name, Role, Company: words"), kept whole as the proof of a shorter email when no figure is given
+const QUOTED_PROOF = /^[A-Z][^:]{3,90}:\s+\S/;
+const SLIP_VERBS = '(?:is|are|was|were|use|uses|want|wants|need|needs|juggle|juggles|lack|lacks|have|has|sit|sits|run|runs|get|gets|ship|ships|evolve|evolve|leave|leaves|lose|loses|struggle|struggles|spend|spends|face|faces|make|makes|can|cannot|must|should|will|rely|relies|grow|grows|take|takes|depend|depends|move|moves|fail|fails|break|breaks|cost|costs|stay|stays)';
+const PASTED_CLAUSE = new RegExp(`\\b(deal|deals|dealing|struggle|struggles|struggling) with ((?:[A-Z][a-z]+|[A-Z]{2,5}\\s+[a-z]+)(?:\\s+[A-Za-z][\\w'-]*,?){0,8}?\\s+${SLIP_VERBS}\\b)`, 'g');
+export function fixSlips(content: string): { text: string; slips: Slip[] } {
+  const slips: Slip[] = [];
+  const lines = content.split('\n').map((line) => {
+    if (!line.trim()) return line;
+    let out = line;
+    // each slip is shown by the few words around it, not the whole line
+    const words = (s: string, n: number) => { const w = s.split(/\s+/); return w.length > n ? `${w.slice(0, n).join(' ')} ...` : s; };
+    // a capital article after "is" ("Snyk is An AI-native platform")
+    out = out.replace(/\b(is|are|was|were|as) (A|An|The) ([A-Za-z][\w-]*)/g, (m, v: string, art: string, nx: string) => {
+      const fixed = `${v} ${art.toLowerCase()} ${nx}`;
+      slips.push({ before: m, after: fixed, note: 'a capital letter in the middle of a sentence' });
+      return fixed;
+    });
+    // a whole sentence pasted after "deal with" ("Teams often deal with Customers want ..."): one sentence again, its first word in small letters
+    if (!/^\s*subject:/i.test(out)) out = out.replace(PASTED_CLAUSE, (m, verb: string, clause: string) => {
+      const fixed = `${/^deal/i.test(verb) ? verb.replace(/^deal(s|ing)?/i, (x, e) => (e === "ing" ? "finding" : e === "s" ? "finds" : "find")) : verb.replace(/^struggl(e|es|ing)/i, (x, e) => (e === "ing" ? "finding" : e === "es" ? "finds" : "find"))} that ${lowerFirstIfCommon(clause)}`;
+      slips.push({ before: words(m, 9), after: words(fixed, 11), note: 'a whole sentence pasted after "deal with", so the line does not read' });
+      return fixed;
+    });
+    // doubled or stray full stops ("deployments., Shailen", "well..", "claim).; Among")
+    out = out.replace(/(\S{0,24})(?:([^.\s])\.\.(?!\.)|\.([,;])(\s))/g, (m, pre: string, ch: string | undefined, punct: string | undefined, sp: string | undefined) => {
+      const fixed = ch !== undefined ? `${pre}${ch}.` : `${pre}${punct}${sp}`;
+      slips.push({ before: m.trim(), after: fixed.trim(), note: 'a doubled or stray full stop' });
+      return fixed;
+    });
+    // a name said twice ("AppTrana is AppTrana"): no safe fix, so the fix to make is named
+    const twice = /\b([A-Z][\w-]+(?: [A-Z][\w-]+){0,3}) is \1\b/.exec(out);
+    if (twice) slips.push({ before: clipEcho(twice[0], 120), after: null, note: `the name is said twice; say what ${twice[1]} is instead` });
+    return out;
+  });
+  return { text: lines.join('\n'), slips };
+}
+
 // A shorter email cut from the user's own text: a subject line of about eight words, the opening problem, the first thing the
 // product does, the one proof item that holds a figure and says what changed, and the ask. Nothing is added or reworded.
 function shorterEmail(content: string): { text: string; left: string[] } | null {
@@ -243,7 +292,7 @@ function shorterEmail(content: string): { text: string; left: string[] } | null 
   const pieces = rest.flatMap((s) => s.split(/;\s+/)).map((x) => x.trim());
   const outcome = /\b(?:reduc\w+|cut|cuts|saved?|saves|improv\w+|increas\w+|grew|grow|boost\w*|achiev\w+|automat\w+|consolidat\w+|expanded|faster|resolved|fell|rose|from \d[\d.,]*%? to)\b/i;
   const score = (x: string) => (FIGURE.test(x) ? 2 : -9) + (outcome.test(x) ? 1 : -9) + (/title\)\s*$/i.test(x) ? -9 : 0) + (/from \d[\d.,]*%? to|\d%|[$₹€£]\s?\d|lakhs?/i.test(x) ? 3 : 0) + (/customer|quote|case study/i.test(x) ? 2 : 0) + (/^(?:recognition|named|leader|featured)\b/i.test(x) ? -9 : 0);
-  const proof = pieces.filter((x) => score(x) > 0).sort((a, b) => score(b) - score(a))[0];
+  const proof = pieces.filter((x) => score(x) > 0).sort((a, b) => score(b) - score(a))[0] || pieces.find((x) => QUOTED_PROOF.test(x) && x.length <= 260);
   const opening = rest[0];
   const product = rest.find((s, i) => i > 0 && s !== proof && !(proof && s.includes(proof)));
   const kept: string[] = [];

@@ -44,7 +44,8 @@ const SYNONYMS: [string, RegExp][] = [
   ['#setup', /set ?up|implement|go[- ]live|live in|onboard|how long|few days|few weeks|in weeks/i],
   ['#security', /secur|complian|certif|iso ?\d|soc ?\d|pci|cert-in|audit|privacy|encrypt/i],
   ['#price', /\bpric|\bcost|cheap|budget|expensive/i],
-  ['#uptime', /uptime|availab|\bsla\b|outage/i]
+  ['#uptime', /uptime|availab|\bsla\b|outage/i],
+  ['#onesystem', /one (?:platform|system|login|network|place|view)|single (?:platform|system|codebase|view|source)|unified|all[- ]in[- ]one|multi-tenant|cloud-based|every property|all properties|across (?:sites|properties|teams)/i]
 ];
 function wordSet(s: string): Set<string> {
   const out = new Set((s.toLowerCase().match(/[a-z0-9]{4,}/g) || []).filter((w) => !GENERIC.has(w) && !SHORT_STOP.has(w)).map(stem));
@@ -114,7 +115,7 @@ export function generateSalesEnablement(args: {
   // Generate objection handlers: each objection is read on its own, answered with the sector's pattern and the proof point that fits it.
   const usedProof = new Set<string>();
   const usedValue = new Set<string>();
-  const objectionHandlers = objections.map((obj) => generateObjectionHandler(obj, valueProps, usableTexts, pp.facts, priceContext, v, usedProof, usedValue));
+  const objectionHandlers = objections.map((obj) => generateObjectionHandler(obj, valueProps, usableTexts, pp.facts, priceContext, v, usedProof, usedValue, pp.name, roleShown));
   const competitorHandlers = competitorObjections.map((obj, i) => generateCompetitorHandler(obj, usableTexts, pp.facts, v, i));
 
   // A value proposition with the proof that bears on it (by shared words, then by kind) and the sector measure it ties to.
@@ -365,7 +366,9 @@ function generateObjectionHandler(
   priceContext: string,
   v: Vertical | null,
   usedProof: Set<string>,
-  usedValue: Set<string>
+  usedValue: Set<string>,
+  productName = '',
+  persona = ''
 ): { label: string; acknowledge: string; reframe: string; proof: string; facts: string; pattern: string; bridge: string; fullScript: string } {
   const kind = objectionKind(objection);
   const isQuestion = /\?\s*$/.test(objection.trim()) || /^(?:how|what|does|do|is|are|can|will|why|which|who|when)\b/i.test(objection.trim());
@@ -376,7 +379,8 @@ function generateObjectionHandler(
   const valueMatch = relevant(objection, valueProps)[0] || proofFor(kind, valueProps, usedValue);
   if (valueMatch && valueMatch !== proof) usedValue.add(valueMatch);
   const proofSentence = proof ? asSentence(proof) : '';
-  const factText = relevant(objection, facts).slice(0, 3);
+  // a fact of one word ("accounting") says nothing to the buyer: only facts of two words or more are quoted
+  const factText = relevant(objection, facts).filter((f) => f.trim().split(/\s+/).length >= 2).slice(0, 3);
   const differs = /\bdiffer|\bvs\.?\b|compared? (?:to|with)|better than/i.test(objection);
   const pattern = differs && kind === 'other' ? 'Answer on the one point where the two differ, using the facts from your product description above, then ask what the other option covers for this buyer today.' : kind === 'other' && isQuestion && !(v && v.objections.some((o) => relevant(objection, [o.objection]).length > 0))
     ? 'Answer the question directly in one or two sentences, using the facts from your product description above; then ask what is behind it for this buyer.'
@@ -430,8 +434,9 @@ function generateObjectionHandler(
     },
     other: {
       ack: isQuestion ? 'Good question.' : 'Thank you for saying so directly.',
-      reframe: isQuestion ? 'Let me answer it first, and then ask what is behind it for you.' : 'Help me understand what is behind that, and what would change your mind?',
-      close: isQuestion ? 'Does that answer it, or is there a part that matters more to you?' : 'What would be most helpful to show you next?'
+      // Run 42 round 2: the question and the next step use the objection's own words, the persona and the product the user gave
+      reframe: isQuestion ? 'Let me answer it first, and then ask what is behind it for you.' : `Which part of that matters most${persona ? ` to a ${persona}` : ' to you'}, and what would you need to see to be comfortable?`,
+      close: isQuestion ? 'Does that answer it, or is there a part that matters more to you?' : `Would it help if I showed how ${productName || 'we'} ${productName ? 'handles' : 'handle'} that, starting from your own example?`
     }
   };
   const k = kinds[kind];

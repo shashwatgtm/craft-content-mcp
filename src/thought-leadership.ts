@@ -89,7 +89,15 @@ export function generateThoughtLeadership(args: {
   const allClaims = [...new Set([...claimsToSource([yourTake, proofRaw]), ...removedClaims])];
   const claims = allClaims.filter((c) => !allClaims.includes(`the ${c}`));
   const readerNoun = readerPhrase(targetReader);
-  const topicLabel = shortTopic(topic);
+  // Run 42B round S: a topic typed as the company's own description ("a leading developer of ...") is not a headline subject; the headline
+  // names the first part of the take instead (or the readers), and an unsourced claim word in the topic is never in a headline
+  const topicLabel0 = cleanClaims(shortTopic(topic)).text.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+  const firstPart = parts[0] ? shortTopic(parts[0]).replace(/\s*\([^)]*\)/g, '').replace(/[.]$/, '') : '';
+  const readerHead = readerNoun.replace(/\s*\([^)]*\)/g, '').split(/,\s+|:\s+|\s+and\s+/)[0];
+  const claimInTopic = claims.some((c) => topicLabel0.toLowerCase().includes(c.toLowerCase()));
+  const topicLabel = /^(?:a|an)\s/i.test(topicLabel0) || !topicLabel0 || claimInTopic
+    ? (firstPart && firstPart.length <= 70 && !/^(?:a|an)\s/i.test(firstPart) && !VERB_PHRASE.test(lowerFirst(firstPart).toLowerCase()) ? firstPart : readerHead ? `Work With ${readerHead}` : topicLabel0)
+    : topicLabel0;
   const takeText = [...parts, ...evidence.map((e) => e.text)].join(' ');
 
   const conflicts = items.filter((i) => { const pc = [...new Set((i.text.match(/\d[\d.,]*\s?%/g) || []).map((x) => x.replace(/\s/g, '')))]; return pc.length >= 2 && (/\bon the [^%]{0,40}\b(?:page|card)\b/i.test(i.text) || /\b(?:vs\.?|versus)\b/i.test(i.text)); });
@@ -104,7 +112,7 @@ export function generateThoughtLeadership(args: {
   const arts: { head: Angle; text: string; lead: string; objection: string; leadItem?: ProofItem }[] = [];
   const heads = Array.from({ length: numArticles }, (_, i) => getArticleAngle(i, articleType, topicLabel, evidence.length + stories.length > 0));
   for (let i = 0; i < numArticles; i++) {
-    const a: Art = { index: i, total: numArticles, type: articleType, topic: topicLabel, parts, readerNoun, v, evidence, stories, mark, count, suggested, heads, askedQuestions, takeText, view, metricsSeries, listedParts, testUsed, conflicts };
+    const a: Art = { index: i, total: numArticles, type: articleType, topic: topicLabel, parts, readerNoun, v, evidence, stories, mark, count, suggested, heads, askedQuestions, takeText, view, metricsSeries, listedParts, testUsed, conflicts, brand };
     arts.push(buildArticle(a, authorBackground, targetReader, credibility));
   }
 
@@ -351,7 +359,7 @@ interface Art {
   index: number; total: number; type: string; topic: string; parts: string[]; readerNoun: string; v: Vertical | null;
   evidence: ProofItem[]; stories: ProofItem[]; mark: (p: ProofItem, article: number) => void; count: (p: ProofItem) => number;
   suggested: boolean; heads: Angle[]; askedQuestions: Set<string>; takeText: string; view: string;
-  metricsSeries: Set<string>; listedParts: Map<string, number>; testUsed: Set<string>; conflicts: ProofItem[];
+  metricsSeries: Set<string>; listedParts: Map<string, number>; testUsed: Set<string>; conflicts: ProofItem[]; brand?: string;
 }
 
 const lowerFirst = (s: string) => lowerFirstSafe(s);
@@ -408,22 +416,31 @@ function componentItems(part: string): string[] {
   if (items.some((x) => /\b(?:is|are|was|were|has|have|can|will|would|must|should)\b/i.test(x))) return [];
   return items;
 }
+// a point typed as what the product does ("connects the banks ...") is said with its subject, so it reads as a claim
+const VERB_PHRASE = /^[a-z]+s\s+(?:the|a|an|every|all|one|your|their|its|each|any|more|less|data|teams?|work)\b/;
+function asClaim(t: string, brand?: string): string { return VERB_PHRASE.test(t) && !/^(?:this|its|has|is|was)\b/.test(t) ? `${brand || 'the approach'} ${t}` : t; }
+const frameworkName = (n: number): string => `the ${['', 'one', 'two', 'three', 'four', 'five'][n] || n}-step position-to-measure framework`;
 // The steps of the framework, each named for what the user's own point is: the position, its other parts, the proof, the measure.
 function frameworkSteps(a: Art, v: Vertical | null): { name: string; text: string }[] {
   const steps: { name: string; text: string }[] = [];
   const add = (name: string, rest: string) => steps.push({ name: lowerFirst(name), text: `**${name}:** ${rest}` });
   const one = (t: string, max = 170) => lowerFirst(clipEcho(t, max).replace(/[.!?]+$/, ''));
   add('Start from the position', `${one(a.parts[0])}.`);
-  if (a.parts[1]) add('Add the next part', `${one(a.parts[1])}.`);
+  // Run 42B round S: five steps, each from the user's own points or the sector file: the position, the parts that carry it, the proof,
+  // the objection it has to clear and the measure it is read on
+  const rest = a.parts.slice(1);
+  if (rest.length) add('Name the parts that carry it', `${proseJoin(rest.slice(0, 3).map((p) => one(p, ECHO)))}.`);
   const proof = a.evidence.find((e) => e.kind !== 'quote') || a.evidence[0] || a.stories[0];
   if (proof) {
     if (proof.kind === 'quote') { const w = quoteParts(proof).words.replace(/[.]$/, ''); add('Check it against what a customer says', `"${w}."${proof.label ? ` (${proof.label})` : ''}`); }
     else add('Check it against the proof on record', `${one(proof.shown, 200)}.`);
   }
+  const o = v && v.objections.length ? v.objections[0] : null;
+  if (o) add('Clear the objection', `expect to hear ${quotedEnd(o.objection)} Agree the test that would answer it before any pilot starts.`);
   const m = rankMetrics(v, a.takeText).find((x) => x.ok)?.m || '';
   if (m) add(`Read it on ${toYou(m)}`, 'for one live piece of work, before and after the change.');
   else add('Write down where one live piece of work stands today', 'so that the change has a number to beat.');
-  return steps.slice(0, 4);
+  return steps.slice(0, 5);
 }
 function buildArticle(a: Art, authorBackground: string, targetReader: string, credibility: ProofItem[]): { head: Angle; text: string; lead: string; objection: string; leadItem?: ProofItem } {
   const head = a.heads[a.index];
@@ -530,14 +547,79 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
     const steps = frameworkSteps(a, v);
     if (steps.length >= 2) {
       const mine = (a.index % steps.length) + 1;
+      const fname = frameworkName(steps.length);
       const body = a.index === 0
-        ? `${steps.map((s, i) => `${i + 1}. ${s.text}`).join('\n')}\n\nThe articles that follow take the steps one at a time.`
-        : `This article works on step ${mine} of ${steps.length} in the framework from the first article: "${steps[mine - 1].name}".`;
+        ? `${steps.map((s, i) => `${i + 1}. ${s.text}`).join('\n')}\n\nCall it ${fname}: it starts from the position and ends on a number, and every step in between uses only what is already on record. The articles that follow take the steps one at a time.`
+        : `This article works on step ${mine} of ${steps.length} in ${fname} from the first article: "${steps[mine - 1].name}".${a.index === 1 ? " The sections below apply that step to this part of the position." : ""}`;
       sections.splice(Math.min(1, sections.length), 0, `## ${a.index === 0 ? `The framework in ${steps.length} steps` : `Step ${mine} of the framework`}
 
 ${body}`);
     }
   }
+
+  // Run 42B round S: each article argues its point in full. The argument, the way the parts fit, what the evidence does and does not
+  // show, and a close are written from the user's own points and the sector file only; where no evidence serves this article, one
+  // plain slot says what to add (at most three in the series). No figure, customer, quote or claim is added.
+  const lowT = asClaim(lowerFirst(clipEcho(thesis, ECHO)).replace(/[.]$/, ''), a.brand);
+  const ms = v ? rankMetrics(v, a.takeText).filter((x) => x.ok).map((x) => toYou(x.m)) : [];
+  const argFrames = [
+    `The argument of this piece rests on one point: ${lowT}. ${ms.length ? `For ${a.readerNoun}, an idea like this is only worth the time if it shows up in the numbers the work is judged on, ${proseJoin(ms.slice(0, 2))}, so that is where it is tested here.` : `It is tested here the way ${a.readerNoun} would test it: against the evidence on record and against the pushback it will meet.`} The sections below take it in order: how the parts fit, what the evidence shows, the objection it has to survive and a way to try it on your own work.`,
+    `This piece makes one claim, about ${lowT.length <= 160 ? lowT : 'the part of the position named above'}. ${ms.length ? `It stands or falls on ${proseJoin(ms.slice(0, 2))}, the measures ${a.readerNoun} already report on.` : `It stands or falls on whether ${a.readerNoun} can check it on their own work.`} What follows sets the claim next to the rest of the position, the proof and the strongest objection, and ends with a test you can run.`,
+    `Here the claim is narrower than in the pieces before. ${ms.length ? `The reason it matters is practical. ${cap(a.readerNoun)} are asked about ${proseJoin(ms.slice(0, 2))}, and a change that does not move those is hard to defend in a review.` : `The reason it matters is practical: a change that cannot be checked is hard to defend in a review.`} The rest of this piece shows how the claim connects to the other parts, where the evidence stops and how to put it to work.`,
+  ];
+  if (a.index < 3) sections.unshift(`## ${['The argument', 'The claim', 'Why it matters'][a.index % 3]}\n\n${argFrames[a.index % argFrames.length]}`);
+  const others = (list.length >= 2 ? (a.index === 0 ? [] : listOthers(a, thesis)) : []).filter((p) => !a.askedQuestions.has(`walk:${p}`));
+  for (const p of others) a.askedQuestions.add(`walk:${p}`);
+  if (others.length) {
+    const ord = ['First', 'Then', 'Finally'];
+    const walk = others.slice(0, 3).map((p, i) => `${others.length === 1 ? 'It works alongside one other part' : ord[i]}: ${lowerFirst(clipEcho(p, ECHO)).replace(/[.]$/, '')}.`).join(' ');
+    sections.splice(1, 0, `## How the parts fit together\n\nThis part does not stand alone. ${walk} ${['Read together, they are one position rather than a list of features, and each part is easier to test once the others are written down.', 'Taken as a set, they explain why this part works: it leans on the others being in place.', 'Seen side by side, the parts make the same point from different angles.', 'Each of these can be checked on its own, but they are meant to be judged together.', 'Together they are the context for this part, so test them in the same piece of work.'][(a.index - 1) % 5]}`);
+  } else if (a.index === 0 && list.length >= 2) {
+    sections.splice(Math.min(2, sections.length), 0, `## How the parts fit together\n\nThe parts are listed in the order a team meets them: ${proseJoin(list.slice(0, 3).map((p) => lowerFirst(clipEcho(p, ECHO)).replace(/[.]$/, '')))}. Each one is easier to judge when the others are in place, which is why the articles that follow take them one at a time rather than as a feature list.`);
+  }
+  const usedHere = [...picked].filter((p) => p.kind !== 'title');
+  if (usedHere.length) {
+    const p = usedHere[0];
+    const what = p.kind === 'quote' ? 'one customer\'s account in their own words' : 'a result on record';
+    const at = sections.findIndex((s) => s.includes(quoteParts(p).words.slice(0, 30)) || s.includes(p.text.slice(0, 30)));
+    const evH = ['What the evidence shows, and what it does not', 'Reading the evidence', 'How far the evidence goes'][a.index % 3];
+    const evB = [
+      `The evidence above is ${what}${p.label ? ` (${p.label})` : ''}. It shows that the idea has held up for someone in a real setting. It does not show what it will do for your own operation, so read it as a reason to run a test, not as a forecast.`,
+      `Read the evidence for what it is: ${what}${p.label ? ` (${p.label})` : ''}. It is a sign that the point holds somewhere, not a promise about your numbers, and it is strongest when you can ask the people behind it how they measured.`,
+      `This evidence is ${what}${p.label ? ` (${p.label})` : ''}, and it goes as far as one setting. Before it carries a decision, set it next to a figure from your own work, taken the same way.`,
+    ][a.index % 3];
+    const evS = v && !a.askedQuestions.has('settleProof') ? (a.askedQuestions.add('settleProof'), ` The proof that would settle it for ${a.readerNoun} is ${lowerFirst(toYou(v.proofShape)).replace(/\.$/, '')}.`) : '';
+    sections.splice(at >= 0 ? at + 1 : sections.length, 0, `## ${evH}
+
+${evB}${evS}`);
+  } else {
+    const slots = [...a.askedQuestions].filter((x) => x.startsWith('slot:')).length;
+    if (slots < 1) {
+      a.askedQuestions.add(`slot:${a.index}`);
+      sections.push(`## Evidence to add\n\n**To add before publishing:** one result or quote from a customer of yours that bears on this part, with the figure, the period and the customer's approval. Nothing is invented here to fill the gap, so this piece argues from the position alone until you add it.`);
+    }
+  }
+  // later articles also show how to put the point to work: a fair test, built from the sector's measures and words only
+  if (a.index >= 1) {
+    const m0 = ms[0] || ''; const vocab = v ? v.vocabulary.slice(0, 3) : [];
+    const work = [
+      `To put this to work, start where the cost of the problem is easiest to see. Choose one piece of work${m0 ? ` where ${m0} is already tracked` : ''}, write down today's figure and the period it covers, and agree who will read the result. Run the change on that piece of work only and keep everything else as it is, so that the comparison is fair.`,
+      `A test like this needs three things agreed in advance: the measure${m0 ? ` (${m0})` : ''}, the period and the person who signs the result off. Without them a good result is easy to dismiss and a poor one is easy to explain away.${vocab.length ? ` Write the test in the words the team already uses (${proseJoin(vocab)}), so everyone reads the result the same way.` : ''}`,
+      `Keep the first test small enough to finish. One team, one piece of work and one number${m0 ? `, ${m0},` : ''} are enough to show whether the point holds; a wider rollout can wait for that answer.`,
+      `When the test is done, share the before and after with the people who will be asked to change how they work. A result they helped measure is easier to accept than one they are shown.`,
+    ];
+    if (work[a.index - 1]) sections.splice(Math.max(sections.length - 1, 0), 0, `## ${['Putting it to work', 'Making the test fair', 'Keeping it small', 'Sharing the result'][a.index - 1]}
+
+${work[a.index - 1]}`);
+  }
+  const closeFrames = [
+    `If you keep one thing from this piece, keep the point it opened with, and the test that checks it.${objection ? ` The pushback, "${objection.objection.replace(/[.?!]+$/, '')}", is fair, and it is answered by a test on real work rather than by argument.` : ''}`,
+    `To close, the point stands or falls on one live test.${objection ? ` Expect to hear "${objection.objection.replace(/[.?!]+$/, '')}", and answer it with the test above, not with a slide.` : ''}`,
+    `The short version: write down where you stand today, run the change on one piece of work, and compare.${objection ? ` When someone says "${objection.objection.replace(/[.?!]+$/, '')}", agree on the test first and let the result decide.` : ''}`,
+    `What this piece asks of you is small: one test, on one piece of work, read on one number.`,
+    `Hold the point loosely until your own numbers back it, then hold it firmly.`,
+  ];
+  sections.push(`## ${['The takeaway', 'In short', 'The bottom line', 'What it asks of you', 'Before you act'][a.index % 5]}\n\n${a.index < closeFrames.length ? closeFrames[a.index] : ''}`);
 
   const isFirst = a.index === 0;
   const aboutAuthor = authorBackground ? clipEcho(authorBackground.replace(/[.!?]+\s*$/, ''), 200) : 'the author';
@@ -549,7 +631,7 @@ ${body}`);
   if (a.index === 0 && list.length >= 2) first = a.view ? `${a.view} has ${list.length} ${list.length === 2 ? 'parts' : 'parts'}.` : '';
   else if (a.index === 0) first = a.view ? `${a.view} is this: ${lowThesis}.` : sentence(clipEcho(thesis, ECHO));
   else if (!repeat && multi) first = `Take ${ON_ITS_OWN[a.type] || ON_ITS_OWN.contrarian} on its own: ${lowThesis}.`;
-  else first = `This picks up from "${a.heads[a.index - 1].title}".`;
+  else first = `This picks up from "${a.heads[a.index - 1].title}" and takes the same position one step further: ${asClaim(lowThesis, a.brand)}.`;
   // the measure this reader watches, only when the sector's measure shares words with the take
   const mm = v ? rankMetrics(v, a.takeText).find((x) => x.ok && !a.metricsSeries.has(x.m)) : undefined;
   if (mm) a.metricsSeries.add(mm.m);

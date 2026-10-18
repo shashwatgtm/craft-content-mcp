@@ -5,6 +5,7 @@
 // Protection: rate limit (config below), a body size cap, input validation against the tool's own input schema,
 // and a honeypot field. Nothing is stored and nothing about the input is logged.
 
+import { countUse } from "../lib/usage-count.mjs";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { createServer } from "../../dist/server.js";
@@ -261,6 +262,7 @@ export default async (req, context) => {
     if (partErrors.length) return reply(400, { ok: false, errors: partErrors });
     const { args, errors, ignored } = validate(tool, input);
     if (errors.length) return reply(400, { ok: false, errors });
+    countUse("craft-content", tool.name, req, "web", context);
     const result = await client.callTool({ name: tool.name, arguments: args });
     const text = (result.content || []).filter((c) => c.type === "text").map((c) => c.text).join("\n\n");
     return reply(result.isError ? 422 : 200, { ok: !result.isError, tool: tool.name, title: tool.title || tool.name, text, error: result.isError ? text : undefined, ignored_fields: ignored.length ? ignored : undefined });

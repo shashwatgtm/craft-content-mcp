@@ -69,6 +69,28 @@ function isOnePhrase(line: string): boolean {
   const last = pieces[pieces.length - 1];
   return pieces.slice(0, -1).every((x) => /^[a-z]/.test(x) && x.split(/\s+/).length <= 3) && /^[a-z]/.test(last) && /\b(?:and|or)\b/.test(last.split(/\s+/).slice(0, 2).join(' '));
 }
+// A quote typed with its speaker ("Quote from Jo Smith, Head of Freight, Acme: words") is cut at the commas of the speaker when the line
+// also holds semicolons; the pieces up to the colon are put back as one item, so the quote stays whole with its speaker.
+function joinSpeakerParts(pieces: string[]): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < pieces.length; i++) {
+    let cur = pieces[i];
+    if (/^(?:quotes?|words|testimonial) (?:from|by) [A-Z]/i.test(cur) && !/:/.test(cur)) {
+      let j = i + 1;
+      let acc = cur;
+      while (j < pieces.length && j <= i + 3) {
+        const hasColon = /^[^:]{1,60}:\s+\S/.test(pieces[j]);
+        if (!hasColon && countOfWords(pieces[j]) > 8) break;
+        acc += `, ${pieces[j]}`;
+        if (hasColon) { cur = acc; i = j; break; }
+        j++;
+      }
+    }
+    out.push(cur);
+  }
+  return out;
+}
+const countOfWords = (s: string): number => s.trim().split(/\s+/).filter(Boolean).length;
 function splitListRaw(raw: unknown): string[] {
   if (typeof raw !== 'string') return [];
   const text = fixNumbers(raw);
@@ -79,7 +101,7 @@ function splitListRaw(raw: unknown): string[] {
   // a semicolon followed by a small letter or a digit continues the item, only ", Capital" or "; Capital" starts the next one.
   const mixed = lines.length === 1 && /;\s+(?![A-Z\s])/.test(text) && /,\s+[A-Z][a-z]/.test(text);
   for (const line of lines) {
-    if (mixed) { parts.push(...splitOutsideParens(line, /;\s+(?=[A-Z])|,\s+(?=[A-Z][a-z])/).map((x) => x.replace(/;\s+(?![A-Z])/g, ', '))); continue; }
+    if (mixed) { parts.push(...joinSpeakerParts(splitOutsideParens(line, /;\s+(?=[A-Z])|,\s+(?=[A-Z][a-z])/)).map((x) => x.replace(/;\s+(?![A-Z])/g, ', '))); continue; }
     const bySemi = splitOutsideParens(line, /;/);
     if (bySemi.length > 1 || hasBreaks) parts.push(...bySemi);
     else if (isOnePhrase(line)) parts.push(line);
@@ -92,7 +114,11 @@ function splitListRaw(raw: unknown): string[] {
     const placeList = merged.length > 0 && (p.split(/\s+/).length <= 3 || (/^[A-Z]{2,5}\b/.test(p) && /^[A-Z]{2,5}[,.]?$/.test(prevLast) && p.split(/\s+/).length <= 7)) && /^[A-Z]/.test(p) && !/\d/.test(p) && (/^[A-Z]{2,5}[,.]?$/.test(prevLast) || /^[A-Z][a-z]+$/.test(prevLast));
     // Run 42B: a place list cut at its semicolons ("a Great Place to Work in India; the UK; the USA; KSA and the UAE") is one item, not value propositions of its own
     const places = merged.length > 0 && PLACE_TAIL.test(merged[merged.length - 1]) && PLACE_ONLY.test(p) && !/\d/.test(p.replace(/\([^)]*\)/g, ''));
-    if (merged.length && (JOINER.test(p) || placeList || places)) merged[merged.length - 1] += ', ' + p;
+    // a phrase cut inside a run of describing words ("Operated in production for consumer; industrial and public platforms with ...") is one item:
+    // the item before ends on "for|of|across|to|in <one lower case word>" (not a plural), the next opens "<word> and <word> <noun>"
+    const prevItem = merged.length ? merged[merged.length - 1] : '';
+    const adjRun = merged.length > 0 && /^[A-Z][a-z]+(?: [a-z]+){2,7} (?:for|of|across|to|in|with|between|from) [a-z]{3,}[a-rt-z]$/.test(prevItem) && /^[a-z]+(?: [a-z]+)? (?:and|or) [a-z]+ [a-z]+/.test(p);
+    if (merged.length && (JOINER.test(p) || placeList || places || adjRun)) merged[merged.length - 1] += ', ' + p;
     else merged.push(p);
   }
   // short fragments: "fast; transparent; compliant and error free travel" is one run of adjectives
@@ -205,6 +231,7 @@ function rejoinAttributed(list: string[]): string[] {
 // so a comma or a semicolon inside an item never splits it. Without labels, the general list rule applies.
 // The text before a piece ends on words after a colon that never reach a full stop: a speaker line cut inside the words, or a source line cut before its result.
 const SOURCE_LINE = /^[^:]{3,80}\b(?:quote|quoted|says?|said|headline|press|article|report|review)\b[^:]{0,60}:\s+\S/i;
+const LABELLED_QUOTE = /^(?:user|customer|partner|client|reviewer) (?:quote|words|review)\s*:/i;
 function cutAfterColon(prev: string, next: string): boolean {
   const colon = prev.indexOf(': ');
   if (colon < 0) return false;
@@ -212,6 +239,8 @@ function cutAfterColon(prev: string, next: string): boolean {
   if (!after || /[.!?]["”'’]?$/.test(after) || /\)\s*$/.test(after) || after.split(/\s+/).length > 12) return false;
   const before = prev.slice(0, colon + 1);
   const speaker = isAttributed(before.replace(/;/g, ','));
+  // a quote labelled "User quote:" with no speaker, cut before its sentence ends, and the next piece opens with an acronym ("CUDA and libraries ...")
+  if (LABELLED_QUOTE.test(prev)) return after.split(/\s+/).length <= 14 && /^[A-Z]{2,6}\b(?![.'’-])/.test(next) && !/^(?:Customer|Partner|User)\b/.test(next);
   if (speaker) return after.split(/\s+/).length <= 8;
   // the next piece is a named company's result ("Acme picked up ...") and the source line has no result of its own
   const RESULT = /\b(?:picked up|retained|saved|reduced|grew|increased|cut|achieved|reached|gained|raised|added|won|processed)\b/;
@@ -255,7 +284,7 @@ function splitProofRaw(raw: unknown): string[] {
       if (inAttribution && bare.split(/\s+/).length <= 6 && !/\d|:/.test(bare) && !OUTCOME_VERB.test(piece) && (TITLE_START.test(piece) || /^[A-Z][a-z]+(?: (?:and|of|&) [A-Z][a-z]+| [A-Z][a-z]+)*$/.test(bare))) { pieces[pieces.length - 1] += ', ' + piece; continue; }
       // Run 42B: a source line ("Press quote: within days of an event") keeps the result that follows it ("; Acme picked up ..."), and a quote typed with
       // a speaker stays whole when a semicolon cuts it before its sentence ends (the second pass below): neither becomes a fragment and a separate item
-      if (pieces.length && /^[A-Z]/.test(piece) && cutAfterColon(pieces[pieces.length - 1], piece)) { pieces[pieces.length - 1] += (isAttributed(pieces[pieces.length - 1].replace(/;/g, ',')) ? ', ' : '; ') + piece; continue; }
+      if (pieces.length && /^[A-Z]/.test(piece) && cutAfterColon(pieces[pieces.length - 1], piece)) { pieces[pieces.length - 1] += (isAttributed(pieces[pieces.length - 1].replace(/;/g, ',')) || LABELLED_QUOTE.test(pieces[pieces.length - 1]) ? ', ' : '; ') + piece; continue; }
       // Run 42B (round P): a bare speaker name after a finished sentence belongs to the item that follows it (its own title and words), never to the sentence before it
       const nextSpeaker = pieces.length > 0 && /[.!?]["”'’]?$/.test(pieces[pieces.length - 1]) && NAME_ONLY.test(bare) && !/\d/.test(bare);
       if (nextSpeaker) { pieces.push(piece); continue; }
@@ -267,7 +296,7 @@ function splitProofRaw(raw: unknown): string[] {
   const joined: string[] = [];
   for (const it of rejoinAttributed(items.map((x) => x.replace(/[;,]\s*$/, '').trim()).filter(Boolean))) {
     const prev = joined[joined.length - 1];
-    if (prev !== undefined && /^[A-Z]/.test(it) && cutAfterColon(prev, it)) joined[joined.length - 1] = prev + (isAttributed(prev.replace(/;/g, ',')) ? ', ' : '; ') + it;
+    if (prev !== undefined && /^[A-Z]/.test(it) && cutAfterColon(prev, it)) joined[joined.length - 1] = prev + (isAttributed(prev.replace(/;/g, ',')) || LABELLED_QUOTE.test(prev) ? ', ' : '; ') + it;
     else joined.push(it);
   }
   return joined.map(unmaskQuoted);
@@ -291,8 +320,10 @@ export function parseProof(raw: unknown): ProofItem[] {
     const l = label.toLowerCase();
     const figure = FIGURE.test(text);
     let kind: ProofKind;
-    if (RECOGNITION.test(text) && !/\bcustomer quote\b/.test(l)) kind = 'recognition';
-    else if (/quote/.test(l) || isAttributed(text) || SPEAKER_QUOTE.test(text)) kind = 'quote';
+    if (/^(?:case study|customer story|success story|story)\s+(?:headlines?|titles?)\b/i.test(text) && !/quote/.test(l)) kind = 'title';
+    // a customer's own words with their speaker ("Name, Title, Company: the number one thing we can do ...") are a quote even when the words say "number one"
+    else if (RECOGNITION.test(text) && !/\bcustomer quote\b/.test(l) && !(/^[^:]{3,140}:\s+\S/.test(text) && (SPEAKER_QUOTE.test(text) || isAttributed(text) || LABELLED_QUOTE.test(text)) && !RECOGNITION.test(text.split(':')[0]))) kind = 'recognition';
+    else if (/quote/.test(l) || LABELLED_QUOTE.test(text) || isAttributed(text) || SPEAKER_QUOTE.test(text)) kind = 'quote';
     // Run 42B round S: a story summary that states a figure and what changed ("upgraded bandwidth from 1.25 Gbps to 5 Gbps") is a result,
     // not a title; a news item or launch is the vendor's own announcement, never a customer result
     else if (/\bnews\b|press release|announcement/.test(l) || /\((?:[^()]*\s)?news item\)\s*$/i.test(text)) kind = 'claim';
@@ -304,7 +335,9 @@ export function parseProof(raw: unknown): ProofItem[] {
     else if (SCALE.test(text) && !OUTCOME_VERB.test(text)) kind = 'scale';
     else if (/page claim/.test(l) && !OUTCOME_VERB.test(text) && !(figure && FROM_TO_FIGURE.test(text))) kind = 'claim';
     else kind = 'result';
-    return { text, label, kind, figure, shown: label ? `${text} (${label})` : text };
+    // "Quote from Jo Smith, Head of X, Acme: words" is shown as the speaker and the words, without the typed prefix
+    const shownText = kind === 'quote' ? text.replace(/^(?:quotes?|words|testimonial) (?:from|by) (?=[A-Z][^:;]{1,120}:\s+\S)/i, '') : text;
+    return { text: shownText, label, kind, figure, shown: label ? `${shownText} (${label})` : shownText };
   });
 }
 
@@ -352,7 +385,7 @@ export function clipAtWord(s: string, max: number): string {
   return dropTail((at > 20 ? cut.slice(0, at) : cut).replace(/[,;:\s-]+$/, ''));
 }
 // A cut never ends on a joining word ("... modernization and", "... with the"): those words are taken off the end.
-const TAIL = /\s+(?:and|or|the|a|an|of|to|with|for|in|on|by|as|while|that|which|from|at|than|so|but|plus|into|over|under|per|its|their|our|your|is|are|first|last|next|same|each|every|this|these|those|any|all|more|most|other)$/i;
+const TAIL = /\s+(?:and|or|the|a|an|of|to|with|for|in|on|by|as|while|that|which|from|at|than|so|but|plus|into|over|under|per|its|their|our|your|is|are|first|last|next|same|each|every|this|these|those|any|all|more|most|other|without|between|across|about|within|through|using|than|both|either)$/i;
 export function dropTail(s: string): string {
   let t = s.replace(/[,;:\s-]+$/, '');
   for (let i = 0; i < 4 && TAIL.test(t); i++) t = t.replace(TAIL, '').replace(/[,;:\s-]+$/, '');

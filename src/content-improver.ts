@@ -51,9 +51,21 @@ export function generateContentImprover(args: {
     const cut = subj && pasted && !/[A-Z]/.test(pasted[1].slice(1)) && SUBJECT_VERB.test(subj.split(/,|;/)[0]) ? cutSubject(subj.replace(/^\s*subject:\s*/i, '')) : null;
     if (subj && cut) { improved.text = improved.text.replace(subj, `Subject: ${cut}`); improved.edits.push({ before: subj.trim(), after: `Subject: ${cut}` }); }
   }
+  // Run 42B round U: a body line that runs on in one sentence of over 35 words, joined by semicolons, is split at the semicolons into
+  // sentences (the user's own words, a capital letter at each start); each split is listed as an edit
+  if (contentType === 'sales_email' || contentType === 'email') {
+    improved.text = improved.text.split('\n').map((line) => {
+      if (/^\s*subject:/i.test(line) || countWords(line) <= 35 || !/;\s+\S/.test(line)) return line;
+      const parts = line.split(/;\s+/);
+      if (parts.length < 2 || parts.some((x) => countWords(x) < 4)) return line;
+      const fixed = parts.map((x, i) => { const t = x.trim().replace(/[.!?]+$/, ''); return `${i === 0 ? t : t.charAt(0).toUpperCase() + t.slice(1)}.`; }).join(' ');
+      improved.edits.push({ before: `${clipAtWord(parts[0], 40)} ...; ${clipAtWord(parts[1], 30)} ...`, after: `${clipAtWord(parts[0], 40)} ... . ${clipAtWord(parts[1].charAt(0).toUpperCase() + parts[1].slice(1), 30)} ...` });
+      return fixed;
+    }).join('\n');
+  }
   const tone = toneCheck(content, args.tone_preference);
   const emailLike = contentType === 'sales_email' || contentType === 'email';
-  const shorter = emailLike && (wordCount > 120 || analysis.findings.some((f) => f.rule === 'subject-length' || f.rule === 'sentence-length' || f.rule === 'run-on')) ? shorterEmail(slipRead.text) : null;
+  const shorter = emailLike && (wordCount > 120 || analysis.findings.some((f) => f.rule === 'subject-length' || f.rule === 'sentence-length' || f.rule === 'run-on')) ? shorterEmail(slipRead.text, slipRead.slips.some((x) => /deal with/.test(x.note))) : null;
   const ctx = readContext(undefined, { seller: [sellerWords(content, contentType)], context: [content, args.goal], role: [args.audience], buyer: [args.audience] }, args.your_sector);
 
   // Create specific recommendations based on analysis: the findings that cost the most points first
@@ -217,9 +229,21 @@ ${SUGGESTION_FOOTER}
 
 // Which of the sector's measures the text already names (a measure counts when one of its long words appears).
 function measuresNamed(content: string, metrics: string[]): string {
-  // a measure counts as named only when every long word of it is in the text as a whole word
-  const words = new Set((content.toLowerCase().match(/[a-z]{3,}/g) || []));
-  const named = metrics.filter((m) => { const long = m.toLowerCase().split(/\s+/).filter((w) => w.length >= 5); return long.length > 0 && long.every((w) => words.has(w)); });
+  // a measure counts as named only when every content word of it (four letters or more, not a joining word) is in the text as a whole
+  // word and all of them sit within six words of each other, so "first" in one place and "response" in another do not count
+  const toks = content.toLowerCase().match(/[a-z]{2,}/g) || [];
+  const JOIN = new Set(['per', 'of', 'to', 'the', 'and', 'for', 'with', 'by', 'in', 'on', 'from', 'time']);
+  const near = (m: string): boolean => {
+    const need = m.toLowerCase().split(/\s+/).filter((w) => w.length >= 4 && !JOIN.has(w));
+    if (!need.length || !m.toLowerCase().split(/\s+/).some((w) => w.length >= 5)) return false;
+    for (let i = 0; i < toks.length; i++) {
+      if (toks[i] !== need[0]) continue;
+      const win = new Set(toks.slice(Math.max(0, i - 6), i + 7));
+      if (need.every((w) => win.has(w))) return true;
+    }
+    return false;
+  };
+  const named = metrics.filter(near);
   return named.length
     ? `Your text already speaks to: ${named.join(', ')}.`
     : 'Your text names none of these measures. If you have a figure you can prove for one of them, put it in the first two sentences.';
@@ -249,7 +273,7 @@ function suggestOpening(content: string): string {
 type Slip = { before: string; after: string | null; note: string };
 // a customer quote with its speaker ("Name, Role, Company: words"), kept whole as the proof of a shorter email when no figure is given
 const QUOTED_PROOF = /^[A-Z][^:]{3,90}:\s+\S/;
-const SLIP_VERBS = '(?:is|are|was|were|use|uses|want|wants|need|needs|juggle|juggles|lack|lacks|have|has|sit|sits|run|runs|get|gets|ship|ships|evolve|evolve|leave|leaves|lose|loses|struggle|struggles|spend|spends|face|faces|make|makes|can|cannot|must|should|will|rely|relies|grow|grows|take|takes|depend|depends|move|moves|fail|fails|break|breaks|cost|costs|stay|stays|go|goes|pile|piles|slip|slips|happen|happens|arrive|arrives|change|changes|come|comes|drift|drifts|remain|remains|lag|lags|vary|varies|wait|waits|miss|misses|add|adds|live|lives|spread|spreads|sprawl|sprawls|end|ends|keep|keeps|feel|feels|see|sees|find|finds|work|works|pay|pays|wait|waits)';
+const SLIP_VERBS = '(?:is|are|was|were|use|uses|want|wants|need|needs|juggle|juggles|lack|lacks|have|has|sit|sits|run|runs|get|gets|ship|ships|evolve|evolve|leave|leaves|lose|loses|struggle|struggles|spend|spends|face|faces|make|makes|can|cannot|must|should|will|rely|relies|grow|grows|take|takes|depend|depends|move|moves|fail|fails|break|breaks|cost|costs|stay|stays|go|goes|pile|piles|slip|slips|happen|happens|arrive|arrives|change|changes|come|comes|drift|drifts|remain|remains|lag|lags|vary|varies|wait|waits|miss|misses|add|adds|live|lives|spread|spreads|sprawl|sprawls|end|ends|keep|keeps|feel|feels|see|sees|find|finds|work|works|pay|pays|wait|waits|file|files|push|pushes)';
 const PASTED_CLAUSE = new RegExp(`\\b(deal|deals|dealing|struggle|struggles|struggling) with ((?:[A-Z][a-z]+|[A-Z]{2,5}\\s+[a-z]+)(?:\\s+[A-Za-z][\\w'-]*,?){0,8}?\\s+${SLIP_VERBS}\\b)`, 'g');
 export function fixSlips(content: string): { text: string; slips: Slip[] } {
   const slips: Slip[] = [];
@@ -301,10 +325,16 @@ export function cutSubject(full: string): string | null {
   if (countWords(t) <= 12 && t.length <= 70) return null;
   const lead = /^((?:a )?quick question (?:about|on)|question (?:about|on)|a thought on|thoughts on|about|re:?)\s+/i.exec(t);
   let core = lead ? t.slice(lead[0].length) : t;
-  core = core.split(/\s*[,;:(]\s*|\s+(?:so|but|while|because|instead of|and then|which|where)\s+/)[0].trim();
-  const clause = SUBJECT_VERB.test(core);
-  const room = lead && !clause ? 9 - countWords(lead[1]) : 9;
-  const w = core.split(/\s+/);
+  const semi = core.split(/\s*[;:(]\s*|\s+(?:so|but|while|because|instead of|and then|which|where)\s+/)[0].trim();
+  const comma = semi.split(/\s*,\s+/)[0].trim();
+  // a comma that opens a list of describing words ("a long, complex and manual cycle") is not a place to cut
+  const listLead = comma !== semi && /^[a-z]+(?:\s+[a-z]+)?\s+(?:and|or)\s/i.test(semi.slice(comma.length).replace(/^\s*,\s*/, '')) && countWords(semi) <= 10;
+  core = listLead ? semi : comma;
+  let clause = SUBJECT_VERB.test(core);
+  let w = core.split(/\s+/);
+  // a clause too long to keep whole is not chopped mid phrase: the words before its verb stay, after "quick question about"
+  if (lead && clause && !listLead && w.length > 9) { const vi = w.findIndex((x, i) => i > 0 && SUBJECT_VERB.test(x)); if (vi >= 2) { core = w.slice(0, vi).join(' '); w = core.split(/\s+/); clause = false; } }
+  const room = lead && !clause ? 9 - countWords(lead[1]) : listLead ? 10 : 9;
   if (w.length > room) core = dropTail(w.slice(0, room).join(' '));
   if (countWords(core) < 3) return null;
   if (lead && !clause) return `${lead[1].charAt(0).toUpperCase()}${lead[1].slice(1)} ${lowerFirstIfCommon(core)}`;
@@ -313,7 +343,7 @@ export function cutSubject(full: string): string | null {
 
 // A shorter email cut from the user's own text: a subject line of about eight words, the opening problem, the first thing the
 // product does, the one proof item that holds a figure and says what changed, and the ask. Nothing is added or reworded.
-function shorterEmail(content: string): { text: string; left: string[] } | null {
+function shorterEmail(content: string, pasted = false): { text: string; left: string[] } | null {
   const lines = content.split('\n').map((l) => l.trim());
   const subjectLine = lines.find((l) => /^subject:/i.test(l));
   const greeting = lines.find((l) => /^(?:hi|hello|dear|hey)\b[^.!?]*,?\s*$/i.test(l));
@@ -349,7 +379,9 @@ function shorterEmail(content: string): { text: string; left: string[] } | null 
   if (greeting) out.push(greeting);
   for (const s of [opening, product]) {
     if (!s) continue;
-    let sh = shortenClauses(s, 170);
+    // a sentence that had a whole sentence pasted into it ("Teams at X often find that Y ...") keeps the pasted sentence alone, whole
+    const joined = pasted && s === opening ? /^[A-Z][^;:]{0,80}?\bfind(?:s|ing)? that ([a-z][^]*)$/.exec(s) : null;
+    let sh = shortenClauses(joined ? joined[1].charAt(0).toUpperCase() + joined[1].slice(1) : s, 170);
     // a cut that ends on the name the sentence starts with ("X is a service plus X.") takes the next clause, which says what that name is
     const lead = (s.match(/^[A-Z][\w-]*/) || [''])[0];
     if (lead && sh.length < s.length && new RegExp(`\\b(?:plus|and|with|by|from|of)\\s+${lead}$`).test(sh.replace(/[.!?]+$/, ''))) { const nxt = s.indexOf(', ', sh.length + 2); sh = nxt > 0 ? s.slice(0, nxt) : s; }

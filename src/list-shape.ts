@@ -24,7 +24,7 @@ export function semicolonCommaList(raw: unknown, sep = 'line'): unknown {
   if (!t || /\n/.test(t) || !/;\s/.test(t) || t.length > 4000) return raw;
   const items = splitItems(t);
   if (items.length < 2) return raw;
-  const shaped = /\d;\d{3}(?!\d)/.test(t) || items.some((it) => { const ps = it.split(/;\s+/); return ps.length > 1 && ps.slice(1).some(SMALL_PIECE); });
+  const shaped = /\d;\d{3}(?!\d)/.test(t) || items.some((it) => SPEAKER_SEMIS.test(it)) || items.some((it) => { const ps = it.split(/;\s+/); return ps.length > 1 && ps.slice(1).some(SMALL_PIECE); });
   if (!shaped) return raw;
   if (sep !== 'line') {
     // proof items: only a quote whose speaker is typed with semicolons ("Name; Title; Company: words") gets its commas back, so the

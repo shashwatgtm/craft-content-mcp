@@ -66,7 +66,17 @@ export function generateWebinarScript(args: {
   const knownProblem = nk(parts.problem || '');
   for (const p of all) if (p.role === 'problem' && !p.label && CLAIM_WORD.test(p.text) && !knownProblem.includes(nk(p.text))) p.role = 'capability';
   const problemPts = all.filter((p) => p.role === 'problem');
-  const given2 = groupPhrases(all.filter((p) => p.role !== 'problem' && p.role !== 'instruction'));
+  // Run 42B round U: instructions that follow each other ("Get organized", "finish projects on time", "win more jobs with faster proposals")
+  // are one run of what the listener will learn to do, said as one sentence, never one odd point each (up to four, 170 characters)
+  const given2: Pt[] = [];
+  const mixedTyped = !/\n/.test(args.key_takeaways || '') && /;\s+[a-z]/.test(args.key_takeaways || '') && /,\s+[A-Z][a-z]/.test(args.key_takeaways || '');
+  for (const p of groupPhrases(all.filter((p) => p.role !== 'problem' && p.role !== 'instruction'))) {
+    const prev = given2[given2.length - 1];
+    const runs = (x: Pt) => !x.label && !x.figure && shapeOf(x) === 'imperative' && startsImperative(x.text);
+    // only when the list shows that its semicolons stand for commas inside an item (items start with a capital after ", ")
+    if (mixedTyped && prev && runs(prev) && runs(p) && prev.text.split(/,\s+(?=[a-z]+\b)/).length < 4 && prev.text.length + p.text.length < 170) { prev.text = `${prev.text}, ${p.text.charAt(0).toLowerCase()}${p.text.slice(1)}`; continue; }
+    given2.push(p);
+  }
   const takeaways: Pt[] = given2.length ? given2 : takeawaysFromSector(ctx.v);
   const productLabel = given ? productParts(given).name : product;
   const w: W = { usedQ: new Set<string>(), usedM: new Set<string>(), topic, label, clause, problem: parts.problem || '', audience, role, field, connector, takeaways, speakers, product, productLevel, includePolls, ctx, haveSpeakers: speakers.length > 0, haveTakeaways, problemPts, metrics: [], objectionHeld: '', minutes: 0, productDescription: '', productName: '', model: ctx.model, type, shortTopic: parts.short, who: productLevel === 'none' ? '' : productLabel };
@@ -769,7 +779,7 @@ function blockScript(section: { name: string; duration: number }, w: W, mine: Pt
   const lines = [
     `${lead} ${teach}`,
     v ? [(rel || measure0) ? `${rel ? ['In your role, this comes down to', 'The measure this part speaks to is', 'The yardstick to keep in view here is'][k % 3] : 'In your role, the number to watch across this part is'} ${toYou(rel || measure0)}.` : '', `Question for the chat: "${question ? toYou(question) : neutralQ}"`].filter(Boolean).join(' ') : '',
-    proof,
+    proof || (v && k === 1 && w.takeaways.some((p) => p.figure) ? `A figure on a page is a claim until it is checked on your own work. The proof worth asking for in ${kind0}: ${lowerFirst(endSentence(toYou(v.proofShape)))}` : ''),
     (rel || measure0) ? [`Try it on one live case from your own work this week, and read it against ${toYou(rel || measure0)}.`, `Take one case from your own work and note where it stands on ${toYou(rel || measure0)} today.`, `Before you change anything, write down where you stand today on ${toYou(rel || measure0)}, so there is a number to beat.`][k % 3] : ['Try it on one live case from your own work this week.', 'Take one case from your own work and note where it stands today.', 'Before you change anything, write down where you stand today, so there is a baseline to beat.'][k % 3],
     objection ? `${k === 1 ? 'One concern that comes up often' : 'Another concern we hear'}: ${quotedEnd(objection.objection)} ${settleLine(w, objection.response)}` : '',
     productLine(w, k, mine),

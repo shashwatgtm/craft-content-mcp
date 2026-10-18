@@ -150,7 +150,7 @@ export function generateSalesEnablement(args: {
   const valueRows = orderedProps.map((vp) => {
     const ranking = RANKING.test(vp);
     const vw = wordSet(vp);
-    const scored = isCompanyFact(vp) || ranking ? [] : usableTexts.map((t) => ({ t, n: [...wordSet(proofBody(t))].filter((x) => vw.has(x)).length })).filter((x) => x.n > 0).sort((x, y) => (y.n - x.n) || (Number(vpUsed.has(x.t)) - Number(vpUsed.has(y.t))));
+    const scored = isCompanyFact(vp) || ranking ? [] : usableTexts.map((t) => ({ t, n: [...wordSet(proofBody(t))].filter((x) => vw.has(x) && !/^(?:minut|hour|day|week|month|year|percen|time)/.test(x)).length })).filter((x) => x.n > 0).sort((x, y) => (y.n - x.n) || (Number(vpUsed.has(x.t)) - Number(vpUsed.has(y.t))));
     const fresh = scored.find((x) => !vpUsed.has(x.t) && x.n === scored[0].n) || scored[0];
     const near = fresh ? fresh.t : undefined;
     if (near) vpUsed.add(near);

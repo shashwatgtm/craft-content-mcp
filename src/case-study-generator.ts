@@ -1,6 +1,6 @@
 import { SUGGESTION_FOOTER, clipEcho, cap, lowerFirstIfCommon } from './utils.js';
 import { q, readContext, startWords, firstSentence, sentencesOf, fromIndicator, type Vertical, type BusinessModel } from './sector.ts';
-import { parseProof, fixNumbers, endSentence, lowerFirstWord, isGenericName, proseJoin, plural, type ProofItem, type ProofKind } from './draft.ts';
+import { parseProof, shortenClauses, fixNumbers, endSentence, lowerFirstWord, isGenericName, proseJoin, plural, type ProofItem, type ProofKind } from './draft.ts';
 // Run 42B round S3: freelancers, solo owners and small firms are not judged as teams
 const SOLO_WORDS = /\b(?:freelancers?|solopreneurs?|sole traders?|self[- ]employed|small business(?:es)?|micro[- ]?business(?:es)?)\b/i;
 
@@ -421,7 +421,9 @@ ${bullets(quotes.slice(0, 2))}`
     paras.push(`**The situation.** ${Subj} is in the ${industryText || sectorName || 'its market'} segment${ms.length ? `, where ${SOLO_WORDS.test(industryText || '') ? 'the work is usually judged on' : 'teams are usually judged on'} ${proseJoin(ms)}` : ''}.`);
     if (challengeText) paras.push(`**The challenge.** Before ${product}, the team was dealing with a problem many in ${industryText || 'the field'} know: ${lowerFirstIfCommon(strip(challengeText))}. ${ms.length ? `Problems like this usually show up first in ${ms[0]}.` : 'That was the case for change.'}`);
     else slots.push(`what ${subj} was dealing with before ${product}, in the customer's own words`);
-    if (solutionText) paras.push(`**The approach.** ${solutionText.startsWith(product) || /^(?:\S+\s+){0,3}\w+ed\b/.test(solutionText) ? `The team brought in ${product}. ${endSentence(capFirst(strip(solutionText)))}` : `The team put ${product} in place: ${lowerFirstIfCommon(strip(solutionText))}.`}${v ? ` As in most of ${sectorName}, the change had to work for the people who use it every day as well as the people who sign it off.` : ''}`);
+    // a long list of features is not a paragraph of the story: the story keeps its first clauses, whole, and the full text stays under The Solution
+    const brief = (s: string): string => (s.split(/\s+/).length > 26 ? shortenClauses(s, 220) : s);
+    if (solutionText) paras.push(`**The approach.** ${solutionText.startsWith(product) || /^(?:\S+\s+){0,3}\w+ed\b/.test(solutionText) ? `The team brought in ${product}. ${endSentence(capFirst(brief(strip(solutionText))))}` : `The team put ${product} in place: ${lowerFirstIfCommon(brief(strip(solutionText)))}.`}${v ? ` As in most of ${sectorName}, the change had to work for the people who use it every day as well as the people who sign it off.` : ''}`);
     const quoteOf = (p: ProofItem) => { const m = /^([^:"“]{3,120}):\s+(.+)$/.exec(p.text); return m ? { who: m[1].trim(), words: strip(m[2]).replace(/^["“]|["”]$/g, '') } : { who: '', words: strip(p.text) }; };
     if (!manySources && (outcomes.length || titles.length)) {
       const res = [...outcomes, ...titles].slice(0, 3).map((r) => `${strip(r.text)}${r.label ? ` (${r.label})` : ''}`);

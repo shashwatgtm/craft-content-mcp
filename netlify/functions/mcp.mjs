@@ -5,6 +5,7 @@
 
 import { countUse } from "../lib/usage-count.mjs";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
+import { LATEST_PROTOCOL_VERSION, SUPPORTED_PROTOCOL_VERSIONS } from "@modelcontextprotocol/sdk/types.js";
 import { createServer } from "../../dist/server.js";
 
 // Run 11 addendum 2 (R11-A2-3), addendum 3 (R11-A3-9) and addendum 4 (R11-A4-1): limits and input checks before the SDK,
@@ -195,7 +196,19 @@ export default async (req, context) => {
       enableJsonResponse: true,
     });
     await server.connect(transport);
-    const res = await transport.handleRequest(req, { parsedBody: body });
+    // 27 Oct 2026: Claude's client sends an mcp-protocol-version header newer than this SDK knows, and the SDK answered
+    // 400 "Unsupported protocol version" to those calls (Netlify logs: 4 of every 6 to 8 Claude calls an hour). The body is
+    // already read and checked above, so an unknown version is read as the newest one this SDK speaks, as GTM Alpha does.
+    // A known version, or no header, reaches the SDK unchanged.
+    const version = req.headers.get("mcp-protocol-version");
+    let sdkReq = req;
+    if (version !== null && !SUPPORTED_PROTOCOL_VERSIONS.includes(version)) {
+      const sdkHeaders = new Headers(req.headers);
+      sdkHeaders.set("mcp-protocol-version", LATEST_PROTOCOL_VERSION);
+      sdkHeaders.delete("content-length");
+      sdkReq = new Request(req.url, { method: "POST", headers: sdkHeaders });
+    }
+    const res = await transport.handleRequest(sdkReq, { parsedBody: body });
     const headers = new Headers(res.headers);
     for (const [name, value] of Object.entries(SECURITY_HEADERS)) headers.set(name, value);
     return new Response(res.body, { status: res.status, statusText: res.statusText, headers });

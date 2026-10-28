@@ -36,3 +36,17 @@ test("content_repurposer: a source without a qualification gets nothing added", 
   const t = await call("content_repurposer", { source_content: "The team started with one region. A named owner checked the reporting fields weekly. The pilot surfaced missing data before a wider rollout.", source_type: "blog_post", target_formats: "email" });
   assert.doesNotMatch(t, /synthetic|not verified|demonstration/i);
 });
+
+test("case_study_generator: the story does not present sector generalities as the customer's facts", async () => {
+  const t = await call("case_study_generator", {
+    customer_name: "Northwind", your_product: "Pipewell CRM, synthetic demonstration scenario", mode: "full",
+    challenge: "Synthetic test story: the regional team used disconnected spreadsheets.", solution: "The test team centralized pipeline records and held weekly reviews.",
+    results: "Synthetic result for review only: reporting preparation fell from 4 hours to 2 hours per week.", customer_industry: "telecom", business_model: "saas", your_sector: "saas",
+  });
+  const story = t.split("## The Story (draft)")[1].split("*The sections below")[0];
+  assert.doesNotMatch(story, /a problem many in|usually show up first in|As in most of/);
+  assert.doesNotMatch(story, /telecom segment, where/);
+  assert.match(story, /General note for SaaS, not from your inputs/);
+  assert.match(story, /4 hours to 2 hours/);
+  assert.doesNotMatch(t, /^> "/m); // no quote is written when none was given
+});

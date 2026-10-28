@@ -299,8 +299,14 @@ function metricFor(k: Kit, text: string): string {
   return best;
 }
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+// Host review 28 Oct 2026: a sentence that qualifies the whole source (synthetic, hypothetical, illustrative, not verified) travels with
+// every piece, because each piece can be shared on its own. It is added as typed, once, to a piece that does not already carry it.
+const CAVEAT = /\b(?:synthetic|hypothetical|illustrative|fictional|fictitious|unverified|not (?:yet )?verified|not real|for review only|example only|made[- ]up|demonstration (?:statements?|data|inputs?|only|scenario))\b/i;
+const caveatsOf = (k: Kit): string[] => sentencesOf(k.content).map((s) => s.trim()).filter((s) => CAVEAT.test(s)).slice(0, 2);
 
 function generateFormat(format: string, k: Kit): string {
+  const caveats = caveatsOf(k);
+  const missingIn = (shown: string[]): string[] => caveats.filter((c) => !shown.some((s) => norm(s).includes(norm(c)))).map((c) => endSentence(c));
   const kind = k.kind;
   const vc = VOICE[k.voice] || VOICE.professional;
   const lead = capFirstChar(k.hook);
@@ -328,6 +334,7 @@ ${[endSentence(lead), ...rest.slice(0, 4).map((p) => endSentence(p)), proof, msg
       const tweets: string[] = [`${tweet(k.hook)} A thread.`];
       for (const p of rest.slice(0, 5)) for (const part of tweetParts(p)) tweets.push(`${tweets.length}/ ${part}`);
       if (k.bestProof) for (const part of tweetParts(proofLineOf(k.bestProof, 'Result'))) tweets.push(`${tweets.length}/ ${part}`);
+      for (const c of missingIn(tweets)) for (const part of tweetParts(c)) tweets.push(`${tweets.length}/ ${part}`);
       tweets.push(`${tweets.length}/ ${[msg ? tweet(msg) : '', close].filter(Boolean).join(' ')}`);
       return `
 ### Twitter/X Thread
@@ -346,6 +353,7 @@ ${tweets.map((t, i) => `**Tweet ${i + 1}${i === 0 ? ' (Hook)' : ''}:**\n${t}${t.
         subjectSafe(rest[0], 60) ? `What we learned: ${subjectSafe(rest[0], 60)}` : '',
         k.bestProof && subjectSafe(k.bestProof.text.replace(/^Customer (?:quote|words)(?: from [^:]*)?:\s*/i, '').replace(/^["“]|["”]$/g, ''), 60) ? `${k.bestProof.kind === 'title' ? 'A customer story' : 'Proof inside'}: ${subjectSafe(k.bestProof.text.replace(/^Customer (?:quote|words)(?: from [^:]*)?:\s*/i, '').replace(/^["“]|["”]$/g, ''), 60)}` : '',
       ].filter((x) => x && norm(x) !== norm(s1));
+      const body = [subjectSafe(k.title, 70) === s1 ? '' : endSentence(lead), ...(rest.length ? rest : k.points).slice(0, 3).map((p) => endSentence(p)), proof, msg];
       return `
 ### Email Version
 
@@ -355,7 +363,7 @@ Subject: ${s1}
 
 ${vc.greet}
 
-${[subjectSafe(k.title, 70) === s1 ? '' : endSentence(lead), ...(rest.length ? rest : k.points).slice(0, 3).map((p) => endSentence(p)), proof, msg, `Read the full ${kind}`].filter(Boolean).join('\n\n')}
+${[...body, ...missingIn([s1, ...body]), `Read the full ${kind}`].filter(Boolean).join('\n\n')}
 
 ${vc.bye}
 
@@ -482,7 +490,12 @@ ${[proof, msg, `Read the full ${kind}`].filter(Boolean).join('\n\n')}
 `,
   };
 
-  return generators[format] ? generators[format]() : '';
+  if (!generators[format]) return '';
+  const piece = generators[format]();
+  // the email and the thread place a missing qualification inside the message above; every other piece gets it as its last line
+  const add = format === 'email' || format === 'twitter_thread' ? [] : missingIn([piece]);
+  const at = piece.lastIndexOf('\n---\n');
+  return add.length && at > 0 ? `${piece.slice(0, at)}\n${add.join(' ')}\n${piece.slice(at)}` : piece;
 }
 
 // Quote cards: customer quotes in your proof, sentences already in quotation marks in the source, then whole key points that fit

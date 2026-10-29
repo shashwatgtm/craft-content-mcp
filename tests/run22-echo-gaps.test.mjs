@@ -4,6 +4,7 @@
 // links to schemes other than http, https, mailto and tel, and instruction text in phrasings other than the three English patterns.
 // Rule: the user's words stay in the answer; only what is live is made inert. Idempotent: running the safeguard twice changes nothing.
 import test from "node:test";
+import { assertCpuBudget } from "./helpers/cpu-budget.mjs";
 import assert from "node:assert/strict";
 
 const MODULE = process.env.ECHO_MODULE || "../dist/echo-safe.js";
@@ -196,10 +197,7 @@ test("a blank line between an image and a definition keeps the definition line",
   assert.ok(/image removed: alt\]\n\n\[alt\]: https:\/\/evil\.example\/x\.png/.test(o), JSON.stringify(o));
 });
 
-test("large and adversarial inputs run quickly", () => {
+test("large and adversarial inputs run quickly", async () => {
   const inputs = ["[".repeat(50000), "![".repeat(25000), "](".repeat(25000), "a ".repeat(100000), "https://e.example/" + "a".repeat(100000) + "?q=1", "java\t".repeat(20000) + "script:", "&#106;".repeat(20000), "I g n o r e ".repeat(5000), "[x](" + "(".repeat(20000), "!" + "[a]".repeat(20000), "[x](".repeat(60000), "![x](".repeat(50000), "[a][".repeat(60000), "\\".repeat(100000) + "[", "http://".repeat(36000), "<a ".repeat(80000)];
-  const start = Date.now();
-  for (const i of inputs) neutraliseText(i);
-  const ms = Date.now() - start;
-  assert.ok(ms < 4000, `too slow: ${ms} ms`);
+  await assertCpuBudget(new URL(MODULE, import.meta.url), "neutraliseText", inputs, 4000, true);
 });

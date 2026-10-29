@@ -371,22 +371,28 @@ ${alts.length ? `Other subject lines to test: ${alts.join('; ')}\n\n` : ''}---
 
 `;
     },
-    blog_summary: () => `
+    blog_summary: () => {
+      // Host review 29 Oct 2026: the title, the opening line and the points each say something new, so a sentence already shown above
+      // is not repeated below it (the full list of points stays under Key Points Extracted)
+      const openLine = norm(lead) === norm(k.title) ? '' : endSentence(lead);
+      const above = [k.title, ...(openLine ? [lead] : [])].map(norm);
+      const newPoints = k.pointsFull.filter((p) => !above.includes(norm(p)));
+      const pts = newPoints.length ? newPoints : k.pointsFull;
+      return `
 ### Blog Summary
 
 ---
 
 **${k.title}**
-
-${endSentence(lead)}
-
-${k.pointsFull.length ? k.pointsFull.map((p) => `- ${endSentence(p)}`).join('\n') : 'No key point was found in the source: paste the finished text.'}
+${openLine ? `\n${openLine}\n` : ''}
+${pts.length ? pts.map((p) => `- ${endSentence(p)}`).join('\n') : 'No key point was found in the source: paste the finished text.'}
 ${k.bestProof ? `\n**Proof:** ${endSentence(k.bestProof.shown)}\n` : ''}
 ${k.v ? `This is written for readers such as ${roles}, who watch ${proseJoin(k.v.metrics.slice(0, 3))}.\n` : ''}
 ${msg || msgRaw ? `**The bottom line:** ${msgRaw}\n` : ''}
 ---
 
-`,
+`;
+    },
     infographic_outline: () => {
       const figs = (p: string) => (FIGURE.exec(p) || [''])[0];
       return `

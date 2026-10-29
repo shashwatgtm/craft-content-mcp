@@ -428,8 +428,11 @@ ${bullets(quotes.slice(0, 2))}`
     if (solutionText) paras.push(`**The approach.** ${solutionText.startsWith(product) || /^(?:\S+\s+){0,3}\w+ed\b/.test(solutionText) ? `The team brought in ${product}. ${endSentence(capFirst(brief(strip(solutionText))))}` : `The team put ${product} in place: ${lowerFirstIfCommon(brief(strip(solutionText)))}.`}`);
     const quoteOf = (p: ProofItem) => { const m = /^([^:"“]{3,120}):\s+(.+)$/.exec(p.text); return m ? { who: m[1].trim(), words: strip(m[2]).replace(/^["“]|["”]$/g, '') } : { who: '', words: strip(p.text) }; };
     if (!manySources && (outcomes.length || titles.length)) {
-      const res = [...outcomes, ...titles].slice(0, 3).map((r) => `${strip(r.text)}${r.label ? ` (${r.label})` : ''}`);
-      paras.push(`**The result.** ${res.map((r) => endSentence(capFirst(r))).join(' ')}`);
+      // Host review 29 Oct 2026: every supplied outcome is in the story (up to 6, then a pointer to the rest); story titles only fill up to 3
+      const shownOutcomes = outcomes.slice(0, 6);
+      const res = [...shownOutcomes, ...titles.slice(0, Math.max(0, 3 - shownOutcomes.length))].map((r) => `${strip(r.text)}${r.label ? ` (${r.label})` : ''}`);
+      const moreOutcomes = outcomes.length - shownOutcomes.length;
+      paras.push(`**The result.** ${res.map((r) => endSentence(capFirst(r))).join(' ')}${moreOutcomes ? ` ${moreOutcomes} more ${plural(moreOutcomes, 'result')} ${moreOutcomes === 1 ? 'is' : 'are'} listed under Outcomes below.` : ''}`);
     } else if (manySources) {
       const others = [...outcomes, ...quotes, ...titles].slice(0, 3).map((r) => { const qp = quoteOf(r); return r.kind === 'quote' && qp.who ? `${qp.who} puts it this way: "${qp.words}."` : endSentence(capFirst(`${strip(r.text)}${r.label ? ` (${r.label})` : ''}`)); });
       paras.push(`**The result.** ${Subj}'s own figures are not given yet, so this draft does not claim any. Other ${product} customers say what the change looked like for them. ${others.join(' ')}`);

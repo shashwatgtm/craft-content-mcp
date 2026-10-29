@@ -41,7 +41,7 @@ No. Each tool applies fixed rules in the CRAFT Content code to the inputs you gi
 
 ### What happens to what I type?
 
-It is sent to this site's server, used once to build the answer, and dropped when the answer is sent back. Nothing is stored and nothing you type is logged. The privacy page has the details.
+It is sent to this site's server, used once to build the answer, and dropped when the answer is sent back. What you type and the answer are not stored, and nothing you type is logged. Only an anonymous count of tool calls is kept. The privacy page has the details.
 
 ### How do I use CRAFT Content in Claude?
 
@@ -69,7 +69,7 @@ Yes, at https://github.com/shashwatgtm/craft-content-mcp under the MIT licence. 
 
 ### Who is CRAFT Content not ideal for?
 
-Teams that want finished, on-brand copy: each tool returns a structured draft to edit, with placeholders where your inputs gave no fact. Anyone who needs research or quotes gathered for them: the tools look nothing up; they work from the story and facts you give, and anything they add themselves is marked as an example, a suggestion or a placeholder. Teams that need saved drafts or approvals: nothing is stored, so keep each result where you keep your work.
+Teams that want finished, on-brand copy: each tool returns a structured draft to edit, with placeholders where your inputs gave no fact. Anyone who needs research or quotes gathered for them: the tools look nothing up; they work from the story and facts you give, and anything they add themselves is marked as an example, a suggestion or a placeholder. Teams that need saved drafts or approvals: answers are not stored, so keep each result where you keep your work.
 
 ### How do I report a problem?
 

@@ -46,6 +46,7 @@
   },
   "files": [
     "dist/**/*",
-    "README.md"
+    "README.md",
+    "ESCAPING-UTILITY-LICENSE.txt"
   ]
 }

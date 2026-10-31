@@ -8,18 +8,24 @@ The empty Helix component keeps source inputs beside a channel draft, with sourc
 
 The component calls only `content_repurposer`, after an explicit button action. It initializes inline display, rejects stale replies and uncorrelated notifications after local ownership, and reports natural height changes. Rendering uses textContent and form values. Fonts are bundled Helix Archivo and IBM Plex Mono assets. Resource external CSP lists are empty. No storage, credential, external request, model call or publish action is added.
 
-## First working checkpoint
+## Final candidate validation
 
 | Check | Result |
 | --- | --- |
 | Original source snapshot | 86 source, configuration and test files verified against Git blob hashes; 11 unchanged website/readme files added to make existing tests runnable |
 | Dependencies | All 145 lockfile package versions match the independently accessible C dependency tree copied into this isolated candidate; SDK 1.32.2, TypeScript 5.9.3 |
 | TypeScript build | PASS |
-| Focused source and real in-memory SDK tests | PASS, 66 tests, zero failures |
+| Focused source, real in-memory SDK and in-process HTTP checks | PASS, 67 checks within the final full suite; the earlier standalone focused run passed 66 before the HTTP resource case was added |
 | Differential contract | 29 valid inputs plus four invalid inputs; exact text and error parity, unchanged tool schemas and other tool metadata, resource MIME/CSP, literal round trips |
-| Full repository suite | Pending at this checkpoint |
-| Simulated browser suite | Pending at this checkpoint |
+| Full repository suite | PASS, 1,130 tests: 1,127 passed, zero failed, three skipped |
+| Simulated browser suite | PASS, 33 checks; real local Chrome with an inline simulated parent and real in-memory SDK tool calls |
 | Actual ChatGPT host and deployed endpoint | NOT_TESTED |
+
+The three skips are the existing private-pool scenarios for newsletter, thought leadership and webinar rewriting. Their optional private fixture modules are absent; the tests explicitly skip when `poolAvailable` is false. They are not claimed as passes. No private fixture or client data was introduced.
+
+After the full suite, a static introduction sentence was clarified to avoid suggesting that regeneration sends no inputs. No logic changed. The affected UI bundle and in-process HTTP checks, build and final browser checks were repeated on that exact copy; the full suite was not repeated solely for wording.
+
+Empty and populated screenshots were captured at 320, 768 and 1280 px. The browser verified source and draft placement, local edits, regeneration confirmation, caveat removal warnings, reset, literal round trips, malformed results, stale responses, host-input cancellation and keyboard use. It observed no external requests or uncaught errors. Clipboard refusal selected the exact draft for keyboard copying. Successful native clipboard access, actual browser UI zoom, screen reader use, reconnect and actual ChatGPT remain NOT_TESTED. The automated zoom check is explicitly 200 percent CSS zoom only.
 
 The baseline writer and server fixtures are mechanical transpilation of the pinned main, with imports redirected to the unchanged shared dependencies. Tests cover all ten formats, duplicates, unknown formats, no proof, no key points, source order, voices, sector override, inert markup, long source, caveats and removed claims. New test data has no example company or client.
 
@@ -28,6 +34,10 @@ The baseline writer and server fixtures are mechanical transpilation of the pinn
 An initial build was started before an ordinary dependency copy finished and could not find TypeScript. After the copy completed, TypeScript reported an explicit interface conversion issue; an `unknown` intermediate cast preserves the already validated dispatch contract. No validation rule changed.
 
 The first focused run passed 63 of 64 checks. Its partner fixture used `(partner words).`, which the existing parser did not recognize as a source label. The test now uses the existing canonical `(partner quote)` form for the exclusion assertion and retains the original ambiguous form as a differential case. The component warns when partner wording lacks a recognized label. The legacy writer and its text are unchanged. This limitation needs owner review before release; no broader proof verification is claimed.
+
+The first browser run timed out because the harness delivered an initial host result after clicking Generate had already taken local ownership. Initial host delivery was moved before local actions; no product behavior was weakened. Independent review then identified two real UI state gaps: a new host input could leave an older draft copyable, and switching channels could leave an obsolete reset confirmation open. Both were fixed and are covered by the final browser checks.
+
+The existing writer recognizes at most two qualification sentences using keyword rules. That limit is visible beside the draft. Proof phrase matches ignore case and punctuation, so the component labels them as normalized phrase matches, not verified attribution or verbatim use. It does not parse the generated Markdown into evidence or scoring.
 
 ## Reproduce
 
@@ -40,8 +50,10 @@ node --test --test-isolation=none
 
 Browser harness: `scripts/check-content-repurposer-browser.mjs`, using an existing Playwright Core installation and local Chrome through `HELIX_PLAYWRIGHT_MODULE` and `HELIX_CHROME_EXECUTABLE`. It follows the established inline parent plus srcdoc iframe harness, with real in-memory SDK calls. It uses no localhost or file URL navigation. This is a simulated MCP Apps host, not ChatGPT.
 
-Source files and test receipts are local under `heavy-run-20261029/widget-builds-20261030/content-repurposer`. Raw setup/build/focused logs are retained under `review`. Screenshots are local evidence only. The generated UI TypeScript is tracked with its HTML source; `dist` is ignored and untracked in this repository.
+Source files and test receipts are local under `heavy-run-20261029/widget-builds-20261030/content-repurposer`. Final raw logs: `review/build-final.txt`, `review/full-suite-final.txt` and `review/browser-final.txt`. Browser JSON and six screenshots are under `docs/review-assets/content-repurposer-20261031`. Earlier failures and intermediate passing receipts are retained. Screenshots stay local. The generated UI TypeScript is tracked with its HTML source; `dist` is ignored and untracked in this repository.
+
+The final GitHub byte receipt compares every changed remote Git blob against the exact local file bytes. The current main tree has no GitHub workflow or AGENTS file; its Netlify build configuration was inspected, but no hosting setting was changed and no Netlify command ran. A later hosting state is not inferred from this draft.
 
 ## Release gate
 
-Keep this PR draft while Content Studio is In review. A later owner decision must identify an authorized host test endpoint, complete the real ChatGPT pack, approve the precise UI metadata and resource, and determine required plugin version or review work under the rules then in force. This draft makes no version change and creates no release package. It does not authorize merge, deployment, upload, submission or publication.
+Keep this PR draft while Content Studio is In review. A later owner decision must identify an authorized host test endpoint, complete the [18-case ChatGPT pack](content-repurposer-host-test-pack-20261031.md), approve the precise UI metadata and resource, and determine required plugin version or review work under the rules then in force. This draft makes no version change and creates no release package. It does not authorize merge, deployment, upload, submission or publication.

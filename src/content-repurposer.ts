@@ -212,8 +212,8 @@ ${ctx.v ? `- ${audienceLine(ctx.v)}
         interpretation: isPartnerItem(p) ? "A partner statement, not a customer's words" : KIND_NOTE[p.kind],
         eligibleAsResult: customerProof.includes(p),
         selectedForResult: p === bestProof || p === secondProof,
-        // This is an exact phrase check, not semantic attribution or verification.
-        verbatimInPieceIds: pieces.filter(piece => norm(piece.text).includes(norm(p.text))).map(piece => piece.id),
+        // Case and punctuation are ignored. This is not semantic attribution or verification.
+        phraseMatchInPieceIds: pieces.filter(piece => norm(piece.text).includes(norm(p.text))).map(piece => piece.id),
       })),
       claimsToSource: [...new Set(claimsRemoved)],
       caveats: caveatsOf(k),

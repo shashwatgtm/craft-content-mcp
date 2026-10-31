@@ -1,0 +1,8 @@
+{
+  "repo": "craft-content-mcp",
+  "name": "craft_content_improver",
+  "path": "src/tools.ts",
+  "commit": "66d888fde2377059112359da172a7877d7207b91",
+  "skip_reason": "",
+  "source_sha256": "7242532ed0120f9d9fc3cbb5f683a3e5c3301ef4940070c96451cef80a259c8a"
+}

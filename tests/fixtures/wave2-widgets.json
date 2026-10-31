@@ -1,0 +1,14 @@
+{
+  "craft_content_improver": {
+    "normal": {
+      "content": "A handoff needs an owner. Our workflow view shows the next action and who owns it. In a supplied interview, an operations lead said this made ownership clearer. Review one handoff with your team and record what remains unclear.",
+      "content_type": "blog_post",
+      "goal": "Help operations leads inspect a handoff",
+      "audience": "Operations leads"
+    },
+    "weak": {
+      "content": "Improve outcomes.",
+      "content_type": "blog_post"
+    }
+  }
+}

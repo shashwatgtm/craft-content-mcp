@@ -1,3 +1,4 @@
+import { attachWidgets } from './widget-layer.js';
 import { waveTools, isWaveTool, callWaveTool } from './wave2-checkers.js';
 // Shared MCP server definition, used by both entry points:
 //   src/index.ts                 stdio (the npm package)
@@ -159,6 +160,8 @@ export function createServer(): Server {
   );
 
   // List tools handler
+  attachWidgets(server);
+
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return { tools: [...listedTools, ...waveTools] };
   });

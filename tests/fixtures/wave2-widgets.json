@@ -10,5 +10,15 @@
       "content": "Improve outcomes.",
       "content_type": "blog_post"
     }
+  },
+  "handcrafted_voice_check": {
+    "normal": {
+      "draft": "Humbled to share this game-changer!\nThat's not a tool. That's a teammate.\nThe review starts on Thursday, May 13, 2026.",
+      "audience": "functional_leaders",
+      "skip_quotes": true
+    },
+    "weak": {
+      "draft": "A plain review gives the owner enough context to decide."
+    }
   }
 }

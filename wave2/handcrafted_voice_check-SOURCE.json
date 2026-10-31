@@ -1,0 +1,26 @@
+{
+  "repo": "b2b-personal-branding",
+  "path": "plugins/b2b-personal-branding/skills/handcrafted-voice-audit/SKILL.md",
+  "commit": "893624da965279be056610c9a1f51e95a7f53748",
+  "source_sha256": "f77c63791c169749eef9fdde3a08b3346739118ca4e427b08a3a19f79d81cc8c",
+  "sha": "ff1b7a93ad92f2171690dff475ca88b1abf98eb3",
+  "name": "handcrafted-voice-audit",
+  "references": [
+    {
+      "path": "plugins/b2b-personal-branding/skills/handcrafted-voice-audit/references/banned-words-and-patterns.md",
+      "sha256": "e8c2d04406eaf3e6c5a8808a3ce6b73b20936692eba9f7fc49a5b569670cf47e"
+    },
+    {
+      "path": "plugins/b2b-personal-branding/skills/handcrafted-voice-audit/references/reading-levels.md",
+      "sha256": "ac14b7f5ee59c6cf552250922c9e9e7dec15b7c783cd2d9a9b21af3c58dfc8a0"
+    },
+    {
+      "path": "plugins/b2b-personal-branding/skills/handcrafted-voice-audit/references/voice-guide-template.md",
+      "sha256": "a335e6030f3cd3aa6fc4ce7510a759a75190c51a57f3a1f0514fa38433325989"
+    },
+    {
+      "path": "plugins/b2b-personal-branding/skills/handcrafted-voice-audit/scripts/voice_scan.py",
+      "sha256": "7abe02d674b84bd307ac9e784ddd62376b1005db9d6dfa732299aa377c18e1a9"
+    }
+  ]
+}

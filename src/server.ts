@@ -1,3 +1,4 @@
+import {reserveTools,isReserveTool,callReserveTool} from './reserve-tools.js';
 import { attachWidgets } from './widget-layer.js';
 import { waveTools, isWaveTool, callWaveTool } from './wave2-checkers.js';
 // Shared MCP server definition, used by both entry points:
@@ -163,11 +164,12 @@ export function createServer(): Server {
   attachWidgets(server);
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
-    return { tools: [...listedTools, ...waveTools] };
+    return { tools: [...listedTools, ...waveTools, ...reserveTools()] };
   });
 
   // Call tool handler
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    if (isReserveTool(request.params.name)) return callReserveTool(request.params.name,request.params.arguments);
     if (isWaveTool(request.params.name)) return callWaveTool(request.params.name, request.params.arguments);
     const { name } = request.params;
     // Run 20 (D086): the one place where a tools/call reaches a tool, on both the hosted path (netlify/functions/mcp.mjs and

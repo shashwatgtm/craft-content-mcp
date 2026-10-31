@@ -8,6 +8,8 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 
 import { tools } from "./tools.js";
@@ -16,7 +18,9 @@ import { reshapeLists } from "./list-shape.js";
 import { generateCaseStudy } from "./case-study-generator.js";
 import { generateNewsletter } from "./newsletter-builder.js";
 import { generateWebinarScript } from "./webinar-script.js";
-import { generateContentRepurposer } from "./content-repurposer.js";
+import { buildContentRepurposer } from "./content-repurposer.js";
+import { CONTENT_UI_URI, CONTENT_UI_MIME, CONTENT_UI_META, contentWidgetResult } from "./content-repurposer-result.js";
+import { contentRepurposerHtml } from "./content-repurposer-ui.js";
 import { generateThoughtLeadership } from "./thought-leadership.js";
 import { generateTestimonialCapture } from "./testimonial-capture.js";
 import { generateSalesEnablement } from "./sales-enablement.js";
@@ -42,6 +46,7 @@ export const listedTools = tools.map((tool) => {
   return {
     ...tool,
     title,
+    ...(tool.name === "content_repurposer" ? { _meta: { ui: { resourceUri: CONTENT_UI_URI } } } : {}),
     annotations: {
       title,
       readOnlyHint: true,
@@ -153,6 +158,7 @@ export function createServer(): Server {
     {
       capabilities: {
         tools: {},
+        resources: {},
       },
     }
   );
@@ -160,6 +166,14 @@ export function createServer(): Server {
   // List tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return { tools: listedTools };
+  });
+
+  server.setRequestHandler(ListResourcesRequestSchema, async () => ({
+    resources: [{ uri: CONTENT_UI_URI, name: "Content Repurposer", mimeType: CONTENT_UI_MIME, _meta: CONTENT_UI_META }],
+  }));
+  server.setRequestHandler(ReadResourceRequestSchema, async request => {
+    if (request.params.uri !== CONTENT_UI_URI) throw new Error("Unknown resource");
+    return { contents: [{ uri: CONTENT_UI_URI, mimeType: CONTENT_UI_MIME, text: contentRepurposerHtml, _meta: CONTENT_UI_META }] };
   });
 
   // Call tool handler
@@ -177,6 +191,7 @@ export function createServer(): Server {
 
     try {
       let result: string;
+      let widget: ReturnType<typeof contentWidgetResult> | undefined;
 
       switch (name) {
         case "case_study_generator":
@@ -188,9 +203,12 @@ export function createServer(): Server {
         case "webinar_script":
           result = generateWebinarScript(args as Parameters<typeof generateWebinarScript>[0]);
           break;
-        case "content_repurposer":
-          result = generateContentRepurposer(args as Parameters<typeof generateContentRepurposer>[0]);
+        case "content_repurposer": {
+          const kit = buildContentRepurposer(args as unknown as Parameters<typeof buildContentRepurposer>[0]);
+          result = kit.text;
+          widget = contentWidgetResult(kit, closeDanglingBrackets, request.params.arguments);
           break;
+        }
         case "thought_leadership_series":
           result = generateThoughtLeadership(args as Parameters<typeof generateThoughtLeadership>[0]);
           break;
@@ -208,6 +226,7 @@ export function createServer(): Server {
       }
 
       return {
+        ...widget,
         content: [
           {
             type: "text",

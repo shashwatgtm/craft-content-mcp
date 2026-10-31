@@ -69,14 +69,29 @@ export function tagsFor(text: string, brand: string, v: Vertical | null): string
 
 const VENDOR_SENTENCE = /^(?:[A-Z][\w&.-]*(?:\s[A-Z][\w&.-]*)?\s+(?:is|are|helps?|gives|lets|makes|provides|offers|builds|sells|runs|sends|turns|connects|automates)\b|At [A-Z][\w&.-]*(?:\s[A-Z][\w&.-]*)? we (?:built|build|make|made|offer|sell))/;
 
-export function generateContentRepurposer(args: {
+export interface ContentRepurposerArgs {
   your_sector?: string;
   source_content: string;
   source_type: string;
   target_formats?: string;
   brand_voice?: string;
   key_message?: string;
-}): string {
+}
+
+export interface ContentRepurposerWarning { code: string; message: string }
+export interface ContentRepurposerPiece {
+  id: string;
+  format: string;
+  text: string;
+  warnings: ContentRepurposerWarning[];
+}
+
+// Retain the public string writer. Both callers use this single generation pass.
+export function generateContentRepurposer(args: ContentRepurposerArgs): string {
+  return buildContentRepurposer(args).text;
+}
+
+export function buildContentRepurposer(args: ContentRepurposerArgs) {
   const claimsRemoved: string[] = [];
   const clean = (t: string) => { const r = cleanClaims(t); claimsRemoved.push(...r.removed); return r.text; };
   const content = clean(fixNumbers(args.source_content));
@@ -140,7 +155,12 @@ ${unknown.length ? `\n${unknown.map((f) => `${f.replace(/_/g, ' ')} is not a for
 
 `;
 
-  for (const key of known) output += generateFormat(key, k);
+  const pieces: ContentRepurposerPiece[] = known.map((format, index) => {
+    const warnings: ContentRepurposerWarning[] = [];
+    const text = generateFormat(format, k, warnings);
+    return { id: `piece-${index + 1}`, format, text, warnings };
+  });
+  for (const piece of pieces) output += piece.text;
 
   output += `
 ---
@@ -180,7 +200,37 @@ ${ctx.v ? `- ${audienceLine(ctx.v)}
 - **A proof point that lands:** ${ctx.v.proofShape}` : '- Name the audience or the product category in the source to get notes in the sector\'s own language.'}
 `;
 
-  return output;
+  return {
+    text: output,
+    result: {
+      requestedFormats: keys,
+      unknownFormats: unknown,
+      sourceNotes: { sourceType, wordCount, voice, coreMessage: keyMessage || points[0] || '', defaultFormats: !args.target_formats },
+      keyPoints: pointsFull,
+      proof: proof.map((p, index) => ({
+        id: `proof-${index + 1}`, text: p.shown, label: p.label, kind: p.kind,
+        interpretation: isPartnerItem(p) ? "A partner statement, not a customer's words" : KIND_NOTE[p.kind],
+        eligibleAsResult: customerProof.includes(p),
+        selectedForResult: p === bestProof || p === secondProof,
+        // Case and punctuation are ignored. This is not semantic attribution or verification.
+        phraseMatchInPieceIds: pieces.filter(piece => norm(piece.text).includes(norm(p.text))).map(piece => piece.id),
+      })),
+      claimsToSource: [...new Set(claimsRemoved)],
+      caveats: caveatsOf(k),
+      missingInputs: notGiven,
+      beforeUse,
+      notUsed,
+      pieces,
+      sectorNotes: { context: ctx.line, audience: ctx.v ? audienceLine(ctx.v) : '', metrics: ctx.v?.metrics.slice(0, 4) || [], vocabulary: ctx.v?.vocabulary.slice(0, 6) || [], proofShape: ctx.v?.proofShape || '' },
+    },
+    warnings: [
+      ...notGiven.map(message => ({ code: 'MISSING_SOURCE_DETAIL', message })),
+      ...unknown.map(format => ({ code: 'UNKNOWN_FORMAT', message: `${format.replace(/_/g, ' ')} is not a format this tool writes.` })),
+      ...(claimsLine ? [{ code: 'CLAIMS_NEED_SOURCE', message: claimsLine }] : []),
+      ...(beforeUse ? [{ code: 'BEFORE_USE', message: beforeUse }] : []),
+      ...(proof.some(p => /\bpartner (?:words|quote)\b/i.test(p.text) && !isPartnerItem(p)) ? [{ code: 'PROOF_LABEL_REVIEW', message: 'A source mentions partner wording without a recognized partner label. Review its classification; the existing writer may treat it as a result.' }] : []),
+    ],
+  };
 }
 
 const isPartnerItem = (p: ProofItem) => /partner/i.test(p.label);
@@ -304,7 +354,7 @@ const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 const CAVEAT = /\b(?:synthetic|hypothetical|illustrative|fictional|fictitious|unverified|not (?:yet )?verified|not real|for review only|example only|made[- ]up|demonstration (?:statements?|data|inputs?|only|scenario))\b/i;
 const caveatsOf = (k: Kit): string[] => sentencesOf(k.content).map((s) => s.trim()).filter((s) => CAVEAT.test(s)).slice(0, 2);
 
-function generateFormat(format: string, k: Kit): string {
+function generateFormat(format: string, k: Kit, warnings: ContentRepurposerWarning[] = []): string {
   const caveats = caveatsOf(k);
   const missingIn = (shown: string[]): string[] => caveats.filter((c) => !shown.some((s) => norm(s).includes(norm(c)))).map((c) => endSentence(c));
   const kind = k.kind;
@@ -336,6 +386,7 @@ ${[endSentence(lead), ...rest.slice(0, 4).map((p) => endSentence(p)), proof, msg
       if (k.bestProof) for (const part of tweetParts(proofLineOf(k.bestProof, 'Result'))) tweets.push(`${tweets.length}/ ${part}`);
       for (const c of missingIn(tweets)) for (const part of tweetParts(c)) tweets.push(`${tweets.length}/ ${part}`);
       tweets.push(`${tweets.length}/ ${[msg ? tweet(msg) : '', close].filter(Boolean).join(' ')}`);
+      if (tweets.some(t => t.length > 280)) warnings.push({ code: 'LONG_THREAD_POST', message: 'At least one post is over 280 characters. Split it before use.' });
       return `
 ### Twitter/X Thread
 

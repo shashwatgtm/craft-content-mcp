@@ -36,6 +36,7 @@ const HOSTILE = {
 
 // valid inputs that fill every text field of every tool (the test fails if a text field of a tool is missing here)
 const BASE = {
+  ...JSON.parse(readFileSync(new URL("./fixtures/wave2-inputs.json", import.meta.url), "utf8")),
   case_study_generator: { customer_name: "the regional carrier", customer_industry: "last-mile logistics", mode: "full", interview_notes: "Notes from a call with the carrier's operations lead.", challenge: "Failed first attempts kept rising across the network.", solution: "Our routing software planned routes around delivery windows.", results: "Failed first attempts fell in the first quarter", customer_quote: "The routing software changed how we plan every route.", your_product: "our routing software" },
   newsletter_builder: { topic: "Failed first-attempt deliveries in last-mile logistics", key_points: "Plan around windows; Tell the customer early; Measure first-attempt success", cta_goal: "register for the webinar", previous_topics: "Route planning basics", your_product: "our routing software" },
   webinar_script: { topic: "Failed first-attempt deliveries", target_audience: "Heads of logistics at regional carriers", webinar_type: "educational", key_takeaways: "Plan around windows; Tell the customer early", speakers: "The head of operations at a regional carrier; our product lead", include_polls: true, your_product: "our routing software" },

@@ -1,0 +1,20 @@
+[
+  {
+    "name": "pr-launch-pack",
+    "repo": "b2b-events-pr-and-launches",
+    "path": "plugins/b2b-events-pr-and-launches/skills/pr-launch-pack/SKILL.md",
+    "commit": "ea375e3d617e656a526e12f67b4976f6dd629205",
+    "sha": "da8f1ebcff8907aa57cf688975f42b0803bef465",
+    "source_sha256": "8afd57873495ce7ff1788673ffc260b078fdafca52d33761c65c64c3a9a6c196",
+    "source_url": "https://github.com/shashwatgtm/b2b-events-pr-and-launches/blob/ea375e3d617e656a526e12f67b4976f6dd629205/plugins/b2b-events-pr-and-launches/skills/pr-launch-pack/SKILL.md"
+  },
+  {
+    "name": "newsletter-creation-curation",
+    "repo": "b2b-personal-branding",
+    "path": "plugins/b2b-personal-branding/skills/newsletter-creation-curation/SKILL.md",
+    "commit": "893624da965279be056610c9a1f51e95a7f53748",
+    "sha": "950954daea3f5f2ed6ae2439e17fc7798a218446",
+    "source_sha256": "ab79f7e9e3eb10fd540daa1a85f99b767eaac050dd38e408853fc61ff907f216",
+    "source_url": "https://github.com/shashwatgtm/b2b-personal-branding/blob/893624da965279be056610c9a1f51e95a7f53748/plugins/b2b-personal-branding/skills/newsletter-creation-curation/SKILL.md"
+  }
+]

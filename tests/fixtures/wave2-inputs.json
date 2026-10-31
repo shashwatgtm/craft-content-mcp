@@ -1,0 +1,50 @@
+{
+  "launch_copy_check": {
+    "assets": [
+      {
+        "label": "Headline",
+        "text": "A process update",
+        "character_limit": 50
+      }
+    ],
+    "claims": [
+      {
+        "id": "E1",
+        "claim": "Observed 12 process steps.",
+        "source": "https://evidence.invalid/record",
+        "source_date": "2026-10-30",
+        "excerpt": "Observed 12 process steps in 2026.",
+        "status": "user_supplied"
+      }
+    ],
+    "dates": [
+      {
+        "date": "2026-11-02",
+        "weekday": "Monday"
+      }
+    ],
+    "quotes": [
+      {
+        "text": "The process is clearer.",
+        "approval": "approved_by_speaker",
+        "source": "Speaker approval record"
+      }
+    ]
+  },
+  "newsletter_source_check": {
+    "cutoff": "2026-10-01",
+    "issue_date": "2026-10-31",
+    "items": [
+      {
+        "title": "Process update",
+        "url": "https://evidence.invalid/record",
+        "date": "2026-10-30",
+        "excerpt": "Observed process change",
+        "quote": "Observed process change",
+        "take": "We should test the process",
+        "why_it_matters": "It concerns our handoff"
+      }
+    ],
+    "lead_index": 0
+  }
+}

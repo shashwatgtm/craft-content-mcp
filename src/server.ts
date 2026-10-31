@@ -1,3 +1,4 @@
+import { waveTools, isWaveTool, callWaveTool } from './wave2-checkers.js';
 // Shared MCP server definition, used by both entry points:
 //   src/index.ts                 stdio (the npm package)
 //   netlify/functions/mcp.mjs    Streamable HTTP (the hosted connector)
@@ -159,11 +160,12 @@ export function createServer(): Server {
 
   // List tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => {
-    return { tools: listedTools };
+    return { tools: [...listedTools, ...waveTools] };
   });
 
   // Call tool handler
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    if (isWaveTool(request.params.name)) return callWaveTool(request.params.name, request.params.arguments);
     const { name } = request.params;
     // Run 20 (D086): the one place where a tools/call reaches a tool, on both the hosted path (netlify/functions/mcp.mjs and
     // api.mjs) and the stdio path (src/index.ts), because all use this server. Markup in what the user typed is made inert once,

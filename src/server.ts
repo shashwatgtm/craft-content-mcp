@@ -1,3 +1,4 @@
+import { BUILD_PROFILE } from './build-profile.js';
 import {reserveTools,isReserveTool,callReserveTool} from './reserve-tools.js';
 import { attachWidgets } from './widget-layer.js';
 import { waveTools, isWaveTool, callWaveTool } from './wave2-checkers.js';
@@ -161,16 +162,16 @@ export function createServer(): Server {
   );
 
   // List tools handler
-  attachWidgets(server);
+  if (BUILD_PROFILE.profile !== "current") attachWidgets(server);
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
-    return { tools: [...listedTools, ...waveTools, ...reserveTools()] };
+    return { tools: [...listedTools, ...(BUILD_PROFILE.profile === "wave" ? waveTools : []), ...(BUILD_PROFILE.profile === "wave" ? reserveTools() : [])] };
   });
 
   // Call tool handler
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    if (isReserveTool(request.params.name)) return callReserveTool(request.params.name,request.params.arguments);
-    if (isWaveTool(request.params.name)) return callWaveTool(request.params.name, request.params.arguments);
+    if (BUILD_PROFILE.profile === "wave" && isReserveTool(request.params.name)) return callReserveTool(request.params.name,request.params.arguments);
+    if (BUILD_PROFILE.profile === "wave" && isWaveTool(request.params.name)) return callWaveTool(request.params.name, request.params.arguments);
     const { name } = request.params;
     // Run 20 (D086): the one place where a tools/call reaches a tool, on both the hosted path (netlify/functions/mcp.mjs and
     // api.mjs) and the stdio path (src/index.ts), because all use this server. Markup in what the user typed is made inert once,

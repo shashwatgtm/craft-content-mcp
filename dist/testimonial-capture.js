@@ -16,7 +16,11 @@ export function generateTestimonialCapture(args) {
     const context = args.relationship_context || 'not supplied';
     const storyFull = fixNumbers(args.success_story.trim());
     const type = args.testimonial_type;
-    const useCase = args.use_case || 'marketing materials (assumed, not supplied)';
+    const useCase = args.use_case || 'Use not approved';
+    const permissionText = args.use_case || '';
+    const confirmation = (label) => permissionText.split(/[;\n]/).find(line => new RegExp('^Approved ' + label + ':\\s*\\S', 'i').test(line.trim()))?.replace(/^[^:]+:\s*/, '').trim() || '';
+    const channel = confirmation('channel'), attribution = confirmation('attribution'), wording = confirmation('wording');
+    const permissionComplete = !!channel && !!attribution && !!wording;
     const incentive = args.incentive || '';
     // Run 19 (D80, problems 3, 4 and 8): the product the user named is used everywhere the old kit printed "[Product]"; the sector and the
     // business model are read from every text the user gave.
@@ -38,6 +42,15 @@ export function generateTestimonialCapture(args) {
     const person = isGenericName(name) ? 'the contact' : name;
     const storyBlock = items.length ? `${items.map((p, i) => `${i + 1}. ${endSentence(capFirst(clipEcho(p.shown, 300)))} *(${KIND_NOTE[p.kind]}${own.includes(p) ? `; used as ${company}'s result` : genericCo ? "; your contact's company is not named, so this is not put to them as their own" : '; not put to this contact'})*`).join('\n')}` : '';
     let output = `# Testimonial Capture Kit
+
+## Publication permission first
+${permissionComplete ? 'Permission scope supplied; confirm the final quote matches the approved wording before publication.' : 'Use not approved. The material below is for interview and permission review only; no publishable quote is approved.'}
+| Confirmation | Status |
+| --- | --- |
+| Channel | ${channel || 'Unknown; ask where the customer permits use'} |
+| Attribution | ${attribution || 'Unknown; confirm name, role, company or anonymity'} |
+| Permitted wording | ${wording || 'Unknown; ask the customer to approve the exact words'} |
+Keep the customer permission record and date with the final quote. Suggested wording remains a draft for the customer to correct.
 ## ${isGenericName(name) ? (role || 'Contact') : name} at ${company}
 
 ---
@@ -86,7 +99,7 @@ ${generateInterviewQuestions(type, P, co, role, ctx.v, ctx.model, w, own)}
 *Sentence starters to offer the customer. The customer completes them in their own words and approves the final text; nothing below is a quote until they do.*
 
 ### Short Format (1-2 sentences)
-*For: Website hero section, social proof snippets*
+*Draft for customer wording review; publication channel and attribution require approval.*
 
 Starter: "Since we started with ${P}, ..."
 ${own.length ? `\nFact to check with the customer before quoting: ${endSentence(capFirst(clipEcho(own[0].shown, 220)))}\n` : ''}

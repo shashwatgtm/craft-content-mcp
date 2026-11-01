@@ -476,7 +476,8 @@ const SUPERLATIVE_CLAIM = /\b(?:the first and only|first and only|the only|the f
 export function claimsToSource(texts: string[]): string[] {
   const out: string[] = [];
   for (const t of texts) {
-    const m = SUPERLATIVE_CLAIM.exec(t);
+    const r = readSignal(t, SUPERLATIVE_CLAIM, SIGNALS.unique);
+    const m = r.state === 'affirmed' ? r.matched : null;
     if (m && !out.includes(m[0].toLowerCase())) out.push(m[0].toLowerCase());
   }
   return out;

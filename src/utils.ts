@@ -383,7 +383,7 @@ export function analyzeContent(content: string, contentType: string, goal: strin
   if (passiveMatches.length > sentences * 0.3) {
     note('clarity', 'passive', 2, `High passive voice usage (${passiveMatches.length} instances)`, 'Convert to active voice: "X did Y" instead of "Y was done by X"');
   }
-  const buzz = distinct(content, BUZZ).filter((b) => !(/^optimi[sz]/i.test(b) && DOMAIN_OPT.test(sentenceWith(content, b))));
+  const buzz = confirmedMatches(content, BUZZ).filter((b) => !(/^optimi[sz]/i.test(b) && DOMAIN_OPT.test(sentenceWith(content, b))));
   if (buzz.length > 0) {
     const shown = buzz.slice(0, 4).map((b) => `"${b}" in "${sentenceWith(content, b)}"`).join('; ');
     note('clarity', 'buzzwords', Math.min(4, buzz.length), `Buzzwords (${buzz.length}): ${shown}${buzz.length > 4 ? `; and ${buzz.length - 4} more: ${buzz.slice(4).join(', ')}` : ''}`, 'Say what the product does in plain words: "use" instead of "leverage" or "utilize", "help" instead of "empower", "improve" instead of "optimize".', true);
@@ -433,7 +433,7 @@ export function analyzeContent(content: string, contentType: string, goal: strin
   if (foundTransitions.length < 2 && paragraphs.length > 3) {
     note('structure', 'transitions', 2, 'Few transition words: may feel disjointed', 'Add transitions: "However...", "As a result...", "First... Second..."');
   }
-  const merge = distinct(content, MERGE_FIELD);
+  const merge = confirmedMatches(content, MERGE_FIELD);
   if (merge.length > 0) {
     note('structure', 'merge-field', 2, `Unfilled merge field or placeholder: ${merge.slice(0, 4).join(', ')}`, 'Fill every merge field and placeholder before sending, or check that your email tool fills it.', true);
   }
@@ -480,7 +480,7 @@ export function analyzeContent(content: string, contentType: string, goal: strin
   if ((hasSignal(goalLower, /educate|inform/i, 'education')) && words < 300) {
     note('goalAlignment', 'educate-length', 2, 'Educational content may be too brief', 'Expand with examples, data, or how-to steps');
   }
-  if (hasSignal(goalLower, /awareness|brand/i, 'awareness')) {
+  if (hasSignal(goalLower, /\b(?:awareness|brand)\b/i, 'awareness')) {
     const brandMentions = (content.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b/g) || []).length;
     if (brandMentions < 2) {
       note('goalAlignment', 'brand', 2, 'Brand/product mentions may be insufficient for awareness', 'Ensure brand is mentioned prominently');

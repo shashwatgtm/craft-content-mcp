@@ -416,7 +416,7 @@ define(
               "Instruction-like text was found in the draft and treated as text, not followed.",
             ]
           : []),
-        "Scan: deterministic server port of the pinned English scanner",
+        "Scan: English wording, readability and date checks",
         "Banned flags: " +
           r.before.stats.banned_flags +
           "; review flags: " +
@@ -444,7 +444,7 @@ define(
             ]),
           },
         },
-        { heading: "Server scan output", body: JSON.stringify(r.before) },
+        { heading: "Detailed scan findings", body: JSON.stringify(r.before) },
         {
           heading: "Proposed revision check",
           body: r.proposal
@@ -455,7 +455,7 @@ define(
       data: r,
       limitations: [
         "No detector result, authorship judgment or guarantee is made. Pattern matches are editing prompts, not proof that a machine wrote the text.",
-        "Reading grade is an estimate; short texts under 60 words are unstable. Named audience ceilings are source working conventions, not measured standards.",
+        "Reading grade is an estimate; short texts under 60 words are unstable. Named audience ceilings are example writing guides, not measured standards.",
         "The scanner cannot verify semantic equivalence, invented causal links or factual truth. A structurally passing revision still requires meaning review.",
         "Explicit allowed words are kept by caller choice. Quoted source text is masked by default; date checks only flag a question and never modify the quote.",
       ],

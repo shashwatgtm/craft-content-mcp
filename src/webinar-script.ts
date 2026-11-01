@@ -764,7 +764,7 @@ function recap(w: W): string {
 function blockScript(section: { name: string; duration: number }, w: W, mine: Pt[], k: number, blocks: number): string {
   if (k === 0) {
     const work = Math.max(1, section.duration - 2);
-    return seg(section, 'Worked example exercise', w.example ? [
+    return seg(section, 'Worked example exercise', [ ...(w.productDescription ? [`For context: ${w.productDescription}`] : []), ...(w.example ? [
       `Here is the supplied example: ${w.example}`,
       `Take ${work} minutes to apply these checks: ${w.takeaways.slice(0,3).map(p=>withLabel(p)).join('; ')}. Record the owner, the starting evidence, your decision and the evidence still needed.`,
       'Expected participant output: one completed decision record; unknown observations stay unknown. Do not invent a measured result.',
@@ -772,7 +772,7 @@ function blockScript(section: { name: string; duration: number }, w: W, mine: Pt
     ] : [
       'This exercise needs an anonymised example and its starting records before delivery. Ask the host to supply them; no customer result is assumed.',
       `The reserved ${section.duration} minutes cover the example, one participant decision record and a debrief on evidence and unknowns.`
-    ]);
+    ])]);
   }
   const v = w.ctx.v;
   const lead = k === 0 ? "Let's start with the first idea." : k === blocks - 1 ? 'Last, and the most practical part.' : 'That brings us to the next part.';

@@ -127,7 +127,7 @@ export function generateContentRepurposer(args) {
         places.push('the video description');
     const toDo = [places.length && !sourceUrl ? `confirm the source URL for ${proseJoin(places)} before sending` : '', known.includes('email') && !sender ? 'confirm the sender name before the email can be sent' : ''].filter(Boolean);
     const claimsLine = claimsRemoved.length ? `**Claims to source before you publish:** your source or key message used ${proseJoin([...new Set(claimsRemoved)].map((c) => `"${c}"`))}. The pieces leave it out; add it back once, in one place, and only if you can prove it with a source a reader can check.` : '';
-    const beforeUse = toDo.length ? `Draft only. Before sending: ${proseJoin(toDo)}. Supply confirmed Reader action, Source URL and Sender as labelled lines in the source notes.` : 'Source link and sender supplied; confirm the wording and publication permission before sending.';
+    const beforeUse = toDo.length ? `Draft only. Before you use it: ${proseJoin(toDo)}. Supply confirmed Reader action, Source URL and Sender as labelled lines in the source notes.` : 'Source link and sender supplied; confirm the wording and publication permission before sending.';
     // Sentences of the source that no piece carries: the key points are the five the rule chose; the others are named in one line.
     const wordSet = (s) => new Set((s.toLowerCase().match(/[a-z]{4,}/g) || []).map((w) => w.slice(0, 5)));
     const carried = [title, ...pointsFull, keyMessage].filter(Boolean).map(wordSet);

@@ -155,10 +155,11 @@ export function generateNewsletter(args) {
     }
     // Supplied checks define the issue; sector templates do not displace them.
     const suppliedChecks = given ? splitList(soft.text).filter(Boolean) : [];
-    if (suppliedChecks.length >= 2) {
+    const checkIssue = suppliedChecks.length >= 2 && suppliedChecks.every(p => p.split(/\s+/).length <= 12 && !/\d+%|page claim|\b(?:we|our|platform|product)\b/i.test(p)) && /^(?:review|check|inspect|audit)\b/i.test(ctaGoal);
+    if (checkIssue) {
         sections.splice(0, sections.length, ...suppliedChecks.map((point, i) => ({
             heading: `Check ${i + 1}: ${cap(point.replace(/[.]+$/, ''))}`,
-            body: `Review this supplied check: "${point.replace(/[.]+$/, '')}". Record what you observed, the source and anything still unknown before drawing a conclusion.`
+            body: `Review this supplied check: "${point.replace(/[.]+$/, '')}". For check ${i + 1}, record the observation, source and unresolved question.`
         })));
     }
     // ---- subject, preview, opening ------------------------------------------------------------------------------------
@@ -178,7 +179,7 @@ export function generateNewsletter(args) {
         openLines.push(openingSentences(opening, who));
     else
         openLines.push(parts.short ? `This issue is about ${clause ? `"${label}"` : lower(label)}.` : `This issue is about ${lower(head)}.`);
-    if (v && !given)
+    if (v && !checkIssue)
         openLines.push(`For ${forWhom}, the numbers to watch are ${proseJoin(v.metrics.slice(0, 2))}.`);
     if (previous.length) {
         const list = proseJoin(previous.map((x) => `"${x.replace(/[.\s]+$/, '')}"`));
@@ -198,7 +199,7 @@ export function generateNewsletter(args) {
     // ---- closing -----------------------------------------------------------------------------------------------------
     const about = productName && productDescription && productDescription !== productName && productDescription.length > productName.length + 3 ? `${productName} is ${lower(productDescription.replace(/\.$/, ''))}. ` : '';
     const next = VERB_START.test(ctaGoal) ? `you can ${lower(ctaGoal)}` : `the next step is ${lower(ctaGoal)}`;
-    const closing = given ? `${cap(ctaGoal)}.` : `${about}${casual ? 'If this made you think, ' : 'If you would like to take this further, '}${next}.`;
+    const closing = checkIssue ? `${cap(ctaGoal)}.` : `${about}${casual ? 'If this made you think, ' : 'If you would like to take this further, '}${next}.`;
     // the button says the action in a few words: a bracket note is left out, and a long product name is the short name the issue already uses
     const buttonText = (() => {
         let b = ctaGoal.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();

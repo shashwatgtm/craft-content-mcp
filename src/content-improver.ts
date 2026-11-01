@@ -101,7 +101,9 @@ ${analysis.findings.length ? analysis.findings.map(f => {
 
 ---
 
-## Optional scoring reference: ${analysis.overall.score}/10 (${analysis.overall.rating})
+## Overall Score: ${analysis.overall.score}/10 (${analysis.overall.rating})
+
+Optional scoring reference; review the evidence and proposed changes above first.
 
 *How this is scored: each score starts at 10 and loses points only for the findings listed below, each quoted from your text. The overall score is the average of the four scores and the lowest one, so one weak area cannot hide behind three strong ones. A rating of EXCELLENT is not given while a buzzword, an unproven claim, a fragment, an unfilled merge field or an unsupported claim about the reader is open. These checks do not judge whether your claims are true.*
 

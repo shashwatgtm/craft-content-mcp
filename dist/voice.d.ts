@@ -24,6 +24,12 @@ export declare function voiceAudit(a: Row): {
         };
         flags: Row[];
     };
+    unresolved: Row[];
+    resolved: {
+        [x: string]: any;
+    }[];
+    unmatchedDecisions: Row[];
+    sourcePreserved: any;
     audience: any;
     gradeStatus: string;
     shortTextCaution: boolean;

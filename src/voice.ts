@@ -295,6 +295,20 @@ export function voiceScan(
   };
 }
 export function voiceAudit(a: Row) {
+  // The frozen string contract can carry an explicit review envelope, or ordinary revision prose.
+  let decisions: Row[] = [];
+  if (typeof a.proposed_revision === 'string' && a.proposed_revision.trim().startsWith('{')) {
+    try {
+      const review = JSON.parse(a.proposed_revision);
+      if (Array.isArray(review.decisions)) {
+        if (review.decisions.length > 200 || review.decisions.some((d:Row)=>!d || typeof d.span!=='string' || typeof d.rule!=='string' || !['accept','reject'].includes(d.decision))) throw new Error('Each review decision needs its exact span, rule and accept or reject choice.');
+        decisions = review.decisions;
+        if (review.text !== undefined && typeof review.text !== 'string') throw new Error('Revision text must be prose.');
+        a = {...a, proposed_revision:review.text};
+      }
+    } catch (error) { if (!(error instanceof SyntaxError)) throw error; }
+  }
+
   const before = voiceScan(
       a.draft,
       a.skip_quotes ?? true,
@@ -369,8 +383,27 @@ export function voiceAudit(a: Row) {
       ),
     };
   }
+  const decisionFor = (f:Row) => {
+    const matches = decisions.filter(d=>d.span===f.span&&d.rule===f.rule);
+    if (matches.length!==1) return null;
+    const d=matches[0];
+    if (f.kind==='date' && !['keep_weekday','keep_date'].includes(d.fact_choice)) return null;
+    return d;
+  };
+  const unresolved = before.flags.filter(f=>!decisionFor(f));
+  const resolved = before.flags.filter(f=>decisionFor(f)).map(f=>({...f,...decisionFor(f)}));
+  const unmatchedDecisions = decisions.filter(d=>!before.flags.some(f=>d.span===f.span&&d.rule===f.rule));
+  if (proposal) {
+    for (const d of resolved.filter(d=>d.decision==='reject')) if (!a.proposed_revision.includes(d.span)) proposal.issues.push('Rejected change was applied to the exact span: '+d.span);
+    if (before.flags.some(f=>f.kind==='date'&&!decisionFor(f)) && a.proposed_revision!==a.draft) proposal.issues.push('Unresolved weekday and date conflict: writer must choose which fact to retain.');
+    if (proposal.issues.length) proposal.status='REQUIRES_CORRECTION';
+  }
   return {
     before,
+    unresolved,
+    resolved,
+    unmatchedDecisions,
+    sourcePreserved: a.draft,
     audience,
     gradeStatus:
       before.stats.approx_reading_grade === null
@@ -429,21 +462,23 @@ define(
       ],
       sections: [
         {
-          heading: "Flags",
+          heading: "Unresolved flags first",
           table: {
             headers: ["Line", "Span", "Rule", "Action"],
-            rows: r.before.flags.map((f) => [
+            rows: r.unresolved.map((f) => [
               f.line,
               f.span,
               f.rule,
               f.kind === "date" || f.kind === "encoding"
-                ? "Ask the writer; do not silently fix the fact"
+                ? "Writer must choose the stated weekday or calendar date; neither is changed silently"
                 : f.severity === "review"
                   ? "Review literal meaning before changing"
                   : "Review this flagged span only",
             ]),
           },
         },
+        { heading: 'Supplied editorial decisions', body: r.resolved.length ? JSON.stringify(r.resolved) : 'No exact span and rule decisions supplied. Accept or reject each wording change; date conflicts also need a writer choice of weekday or calendar date.' },
+        { heading: 'Unmatched decisions', body: JSON.stringify(r.unmatchedDecisions) },
         { heading: "Detailed scan findings", body: JSON.stringify(r.before) },
         {
           heading: "Proposed revision check",

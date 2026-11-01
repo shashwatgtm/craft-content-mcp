@@ -4,7 +4,7 @@ import { readerLabel } from "./text-signals.js";
 // They read what the user typed into points (a problem, a result with its source label, a quote, a capability), say each point in a
 // whole sentence of ours, and write the closing line that names what was not given. Rule B82: nothing here adds a figure, a quote, a
 // customer or a named company; the words come from the user's text and from the one sector file (src/verticals.ts).
-import { splitList, fixNumbers, endSentence, capFirst, proseJoin, clipAtWord, dropTail, tidyPoint, STAT, FIGURE, RECOGNITION, SCALE } from "./draft.js";
+import { splitList, fixNumbers, endSentence, capFirst, proseJoin, clipAtWord, dropTail, tidyPoint, missingEvidence, STAT, FIGURE, RECOGNITION, SCALE } from "./draft.js";
 import { cap, isCommonWord } from './utils.js';
 import { neutraliseText } from "./echo-safe.js";
 import { weldNames } from "./sector.js";
@@ -137,6 +137,8 @@ function roleOf(p, problemLike, known = false) {
     const l = p.label.toLowerCase();
     if (isInstruction(p.text))
         return 'instruction';
+    if (missingEvidence(p.text))
+        return 'problem';
     if (known && frictionReading(p.text).state !== 'negated')
         return 'problem';
     if (/quote|testimonial/.test(l) || /^(?:customer|partner) (?:quote|words)\b/i.test(p.text) || /^["“]/.test(p.text))
@@ -372,6 +374,8 @@ const lowerStart = (s) => lowerFirstSafe(s);
 export function sentenceOf(p, who, variant = 0) {
     const t = withLabel(p);
     const tIn = t.replace(/:\s+/, ', namely '); // a text that has a colon of its own does not follow a lead-in that has one
+    if (missingEvidence(p.text))
+        return endSentence(`Evidence still to gather: ${lowerStart(t)}`);
     if (p.clause)
         return endSentence(capFirst(t));
     if (PARTICIPLE_START.test(p.text) && who)

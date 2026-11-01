@@ -1,6 +1,6 @@
 import { countWords, aOrAn } from './utils.js';
 import { splitItems, pickKeyPoints, readContext, audienceLine, firstSentence, sentencesOf, q, type Vertical } from './sector.ts';
-import { parseProof, fixNumbers, endSentence, shortenClauses, proseJoin, brandFrom, softenClaims, dropTail, KIND_NOTE, FIGURE, type ProofItem } from './draft.ts';
+import { parseProof, fixNumbers, endSentence, shortenClauses, proseJoin, brandFrom, softenClaims, dropTail, KIND_NOTE, missingEvidence, FIGURE, type ProofItem } from './draft.ts';
 
 // Run 21c (draft rewrite): the kit is a set of finished pieces, one per channel, built from the source, the key message, the proof and the
 // voice. Each piece uses whole sentences of the source (a long one is shortened at a clause boundary in posts and tweets only). Nothing is
@@ -79,7 +79,7 @@ export function generateContentRepurposer(args: {
 }): string {
   const claimsRemoved: string[] = [];
   const clean = (t: string) => { const r = cleanClaims(t); claimsRemoved.push(...r.removed); return r.text; };
-  const content = clean(fixNumbers(args.source_content));
+  const content = fixNumbers(args.source_content).split('\n').map(clean).join('\n');
   const sourceType = args.source_type;
   const targetFormats = args.target_formats ? splitItems(args.target_formats) : DEFAULT_FORMATS;
   const voice = args.brand_voice && VOICE[args.brand_voice] ? args.brand_voice : 'professional';

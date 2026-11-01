@@ -2,7 +2,7 @@ import { sellerSectorLabel } from './text-signals.js';
 import { analyzeContent, generateImprovedVersion, editSentence, toneCheck, annotateText, bodyOf, countWords, avgWordsPerSentence, calculateReadability, SUGGESTION_FOOTER, clipEcho, ASK } from './utils.js';
 import { lowerFirstIfCommon, isCommonWord } from './utils.js';
 import { readContext, audienceLine, sentencesOf } from "./sector.js";
-import { shortenClauses, clipAtWord, endSentence, fixNumbers, FIGURE, dropTail } from "./draft.js";
+import { shortenClauses, clipAtWord, endSentence, fixNumbers, missingEvidence, FIGURE, dropTail } from "./draft.js";
 // Default goals by content type
 const DEFAULT_GOALS = {
     blog_post: 'Engage readers and drive shares/comments',
@@ -214,7 +214,7 @@ ${generateChecklist(contentType, goal, analysis, buzzFound, hardFound, readabili
 
 ${SUGGESTION_FOOTER}
 `;
-    return output;
+    return (missingEvidence(args.content) ? '**Evidence still to gather:** Your text does not supply a measured customer outcome. Gather an approved result before using it as proof.\n\n' : '') + output;
 }
 // Which of the sector's measures the text already names (a measure counts when one of its long words appears).
 function measuresNamed(content, metrics) {
@@ -249,7 +249,7 @@ function suggestOpening(content) {
     const outcome = /\b(?:reduc\w+|cut|cuts|saved?|saves|improv\w+|increas\w+|grew|grow|boost\w*|achiev\w+|automat\w+|consolidat\w+|expanded|faster|from \d[\d.,]*%? to|resolved|fell|rose)\b/i;
     const fig = (x) => FIGURE.test(x) && !/\?\s*$/.test(x) && x.split(/\s+/).length >= 4;
     const sc = (x) => (fig(x) ? 2 : -9) + (outcome.test(x) ? 1 : -9) + (/title\)\s*$/i.test(x) ? -9 : 0) + (/from \d[\d.,]*%? to|\d%|[$₹€£]\s?\d|lakhs?/i.test(x) ? 3 : 0) + (/customer|quote|case study/i.test(x) ? 2 : 0) + (/^(?:recognition|named|leader|featured)\b/i.test(x) ? -9 : 0);
-    const proof = pieces.filter((x) => sc(x) > 0).sort((a, b) => sc(b) - sc(a))[0];
+    const proof = pieces.filter((x) => !missingEvidence(x) && sc(x) > 0).sort((a, b) => sc(b) - sc(a))[0];
     if (!proof)
         return 'No opening can be built from this text without a fact from you. Add one specific result or one sourced observation about the reader\'s work, then lead with it and run this tool again.';
     const clean = shortenClauses(proof.replace(/[.!?]+$/, ''), 220);
@@ -360,7 +360,7 @@ function shorterEmail(content, pasted = false) {
     const pieces = rest.flatMap((s) => s.split(/;\s+/)).map((x) => x.trim());
     const outcome = /\b(?:reduc\w+|cut|cuts|saved?|saves|improv\w+|increas\w+|grew|grow|boost\w*|achiev\w+|automat\w+|consolidat\w+|expanded|faster|resolved|fell|rose|from \d[\d.,]*%? to)\b/i;
     const score = (x) => (FIGURE.test(x) ? 2 : -9) + (outcome.test(x) ? 1 : -9) + (/title\)\s*$/i.test(x) ? -9 : 0) + (/from \d[\d.,]*%? to|\d%|[$₹€£]\s?\d|lakhs?/i.test(x) ? 3 : 0) + (/customer|quote|case study/i.test(x) ? 2 : 0) + (/^(?:recognition|named|leader|featured)\b/i.test(x) ? -9 : 0);
-    const proof = pieces.filter((x) => score(x) > 0).sort((a, b) => score(b) - score(a))[0] || pieces.find((x) => QUOTED_PROOF.test(x) && x.length <= 260);
+    const proof = pieces.filter((x) => !missingEvidence(x) && score(x) > 0).sort((a, b) => score(b) - score(a))[0] || pieces.find((x) => !missingEvidence(x) && QUOTED_PROOF.test(x) && x.length <= 260);
     const opening = rest[0];
     const product = rest.find((s, i) => i > 0 && s !== proof && !(proof && s.includes(proof)));
     const kept = [];

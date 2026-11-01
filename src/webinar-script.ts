@@ -1,6 +1,6 @@
 import { lowerFirstIfCommon, cap, aOrAn } from './utils.js';
 import { q, readContext, startWords, audienceLine, isClause, AI_TASK_METRICS, type Vertical, type BusinessModel } from './sector.ts';
-import { splitList, bestQuestion, unpackTopic, fixNumbers, endSentence, capFirst, proseJoin, roleOf, clipAtWord, productParts, softenClaims } from './draft.ts';
+import { splitList, bestQuestion, unpackTopic, fixNumbers, endSentence, capFirst, proseJoin, roleOf, clipAtWord, productParts, missingEvidence, softenClaims } from './draft.ts';
 import { looksClause, cleanSectorLine, readPoints, groupPhrases, sentenceOf, withLabel, shorten, waysToSettle, settleBare, quotedEnd, instructionNote, sharpenLine, stripGuardQuotes, lowerFirstSafe, audienceShort, shapeOf, startsImperative, companyFrom, toReader as toYou, PARTICIPLE_START, nk, type Pt } from './rw-content.ts';
 
 // Run 22 (rewrite): the script is written to be read aloud. The takeaways are read for what they are and said in whole sentences, the
@@ -64,7 +64,7 @@ export function generateWebinarScript(args: {
   // Run 42B: a typed takeaway that only sounds like a problem ("integrations ... are not needed") but is a vendor claim with no source label is a claim, not the problem: it is
   // taught as a takeaway under the vendor's-description label, never spoken as the fact of the problem.
   const knownProblem = nk(parts.problem || '');
-  for (const p of all) if (p.role === 'problem' && !p.label && CLAIM_WORD.test(p.text) && !knownProblem.includes(nk(p.text))) p.role = 'capability';
+  for (const p of all) if (p.role === 'problem' && !missingEvidence(p.text) && !p.label && CLAIM_WORD.test(p.text) && !knownProblem.includes(nk(p.text))) p.role = 'capability';
   const problemPts = all.filter((p) => p.role === 'problem');
   // Run 42B round U: instructions that follow each other ("Get organized", "finish projects on time", "win more jobs with faster proposals")
   // are one run of what the listener will learn to do, said as one sentence, never one odd point each (up to four, 170 characters)
@@ -182,7 +182,7 @@ ${notes.map((n) => `- ${n}`).join('\n')}
 | **Product Mentions** | ${productLevel}${args.product_mention_level ? '' : ' (default)'} |
 ${missing.length ? `\n${sharpenLine(missing)}\n` : ''}`;
 
-  return output.replace(/\n{3,}/g, '\n\n');
+  return (missingEvidence(args.key_takeaways || '') ? '**Evidence still to gather:** The supplied takeaways do not establish a customer outcome. Gather an approved result before presenting one as proof.\n\n' : '') + output.replace(/\n{3,}/g, '\n\n');
 }
 
 const INSTRUCTION_LIKE = /\b(?:ignore|disregard|forget|override)\b.{0,60}\b(?:instructions?|prompts?|rules?|above|previous|prior)\b|\bsystem prompt\b/i;
@@ -416,6 +416,7 @@ function howTo(text: string): string {
 // run of instructions is what the listener will learn to do; a phrase is what the session shows or covers. A fragment is never given a
 // verb that does not fit it.
 function tk(p0: Pt, w: W, after = false): string {
+  if (missingEvidence(p0.text)) return endSentence(`Evidence still to gather: ${p0.text}`);
   const shape = shapeOf(p0);
   const claim = !p0.label && shape !== 'imperative' && shape !== 'example' && p0.role !== 'instruction' && p0.role !== 'problem' && CLAIM_WORD.test(p0.text) && w.takeaways.includes(p0) && w.haveTakeaways;
   const p: Pt = claim ? { ...p0, label: VENDOR } : p0;

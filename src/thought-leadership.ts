@@ -72,7 +72,7 @@ export function generateThoughtLeadership(args: {
   }) : [];
   const evidence = items.filter((i) => (i.kind === 'result' || i.kind === 'quote') && !isPartner(i));
   const stories = items.filter((i) => i.kind === 'title');
-  const credibilityItems = items.filter((i) => !evidence.includes(i) && !stories.includes(i));
+  const credibilityItems = items.filter((i) => !evidence.includes(i) && !stories.includes(i) && i.kind !== 'missing' && i.kind !== 'unclear' && i.kind !== 'adverse');
 
   const topicNorm = topic.toLowerCase().replace(/\W+/g, ' ').trim();
   const takeAll = splitTake(soft(yourTake));
@@ -125,7 +125,7 @@ export function generateThoughtLeadership(args: {
   const notUsed = items.filter((i) => !used.has(i) && !credibility.includes(i));
   const notes: string[] = [];
   if (claims.length) notes.push(`**Claims to source before you publish:** your take or proof points use ${proseJoin(claims.map((c) => `"${c}"`))}. The articles and posts leave them out; add one back once, in one place, and only if you can prove it with a source a reader can check.`);
-  if (notUsed.length) notes.push(`Not used as examples: ${proseJoin(notUsed.map((i) => `"${clipEcho(i.text, 80)}"`))}, because ${numArticles === 1 ? 'the article has' : `the ${numArticles} articles have`} room for only so many; ${notUsed.length === 1 ? 'it is' : 'they are'} listed under the proof points below.`);
+  if (notUsed.length) notes.push(`Not used as examples: ${proseJoin(notUsed.map((i) => `"${clipEcho(i.shown, 180)}"`))}, because ${numArticles === 1 ? 'the article has' : `the ${numArticles} articles have`} room for only so many; ${notUsed.length === 1 ? 'it is' : 'they are'} listed under the proof points below.`);
   if (conflicts.length) notes.push(`Two different figures are given for one result: ${proseJoin(conflicts.map((c) => `"${clipEcho(c.shown, 200)}"`))}. They differ, so the articles show both as typed and mark the case.`);
   if (orders.length) notes.push(instructionNote(orders));
   if (droppedLegal.length) notes.push(`Legal or regulatory wording left out of the articles: ${proseJoin([...new Set(droppedLegal)].map((x) => `"${clipEcho(x, 160)}"`))}. A disclaimer is not a topic or a point; keep it as the footer of the page it belongs to.`);
@@ -153,7 +153,7 @@ Link each promo post to its article. ${tags ? `Hashtags for the posts: ${tags}.`
 
 ## Proof Points Used
 
-${items.length || credibility.length ? `| Proof point | What it is | How it is used |\n|---|---|---|\n${[...items, ...credibility.filter((c) => !items.includes(c))].map((p) => `| ${clipEcho(p.shown, 600).replace(/\|/g, '/')} | ${noteOf(p)} | ${credibility.includes(p) ? 'a credibility line, not an example' : used.has(p) ? `article ${(used.get(p) as number[]).join(' and ')}` : 'not used as an example'} |`).join('\n')}` : 'None were given.'}
+${items.length || credibility.length ? `| Proof point | What it is | How it is used |\n|---|---|---|\n${[...items, ...credibility.filter((c) => !items.includes(c))].map((p) => `| ${clipEcho(p.shown, 600).replace(/\|/g, '/')} | ${noteOf(p)} | ${p.kind === 'missing' || p.kind === 'unclear' ? 'evidence still to gather' : credibility.includes(p) ? 'a credibility line, not an example' : used.has(p) ? `article ${(used.get(p) as number[]).join(' and ')}` : 'not used as an example'} |`).join('\n')}` : 'None were given.'}
 ${sectorBlock(vFull, askedQuestions.has('who'))}${generic ? '\n- The readers you named do not match the readers this sector reading is written for, so the articles use none of its measures.\n' : ''}
 ---
 

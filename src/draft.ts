@@ -150,7 +150,7 @@ function splitListRaw(raw: unknown): string[] {
 // A real figure: a percentage, a money amount, a count with a unit, or a number of two or more digits; not a token such as 4G or 3PL.
 export const FIGURE = /[$₹€£]\s?\d|(?<![A-Za-z])\d[\d.,]*\s?(?:%|x\b|\+|k\b|m\b|mn\b|million|billion|lakhs?|crore|days?|hours?|weeks?|months?|years?|minutes?|seconds?|percent|sources|branches|sites|trucks|customers|businesses|companies)|(?<![A-Za-z0-9])\d{2,}(?![A-Za-z0-9])/i;
 
-export type ProofKind = 'result' | 'quote' | 'recognition' | 'title' | 'scale' | 'claim' | 'adverse' | 'unclear';
+export type ProofKind = 'result' | 'quote' | 'recognition' | 'title' | 'scale' | 'claim' | 'adverse' | 'unclear' | 'missing';
 export interface ProofItem {
   text: string;           // the item as typed, label removed
   label: string;         // the source label typed in brackets at the end ("customer quote", "page claim"), or ''
@@ -314,6 +314,12 @@ const PROMO_OFFER =/\b(?:financ(?:e|es|ing)|loans?|credit lines?|working capital
 const CERTIFIED = /\b(?:certified|certifications?|accredited|compliant with|soc ?2\+?|iso ?27001|pci[- ]?dss)\b/i;
 // Run 42B round S3: "Quote from Jo Smith, VP of Transport: words" and "Hillside School, The Czech Republic: words" are customer quotes
 const SPEAKER_QUOTE = /^(?:(?:[Qq]uotes?|[Ww]ords|[Tt]estimonial) (?:from|by) [A-Za-z][^:;]{1,120}|[A-Z][\w&.'-]*(?:\s+(?:[A-Z][\w&.'-]*|of|the|and|&)){0,6},\s+(?:The\s+)?[A-Z][\w&.'-]*(?:\s+[A-Z][\w&.'-]*){0,3}):\s+\S+(?:\s+\S+){5,}/;
+// An absence of evidence is a collection task, never a customer result.
+export function missingEvidence(text: string): boolean {
+  const absent = /\b(?:no|without|lack(?:s|ing)?(?: of)?)\s+(?:(?:an?|any|approved|measured|verified|documented|published|customer|quantified|outcome|outcomes|real|actual|usable|supporting)\s+){0,5}(?:results?|outcomes?|stud(?:y|ies)|evidence|proof)\b|\b(?:results?|outcomes?|stud(?:y|ies)|evidence|proof)\s+(?:(?:is|are|was|were|has|have|been|still|not|yet|approved|customer)\s+){0,5}(?:missing|unavailable|unmeasured|not (?:measured|approved|available|recorded|supplied|provided|gathered))\b|\b(?:not|never|haven't|hasn't)\s+(?:yet\s+)?(?:measured|verified|documented|gathered|recorded)\s+(?:any\s+)?(?:customer\s+)?(?:results?|outcomes?|evidence|proof)\b/i;
+  return absent.test(text);
+}
+
 export function parseProof(raw: unknown): ProofItem[] {
   return splitProof(raw).map((item) => {
     const m = LABEL_END.exec(item);
@@ -322,7 +328,8 @@ export function parseProof(raw: unknown): ProofItem[] {
     const l = label.toLowerCase();
     const figure = FIGURE.test(text);
     let kind: ProofKind;
-    if (illustrativeProof(item).state === 'affirmed') kind = 'unclear';
+    if (missingEvidence(item)) kind = 'missing';
+    else if (illustrativeProof(item).state === 'affirmed') kind = 'unclear';
     else if (signal(text, 'adverse_result').state === 'affirmed' || signal(text, 'cancelled').state === 'affirmed') kind = 'adverse';
     else if (signal(text, 'positive_result').state === 'negated' || readSignal(text, RECOGNITION, SIGNALS.recognition).state === 'negated') kind = 'unclear';
     else if (/^(?:case study|customer story|success story|story)\s+(?:headlines?|titles?)\b/i.test(text) && !/quote/.test(l)) kind = 'title';
@@ -339,7 +346,8 @@ export function parseProof(raw: unknown): ProofItem[] {
     else if (PROMO_OFFER.test(text) && !figure && !OUTCOME_VERB.test(text)) kind = 'claim';
     else if (SCALE.test(text) && !OUTCOME_VERB.test(text)) kind = 'scale';
     else if (/page claim/.test(l) && !OUTCOME_VERB.test(text) && !(figure && FROM_TO_FIGURE.test(text))) kind = 'claim';
-    else kind = 'result';
+    else if (/\b(?:live in|approves? every|approval for)\b/i.test(text)) kind = 'claim';
+    else kind = OUTCOME_VERB.test(text) || FROM_TO_FIGURE.test(text) || signal(text, 'positive_result').state === 'affirmed' || /\b(?:fell|rose|went from|became|resolved|completed|achieved)\b/i.test(text) ? 'result' : 'unclear';
     // "Quote from Jo Smith, Head of X, Acme: words" is shown as the speaker and the words, without the typed prefix
     const shownText = kind === 'quote' ? text.replace(/^(?:quotes?|words|testimonial) (?:from|by) (?=[A-Z][^:;]{1,120}:\s+\S)/i, '') : text;
     return { text: shownText, label, kind, figure, shown: label ? `${shownText} (${label})` : shownText };
@@ -347,6 +355,7 @@ export function parseProof(raw: unknown): ProofItem[] {
 }
 
 export const KIND_NOTE: Record<ProofKind, string> = {
+  missing: 'evidence still to gather; no customer outcome supplied',
   adverse: 'an adverse result, not a success story',
   unclear: 'the fact was not clear; not a customer result',
   result: 'a result',

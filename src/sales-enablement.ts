@@ -91,7 +91,7 @@ export function generateSalesEnablement(args: {
   // Customer results, quotes and the vendor's own claims can answer an objection; recognition and company-wide counts are credibility only.
   const usable = items.filter((i) => ['result','quote','claim'].includes(i.kind));
   const customerResults = usable.filter(i=>i.kind==='result'||i.kind==='quote');
-  const held = items.filter(i=>['adverse','unclear','title'].includes(i.kind));
+  const held = items.filter(i=>['adverse','unclear','missing','title'].includes(i.kind));
   const credibility = items.filter((i) => i.kind==='recognition'||i.kind==='scale');
   const usableTexts = usable.map((i) => clipEcho(i.shown, 300));
   const priceContext = args.price_context || 'Market rate';

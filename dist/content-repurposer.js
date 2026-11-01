@@ -71,7 +71,7 @@ const VENDOR_SENTENCE = /^(?:[A-Z][\w&.-]*(?:\s[A-Z][\w&.-]*)?\s+(?:is|are|helps
 export function generateContentRepurposer(args) {
     const claimsRemoved = [];
     const clean = (t) => { const r = cleanClaims(t); claimsRemoved.push(...r.removed); return r.text; };
-    const content = clean(fixNumbers(args.source_content));
+    const content = fixNumbers(args.source_content).split('\n').map(clean).join('\n');
     const sourceType = args.source_type;
     const targetFormats = args.target_formats ? splitItems(args.target_formats) : DEFAULT_FORMATS;
     const voice = args.brand_voice && VOICE[args.brand_voice] ? args.brand_voice : 'professional';

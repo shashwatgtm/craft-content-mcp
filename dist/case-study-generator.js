@@ -314,6 +314,7 @@ ${q(quote)}
     const titles = grp(['title']);
     const claims = grp(['scale', 'claim']);
     const recognition = grp(['recognition']);
+    const missing = grp(['missing', 'unclear']);
     // the lead result: a result with a figure, else a customer quote, else a story title that states an outcome
     const lead = outcomes.find((i) => i.figure) || quotes.find((i) => i.figure) || titles.find((i) => i.figure) || outcomes[0] || quotes[0] || titles[0];
     const hasCustomerOutcome = !!lead;
@@ -354,6 +355,8 @@ ${q(quote)}
 > **Whose results these are.** customer name is ${q(customerName)}, which does not name a company, and the results name their own sources. A case study tells one customer's story, so each result below stays with the company or source that reported it, and none is presented as this customer's own. To write the single story, pick one customer from the list and run this tool again with that name and only its results.
 ` : '';
     const outcomeBlocks = [];
+    if (missing.length)
+        outcomeBlocks.push(`**Evidence still to gather.** These items supply no customer outcome.\n\n${bullets(missing)}`);
     if (outcomes.length)
         outcomeBlocks.push(`**Outcomes**\n\n${bullets(outcomes)}`);
     if (quotes.length)
@@ -365,7 +368,7 @@ ${q(quote)}
     if (recognition.length)
         outcomeBlocks.push(`**Recognition, kept out of the outcomes.** A ranking or an award is not something the customer achieved. Use it as a "Recognised by" line beside the story.\n\n${bullets(recognition)}`);
     const noOutcome = !hasCustomerOutcome ? `
-**No customer outcome was given.** Every item above is a company-wide claim or a recognition, so there is no result to build this story on yet. Ask the customer for ${v ? askMetrics : 'one measure it tracks'}: the value before, the value after and the period. ${v ? `A strong proof point here: ${v.proofShape}` : ''}
+**No customer outcome was given.** The supplied items do not establish a customer result to build this story on yet. Ask the customer for ${v ? askMetrics : 'one measure it tracks'}: the value before, the value after and the period. ${v ? `A strong proof point here: ${v.proofShape}` : ''}
 ` : '';
     const cta = v ? `Close with one action for the reader. Deals in ${sectorName} usually start like this: ${lowerFirstWord(v.salesMotion)} Write the reader's next step to match, for example a pilot request.` : `Suggested closing line for readers: say what the reader does next (a call, a pilot, a visit) and keep it to one action.`;
     const pullable = quotes.filter((x) => /customer quote/i.test(x.label) && /\b(?:we|our|us|my|I)\b/.test(x.text.replace(/^[^:]{0,60}:\s*/, '')));

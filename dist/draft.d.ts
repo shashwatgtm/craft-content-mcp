@@ -6,7 +6,7 @@ export declare function proseJoin(items: string[]): string;
 export declare function plural(n: number, one: string, many?: string): string;
 export declare function splitList(raw: unknown): string[];
 export declare const FIGURE: RegExp;
-export type ProofKind = 'result' | 'quote' | 'recognition' | 'title' | 'scale' | 'claim' | 'adverse' | 'unclear';
+export type ProofKind = 'result' | 'quote' | 'recognition' | 'title' | 'scale' | 'claim' | 'adverse' | 'unclear' | 'missing';
 export interface ProofItem {
     text: string;
     label: string;
@@ -20,6 +20,7 @@ export declare function isAttributed(x: string): boolean;
 export declare function splitProof(raw: unknown): string[];
 export declare const RECOGNITION: RegExp;
 export declare const SCALE: RegExp;
+export declare function missingEvidence(text: string): boolean;
 export declare function parseProof(raw: unknown): ProofItem[];
 export declare const KIND_NOTE: Record<ProofKind, string>;
 export interface TopicParts {

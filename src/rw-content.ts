@@ -5,7 +5,7 @@ import { readerLabel } from './text-signals.ts';
 // whole sentence of ours, and write the closing line that names what was not given. Rule B82: nothing here adds a figure, a quote, a
 // customer or a named company; the words come from the user's text and from the one sector file (src/verticals.ts).
 
-import { splitList, fixNumbers, endSentence, capFirst, proseJoin, clipAtWord, dropTail, tidyPoint, STAT, FIGURE, RECOGNITION, SCALE } from './draft.ts';
+import { splitList, fixNumbers, endSentence, capFirst, proseJoin, clipAtWord, dropTail, tidyPoint, missingEvidence, STAT, FIGURE, RECOGNITION, SCALE } from './draft.ts';
 import { cap, lowerFirstIfCommon, isCommonWord } from './utils.js';
 import { neutraliseText } from './echo-safe.ts';
 import { weldNames } from './sector.ts';
@@ -135,6 +135,7 @@ const OUTCOMEISH = /^(?:measurable |significant |up to |about |over |more than |
 function roleOf(p: { text: string; label: string; clause: boolean; figure: boolean }, problemLike: boolean, known = false): Role {
   const l = p.label.toLowerCase();
   if (isInstruction(p.text)) return 'instruction';
+  if (missingEvidence(p.text)) return 'problem';
   if (known && frictionReading(p.text).state !== 'negated') return 'problem';
   if (/quote|testimonial/.test(l) || /^(?:customer|partner) (?:quote|words)\b/i.test(p.text) || /^["“]/.test(p.text)) return 'quote';
   if (RECOGNITION.test(p.text) && !/customer/.test(l)) return 'recognition';
@@ -299,6 +300,7 @@ const lowerStart = (s: string): string => lowerFirstSafe(s);
 export function sentenceOf(p: Pt, who: string, variant = 0): string {
   const t = withLabel(p);
   const tIn = t.replace(/:\s+/, ', namely ');   // a text that has a colon of its own does not follow a lead-in that has one
+  if (missingEvidence(p.text)) return endSentence(`Evidence still to gather: ${lowerStart(t)}`);
   if (p.clause) return endSentence(capFirst(t));
   if (PARTICIPLE_START.test(p.text) && who) return endSentence(`${who} is ${lowerStart(t)}`);
   switch (p.role) {

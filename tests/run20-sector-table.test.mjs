@@ -10,7 +10,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const mod = await import(new URL("../src/verticals.ts", import.meta.url));
+const mod = await import(new URL("../dist/verticals.js", import.meta.url));
 const { detectVertical, detectModel } = mod;
 const table = JSON.parse(readFileSync(new URL("./fixtures/run20-sector-table.json", import.meta.url), "utf8"));
 const IDS = ["logistics-tech", "fintech", "saas", "vertical-saas", "ai-native", "ites", "telecom", "software", "cybersecurity"];

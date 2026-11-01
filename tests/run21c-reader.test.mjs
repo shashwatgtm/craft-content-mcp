@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-const mod = await import(new URL("../src/verticals.ts", import.meta.url));
+const mod = await import(new URL("../dist/verticals.js", import.meta.url));
 const { detectVertical, detectModel, SUBTYPES } = mod;
 const read = (input) => { const v = detectVertical(input); return { id: v ? v.id : null, sub: v ? v.subtype || null : null }; };
 

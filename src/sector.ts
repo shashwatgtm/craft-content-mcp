@@ -1,3 +1,4 @@
+import { sellerSectorLabel } from './text-signals.js';
 import { hasSignal, signal } from './text-signals.ts';
 // Run 19 R19-35 (owner decision D80): helpers shared by the eight tools for the problems of the real-world test.
 // They read the sector and the business model from what the user typed (src/verticals.ts, the one data file), quote typed
@@ -337,7 +338,8 @@ export function servedNotes(v: Vertical, input: ReaderInput, own: unknown[] = []
 export function readContext(explicitModel: unknown, raw: ReaderInput, yourSector?: unknown, ownWords?: unknown[]): { v: Vertical | null; model: BusinessModel | null; how: string; line: string; source: string | null } {
   const scrubbed: ReaderInput = { seller: scrub(raw.seller), context: scrub(raw.context), role: scrub(raw.role), buyer: scrub(raw.buyer) };
   const gs = givenSector(yourSector);
-  const ov = gs.given ? { id: null } as ReturnType<typeof coreOverride> : coreOverride(scrubbed);
+  const label = sellerSectorLabel(nonEmpty(scrubbed.seller).join(' . '));
+  const ov = gs.given ? { id: null } as ReturnType<typeof coreOverride> : label.id ? {id:null,vertical:VERTICALS.find(v=>v.id===label.id)} : coreOverride(scrubbed);
   const input: ReaderInput = gs.given ? scrubbed : weighSignals(ov.seller ? { ...scrubbed, seller: ov.seller } : scrubbed);
   const forced = gs.given ? gs.v : ov.vertical ?? (ov.id ? VERTICALS.find((x) => x.id === ov.id) ?? null : null);
   let v = gs.given ? gs.v : forced ?? detectVertical(input);

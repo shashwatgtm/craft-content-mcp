@@ -7,7 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const mod = await import(new URL("../src/verticals.ts", import.meta.url));
+const mod = await import(new URL("../dist/verticals.js", import.meta.url));
 const { detectVertical, detectModel, VERTICALS, SUBTYPES, profileFor } = mod;
 const table = JSON.parse(readFileSync(new URL("./fixtures/run21-subtype-table.json", import.meta.url), "utf8"));
 const flat = (v) => JSON.stringify({ n: v.vocabulary, r: v.buyerRoles, c: v.committee, o: v.objections, s: v.salesMotion, m: v.metrics, p: v.proofShape, d: v.discovery });

@@ -1,3 +1,5 @@
+import { sectorChoiceNotice } from './text-signals.js';
+import { explainSector } from './verticals.js';
 // Shared MCP server definition, used by both entry points:
 //   src/index.ts                 stdio (the npm package)
 //   netlify/functions/mcp.mjs    Streamable HTTP (the hosted connector)
@@ -206,6 +208,8 @@ export function createServer(): Server {
         default:
           throw new Error(`Unknown tool: ${name}`);
       }
+
+      result = sectorChoiceNotice(name, (args || {}) as Record<string,unknown>, text=>{const r=explainSector({seller:[text]});return {id:r.vertical?.id,name:r.vertical?.name,source:r.source}}) + result;
 
       return {
         content: [

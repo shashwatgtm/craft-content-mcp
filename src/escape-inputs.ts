@@ -22,11 +22,14 @@
 // instruction is quoted as the caller's own (“...”).
 // Line breaks, spaces and tabs are kept as typed (a backslash cannot escape them). No figures, no sector knowledge (B82).
 
-const HIDDEN = /[\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
-const HIDDEN_MORE = /[\u00ad\u034f\u061c\u180e\u{E0000}-\u{E007F}\u{E0100}-\u{E01EF}]/gu;
+const HIDDEN =
+  /[\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
+const HIDDEN_MORE =
+  /[\u00ad\u034f\u061c\u180e\u{E0000}-\u{E007F}\u{E0100}-\u{E01EF}]/gu;
 
 // ---- schemes written with tabs, newlines, entities or case changes (the run 22 rule, unchanged) ----
-const SEP = "(?:[\\s\\u0000-\\u001f]|&(?:Tab|NewLine);|&#0{0,10}(?:9|10|13);?|&#x0{0,10}(?:9|a|d);?){0,12}";
+const SEP =
+  "(?:[\\s\\u0000-\\u001f]|&(?:Tab|NewLine);|&#0{0,10}(?:9|10|13);?|&#x0{0,10}(?:9|a|d);?){0,12}";
 const COLON = "(?::|&colon;|&#0{0,10}58;?|&#x0{0,10}3a;?)";
 function letter(ch: string): string {
   const lo = ch.toLowerCase().charCodeAt(0);
@@ -36,8 +39,14 @@ function letter(ch: string): string {
 function word(w: string): string {
   return w.split("").map(letter).join(SEP);
 }
-const BARE_SCRIPT = new RegExp(`(?<![A-Za-z0-9])(?:${word("javascript")}|${word("vbscript")})${SEP}${COLON}`, "gi");
-const BARE_DATA = new RegExp(`(?<![A-Za-z0-9])${word("data")}${SEP}${COLON}${SEP}(?:text|image|application)\\/[a-z0-9.+-]*`, "gi");
+const BARE_SCRIPT = new RegExp(
+  `(?<![A-Za-z0-9])(?:${word("javascript")}|${word("vbscript")})${SEP}${COLON}`,
+  "gi",
+);
+const BARE_DATA = new RegExp(
+  `(?<![A-Za-z0-9])${word("data")}${SEP}${COLON}${SEP}(?:text|image|application)\\/[a-z0-9.+-]*`,
+  "gi",
+);
 
 // ---- instruction text (the run 22 rule, unchanged) ----
 const INSTRUCTION_PARTS = [
@@ -90,18 +99,30 @@ const QUOTED = /^“[\s\S]*”$/;
 
 // ---- the escape pass ----
 const ALWAYS = new Set(["\\", "[", "]", "<", ">", "!", "`", "*", "~", "|"]);
-const isAsciiAlnum = (c: number) => (c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
+const isAsciiAlnum = (c: number) =>
+  (c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
 const isDigit = (c: number) => c >= 48 && c <= 57;
 const isLetter = (c: number) => (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
 const isBlank = (c: number) => c === 32 || c === 9;
 // every character String.prototype.trim() removes (the tools trim each piece they cut): a marker before any of them can open a block
 const isTrimSpace = (c: number) =>
-  c === 32 || (c >= 9 && c <= 13) || c === 0xa0 || c === 0x1680 || (c >= 0x2000 && c <= 0x200a) || c === 0x2028 || c === 0x2029 ||
-  c === 0x202f || c === 0x205f || c === 0x3000 || c === 0xfeff;
+  c === 32 ||
+  (c >= 9 && c <= 13) ||
+  c === 0xa0 ||
+  c === 0x1680 ||
+  (c >= 0x2000 && c <= 0x200a) ||
+  c === 0x2028 ||
+  c === 0x2029 ||
+  c === 0x202f ||
+  c === 0x205f ||
+  c === 0x3000 ||
+  c === 0xfeff;
 const isEol = (c: number) => c === 10 || c === 13;
 // characters that may stand right before "@" in a GFM mail address
-const isMailLocal = (c: number) => isAsciiAlnum(c) || c === 46 || c === 43 || c === 45 || c === 95;
-const isShortcode = (c: number) => isAsciiAlnum(c) || c === 95 || c === 43 || c === 45;
+const isMailLocal = (c: number) =>
+  isAsciiAlnum(c) || c === 46 || c === 43 || c === 45 || c === 95;
+const isShortcode = (c: number) =>
+  isAsciiAlnum(c) || c === 95 || c === 43 || c === 45;
 const lower = (c: number) => (c >= 65 && c <= 90 ? c + 32 : c);
 // a letter or digit of any script (the character at i, a whole code point when it is a surrogate pair)
 // Run 40S2 fix round (GTM Alpha F4): combining marks count too (pandoc composes a letter and its mark into one letter)
@@ -191,8 +212,18 @@ function scan(s: string, emit: (i: number, kind: number) => void): void {
         }
         if (atLine) {
           let k = j;
-          while (k < n && isTrimSpace(s.charCodeAt(k)) && !isEol(s.charCodeAt(k))) k++;
-          const cut = p === -1 || isEol(p) || (k > j && endsAt(k)) || CUT_AFTER_DIGITS.has(p) || dotOrParen;
+          while (
+            k < n &&
+            isTrimSpace(s.charCodeAt(k)) &&
+            !isEol(s.charCodeAt(k))
+          )
+            k++;
+          const cut =
+            p === -1 ||
+            isEol(p) ||
+            (k > j && endsAt(k)) ||
+            CUT_AFTER_DIGITS.has(p) ||
+            dotOrParen;
           if (cut) emit(i, 1);
         }
       }
@@ -203,11 +234,21 @@ function scan(s: string, emit: (i: number, kind: number) => void): void {
       // "&" that starts a character reference ("&#58;", "&colon;", "&#x3a;": a name or number, then ";"): shown as typed, so no
       // reader decodes it (mdast with GFM decodes it into finished text and finds an address there)
       let j = i + 1;
-      while (j < n && j - i <= 33 && (isAsciiAlnum(s.charCodeAt(j)) || s.charCodeAt(j) === 35)) j++;
+      while (
+        j < n &&
+        j - i <= 33 &&
+        (isAsciiAlnum(s.charCodeAt(j)) || s.charCodeAt(j) === 35)
+      )
+        j++;
       // Run 40S2 fix round (GTM Alpha F2): also a reference that runs to the end (the tool's own ";" may follow): a number,
       // or a name of two or more characters (no entity name has one letter, so "AT&T" stays as typed)
       // Run 40S3 fix round: U+037E (Greek question mark) is a ";" after NFC (pandoc), so it closes a reference too
-      if (j > i + 1 && ((j > last && (s.charCodeAt(i + 1) === 35 || j > i + 2)) || (j < n && (s.charCodeAt(j) === 59 || s.charCodeAt(j) === 0x37e)))) emit(i, 1);
+      if (
+        j > i + 1 &&
+        ((j > last && (s.charCodeAt(i + 1) === 35 || j > i + 2)) ||
+          (j < n && (s.charCodeAt(j) === 59 || s.charCodeAt(j) === 0x37e)))
+      )
+        emit(i, 1);
       continue;
     }
     // Run 40S3 fix round (GTM Alpha auditor F2): U+1FEF (Greek varia) is a backtick after NFC, which pandoc applies before it
@@ -219,20 +260,27 @@ function scan(s: string, emit: (i: number, kind: number) => void): void {
     const next = i + 1 < n ? s.charCodeAt(i + 1) : -1;
     if (c === 95) {
       // "_" between two ASCII letters or digits can neither open nor close emphasis
-      if (!(prev >= 0 && next >= 0 && isAsciiAlnum(prev) && isAsciiAlnum(next))) emit(i, 1);
+      if (!(prev >= 0 && next >= 0 && isAsciiAlnum(prev) && isAsciiAlnum(next)))
+        emit(i, 1);
       continue;
     }
     if (c === 36) {
       // "$": pandoc gfm reads "$...$" as TeX math (an opening "$" has no space after it, a closing one no space before it).
       // An amount "$75" at the start of the text or after a space or tab stays as typed (it can only open, never close, and the
       // tools read amounts from it); every other "$" gets a backslash
-      if (!(isDigit(next) && (prev === -1 || isBlank(prev) || isEol(prev)))) emit(i, 1);
+      if (!(isDigit(next) && (prev === -1 || isBlank(prev) || isEol(prev))))
+        emit(i, 1);
       continue;
     }
     if (c === 58) {
       // ":" before "//" after a letter (an address scheme): shown with a backslash, so no reader finds an address here
       // (a letter of any script: a tool that changes case can turn "ſ" into "S")
-      if (i > 0 && isWordChar(s, i - 1) && next === 47 && s.charCodeAt(i + 2) === 47) {
+      if (
+        i > 0 &&
+        isWordChar(s, i - 1) &&
+        next === 47 &&
+        s.charCodeAt(i + 2) === 47
+      ) {
         emit(i, 2);
         continue;
       }
@@ -260,7 +308,16 @@ function scan(s: string, emit: (i: number, kind: number) => void): void {
       // "@" of a mail address: a local part character before it and a domain character after it
       // (letters of any script count: a tool that changes case can turn one into an ASCII letter)
       // Run 40S2 fix round (IMPACT F2, GTM Alpha F3): a "." after "@" counts too (micromark and mdast link "q@.host")
-      if (prev >= 0 && (isMailLocal(prev) || isWordChar(s, i - 1)) && next >= 0 && (isAsciiAlnum(next) || next === 95 || next === 45 || next === 46 || isWordChar(s, i + 1))) {
+      if (
+        prev >= 0 &&
+        (isMailLocal(prev) || isWordChar(s, i - 1)) &&
+        next >= 0 &&
+        (isAsciiAlnum(next) ||
+          next === 95 ||
+          next === 45 ||
+          next === 46 ||
+          isWordChar(s, i + 1))
+      ) {
         emit(i, 2);
       }
       continue;
@@ -367,8 +424,13 @@ export function escapeText(input: string): string {
   // (production keeps the CR, and the tools split only at line feeds), so an answer with every field full of CR lines grew from
   // 0.2 MB to 40 MB and took 800 ms in place of 6 ms. CommonMark shows a lone CR as a soft line break, which a page shows as a
   // space, so the rendered text stays as production shows it; markers after it are escaped by the piece start rule.
-  const clean = input.replace(HIDDEN, "").replace(HIDDEN_MORE, "").replace(/\r(?!\n)/g, " ");
-  let s = clean.replace(BARE_SCRIPT, "[link removed]").replace(BARE_DATA, "[link removed]");
+  const clean = input
+    .replace(HIDDEN, "")
+    .replace(HIDDEN_MORE, "")
+    .replace(/\r(?!\n)/g, " ");
+  let s = clean
+    .replace(BARE_SCRIPT, "[link removed]")
+    .replace(BARE_DATA, "[link removed]");
   s = escapeMarkup(s);
   if (looksLikeInstruction(clean) && !QUOTED.test(s)) s = `“${s}”`;
   return s;
@@ -382,11 +444,14 @@ export function quoteIfInstruction(text: string): string {
 
 // Hidden characters only (what the input checks read: a value of hidden characters alone counts as empty, as before).
 export function cleanDeep<T>(value: T): T {
-  if (typeof value === "string") return value.replace(HIDDEN, "").replace(HIDDEN_MORE, "") as unknown as T;
-  if (Array.isArray(value)) return value.map((v) => cleanDeep(v)) as unknown as T;
+  if (typeof value === "string")
+    return value.replace(HIDDEN, "").replace(HIDDEN_MORE, "") as unknown as T;
+  if (Array.isArray(value))
+    return value.map((v) => cleanDeep(v)) as unknown as T;
   if (value && typeof value === "object") {
     const out: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(value as Record<string, unknown>)) out[k] = cleanDeep(v);
+    for (const [k, v] of Object.entries(value as Record<string, unknown>))
+      out[k] = cleanDeep(v);
     return out as T;
   }
   return value;
@@ -401,10 +466,12 @@ export function escapeDeep<T>(value: T): T {
 }
 function escapeDeepOnce<T>(value: T): T {
   if (typeof value === "string") return escapeText(value) as unknown as T;
-  if (Array.isArray(value)) return value.map((v) => escapeDeepOnce(v)) as unknown as T;
+  if (Array.isArray(value))
+    return value.map((v) => escapeDeepOnce(v)) as unknown as T;
   if (value && typeof value === "object") {
     const out: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(value as Record<string, unknown>)) out[k] = escapeDeepOnce(v);
+    for (const [k, v] of Object.entries(value as Record<string, unknown>))
+      out[k] = escapeDeepOnce(v);
     return out as T;
   }
   return value;
@@ -419,13 +486,19 @@ function escapeDeepOnce<T>(value: T): T {
 // return, a tab, a lone surrogate or a \u escape with a letter or digit last ("\n", "\ud800", "\"), so an "@" or ":" right
 // after one would follow a letter or digit in the raw text ("n@host" is a mail address there): that "@" or ":" is written as
 // a \u escape too. JSON without any backslash is unchanged. One pass, linear. Usage: jsonInert(JSON.stringify(value)).
-const isPunct = (c: number) => (c >= 33 && c <= 47) || (c >= 58 && c <= 64) || (c >= 91 && c <= 96) || (c >= 123 && c <= 126);
+const isPunct = (c: number) =>
+  (c >= 33 && c <= 47) ||
+  (c >= 58 && c <= 64) ||
+  (c >= 91 && c <= 96) ||
+  (c >= 123 && c <= 126);
 const hex = (v: number) => "\\u" + v.toString(16).padStart(4, "0");
 // Run 40S3 (40S2-2): the same decisions as before, written into a buffer of UTF-16 code units in place of joining strings (a
 // tool answer of 40 MB with a million escapes took 1 to 2 seconds here, most of it in string joins and garbage collection).
 // The output is the same text, character for character (tested against the 40S2 version on random and long inputs).
 // the four hex digits of a \\u escape
-const HEX_DIGITS = Uint16Array.from("0123456789abcdef", (ch) => ch.charCodeAt(0));
+const HEX_DIGITS = Uint16Array.from("0123456789abcdef", (ch) =>
+  ch.charCodeAt(0),
+);
 const EMPTY_UNITS = new Uint16Array(0);
 export function jsonInert(json: string): string {
   if (json.indexOf("\\") < 0) return json;
@@ -486,7 +559,9 @@ export function jsonInert(json: string): string {
       // copy json[from, at), then the six characters of the \u escape
       const need = len + (at - from) + 6;
       if (need > out.length) {
-        const bigger = new Uint16Array(Math.max(need, out.length === 0 ? n + (n >> 1) + 16 : out.length * 2));
+        const bigger = new Uint16Array(
+          Math.max(need, out.length === 0 ? n + (n >> 1) + 16 : out.length * 2),
+        );
         bigger.set(out.subarray(0, len));
         out = bigger;
       }
@@ -519,8 +594,15 @@ export function jsonInert(json: string): string {
 const NodeBuffer: any = (globalThis as any).Buffer;
 const LITTLE_ENDIAN = new Uint8Array(new Uint16Array([1]).buffer)[0] === 1;
 function unitsToString(u: Uint16Array, len: number): string {
-  if (NodeBuffer && LITTLE_ENDIAN) return NodeBuffer.from(u.buffer, u.byteOffset, len * 2).toString("utf16le");
+  if (NodeBuffer && LITTLE_ENDIAN)
+    return NodeBuffer.from(u.buffer, u.byteOffset, len * 2).toString("utf16le");
   const parts: string[] = [];
-  for (let k = 0; k < len; k += 8192) parts.push(String.fromCharCode.apply(null, u.subarray(k, Math.min(len, k + 8192)) as unknown as number[]));
+  for (let k = 0; k < len; k += 8192)
+    parts.push(
+      String.fromCharCode.apply(
+        null,
+        u.subarray(k, Math.min(len, k + 8192)) as unknown as number[],
+      ),
+    );
   return parts.join("");
 }

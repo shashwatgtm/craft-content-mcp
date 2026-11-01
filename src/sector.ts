@@ -393,10 +393,10 @@ export function readContext(explicitModel: unknown, raw: ReaderInput, yourSector
   }
   const from = source === 'role' ? ' (the job titles name it)' : source === 'buyer' ? ' (the buyer\'s industry names it; your own description names no sector)' : '';
   const lensNote = lens ? ` (measures and questions follow the ${lens} buyer)` : '';
-  const sector = investorOnly ? `the buyers are investors, so the investment notes are shown (your own description names no sector; ${v ? v.name : 'investment management'})` : v ? `${chosen ? `set by your_sector as ${v.name}` : `read from your inputs as ${v.name}${from}${lensNote}`}` : gs.given ? 'not set: your_sector is other, so the wording is neutral B2B' : 'not clear from your inputs (name the industry for sector notes, or set your_sector)';
+  const sector = investorOnly ? `the buyers are investors, so the investment notes are shown (your own description names no sector; ${v ? v.name : 'investment management'})` : v ? `${chosen ? `from your choice: ${v.name}` : `read from your inputs as ${v.name}${from}${lensNote}`}` : gs.given ? 'not set: your selected sector is other, so the wording is neutral B2B' : 'not clear from your inputs (name the industry for sector notes, or set your selected sector)';
   const model = m.model
-    ? `${MODEL_NAME[m.model]} (${m.how === 'input' ? 'from business_model' : m.how === 'sector' ? 'the usual model in this sector, assumed; set business_model to change it' : 'read from your inputs; set business_model to change it'})`
-    : 'not clear from your inputs; set business_model (saas, services, connectivity, transactions, marketplace, hardware_software or investment) for advice that fits it';
+    ? `${MODEL_NAME[m.model]} (${m.how === 'input' ? 'from your answer' : m.how === 'sector' ? 'the usual model in this sector, assumed; confirm how you charge' : 'read from your inputs; confirm how you charge'})`
+    : 'not clear from your inputs; set how you charge (saas, services, connectivity, transactions, marketplace, hardware_software or investment) for advice that fits it';
   return { v, model: m.model, how: m.how, line: `*Sector: ${sector}. Business model: ${model}.*`, source };
 }
 

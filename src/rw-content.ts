@@ -1,3 +1,4 @@
+import { readerLabel } from './text-signals.ts';
 // Run 22 (content rewrite): shared writing helpers for newsletter_builder, thought_leadership_series and webinar_script.
 // They read what the user typed into points (a problem, a result with its source label, a quote, a capability), say each point in a
 // whole sentence of ours, and write the closing line that names what was not given. Rule B82: nothing here adds a figure, a quote, a
@@ -433,7 +434,7 @@ export function waysToSettle(response: string): string {
 // What was not given, named once: 'To sharpen this, give: X (it would change Y); Z (it would change W).'
 export function sharpenLine(missing: { field: string; change: string }[]): string {
   if (!missing.length) return '';
-  return `To sharpen this, give: ${missing.map((m) => `${m.field} (it would change ${m.change})`).join('; ')}.`;
+  return `To sharpen this, give: ${missing.map((m) => `${readerLabel(m.field)} (it would change ${m.change})`).join('; ')}.`;
 }
 
 // The sector line without the request to the user: what could be given belongs in the closing line, where it is asked for once.

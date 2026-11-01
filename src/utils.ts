@@ -540,7 +540,7 @@ export function toneCheck(content: string, tone: string | undefined): { notes: s
     const f = distinct(content, /\b(?:furthermore|moreover|hereby|therefore|consequently|pursuant|kindly|thus)\b/gi);
     return { used: true, notes: [f.length ? `Formal joining words found: ${f.join(', ')}. Plainer words ("so", "also", "and") read as more casual.` : 'No formal joining words found: nothing to change for a more casual tone.'] };
   }
-  return { used: false, notes: [`tone_preference ${tone.replace(/^more_/, 'more_')} was not used: this tool checks tone only for more_formal and more_casual.`] };
+  return { used: false, notes: [`tone preference ${tone.replace(/^more_/, 'more_')} was not used: this tool checks tone only for more_formal and more_casual.`] };
 }
 
 // ---- the improved version: real edits, each one listed; or none, said plainly ----

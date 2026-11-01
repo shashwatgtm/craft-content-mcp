@@ -2,7 +2,7 @@
 
 ## Late deliveries down 60%
 
-*Sector: read from your inputs as logistics tech. Business model: software subscription (the usual model in this sector, assumed; set business_model to change it).*
+*Sector: read from your inputs as logistics tech. Business model: software subscription (the usual model in this sector, assumed; confirm how you charge).*
 
 *Built from: challenge: given; solution: given; results: 3 items (3 outcomes); customer quote: given; industry: given.*
 

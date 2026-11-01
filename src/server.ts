@@ -1,3 +1,4 @@
+import { readerLabel, readerIssue, claimRisk, outcomeReading } from './text-signals.ts';
 import { sectorChoiceNotice } from './text-signals.js';
 import { explainSector } from './verticals.js';
 // Shared MCP server definition, used by both entry points:
@@ -121,7 +122,7 @@ function checkRequiredInputs(
   const blankText = (key: string) => typeof args?.[key] === "string" && (args[key] as string).trim() === "" && props[key]?.type === "string" && !Array.isArray(props[key]?.enum);
   const missing = required.filter((key) => args?.[key] === undefined || args?.[key] === null || blankText(key));
   if (missing.length > 0) {
-    return `Missing required input for ${name}: ${missing.join(", ")}. Provide ${missing.length === 1 ? "it" : "them"} and call the tool again.`;
+    return `Missing required input for ${readerLabel(name)}: ${missing.map(readerLabel).join(", ")}. Provide ${missing.length === 1 ? "it" : "them"} and call the tool again.`;
   }
   // Decision N2 (run 6) and run 7: schema limits at any depth, choices, money text and single amounts.
   const problems: string[] = [];
@@ -141,7 +142,7 @@ function checkRequiredInputs(
     if (typeof raw === "string" && AMOUNT_RANGE.test(raw)) problems.push(`${key} must be one amount, not a range (for example $75,000)`);
   }
   if (problems.length > 0) {
-    return `Invalid input for ${name}: ${problems.join("; ")}.`;
+    return `Invalid input for ${readerLabel(name)}: ${problems.map(readerIssue).join("; ")}.`;
   }
   return null;
 }

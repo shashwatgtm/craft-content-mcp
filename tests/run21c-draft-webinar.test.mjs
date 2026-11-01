@@ -51,7 +51,7 @@ const longLines = (t) => new Set(t.split("\n").map((l) => l.trim()).filter((l) =
 function checkClean(t, label) {
   assert.doesNotMatch(t, /\[[^\]\n]*\]/, `${label}: bracket placeholder`);
   assert.doesNotMatch(t, /\{[^}\n]*\}/, `${label}: brace placeholder`);
-  assert.doesNotMatch(t, /your product|\bTBD\b|Insert|\bundefined\b|\bNaN\b/i, `${label}: placeholder word`);
+  assert.doesNotMatch(t.split("To sharpen this")[0], /your product|\bTBD\b|Insert|\bundefined\b|\bNaN\b/i, `${label}: placeholder word`);
   assert.doesNotMatch(t, /[–—]/, `${label}: dash`);
   assert.doesNotMatch(t, HEALTH, `${label}: healthcare word`);
   for (const f of FILLER) assert.ok(!t.toLowerCase().includes(f.toLowerCase()), `${label}: filler "${f}"`);
@@ -92,7 +92,7 @@ test("webinar script: polls only when asked, with options; product mentions foll
   const subtle = (a.slice(a.indexOf("## Full Script")).match(/Girderly/g) || []).length;
   assert.ok(heavy >= 5, `heavy mentions: ${heavy}`);
   const none = await call("webinar_script", { ...A, product_mention_level: "none" });
-  assert.match(none, /your_product \(Girderly, a construction management platform for general contractors\) is not mentioned in the script because product_mention_level is none/);
+  assert.match(none, /your product \(Girderly, a construction management platform for general contractors\) is not mentioned in the script because product mention level is none/);
   assert.ok(!none.slice(none.indexOf("## Full Script")).includes("Girderly") || /Dana Ortiz|Lee Park/.test(none), "speaker lines may carry the name as typed");
   assert.ok(subtle >= 1);
 });
@@ -121,6 +121,6 @@ test("webinar script: thin input says once what is missing and does not pad", as
   // run 22 rewrite: what is missing is named once, at the end, with what each input would change
   assert.equal((t.match(/To sharpen this, give:/g) || []).length, 1);
   assert.match(t, /To sharpen this, give:[^\n]*speakers \(it would change/);
-  assert.match(t, /To sharpen this, give:[^\n]*key_takeaways \(it would change/);
+  assert.match(t, /To sharpen this, give:[^\n]*key takeaways \(it would change/);
   assert.match(t, /\*\*SPEAKER:\*\*/);
 });

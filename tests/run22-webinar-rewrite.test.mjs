@@ -73,7 +73,7 @@ test("webinar rewrite: polls only when asked; product mentions follow the level"
   const n = await call("webinar_script", NORTH);
   assert.doesNotMatch(n, /poll/i);
   const none = await call("webinar_script", { ...ORCHARD, product_mention_level: "none" });
-  assert.match(none, /not mentioned in the script because product_mention_level is none/);
+  assert.match(none, /not mentioned in the script because product mention level is none/);
   assert.ok(!none.slice(none.indexOf("## Full Script")).includes("Orchardly") || /Ravi Menon/.test(none));
   const heavy = await call("webinar_script", { ...ORCHARD, product_mention_level: "heavy" });
   assert.ok((heavy.slice(heavy.indexOf("## Full Script")).match(/Orchardly/g) || []).length >= 4);

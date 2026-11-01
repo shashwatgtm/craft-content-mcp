@@ -81,7 +81,7 @@ test("tools/list: new optional inputs business_model and your_product exist and 
   }
   const bad = await call("webinar_script", { topic: "x", target_audience: "y", webinar_type: "educational", business_model: "banana" });
   assert.equal(bad.isError, true);
-  assert.match(bad.text, /business_model must be one of/);
+  assert.match(bad.text, /how you charge must be one of/);
 });
 
 // ---- case_study_generator ----
@@ -101,7 +101,7 @@ test("case_study_generator: every result kept, the whole quote and challenge, no
 
 test("case_study_generator: interview_notes given with all three facts is named as not used, with the reason", async () => {
   const r = await call("case_study_generator", { ...ANSWERLOOP_CASE, interview_notes: "The CTO said refunds were the slowest part. We started in March." });
-  assert.match(r.text, /interview_notes was not used/i);
+  assert.match(r.text, /interview notes was not used/i);
   assert.match(r.text, /because you gave the challenge, the solution and the results/i);
 });
 
@@ -114,7 +114,7 @@ test("case_study_generator: discovery kit for a connectivity business follows th
 test("case_study_generator: a missing industry and a short quote are handled in the customer's own words", async () => {
   const r = await call("case_study_generator", { customer_name: "Example IT Services Co", your_product: "Lanehop", mode: "full", challenge: "Dispatchers re-plan routes by hand", solution: "Live re-routing", results: "Cost per delivery down 12% in a quarter", customer_quote: "It saved our mornings." });
   assert.match(r.text, /It saved our mornings\./);
-  assert.match(r.text, /\*\*Industry\*\* \| not given \(add customer_industry\)/);
+  assert.match(r.text, /\*\*Industry\*\* \| not given \(add customer industry\)/);
 });
 
 // ---- newsletter_builder ----
@@ -170,7 +170,7 @@ test("webinar_script: speakers are listed as typed, never pasted after 'I'm'; po
 
 test("webinar_script: product_mention_level none leaves the product out and says why it is not used", async () => {
   const r = await call("webinar_script", { topic: "Month-end close and expense reconciliation", target_audience: "Finance controllers at mid-size manufacturers", webinar_type: "product_demo", your_product: "Spendrill", product_mention_level: "none", business_model: "saas" });
-  assert.match(r.text, /your_product \(Spendrill\) is not mentioned in the script because product_mention_level is none/i);
+  assert.match(r.text, /your product \(Spendrill\) is not mentioned in the script because product mention level is none/i);
   shared(r.text, { sector: /reconciliation|month-end close|ERP posting|audit trail/i, label: "webinar none" });
 });
 
@@ -248,7 +248,7 @@ test("thought_leadership_series: without proof points the drafts name suggested 
   const r = await call("thought_leadership_series", { topic: "managed SD-WAN for branch networks", your_take: "Branch uptime is bought, not hoped for", target_reader: "Heads of IT infrastructure at companies with many branches", num_articles: 1, article_type: "how_to" });
   shared(r.text, { sector: /uptime|mean time to repair|cost per site|wave plan|site survey/i, label: "thought leadership 2" });
   // run 21c: draft rewrite. The generic list of proof to gather is gone; the missing proof is named once, with the sector's proof shape.
-  assert.match(r.text, /To sharpen this, give: proof_points \(it would change/);   // run 22 rewrite: said once, at the end
+  assert.match(r.text, /To sharpen this, give: proof points \(it would change/);   // run 22 rewrite: said once, at the end
 });
 
 // ---- testimonial_capture ----
@@ -271,7 +271,7 @@ test("testimonial_capture: a review-site request for a connectivity business is 
 
 test("testimonial_capture: without your_product the answer says so instead of printing [Product] everywhere", async () => {
   const r = await call("testimonial_capture", { customer_name: "Lee Example (fictional)", customer_company: "Example IT Services Co", success_story: "Service desk SLA attainment rose in one quarter", testimonial_type: "written_quote" });
-  assert.match(r.text, /your_product was not given/i);
+  assert.match(r.text, /your product was not given/i);
   assert.doesNotMatch(r.text, /\[Product\]/);
 });
 
@@ -355,7 +355,7 @@ test("craft_content_improver: tone_preference and audience are used or named as 
   assert.match(r.text, /contraction/i);
   assert.match(r.text, /never mentions your audience/i);
   const u = await call("craft_content_improver", { content: "Short note.", content_type: "email", tone_preference: "more_urgent" });
-  assert.match(u.text, /tone_preference more_urgent was not used/i);
+  assert.match(u.text, /tone preference more_urgent was not used/i);
 });
 
 // ---- unit tests for each score or calculation rule (dist/utils.js and dist/sector.js) ----

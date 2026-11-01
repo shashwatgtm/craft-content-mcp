@@ -250,7 +250,7 @@ Run this tool again with mode="full" and include:
 - **challenge:** What they were struggling with
 - **solution:** How ${product} helped
 - **results:** Quantifiable outcomes
-- **customer_quote:** Their best testimonial quote
+- **customer quote:** Their best testimonial quote
 
 ---
 
@@ -358,7 +358,7 @@ function generateFullCaseStudy(
   const notUsed = extra?.notes ? `
 ## Inputs Not Used
 
-- **interview_notes was not used** for this draft because you gave the challenge, the solution and the results directly. ${((extra.notes.match(/"[^"]+"/g) || []).length ? `The notes hold ${(extra.notes.match(/"[^"]+"/g) || []).length} quoted line(s): ${(extra.notes.match(/"[^"]+"/g) || []).slice(0, 2).join(' ')}. Use one as the customer quote.` : 'The notes hold no quoted line; ask the customer for one.')}
+- **interview notes was not used** for this draft because you gave the challenge, the solution and the results directly. ${((extra.notes.match(/"[^"]+"/g) || []).length ? `The notes hold ${(extra.notes.match(/"[^"]+"/g) || []).length} quoted line(s): ${(extra.notes.match(/"[^"]+"/g) || []).slice(0, 2).join(' ')}. Use one as the customer quote.` : 'The notes hold no quoted line; ask the customer for one.')}
 
 ---
 ` : '';
@@ -381,7 +381,7 @@ function generateFullCaseStudy(
   const reported = (outcomes.length ? outcomes : quotes.length ? quotes : titles).slice(0, 2);
 
   const genericNote = generic && items.length > 1 ? `
-> **Whose results these are.** customer_name is ${q(customerName)}, which does not name a company, and the results name their own sources. A case study tells one customer's story, so each result below stays with the company or source that reported it, and none is presented as this customer's own. To write the single story, pick one customer from the list and run this tool again with that name and only its results.
+> **Whose results these are.** customer name is ${q(customerName)}, which does not name a company, and the results name their own sources. A case study tells one customer's story, so each result below stays with the company or source that reported it, and none is presented as this customer's own. To write the single story, pick one customer from the list and run this tool again with that name and only its results.
 ` : '';
 
   const outcomeBlocks: string[] = [];
@@ -401,12 +401,12 @@ function generateFullCaseStudy(
   const pull = quote
     ? `> "${quote.replace(/^"|"$/g, '')}"\n>\n> ${customerName}`
     : pullable.length
-      ? `No customer_quote was given. A quote in your results can serve as the pull quote once the customer has approved it:\n\n${bullets(pullable.slice(0, 2))}`
+      ? `No customer quote was given. A quote in your results can serve as the pull quote once the customer has approved it:\n\n${bullets(pullable.slice(0, 2))}`
       : quotes.length
-        ? `No customer_quote was given, so the quotes listed under The Results stay with the people who said them. Use one as the pull quote only in a story about that speaker's company, once they approve it:
+        ? `No customer quote was given, so the quotes listed under The Results stay with the people who said them. Use one as the pull quote only in a story about that speaker's company, once they approve it:
 
 ${bullets(quotes.slice(0, 2))}`
-      : `No customer_quote was given. Ask for one line the customer would say aloud about what changed${v ? ` in ${v.metrics[0]}` : ''}, and get written approval before you print it.`;
+      : `No customer quote was given. Ask for one line the customer would say aloud about what changed${v ? ` in ${v.metrics[0]}` : ''}, and get written approval before you print it.`;
 
   // Run 42B round S2: the story itself, as prose in the case study shape (situation, challenge, approach, result, quote), from the
   // inputs only. An unnamed customer gets its situation, challenge and approach; results that name another company stay with that
@@ -465,7 +465,7 @@ ${story}
 | | |
 |---|---|
 | **Customer** | ${customerName} |
-| **Industry** | ${industryText || 'not given (add customer_industry)'} |
+| **Industry** | ${industryText || 'not given (add customer industry)'} |
 | **Product** | ${product} |
 | **Lead result** | ${manySources ? 'none for one customer: see The Results' : lead ? endSentence(lead.shown) : 'none given'} |
 ${genericNote}

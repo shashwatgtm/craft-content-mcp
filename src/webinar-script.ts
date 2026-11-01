@@ -12,6 +12,7 @@ type Ctx = { v: Vertical | null; model: BusinessModel | null; line: string; how:
 
 // Everything a section of the script needs, read once from the inputs.
 interface W {
+  example: string;
   usedQ: Set<string>; usedM: Set<string>;
   topic: string; label: string; clause: boolean; problem: string; audience: string; role: string; field: string; connector: string;
   takeaways: Pt[]; speakers: string[]; product: string; productLevel: string; includePolls: boolean; ctx: Ctx;
@@ -55,9 +56,11 @@ export function generateWebinarScript(args: {
   const ctx: Ctx = readContext(args.business_model, { seller: [given || parts.company || company, parts.problem || topic], context: [args.key_takeaways, args.speakers], role: [audienceFull], buyer: [parts.audience, audienceFull] }, args.your_sector);
 
   // the takeaways: read for what each one is; the problem the topic names is said once, as the problem
+  const example = (args.key_takeaways || '').split('\n').find(l=>/^(?:Supplied example|Worked example|Example):/i.test(l.trim()))?.replace(/^[^:]+:\s*/, '').trim() || '';
+  const takeawayText = (args.key_takeaways || '').split('\n').filter(l=>! /^(?:Supplied example|Worked example|Example):/i.test(l.trim())).join('\n');
   const haveTakeaways = !!(args.key_takeaways && args.key_takeaways.trim());
-  const soft0 = softenClaims(args.key_takeaways || '');
-  const soft = soft0.removed.length ? soft0 : { text: args.key_takeaways || '', removed: [] as string[] };
+  const soft0 = softenClaims(takeawayText);
+  const soft = soft0.removed.length ? soft0 : { text: takeawayText, removed: [] as string[] };
   const softP = softenClaims(parts.problem || '');
   const all = readPoints(soft.text, { problem: soft0.removed.length || softP.removed.length ? softP.text : parts.problem || '' });
   for (const p of all) if (p.role === 'instruction') orders.push(p.text);
@@ -79,7 +82,7 @@ export function generateWebinarScript(args: {
   }
   const takeaways: Pt[] = given2.length ? given2 : takeawaysFromSector(ctx.v);
   const productLabel = given ? productParts(given).name : product;
-  const w: W = { usedQ: new Set<string>(), usedM: new Set<string>(), topic, label, clause, problem: parts.problem || '', audience, role, field, connector, takeaways, speakers, product, productLevel, includePolls, ctx, haveSpeakers: speakers.length > 0, haveTakeaways, problemPts, metrics: [], objectionHeld: '', minutes: 0, productDescription: '', productName: '', model: ctx.model, type, shortTopic: parts.short, who: productLevel === 'none' ? '' : productLabel };
+  const w: W = { example, usedQ: new Set<string>(), usedM: new Set<string>(), topic, label, clause, problem: parts.problem || '', audience, role, field, connector, takeaways, speakers, product, productLevel, includePolls, ctx, haveSpeakers: speakers.length > 0, haveTakeaways, problemPts, metrics: [], objectionHeld: '', minutes: 0, productDescription: '', productName: '', model: ctx.model, type, shortTopic: parts.short, who: productLevel === 'none' ? '' : productLabel };
   // the sector's measures that fit the kind of product and the topic: they share a word with it or belong to the same theme (security with blocked
   // or fraud measures, price with cost measures); the measures of another kind of product are left out
   if (ctx.v) {
@@ -131,6 +134,9 @@ export function generateWebinarScript(args: {
   let output = `# Webinar Script: ${parts.short ? topic : `${cap(type.replace(/_/g, ' '))} webinar${productLabel && productLevel !== 'none' ? ` with ${productLabel}` : ''} for ${audience}`}
 
 ---
+
+## Exercise preparation
+${example ? 'Supplied example is included in the first main block. Confirm its anonymisation and permission before delivery.' : 'Example needed before delivery: supply one anonymised case, its starting records and the decision participants should make. No exercise result is invented. State it as an Example line in the existing takeaway notes.'}
 
 ## Key Takeaways for Audience
 
@@ -756,6 +762,18 @@ function recap(w: W): string {
 
 // One main content block: the takeaways it teaches, the sector measure, the chat question, the objection for later blocks, and the product line.
 function blockScript(section: { name: string; duration: number }, w: W, mine: Pt[], k: number, blocks: number): string {
+  if (k === 0) {
+    const work = Math.max(1, section.duration - 2);
+    return seg(section, 'Worked example exercise', w.example ? [
+      `Here is the supplied example: ${w.example}`,
+      `Take ${work} minutes to apply these checks: ${w.takeaways.slice(0,3).map(p=>withLabel(p)).join('; ')}. Record the owner, the starting evidence, your decision and the evidence still needed.`,
+      'Expected participant output: one completed decision record; unknown observations stay unknown. Do not invent a measured result.',
+      'Debrief: Which evidence changed your decision? Which comparison was like for like? What remains unresolved, and who must confirm it?'
+    ] : [
+      'This exercise needs an anonymised example and its starting records before delivery. Ask the host to supply them; no customer result is assumed.',
+      `The reserved ${section.duration} minutes cover the example, one participant decision record and a debrief on evidence and unknowns.`
+    ]);
+  }
   const v = w.ctx.v;
   const lead = k === 0 ? "Let's start with the first idea." : k === blocks - 1 ? 'Last, and the most practical part.' : 'That brings us to the next part.';
   const kind0 = v ? kindOf(v) : '';

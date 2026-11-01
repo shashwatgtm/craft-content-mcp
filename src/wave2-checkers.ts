@@ -52,7 +52,7 @@ function define(
 }
 define(
   "launch_copy_check",
-  "Check pasted draft lines or supplied launch assets for counts, superlatives, number/unit evidence, date/weekday mismatches, past dates and speaker approvals. Ask for missing sources and review date. No source opening or publication occurs.",
+  "Checks pasted draft lines or launch assets from your supplied text and evidence. Returns counts and findings for superlatives, number and unit evidence, date and weekday mismatches, past dates and speaker approvals. Optional review date enables past-date checks; source records and approvals must come from the user. No source opening or publication occurs.",
   object(
     {
       pasted_text: text,
@@ -149,7 +149,7 @@ define(
 );
 define(
   "newsletter_source_check",
-  "Check supplied story records or pasted issue text with ### item headings. Normalize URLs and quotations, report missing sources/dates/editorial takes, recency gaps and caller-reported source status. No fetch, send or independent verification.",
+  "Checks story records or pasted issue text from your supplied sources, using ### item headings for a paste. Returns findings for duplicate URLs, quotations, missing sources, dates, editorial takes, recency gaps and caller-reported source status. Optional cutoff and issue date set the review window. No fetch, send or independent verification occurs.",
   object(
     {
       pasted_text: text,

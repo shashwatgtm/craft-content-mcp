@@ -82,9 +82,9 @@ export function generateSalesEnablement(args) {
     const held = items.filter(i => ['adverse', 'unclear', 'missing', 'title'].includes(i.kind));
     const credibility = items.filter((i) => i.kind === 'recognition' || i.kind === 'scale');
     const usableTexts = usable.map((i) => clipEcho(i.shown, 300));
-    const priceContext = args.price_context || 'Market rate';
+    const priceContext = args.price_context || '';
     // Run 12 (R12-20): a default is shown as assumed.
-    const priceShown = args.price_context || 'Market rate (assumed, not supplied)';
+    const priceShown = args.price_context || 'Price position unknown';
     const stage = args.sales_stage || 'demo';
     // Run 19 (D80, problems 4 and 8): the sector and the business model are read from every text the user gave.
     const ctx = readContext(args.business_model, { seller: [args.product, args.value_props], context: [args.proof_points, args.common_objections, args.competitor_objections, args.price_context], role: [args.target_persona] }, args.your_sector);
@@ -257,7 +257,7 @@ ${handler.whenHeard}
 |-------|--------------------|
 ${valueRows.map((r) => `| ${r.vp} | ${r.proof || 'none of your proof points bears on this one'} |`).join('\n') || `| ${usable[0] ? clipEcho(usable[0].shown, 200) : 'No value proposition given'} | ${usable[0] ? 'the same item' : 'add value props'} |`}
 
-**Investment:** ${product} is positioned at ${priceShown}.
+**Investment:** ${args.price_context ? `${product} is positioned at ${priceShown}.` : 'Price position unknown. Supply the approved price position before using a pricing claim.'}
 
 **ROI Conversation:**
 

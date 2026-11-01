@@ -85,7 +85,7 @@ test("sales_enablement: a given objection is not reported as none given, each ge
     value_props: "Ranked #1 construction estimating software (page claim); live supplier pricing in every estimate", competitor_objections: "Why not manual estimating on paper", your_sector: "vertical_saas",
   });
   assert.doesNotMatch(t, /You didn't provide objections/);
-  assert.match(t, /competitor_objections/);
+  assert.match(t, /competitor objections/);
   const reframes = [...t.matchAll(/\*\*Reframe:\*\*\n> (.+)/g)].map((m) => m[1]);
   assert.ok(reframes.length >= 3);
   assert.equal(new Set(reframes).size, reframes.length, "no identical reframe repeated");

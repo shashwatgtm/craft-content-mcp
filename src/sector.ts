@@ -1,3 +1,6 @@
+import { clearanceAdvice } from './text-signals.js';
+import { sellerSectorLabel } from './text-signals.js';
+import { hasSignal, signal } from './text-signals.ts';
 // Run 19 R19-35 (owner decision D80): helpers shared by the eight tools for the problems of the real-world test.
 // They read the sector and the business model from what the user typed (src/verticals.ts, the one data file), quote typed
 // text instead of pasting it into fixed sentences, split typed lists, and pick whole sentences from a source text.
@@ -336,7 +339,8 @@ export function servedNotes(v: Vertical, input: ReaderInput, own: unknown[] = []
 export function readContext(explicitModel: unknown, raw: ReaderInput, yourSector?: unknown, ownWords?: unknown[]): { v: Vertical | null; model: BusinessModel | null; how: string; line: string; source: string | null } {
   const scrubbed: ReaderInput = { seller: scrub(raw.seller), context: scrub(raw.context), role: scrub(raw.role), buyer: scrub(raw.buyer) };
   const gs = givenSector(yourSector);
-  const ov = gs.given ? { id: null } as ReturnType<typeof coreOverride> : coreOverride(scrubbed);
+  const label = sellerSectorLabel(nonEmpty(scrubbed.seller).join(' . '));
+  const ov = gs.given ? { id: null } as ReturnType<typeof coreOverride> : label.id ? {id:null,vertical:VERTICALS.find(v=>v.id===label.id)} : coreOverride(scrubbed);
   const input: ReaderInput = gs.given ? scrubbed : weighSignals(ov.seller ? { ...scrubbed, seller: ov.seller } : scrubbed);
   const forced = gs.given ? gs.v : ov.vertical ?? (ov.id ? VERTICALS.find((x) => x.id === ov.id) ?? null : null);
   let v = gs.given ? gs.v : forced ?? detectVertical(input);
@@ -390,10 +394,10 @@ export function readContext(explicitModel: unknown, raw: ReaderInput, yourSector
   }
   const from = source === 'role' ? ' (the job titles name it)' : source === 'buyer' ? ' (the buyer\'s industry names it; your own description names no sector)' : '';
   const lensNote = lens ? ` (measures and questions follow the ${lens} buyer)` : '';
-  const sector = investorOnly ? `the buyers are investors, so the investment notes are shown (your own description names no sector; ${v ? v.name : 'investment management'})` : v ? `${chosen ? `set by your_sector as ${v.name}` : `read from your inputs as ${v.name}${from}${lensNote}`}` : gs.given ? 'not set: your_sector is other, so the wording is neutral B2B' : 'not clear from your inputs (name the industry for sector notes, or set your_sector)';
+  const sector = investorOnly ? `the buyers are investors, so the investment notes are shown (your own description names no sector; ${v ? v.name : 'investment management'})` : v ? `${chosen ? `from your choice: ${v.name}` : `read from your inputs as ${v.name}${from}${lensNote}`}` : gs.given ? 'not set: your selected sector is other, so the wording is neutral B2B' : 'not clear from your inputs (name the industry for sector notes, or choose your sector)';
   const model = m.model
-    ? `${MODEL_NAME[m.model]} (${m.how === 'input' ? 'from business_model' : m.how === 'sector' ? 'the usual model in this sector, assumed; set business_model to change it' : 'read from your inputs; set business_model to change it'})`
-    : 'not clear from your inputs; set business_model (saas, services, connectivity, transactions, marketplace, hardware_software or investment) for advice that fits it';
+    ? `${MODEL_NAME[m.model]} (${m.how === 'input' ? 'from your answer' : m.how === 'sector' ? 'the usual model in this sector, assumed; confirm how you charge' : 'read from your inputs; confirm how you charge'})`
+    : 'not clear from your inputs; describe how you charge for advice that fits it';
   return { v, model: m.model, how: m.how, line: `*Sector: ${sector}. Business model: ${model}.*`, source };
 }
 
@@ -411,11 +415,13 @@ export function sectorNotes(v: Vertical | null, what: 'committee' | 'metrics' | 
 
 // The answer pattern for one objection typed by the user: the sector's pattern when it matches, else a pattern by kind.
 export function answerFor(text: string, v: Vertical | null): string {
+  const clearance = clearanceAdvice(text); if (clearance) return clearance;
   const t = text.toLowerCase();
+  if (!['price','security','adoption','incumbent'].some(k => signal(text,k).state === 'affirmed') && ['price','security','adoption','incumbent'].some(k => ['negated','unclear'].includes(signal(text,k).state))) return 'No objection is confirmed by this wording. The fact was not clear; confirm whether a concern remains before defending the product.';
   if (v) {
     for (const o of v.objections) {
       const keys = o.objection.toLowerCase().split(/\W+/).filter((w) => w.length > 2 && !['our', 'the', 'and', 'are', 'not', 'too', 'for', 'already', 'have', 'has', 'does', 'this', 'will', 'than', 'with', 'from', 'your', 'ourselves', 'we', 'can', 'use', 'new', 'own'].includes(w));
-      if (keys.filter((k) => t.includes(k)).length >= Math.min(2, keys.length)) return o.response;
+      if (keys.filter((k) => hasSignal(t,new RegExp('\\b'+k+'\\w*','i'))).length >= Math.min(2, keys.length)) return o.response;
     }
   }
   return kindAnswer(objectionKind(text));
@@ -425,15 +431,15 @@ export type ObjectionKind = 'price' | 'existing' | 'adoption' | 'implementation'
 // What kind of objection a typed objection is (whole-word and stem matches on what the user typed).
 export function objectionKind(text: string): ObjectionKind {
   const t = text.toLowerCase();
-  if (/\bprice|\bpricing|\bcost|\bbudget|expensive|cheaper|discount|margin|\brates?\b/.test(t)) return 'price';
-  if (/already have|already has|already does|already use|existing|incumbent|current (?:vendor|tool|system|provider|operator)|in-house|built|free .*app|\bopen[- ]source\b/.test(t)) return 'existing';
-  if (/adopt|use a new|will not use|won't use|wont use|resist|change management|training|another app|new app/.test(t)) return 'adoption';
-  if (/integrat|migrat|cut-?over|disrupt|\bsetup\b|set-up|\bset up\b|implementation|rollout|transition|too long|long to|takes? too|onboarding|how long (?:does|will|would|do) it take/.test(t)) return 'implementation';
-  if (/security|privacy|compliance|audit|regulat|legal|\brisk\b|data residency|where does (?:our|my|the|your) data|\bdata (?:go|goes|live|lives|leave|leaves|stored)\b/.test(t)) return 'security';
-  if (/bundle|one vendor|single vendor|suite/.test(t)) return 'bundle';
-  if (/timing|not now|next year|\blater\b|priority|priorities|right time/.test(t)) return 'timing';
-  if (/black box|explain|wrong|mistake|accura|hallucinat|\berrors?\b|track record/.test(t)) return 'accuracy';
-  if (/\bproof\b|evidence|references?|case stud|unproven|too new|\bstable\b|stability|still be around|go out of business/.test(t)) return 'proof';
+  if (hasSignal(t, /\bprice|\bpricing|\bcost|\bbudget|expensive|cheaper|discount|margin|\brates?\b/, 'price')) return 'price';
+  if (hasSignal(t, /already have|already has|already does|already use|existing|incumbent|current (?:vendor|tool|system|provider|operator)|in-house|built|free .*app|\bopen[- ]source\b/, 'incumbent')) return 'existing';
+  if (hasSignal(t, /adopt|use a new|will not use|won't use|wont use|resist|change management|training|another app|new app/, 'adoption')) return 'adoption';
+  if (hasSignal(t, /integrat|migrat|cut-?over|disrupt|\bsetup\b|set-up|\bset up\b|implementation|rollout|transition|too long|long to|takes? too|onboarding|how long (?:does|will|would|do) it take/, 'migration')) return 'implementation';
+  if (hasSignal(t, /security|privacy|compliance|audit|regulat|legal|\brisk\b|data residency|where does (?:our|my|the|your) data|\bdata (?:go|goes|live|lives|leave|leaves|stored)\b/, 'security')) return 'security';
+  if (hasSignal(t, /bundle|one vendor|single vendor|suite/, 'bundle')) return 'bundle';
+  if (hasSignal(t, /timing|not now|next year|\blater\b|priority|priorities|right time/, 'timing')) return 'timing';
+  if (hasSignal(t, /black box|explain|wrong|mistake|accura|hallucinat|\berrors?\b|track record/)) return 'accuracy';
+  if (hasSignal(t, /\bproof\b|evidence|references?|case stud|unproven|too new|\bstable\b|stability|still be around|go out of business/)) return 'proof';
   return 'other';
 }
 function kindAnswer(kind: ObjectionKind): string {

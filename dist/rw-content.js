@@ -1,3 +1,5 @@
+import { frictionReading } from './text-signals.js';
+import { readerLabel } from "./text-signals.js";
 // Run 22 (content rewrite): shared writing helpers for newsletter_builder, thought_leadership_series and webinar_script.
 // They read what the user typed into points (a problem, a result with its source label, a quote, a capability), say each point in a
 // whole sentence of ours, and write the closing line that names what was not given. Rule B82: nothing here adds a figure, a quote, a
@@ -135,7 +137,7 @@ function roleOf(p, problemLike, known = false) {
     const l = p.label.toLowerCase();
     if (isInstruction(p.text))
         return 'instruction';
-    if (known)
+    if (known && frictionReading(p.text).state !== 'negated')
         return 'problem';
     if (/quote|testimonial/.test(l) || /^(?:customer|partner) (?:quote|words)\b/i.test(p.text) || /^["“]/.test(p.text))
         return 'quote';
@@ -351,7 +353,7 @@ export function readPoints(raw, known = {}) {
         const figure = (STAT.test(it.text) || FIGURE.test(it.text) || /\bper cent\b/i.test(it.text)) && /\d/.test(it.text);
         const clause = looksClause(it.text) && !PARTICIPLE_START.test(it.text) && !JOIN_START.test(it.text);
         const base = { text: it.text, label: it.label, clause, figure };
-        const problemLike = it.problem || (clause && PROBLEM_WORD.test(it.text.replace(REPLACED_TAIL, '')) && !notProblemPoint(it.text) && !figure && !isImperative(it.text) && !/^(?:it|we|our|its|this|these)\b/i.test(it.text));
+        const problemLike = frictionReading(it.text).state !== 'negated' && (it.problem || (clause && PROBLEM_WORD.test(it.text.replace(REPLACED_TAIL, '')) && !notProblemPoint(it.text) && !figure && !isImperative(it.text) && !/^(?:it|we|our|its|this|these)\b/i.test(it.text)));
         return { ...base, role: roleOf(base, problemLike, it.problem) };
     });
 }
@@ -533,7 +535,7 @@ export function waysToSettle(response) {
 export function sharpenLine(missing) {
     if (!missing.length)
         return '';
-    return `To sharpen this, give: ${missing.map((m) => `${m.field} (it would change ${m.change})`).join('; ')}.`;
+    return `To sharpen this, give: ${missing.map((m) => `${readerLabel(m.field)} (it would change ${m.change})`).join('; ')}.`;
 }
 // The sector line without the request to the user: what could be given belongs in the closing line, where it is asked for once.
 export const cleanSectorLine = (line) => line.replace(/; set business_model to change it/g, '').replace(/; set business_model \([^)]*\) for advice that fits it/g, '');

@@ -105,8 +105,8 @@ export function generateWebinarScript(args: {
   const structure = getWebinarStructure(type, minutes);
 
   const productNote = given
-    ? (productLevel === 'none' ? `your_product (${given}) is not mentioned in the script because product_mention_level is none.` : `${w.productName || given} is mentioned at the "${productLevel}" level.`)
-    : product ? `your_product was not given; ${product} is read from the topic and mentioned at the "${productLevel}" level.`
+    ? (productLevel === 'none' ? `your product (${given}) is not mentioned in the script because product mention level is none.` : `${w.productName || given} is mentioned at the "${productLevel}" level.`)
+    : product ? `your product was not given; ${product} is read from the topic and mentioned at the "${productLevel}" level.`
     : '';
 
   const bareClaimsFor = takeaways.filter((p) => !p.label && shapeOf(p) !== 'imperative' && shapeOf(p) !== 'example' && p.role !== 'instruction' && p.role !== 'problem' && CLAIM_WORD.test(p.text) && haveTakeaways);

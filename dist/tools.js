@@ -167,6 +167,7 @@ export const tools = [
         inputSchema: {
             type: "object",
             properties: {
+                customer_status: { type: "string", enum: ["active", "cancelled", "unknown"], description: "Ask whether the customer is active or cancelled before a testimonial request. A confirmed typed fact takes precedence over cancellation wording." },
                 customer_name: { type: "string", description: "The customer's name" },
                 customer_company: { type: "string", description: "The customer's company" },
                 customer_role: { type: "string", description: "The customer's job title" },

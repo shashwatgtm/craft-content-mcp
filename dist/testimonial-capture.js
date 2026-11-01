@@ -1,7 +1,13 @@
+import { signal, evidenceLine } from './text-signals.js';
 import { cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { readContext, startWords } from "./sector.js";
 import { parseProof, fixNumbers, endSentence, capFirst, isGenericName, KIND_NOTE } from "./draft.js";
 export function generateTestimonialCapture(args) {
+    const cancellation = signal([args.success_story, args.relationship_context].filter(Boolean).join('; '), 'cancelled');
+    const adverse = signal(args.success_story, 'adverse_result');
+    const cancelled = args.customer_status ? args.customer_status === 'cancelled' : cancellation.state === 'affirmed';
+    if (cancelled || adverse.state === 'affirmed')
+        return `# Testimonial request on hold\n\nDo not ask for a quote from this customer now. The supplied account has a cancellation, refund request or adverse result. Resolve the complaint and confirm the customer's current position before considering a request.\n\n${cancelled && args.customer_status ? 'Basis: confirmed customer status is cancelled.' : evidenceLine('Account evidence', cancelled ? cancellation : adverse)}`;
     const name = args.customer_name.trim();
     const company = args.customer_company.trim();
     const role = args.customer_role?.trim() || '';
@@ -43,7 +49,7 @@ export function generateTestimonialCapture(args) {
 | **Name** | ${name} |
 | **Company** | ${company} |
 | **Role** | ${roleShown} |
-| **Product** | ${product || (fromCompany ? `not given (your_product was not given; ${fromCompany} is read from the company field; add your_product to name your product)` : 'not given (your_product was not given, so the templates say "the product"; add it to name your product)')} |
+| **Product** | ${product || (fromCompany ? `not given (your product was not given; ${fromCompany} is read from the company field; add your product to name your product)` : 'not given (your product was not given, so the templates say "the product"; add it to name your product)')} |
 | **Relationship** | ${context} |
 | **Testimonial Type** | ${type.replace(/_/g, ' ')} |
 | **Use Case** | ${useCase} |
@@ -65,7 +71,7 @@ ${items.length > 1 || (items.length === 1 && own.length === 0) ? `**What each pa
     output += generateRequestEmail(greeting, co, own, type, args.use_case || '', incentive, P, ctx.model, role);
     output += `
 
-*Notes for you, not part of the email: the time in the email (5 minutes to write, 15-20 minutes for a call) is an example, so change it to what you will really ask for.${args.use_case ? '' : ' use_case was not given, so the email names no usage; add it if the customer should know where the quote will appear.'} Review sites suit software products; for other businesses a named reference call or a case study is the usual proof.*
+*Notes for you, not part of the email: the time in the email (5 minutes to write, 15-20 minutes for a call) is an example, so change it to what you will really ask for.${args.use_case ? '' : ' use case was not given, so the email names no usage; add it if the customer should know where the quote will appear.'} Review sites suit software products; for other businesses a named reference call or a case study is the usual proof.*
 
 ---
 

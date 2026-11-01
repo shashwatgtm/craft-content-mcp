@@ -104,8 +104,8 @@ test("thought_leadership_series draft: a missing input is said once near the top
   // run 22 rewrite: what is missing is named once, at the end, with what each input would change
   assert.equal((t.match(/To sharpen this, give:/g) || []).length, 1, "said once");
   const tail = t.slice(t.indexOf("To sharpen this, give:"));
-  assert.match(tail, /proof_points \(it would change/);
-  assert.match(tail, /author_background \(it would change/);
+  assert.match(tail, /proof points \(it would change/);
+  assert.match(tail, /author background \(it would change/);
   assert.ok(t.length - t.indexOf("To sharpen this, give:") < 900, "at the end");
   assert.doesNotMatch(t, BAD_PLACEHOLDER);
   assert.doesNotMatch(t, /Suggested Proof Points|A personal story where you learned/);

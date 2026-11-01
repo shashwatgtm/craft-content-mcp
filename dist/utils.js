@@ -1,3 +1,4 @@
+import { hasSignal, SIGNALS, confirmedMatches } from "./text-signals.js";
 // Utility functions for content analysis and generation
 import { pickKeyPoints, sentencesOf, LIST_COMMA } from "./sector.js";
 // Last line of any output that suggests timings, lengths or counts (lengths in words, time boxes, cadences).
@@ -359,7 +360,7 @@ export function analyzeContent(content, contentType, goal, opts = {}) {
     if (passiveMatches.length > sentences * 0.3) {
         note('clarity', 'passive', 2, `High passive voice usage (${passiveMatches.length} instances)`, 'Convert to active voice: "X did Y" instead of "Y was done by X"');
     }
-    const buzz = distinct(content, BUZZ).filter((b) => !(/^optimi[sz]/i.test(b) && DOMAIN_OPT.test(sentenceWith(content, b))));
+    const buzz = confirmedMatches(content, BUZZ).filter((b) => !(/^optimi[sz]/i.test(b) && DOMAIN_OPT.test(sentenceWith(content, b))));
     if (buzz.length > 0) {
         const shown = buzz.slice(0, 4).map((b) => `"${b}" in "${sentenceWith(content, b)}"`).join('; ');
         note('clarity', 'buzzwords', Math.min(4, buzz.length), `Buzzwords (${buzz.length}): ${shown}${buzz.length > 4 ? `; and ${buzz.length - 4} more: ${buzz.slice(4).join(', ')}` : ''}`, 'Say what the product does in plain words: "use" instead of "leverage" or "utilize", "help" instead of "empower", "improve" instead of "optimize".', true);
@@ -407,11 +408,11 @@ export function analyzeContent(content, contentType, goal, opts = {}) {
     if (foundTransitions.length < 2 && paragraphs.length > 3) {
         note('structure', 'transitions', 2, 'Few transition words: may feel disjointed', 'Add transitions: "However...", "As a result...", "First... Second..."');
     }
-    const merge = distinct(content, MERGE_FIELD);
+    const merge = confirmedMatches(content, MERGE_FIELD);
     if (merge.length > 0) {
         note('structure', 'merge-field', 2, `Unfilled merge field or placeholder: ${merge.slice(0, 4).join(', ')}`, 'Fill every merge field and placeholder before sending, or check that your email tool fills it.', true);
     }
-    const recog = distinct(content, /\b(?:Best [A-Za-z&\- ]{3,40}(?:platform|solution|tool)|Leader in [A-Za-z&\- ]{3,50}|Named a [A-Za-z ]{3,30}|Gartner[A-Za-z ]{0,30}|Forrester[A-Za-z ]{0,30}|award(?:ed)? [A-Za-z ]{3,30})/g);
+    const recog = confirmedMatches(content, /\b(?:Best [A-Za-z&\- ]{3,40}(?:platform|solution|tool)|Leader in [A-Za-z&\- ]{3,50}|Named a [A-Za-z ]{3,30}|Gartner[A-Za-z ]{0,30}|Forrester[A-Za-z ]{0,30}|award(?:ed)? [A-Za-z ]{3,30})/g);
     if (recog.length > 0 && !/\((?:[^()]*(?:report|source|analyst)[^()]*)\)/i.test(content)) {
         note('engagement', 'recognition-claim', 1, `A ranking or award is stated without a source a reader can check: "${clipEcho(recog[0], 100)}"${recog.length > 1 ? ` and ${recog.length - 1} more` : ''}`, 'Name the report and the year, or take the line out.', true);
     }
@@ -427,13 +428,13 @@ export function analyzeContent(content, contentType, goal, opts = {}) {
     if (words >= 20 && !/\d/.test(content)) {
         note('engagement', 'no-figure', 2, 'No specific figure in the text', 'Add one result you can prove, with its number and timeframe, or a named example.');
     }
-    const supers = distinct(content, SUPERLATIVE);
+    const supers = confirmedMatches(content, SUPERLATIVE, SIGNALS.unique);
     if (supers.length > 0) {
         note('engagement', 'superlative', Math.min(3, supers.length), `Claims that need proof (${supers.length}): ${supers.slice(0, 4).map((s) => `"${s}" in "${sentenceWith(content, s)}"`).join('; ')}`, 'Remove the claim or back it with a result you can show.', true);
     }
     if (emailLike) {
-        const claim = content.match(READER_CLAIM);
-        if (claim) {
+        const claim = confirmedMatches(content, READER_CLAIM);
+        if (claim.length) {
             note('engagement', 'reader-claim', 2, `Claim about the reader that you may not be able to support: "${clipEcho(claim[0].trim(), 160)}"`, 'Only say what you saw if you can name the source (their post, their job ad, their site); otherwise open with the problem.', true);
         }
     }
@@ -444,20 +445,20 @@ export function analyzeContent(content, contentType, goal, opts = {}) {
     }
     // GOAL ALIGNMENT: an ask where the goal needs one, evidence for trust goals, and whether the text speaks to the audience
     const goalLower = goal.toLowerCase();
-    const hasCTA = ASK.test(content);
-    if (NEEDS_ASK.test(goalLower) && !hasCTA) {
+    const hasCTA = hasSignal(content, ASK, 'ask');
+    if (hasSignal(goalLower, NEEDS_ASK) && !hasCTA) {
         note('goalAlignment', 'ask', 4, 'The goal needs the reader to do something, but no ask was found', 'Add one clear ask: what the reader should do next, and how.');
     }
-    if ((goalLower.includes('educate') || goalLower.includes('inform')) && words < 300) {
+    if ((hasSignal(goalLower, /educate|inform/i, 'education')) && words < 300) {
         note('goalAlignment', 'educate-length', 2, 'Educational content may be too brief', 'Expand with examples, data, or how-to steps');
     }
-    if (goalLower.includes('awareness') || goalLower.includes('brand')) {
+    if (hasSignal(goalLower, /\b(?:awareness|brand)\b/i, 'awareness')) {
         const brandMentions = (content.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b/g) || []).length;
         if (brandMentions < 2) {
             note('goalAlignment', 'brand', 2, 'Brand/product mentions may be insufficient for awareness', 'Ensure brand is mentioned prominently');
         }
     }
-    if (goalLower.includes('trust') || goalLower.includes('credibility')) {
+    if (hasSignal(goalLower, /trust|credibility/i, 'trust')) {
         if (!/\d+%|\$\d+|\d+x|\d+\s*(customer|client|user)/i.test(content)) {
             note('goalAlignment', 'trust-evidence', 3, 'No data or proof points for credibility', 'Add figures you can prove: a result, a count of customers, a time saved.');
         }
@@ -522,7 +523,7 @@ export function toneCheck(content, tone) {
         const f = distinct(content, /\b(?:furthermore|moreover|hereby|therefore|consequently|pursuant|kindly|thus)\b/gi);
         return { used: true, notes: [f.length ? `Formal joining words found: ${f.join(', ')}. Plainer words ("so", "also", "and") read as more casual.` : 'No formal joining words found: nothing to change for a more casual tone.'] };
     }
-    return { used: false, notes: [`tone_preference ${tone.replace(/^more_/, 'more_')} was not used: this tool checks tone only for more_formal and more_casual.`] };
+    return { used: false, notes: [`tone preference ${tone.replace(/^more_/, 'more_')} was not used: this tool checks tone only for more_formal and more_casual.`] };
 }
 // ---- the improved version: real edits, each one listed; or none, said plainly ----
 const HYPE_ADJ = '(?:cutting-edge|best-in-class|world-class|state-of-the-art|innovative|robust|seamless|holistic|game-changing|revolutionary|industry-leading|market-leading|next-generation)';

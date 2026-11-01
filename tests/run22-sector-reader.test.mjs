@@ -8,7 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 let mod;
-try { mod = await import(new URL("../src/verticals.ts", import.meta.url)); } catch { mod = await import(new URL("../netlify/lib/verticals.js", import.meta.url)); }
+try { mod = await import(new URL("../dist/verticals.js", import.meta.url)); } catch { mod = await import(new URL("../netlify/lib/verticals.js", import.meta.url)); }
 const { detectVertical, detectModel, explainSector, SUBTYPES } = mod;
 const sector = (input) => { const v = detectVertical(input); return v ? v.id : null; };
 const model = (input) => detectModel(undefined, input).model;

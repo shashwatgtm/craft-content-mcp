@@ -48,7 +48,7 @@ const longLines = (t) => new Set(t.split("\n").map((l) => l.trim()).filter((l) =
 function checkClean(t, label) {
   assert.doesNotMatch(t, /\[[^\]\n]*\]/, `${label}: bracket placeholder`);
   assert.doesNotMatch(t, /\{[^}\n]*\}/, `${label}: brace placeholder`);
-  assert.doesNotMatch(t, /your product|\bTBD\b|Insert|\bundefined\b|\bNaN\b/i, `${label}: placeholder word`);
+  assert.doesNotMatch(t.split("To sharpen this")[0], /your product|\bTBD\b|Insert|\bundefined\b|\bNaN\b/i, `${label}: placeholder word`);
   assert.doesNotMatch(t, /[–—]/, `${label}: dash`);
   assert.doesNotMatch(t, HEALTH, `${label}: healthcare word`);
   for (const f of FILLER) assert.ok(!t.includes(f), `${label}: filler "${f}"`);
@@ -118,8 +118,8 @@ test("newsletter draft: thin input says once what is missing and does not pad", 
   checkClean(t, "thin");
   // run 22 rewrite: what is missing is named once, at the end, with what each input would change
   assert.equal((t.match(/To sharpen this, give:/g) || []).length, 1, "one line that says what is missing");
-  assert.match(t, /To sharpen this, give:[^\n]*key_points \(it would change/);
-  assert.match(t, /To sharpen this, give:[^\n]*your_product \(it would change/);
+  assert.match(t, /To sharpen this, give:[^\n]*key points \(it would change/);
+  assert.match(t, /To sharpen this, give:[^\n]*your product \(it would change/);
   assert.match(t, /\*\*Subject:\*\*/);
   assert.match(t, /Button: Read the guide/);
 });

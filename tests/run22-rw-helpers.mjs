@@ -61,7 +61,7 @@ export function sharpenAtEnd(t, fields, label) {
   assert.ok(i > 0, `${label}: To sharpen this, give: is missing`);
   assert.equal((t.match(/To sharpen this, give:/g) || []).length, 1);
   const tail = t.slice(i);
-  for (const f of fields) assert.ok(tail.includes(f), `${label}: ${f} named in the closing line`);
+  for (const f of fields) assert.ok(tail.includes(f.replace(/_/g, " ")), `${label}: ${f} named in the closing line`);
   assert.ok((tail.match(/\(it would change /g) || []).length >= fields.length, `${label}: each missing input says what it would change`);
   // nothing but the closing notes comes after it
   assert.ok(t.length - i < 900 || /Suggested timings/.test(t.slice(i)), `${label}: the closing line comes at the end`);

@@ -1,3 +1,5 @@
+import { illustrativeProof } from "./text-signals.js";
+import { signal, hasSignal, readSignal, SIGNALS } from './text-signals.js';
 // Run 20 round 1b (owner decision D92): helpers shared by the eight tools so that a draft is built from the user's inputs
 // instead of pasting them into fixed sentence frames. Rule B82: nothing here adds a statistic, a quote or a named company; the
 // helpers only split, sort and label what the user typed, and join it with plain sentences of our own.
@@ -366,10 +368,16 @@ export function parseProof(raw) {
         const l = label.toLowerCase();
         const figure = FIGURE.test(text);
         let kind;
-        if (/^(?:case study|customer story|success story|story)\s+(?:headlines?|titles?)\b/i.test(text) && !/quote/.test(l))
+        if (illustrativeProof(item).state === 'affirmed')
+            kind = 'unclear';
+        else if (signal(text, 'adverse_result').state === 'affirmed' || signal(text, 'cancelled').state === 'affirmed')
+            kind = 'adverse';
+        else if (signal(text, 'positive_result').state === 'negated' || readSignal(text, RECOGNITION, SIGNALS.recognition).state === 'negated')
+            kind = 'unclear';
+        else if (/^(?:case study|customer story|success story|story)\s+(?:headlines?|titles?)\b/i.test(text) && !/quote/.test(l))
             kind = 'title';
         // a customer's own words with their speaker ("Name, Title, Company: the number one thing we can do ...") are a quote even when the words say "number one"
-        else if (RECOGNITION.test(text) && !/\bcustomer quote\b/.test(l) && !(/^[^:]{3,140}:\s+\S/.test(text) && (SPEAKER_QUOTE.test(text) || isAttributed(text) || LABELLED_QUOTE.test(text)) && !RECOGNITION.test(text.split(':')[0])))
+        else if (hasSignal(text, RECOGNITION, 'recognition') && !/\bcustomer quote\b/.test(l) && !(/^[^:]{3,140}:\s+\S/.test(text) && (SPEAKER_QUOTE.test(text) || isAttributed(text) || LABELLED_QUOTE.test(text)) && !RECOGNITION.test(text.split(':')[0])))
             kind = 'recognition';
         else if (/quote/.test(l) || LABELLED_QUOTE.test(text) || isAttributed(text) || SPEAKER_QUOTE.test(text))
             kind = 'quote';
@@ -397,6 +405,8 @@ export function parseProof(raw) {
     });
 }
 export const KIND_NOTE = {
+    adverse: 'an adverse result, not a success story',
+    unclear: 'the fact was not clear; not a customer result',
     result: 'a result',
     quote: 'a customer quote',
     recognition: 'a recognition or ranking, not a customer outcome',
@@ -540,7 +550,8 @@ const SUPERLATIVE_CLAIM = /\b(?:the first and only|first and only|the only|the f
 export function claimsToSource(texts) {
     const out = [];
     for (const t of texts) {
-        const m = SUPERLATIVE_CLAIM.exec(t);
+        const r = readSignal(t, SUPERLATIVE_CLAIM, SIGNALS.unique);
+        const m = r.state === 'affirmed' ? r.matched : null;
         if (m && !out.includes(m[0].toLowerCase()))
             out.push(m[0].toLowerCase());
     }

@@ -6,8 +6,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 
-const own = new URL("../src/verticals.ts", import.meta.url);
-const MODULE = process.env.VERTICALS_MODULE || (existsSync(own) ? "../src/verticals.ts" : "../netlify/lib/verticals.js");
+const own = new URL("../dist/verticals.js", import.meta.url);
+const MODULE = process.env.VERTICALS_MODULE || (existsSync(own) ? "../dist/verticals.js" : "../netlify/lib/verticals.js");
 const { explainSector, detectModel } = await import(new URL(MODULE, import.meta.url));
 const read = (...texts) => explainSector({ seller: texts }).vertical;
 const words = (v) => JSON.stringify([v.vocabulary, v.buyerRoles, v.committee, v.objections, v.salesMotion, v.metrics, v.proofShape, v.discovery]).toLowerCase();

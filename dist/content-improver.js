@@ -1,3 +1,4 @@
+import { sellerSectorLabel } from './text-signals.js';
 import { analyzeContent, generateImprovedVersion, editSentence, toneCheck, annotateText, bodyOf, countWords, avgWordsPerSentence, calculateReadability, SUGGESTION_FOOTER, clipEcho, ASK } from './utils.js';
 import { lowerFirstIfCommon, isCommonWord } from './utils.js';
 import { readContext, audienceLine, sentencesOf } from "./sector.js";
@@ -59,7 +60,7 @@ export function generateContentImprover(args) {
     const tone = toneCheck(content, args.tone_preference);
     const emailLike = contentType === 'sales_email' || contentType === 'email';
     const shorter = emailLike && (wordCount > 120 || analysis.findings.some((f) => f.rule === 'subject-length' || f.rule === 'sentence-length' || f.rule === 'run-on')) ? shorterEmail(slipRead.text, slipRead.slips.some((x) => /deal with/.test(x.note))) : null;
-    const ctx = readContext(undefined, { seller: [sellerWords(content, contentType)], context: [content, args.goal], role: [args.audience], buyer: [args.audience] }, args.your_sector);
+    const ctx = readContext(undefined, { seller: [sellerSectorLabel(content).id ? content : sellerWords(content, contentType)], context: [content, args.goal], role: [args.audience], buyer: [args.audience] }, args.your_sector);
     // Create specific recommendations based on analysis: the findings that cost the most points first
     const priorityFixes = [...analysis.findings].sort((a, b) => b.penalty - a.penalty).slice(0, 6).map((f) => {
         const dim = f.dimension === 'goalAlignment' ? 'Goal Alignment' : f.dimension.charAt(0).toUpperCase() + f.dimension.slice(1);

@@ -107,9 +107,9 @@ export function generateContentRepurposer(args) {
     if (!proof.length)
         notGiven.push('Not given: a proof line. The source has no line that starts "Proof:" or "Results:", so no piece carries a customer result; add one customer result with its figure to the source to make the pieces stronger.');
     if (!keyMessage)
-        notGiven.push('Not given: key_message. The hooks come from the source\'s title or first sentence; add key_message to set the core message.');
+        notGiven.push('Not given: key message. The hooks come from the source\'s title or first sentence; add key message to set the core message.');
     if (!points.length)
-        notGiven.push('Not given: a full sentence of 25 characters or more. The source has no key points to carry, so paste the finished text or add a key_message.');
+        notGiven.push('Not given: a full sentence of 25 characters or more. The source has no key points to carry, so paste the finished text or add a key message.');
     const places = [];
     if (known.includes('email'))
         places.push(`the "Read the full ${kind}" line of the email`);
@@ -484,7 +484,7 @@ ${k.v ? `- Measures this audience watches: ${proseJoin(k.v.metrics.slice(0, 3))}
 
 ---
 
-${cards.length ? cards.map((qt, i) => qt.stat ? `**Stat Card ${i + 1}:**\n> ${qt.text}\n` : `**Quote Card ${i + 1}:**\n> "${qt.text}"${qt.by ? `\n>\n> ${qt.by}` : ''}\n`).join('\n') : 'No sentence of 180 characters or less was found, so there is no card text. Add a short line to the source or a key_message.\n'}
+${cards.length ? cards.map((qt, i) => qt.stat ? `**Stat Card ${i + 1}:**\n> ${qt.text}\n` : `**Quote Card ${i + 1}:**\n> "${qt.text}"${qt.by ? `\n>\n> ${qt.by}` : ''}\n`).join('\n') : 'No sentence of 180 characters or less was found, so there is no card text. Add a short line to the source or a key message.\n'}
 ---
 
 `;

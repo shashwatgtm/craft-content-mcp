@@ -89,8 +89,10 @@ export function generateSalesEnablement(args: {
   const roleShown = role || persona;
   const items: ProofItem[] = parseProof(args.proof_points);
   // Customer results, quotes and the vendor's own claims can answer an objection; recognition and company-wide counts are credibility only.
-  const usable = items.filter((i) => i.kind !== 'recognition' && i.kind !== 'scale');
-  const credibility = items.filter((i) => !usable.includes(i));
+  const usable = items.filter((i) => ['result','quote','claim'].includes(i.kind));
+  const customerResults = usable.filter(i=>i.kind==='result'||i.kind==='quote');
+  const held = items.filter(i=>['adverse','unclear','title'].includes(i.kind));
+  const credibility = items.filter((i) => i.kind==='recognition'||i.kind==='scale');
   const usableTexts = usable.map((i) => clipEcho(i.shown, 300));
   const priceContext = args.price_context || 'Market rate';
   // Run 12 (R12-20): a default is shown as assumed.
@@ -110,11 +112,11 @@ export function generateSalesEnablement(args: {
   } else if (v) {
     objections = v.objections.map((o) => o.objection);
     objectionsNote = args.competitor_objections
-      ? `\n**NOTE:** You gave one or more objections under competitor_objections (answered under Competitive Responses). We have added handlers for the objections ${v.name} buyers raise most; replace them with the ones you hear.\n`
+      ? `\n**NOTE:** You gave one or more objections under competitor objections (answered under Competitive Responses). We have added handlers for the objections ${v.name} buyers raise most; replace them with the ones you hear.\n`
       : `\n**NOTE:** You didn't provide objections. We've generated handlers for the objections ${v.name} buyers raise most. Update these with real objections you hear from prospects.\n`;
   } else {
     objections = [];
-    objectionsNote = `\n**NOTE:** You didn't provide objections and no sector could be read from your inputs, so no objection handlers are written (a generic list would be invented). Add common_objections, or name the industry, to get them.\n`;
+    objectionsNote = `\n**NOTE:** You didn't provide objections and no sector could be read from your inputs, so no objection handlers are written (a generic list would be invented). Add common objections, or name the industry, to get them.\n`;
   }
 
   const allValueProps = args.value_props ? splitList(args.value_props).map((p) => clipEcho(p)) : [];
@@ -169,6 +171,7 @@ ${ctx.line}
 
 ---
 
+${held.length ? '**Proof held out of sales copy:** illustrative, unclear or adverse items remain in the source notes below; they are not customer success evidence.\n' : ''}
 ## Quick Reference Card
 
 | Element | Detail |
@@ -177,7 +180,7 @@ ${ctx.line}
 | **Persona** | ${persona} |
 | **Price Position** | ${priceShown} |
 | **Sales Stage** | ${stage.replace(/_/g, ' ')}${args.sales_stage ? '' : ' (default)'} |${!args.value_props ? `
-| **Note** | No value_props given: the pitch order below leads with your proof points |` : ''}${!args.common_objections ? `
+| **Note** | ${usable.length ? "No value props given: the pitch order below leads with your proof points" : "No usable value or proof supplied: confirm a supported benefit before building a pitch"} |` : ''}${!args.common_objections ? `
 | **Note** | ${args.competitor_objections ? 'Your objection is under Competitive Responses; the handlers above add the usual ones for the sector' : 'Objections suggested: replace them with the ones you hear'} |` : ''}
 
 ---
@@ -192,7 +195,7 @@ ${r.why ? `- *Why it matters to ${midSentence(roleShown)}${field ? ` in ${field}
 `).join('\n') : (lead.length ? lead : usable.slice(0, 3)).map((p, i) => `
 **${i + 1}. ${endSentence(capFirst(clipEcho(p.shown, 300)))}**
 - *Why it matters to ${midSentence(roleShown)}${field ? ` in ${field}` : ''}:* ${v ? `it speaks to ${proseJoin(v.metrics.slice(0, 2))}, measures ${v.name} buyers track` : 'tie it to a measure this buyer owns'}
-`).join('\n') || '\n*No value propositions or customer proof points were given, so there is no pitch order. Add value_props or proof_points.*\n'}
+`).join('\n') || '\n*No usable value propositions or customer proof points were given, so there is no pitch order. Add value props or proof points.*\n'}
 
 ---
 ${v ? `\n${sectorNotes(v, 'all', ctx.model)}\n\n---\n` : ''}
@@ -254,7 +257,7 @@ ${handler.whenHeard}
 
 ---
 `).join('\n') : `
-*No competitor-specific objections provided. Add competitor_objections parameter for battle cards.*
+*No competitor-specific objections provided. Add competitor objections parameter for battle cards.*
 `}
 
 ## Price Justification
@@ -265,17 +268,17 @@ ${handler.whenHeard}
 
 | Value | Proof you can cite |
 |-------|--------------------|
-${valueRows.map((r) => `| ${r.vp} | ${r.proof || 'none of your proof points bears on this one'} |`).join('\n') || `| ${usable[0] ? clipEcho(usable[0].shown, 200) : 'No value proposition given'} | ${usable[0] ? 'the same item' : 'add value_props'} |`}
+${valueRows.map((r) => `| ${r.vp} | ${r.proof || 'none of your proof points bears on this one'} |`).join('\n') || `| ${usable[0] ? clipEcho(usable[0].shown, 200) : 'No value proposition given'} | ${usable[0] ? 'the same item' : 'add value props'} |`}
 
 **Investment:** ${product} is positioned at ${priceShown}.
 
 **ROI Conversation:**
 
-${lead.length || usable.length ? `"Let me share what customers have seen:
+${customerResults.length ? `"Let me share what customers have seen:
 
-${(lead.length ? lead : usable).slice(0, 3).map((p) => `- ${clipEcho(p.shown, 300)}`).join('\n')}
+${customerResults.slice(0, 3).map((p) => `- ${clipEcho(p.shown, 300)}`).join('\n')}
 
-Based on what you've shared about your situation, here's what that could mean for you:" then work it out from the prospect's own figures, which this kit does not have.` : '*No proof points with a result were given, so there is nothing to quote here. Add proof_points.*'}
+Based on what you've shared about your situation, here's what that could mean for you:" then work it out from the prospect's own figures, which this kit does not have.` : '*No proof points with a result were given, so there is nothing to quote here. Add proof points.*'}
 
 **If Price Pushback:**
 

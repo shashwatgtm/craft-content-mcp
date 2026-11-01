@@ -2,6 +2,10 @@ import { BUILD_PROFILE } from './build-profile.js';
 import {reserveTools,isReserveTool,callReserveTool} from './reserve-tools.js';
 import { attachWidgets } from './widget-layer.js';
 import { waveTools, isWaveTool, callWaveTool } from './wave2-checkers.js';
+import { decisionInputs, decisionHelp, decisionLimit } from './decision-limits.ts';
+import { readerLabel, readerIssue, claimRisk, outcomeReading } from './text-signals.ts';
+import { sectorChoiceNotice } from './text-signals.js';
+import { explainSector } from './verticals.js';
 // Shared MCP server definition, used by both entry points:
 //   src/index.ts                 stdio (the npm package)
 //   netlify/functions/mcp.mjs    Streamable HTTP (the hosted connector)
@@ -40,6 +44,8 @@ const TOOL_TITLES: Record<string, string> = {
   "sales_enablement_content": "Sales Enablement Content",
   "craft_content_improver": "CRAFT Content Improver"
 };
+
+for(const tool of tools){Object.assign(tool.inputSchema.properties||{},decisionInputs(tool.name));tool.description=(tool.description||'')+decisionHelp(tool.name);}
 
 export const listedTools = tools.map((tool) => {
   const title = TOOL_TITLES[tool.name] ?? tool.name;
@@ -123,7 +129,7 @@ function checkRequiredInputs(
   const blankText = (key: string) => typeof args?.[key] === "string" && (args[key] as string).trim() === "" && props[key]?.type === "string" && !Array.isArray(props[key]?.enum);
   const missing = required.filter((key) => args?.[key] === undefined || args?.[key] === null || blankText(key));
   if (missing.length > 0) {
-    return `Missing required input for ${name}: ${missing.join(", ")}. Provide ${missing.length === 1 ? "it" : "them"} and call the tool again.`;
+    return `Missing required input for ${readerLabel(name)}: ${missing.map(readerLabel).join(", ")}. Provide ${missing.length === 1 ? "it" : "them"} and call the tool again.`;
   }
   // Decision N2 (run 6) and run 7: schema limits at any depth, choices, money text and single amounts.
   const problems: string[] = [];
@@ -143,7 +149,7 @@ function checkRequiredInputs(
     if (typeof raw === "string" && AMOUNT_RANGE.test(raw)) problems.push(`${key} must be one amount, not a range (for example $75,000)`);
   }
   if (problems.length > 0) {
-    return `Invalid input for ${name}: ${problems.join("; ")}.`;
+    return `Invalid input for ${readerLabel(name)}: ${problems.map(readerIssue).join("; ")}.`;
   }
   return null;
 }
@@ -184,6 +190,8 @@ export function createServer(): Server {
     }
 
     try {
+      const limit=decisionLimit(name,(args||{}) as Record<string,unknown>);
+      if(limit.stop)return {content:[{type:'text',text:limit.text}]};
       let result: string;
 
       switch (name) {
@@ -214,6 +222,8 @@ export function createServer(): Server {
         default:
           throw new Error(`Unknown tool: ${name}`);
       }
+
+      result = limit.text + sectorChoiceNotice(name, (args || {}) as Record<string,unknown>, text=>{const r=explainSector({seller:[text]});return {id:r.vertical?.id,name:r.vertical?.name,source:r.source}}) + result;
 
       return {
         content: [

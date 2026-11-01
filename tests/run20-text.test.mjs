@@ -83,7 +83,7 @@ test("num_articles: the schema, the hint, the README and the docs page agree and
   for (const n of [0, 6, 2.5, "2.5", -1]) {
     const r = await call("thought_leadership_series", { ...base, num_articles: n });
     assert.equal(r.isError, true, `num_articles ${n} is refused`);
-    assert.match(r.text, /num_articles must be/);
+    assert.match(r.text, /num articles must be/);
   }
   const frac = await call("thought_leadership_series", { ...base, num_articles: 2.5 });
   assert.match(frac.text, /whole number/);

@@ -85,8 +85,8 @@ test("newsletter_builder: a topic with interior runs of spaces makes subject lin
 test("newsletter_builder: a topic or cta_goal that is only whitespace is still refused as missing", async () => {
   const a = await call("newsletter_builder", { topic: " \n ", cta_goal: "read the blog" });
   assert.equal(a.isError, true);
-  assert.match(a.text, /Missing required input for newsletter_builder: topic/);
+  assert.match(a.text, /Missing required input for Newsletter Builder: topic/);
   const b = await call("newsletter_builder", { topic: "AI agents", cta_goal: "\n\t" });
   assert.equal(b.isError, true);
-  assert.match(b.text, /Missing required input for newsletter_builder: cta_goal/);
+  assert.match(b.text, /Missing required input for Newsletter Builder: cta goal/);
 });

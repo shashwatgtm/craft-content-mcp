@@ -1,4 +1,5 @@
 export declare function generateTestimonialCapture(args: {
+    customer_status?: 'active' | 'cancelled' | 'unknown';
     your_sector?: string;
     customer_name: string;
     customer_company: string;

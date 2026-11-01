@@ -20,7 +20,7 @@ test("your_sector decides the sector over contrary text", () => {
   const seller = ["Acme, auto repair shop management software: estimates, card payments, financing and payouts", "payments, lending, banking, invoices, fraud"];
   const c = readContext(undefined, { seller, context: ["fraud checks on every payment"], buyer: ["a bank"] }, "vertical_saas");
   assert.equal(c.v?.id, "vertical-saas");
-  assert.match(c.line, /set by your_sector as vertical SaaS/);
+  assert.match(c.line, /from your choice: vertical SaaS/);
   const d = readContext(undefined, { seller: ["Acme platform for freight tracking and shipments"] }, "ites");
   assert.equal(d.v?.id, "ites");
   assert.equal(d.model, "services");
@@ -34,7 +34,7 @@ test("your_sector decides the sector over contrary text", () => {
 test("an unknown your_sector is refused without being echoed", async () => {
   const j = await rpc("tools/call", { name: "newsletter_builder", arguments: { topic: "Month-end close", cta_goal: "book a call", your_sector: "<b>evil</b>" } });
   const t = j.result.content.map((c) => c.text).join("\n");
-  assert.match(t, /your_sector must be one of: logistics_tech, fintech/);
+  assert.match(t, /your selected sector must be one of: logistics_tech, fintech/);
   assert.doesNotMatch(t, /evil|<b>/);
   const c = readContext(undefined, { seller: ["Acme payments API"] }, "<b>evil</b>");
   assert.doesNotMatch(c.line, /evil/);

@@ -6,7 +6,7 @@ export declare function proseJoin(items: string[]): string;
 export declare function plural(n: number, one: string, many?: string): string;
 export declare function splitList(raw: unknown): string[];
 export declare const FIGURE: RegExp;
-export type ProofKind = 'result' | 'quote' | 'recognition' | 'title' | 'scale' | 'claim';
+export type ProofKind = 'result' | 'quote' | 'recognition' | 'title' | 'scale' | 'claim' | 'adverse' | 'unclear';
 export interface ProofItem {
     text: string;
     label: string;

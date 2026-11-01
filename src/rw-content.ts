@@ -1,3 +1,4 @@
+import { frictionReading } from './text-signals.js';
 import { readerLabel } from './text-signals.ts';
 // Run 22 (content rewrite): shared writing helpers for newsletter_builder, thought_leadership_series and webinar_script.
 // They read what the user typed into points (a problem, a result with its source label, a quote, a capability), say each point in a
@@ -134,7 +135,7 @@ const OUTCOMEISH = /^(?:measurable |significant |up to |about |over |more than |
 function roleOf(p: { text: string; label: string; clause: boolean; figure: boolean }, problemLike: boolean, known = false): Role {
   const l = p.label.toLowerCase();
   if (isInstruction(p.text)) return 'instruction';
-  if (known) return 'problem';
+  if (known && frictionReading(p.text).state !== 'negated') return 'problem';
   if (/quote|testimonial/.test(l) || /^(?:customer|partner) (?:quote|words)\b/i.test(p.text) || /^["“]/.test(p.text)) return 'quote';
   if (RECOGNITION.test(p.text) && !/customer/.test(l)) return 'recognition';
   if (/title|headline|story/.test(l) && !p.figure) return 'story';
@@ -279,7 +280,7 @@ export function readPoints(raw: string | undefined, known: { problem?: string } 
     const figure = (STAT.test(it.text) || FIGURE.test(it.text) || /\bper cent\b/i.test(it.text)) && /\d/.test(it.text);
     const clause = looksClause(it.text) && !PARTICIPLE_START.test(it.text) && !JOIN_START.test(it.text);
     const base = { text: it.text, label: it.label, clause, figure };
-    const problemLike = it.problem || (clause && PROBLEM_WORD.test(it.text.replace(REPLACED_TAIL, '')) && !notProblemPoint(it.text) && !figure &&!isImperative(it.text) && !/^(?:it|we|our|its|this|these)\b/i.test(it.text));
+    const problemLike = frictionReading(it.text).state !== 'negated' && (it.problem || (clause && PROBLEM_WORD.test(it.text.replace(REPLACED_TAIL, '')) && !notProblemPoint(it.text) && !figure &&!isImperative(it.text) && !/^(?:it|we|our|its|this|these)\b/i.test(it.text)));
     return { ...base, role: roleOf(base, problemLike, it.problem) };
   });
 }

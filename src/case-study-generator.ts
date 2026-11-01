@@ -1,3 +1,4 @@
+import { frictionReading } from './text-signals.js';
 import { quotedPassages } from './text-signals.js';
 import { SUGGESTION_FOOTER, clipEcho, cap, lowerFirstIfCommon } from './utils.js';
 import { q, readContext, startWords, firstSentence, sentencesOf, fromIndicator, type Vertical, type BusinessModel } from './sector.ts';
@@ -264,7 +265,7 @@ function generateFromNotes(notes: string, customerName: string, industry: string
   const keyPoints = sentencesOf(notes).filter((s) => s.length > 10).slice(0, 5).map((p) => clipEcho(p.replace(/[.!?]+$/, '')));
 
   // Look for challenge indicators
-  const challengeMatches = fromIndicator(notes, /(?:problem|struggle|challenge|issue|pain|before|difficult|hard|couldn't|wasn't|weren't)/i);
+  const challengeMatches = sentencesOf(notes).flatMap(s => { const fr = frictionReading(s); return fr.state === 'negated' || fr.state === 'unclear' ? [] : fr.state === 'affirmed' ? [s] : fromIndicator(s, /(?:problem|struggle|challenge|issue|pain|before|difficult|hard|couldn't|wasn't|weren't)/i); });
   const challenge = given.challenge?.trim() || challengeMatches.slice(0, 2).join(' ') || '';
 
   // Look for solution indicators

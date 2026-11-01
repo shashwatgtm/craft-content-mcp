@@ -1,3 +1,4 @@
+import { signal, hasSignal, readSignal, SIGNALS } from './text-signals.js';
 // Run 20 round 1b (owner decision D92): helpers shared by the eight tools so that a draft is built from the user's inputs
 // instead of pasting them into fixed sentence frames. Rule B82: nothing here adds a statistic, a quote or a named company; the
 // helpers only split, sort and label what the user typed, and join it with plain sentences of our own.
@@ -148,7 +149,7 @@ function splitListRaw(raw: unknown): string[] {
 // A real figure: a percentage, a money amount, a count with a unit, or a number of two or more digits; not a token such as 4G or 3PL.
 export const FIGURE = /[$₹€£]\s?\d|(?<![A-Za-z])\d[\d.,]*\s?(?:%|x\b|\+|k\b|m\b|mn\b|million|billion|lakhs?|crore|days?|hours?|weeks?|months?|years?|minutes?|seconds?|percent|sources|branches|sites|trucks|customers|businesses|companies)|(?<![A-Za-z0-9])\d{2,}(?![A-Za-z0-9])/i;
 
-export type ProofKind = 'result' | 'quote' | 'recognition' | 'title' | 'scale' | 'claim';
+export type ProofKind = 'result' | 'quote' | 'recognition' | 'title' | 'scale' | 'claim' | 'adverse' | 'unclear';
 export interface ProofItem {
   text: string;           // the item as typed, label removed
   label: string;         // the source label typed in brackets at the end ("customer quote", "page claim"), or ''
@@ -320,9 +321,11 @@ export function parseProof(raw: unknown): ProofItem[] {
     const l = label.toLowerCase();
     const figure = FIGURE.test(text);
     let kind: ProofKind;
-    if (/^(?:case study|customer story|success story|story)\s+(?:headlines?|titles?)\b/i.test(text) && !/quote/.test(l)) kind = 'title';
+    if (signal(text, 'adverse_result').state === 'affirmed' || signal(text, 'cancelled').state === 'affirmed') kind = 'adverse';
+    else if (signal(text, 'positive_result').state === 'negated' || readSignal(text, RECOGNITION, SIGNALS.recognition).state === 'negated') kind = 'unclear';
+    else if (/^(?:case study|customer story|success story|story)\s+(?:headlines?|titles?)\b/i.test(text) && !/quote/.test(l)) kind = 'title';
     // a customer's own words with their speaker ("Name, Title, Company: the number one thing we can do ...") are a quote even when the words say "number one"
-    else if (RECOGNITION.test(text) && !/\bcustomer quote\b/.test(l) && !(/^[^:]{3,140}:\s+\S/.test(text) && (SPEAKER_QUOTE.test(text) || isAttributed(text) || LABELLED_QUOTE.test(text)) && !RECOGNITION.test(text.split(':')[0]))) kind = 'recognition';
+    else if (hasSignal(text, RECOGNITION, 'recognition') && !/\bcustomer quote\b/.test(l) && !(/^[^:]{3,140}:\s+\S/.test(text) && (SPEAKER_QUOTE.test(text) || isAttributed(text) || LABELLED_QUOTE.test(text)) && !RECOGNITION.test(text.split(':')[0]))) kind = 'recognition';
     else if (/quote/.test(l) || LABELLED_QUOTE.test(text) || isAttributed(text) || SPEAKER_QUOTE.test(text)) kind = 'quote';
     // Run 42B round S: a story summary that states a figure and what changed ("upgraded bandwidth from 1.25 Gbps to 5 Gbps") is a result,
     // not a title; a news item or launch is the vendor's own announcement, never a customer result
@@ -342,6 +345,8 @@ export function parseProof(raw: unknown): ProofItem[] {
 }
 
 export const KIND_NOTE: Record<ProofKind, string> = {
+  adverse: 'an adverse result, not a success story',
+  unclear: 'the fact was not clear; not a customer result',
   result: 'a result',
   quote: 'a customer quote',
   recognition: 'a recognition or ranking, not a customer outcome',

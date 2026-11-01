@@ -1,8 +1,10 @@
+import { signal, evidenceLine } from './text-signals.js';
 import { cap, aOrAn, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { readContext, startWords, type Vertical, type BusinessModel } from './sector.ts';
 import { parseProof, fixNumbers, endSentence, capFirst, proseJoin, isGenericName, shortenClauses, KIND_NOTE, type ProofItem } from './draft.ts';
 
 export function generateTestimonialCapture(args: {
+  customer_status?: 'active' | 'cancelled' | 'unknown';
   your_sector?: string;
   customer_name: string;
   customer_company: string;
@@ -15,6 +17,10 @@ export function generateTestimonialCapture(args: {
   your_product?: string;
   business_model?: string;
 }): string {
+  const cancellation = signal([args.success_story,args.relationship_context].filter(Boolean).join('; '), 'cancelled');
+  const adverse = signal(args.success_story, 'adverse_result');
+  const cancelled = args.customer_status ? args.customer_status === 'cancelled' : cancellation.state === 'affirmed';
+  if (cancelled || adverse.state === 'affirmed') return `# Testimonial request on hold\n\nDo not ask for a quote from this customer now. The supplied account has a cancellation, refund request or adverse result. Resolve the complaint and confirm the customer's current position before considering a request.\n\n${cancelled && args.customer_status ? 'Basis: confirmed customer_status is cancelled.' : evidenceLine('Account evidence', cancelled ? cancellation : adverse)}`;
   const name = args.customer_name.trim();
   const company = args.customer_company.trim();
   const role = args.customer_role?.trim() || '';

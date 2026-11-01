@@ -1,5 +1,5 @@
 import { sellerSectorLabel } from './text-signals.js';
-import { analyzeContent, generateImprovedVersion, editSentence, toneCheck, annotateText, bodyOf, countWords, avgWordsPerSentence, calculateReadability, SUGGESTION_FOOTER, clipEcho, ASK } from './utils.js';
+import { operationalPurpose, analyzeContent, generateImprovedVersion, editSentence, toneCheck, annotateText, bodyOf, countWords, avgWordsPerSentence, calculateReadability, SUGGESTION_FOOTER, clipEcho, ASK } from './utils.js';
 import { lowerFirstIfCommon, isCommonWord } from './utils.js';
 import { readContext, audienceLine, sentencesOf } from "./sector.js";
 import { shortenClauses, clipAtWord, endSentence, fixNumbers, missingEvidence, FIGURE, dropTail } from "./draft.js";
@@ -20,6 +20,7 @@ export function generateContentImprover(args) {
     const goal = args.goal || DEFAULT_GOALS[contentType] || 'Improve clarity and engagement';
     const audience = args.audience || 'general audience';
     // Note if goal was auto-assigned
+    const operational = operationalPurpose(args.goal || '');
     const goalNote = args.goal ? '' : ` *(auto-assigned based on content type)*`;
     // Perform actual analysis. Run 19 (D80, problem 5): every point taken off comes from a listed finding that quotes the text.
     const analysis = analyzeContent(content, contentType, goal, { audience: args.audience });
@@ -64,11 +65,22 @@ export function generateContentImprover(args) {
     // Create specific recommendations based on analysis: the findings that cost the most points first
     const priorityFixes = [...analysis.findings].sort((a, b) => b.penalty - a.penalty).slice(0, 6).map((f) => {
         const dim = f.dimension === 'goalAlignment' ? 'Goal Alignment' : f.dimension.charAt(0).toUpperCase() + f.dimension.slice(1);
-        return `**${dim}** (${analysis[f.dimension].score}/10): ${f.text}${f.suggestion ? `. Fix: ${f.suggestion}` : ''}`;
+        return `**${['merge-field', 'fragment'].includes(f.rule) ? 'Defect' : f.hard ? 'Evidence check' : 'Suggestion'}: ${dim}**: ${f.text}${f.suggestion ? `. Fix: ${f.suggestion}` : ''}`;
     });
     const buzzFound = analysis.findings.some((f) => f.rule === 'buzzwords');
     const hardFound = analysis.findings.some((f) => f.hard);
     let output = `# Content Analysis & Improvement Report
+
+## Confirm the purpose
+${args.goal ? `You supplied: "${goal}". Confirm this is the intended reader task.` : 'No purpose was supplied. Confirm the reader task before treating the content type default as a requirement.'}
+${operational ? 'Review mode: operational instruction. Judge clarity, the action to complete and the completion record. Questions, promotional engagement and outcome figures are optional, not defects.' : 'Review mode: purpose awaiting confirmation. Style suggestions are optional; factual and publication checks still apply.'}
+
+## Evidence and suggestions
+${analysis.findings.length ? analysis.findings.map(f => {
+        const spans = [...f.text.matchAll(/"([^"\n]+)"/g)].map(m => m[1]).filter(t => content.includes(t));
+        const kind = ['merge-field', 'fragment'].includes(f.rule) ? 'Defect' : f.hard ? 'Evidence check' : 'Suggestion';
+        return `- **${kind} (${f.rule})**: ${f.text}. ${spans.length ? `Exact span: ${spans.map(t => `"${t}"`).join('; ')}.` : 'Scope: whole draft; no single triggering span.'} ${f.suggestion}`;
+    }).join('\n') : 'No defects found by these checks. Confirm the reader can complete the stated task and record what remains unclear.'}
 
 ## Content Overview
 - **Type:** ${contentType.replace(/_/g, ' ')}
@@ -79,7 +91,7 @@ export function generateContentImprover(args) {
 
 ---
 
-## Overall Score: ${analysis.overall.score}/10 (${analysis.overall.rating})
+## Optional scoring reference: ${analysis.overall.score}/10 (${analysis.overall.rating})
 
 *How this is scored: each score starts at 10 and loses points only for the findings listed below, each quoted from your text. The overall score is the average of the four scores and the lowest one, so one weak area cannot hide behind three strong ones. A rating of EXCELLENT is not given while a buzzword, an unproven claim, a fragment, an unfilled merge field or an unsupported claim about the reader is open. These checks do not judge whether your claims are true.*
 
@@ -127,7 +139,7 @@ ${slipRead.slips.map((x) => `- "${x.before}": ${x.note}.${x.after ? ` Fixed: "${
 ` : ''}
 ---
 
-## Priority Fixes (Do These First)
+## Review the proposed changes
 
 ${priorityFixes.length > 0
         ? priorityFixes.map((fix, i) => `${i + 1}. ${fix}`).join('\n\n')

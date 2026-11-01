@@ -325,6 +325,9 @@ function sentenceWith(content, needle) {
 export function bodyOf(content) {
     return content.split(/\n/).filter((l) => !/^\s*(?:subject:|(?:hi|hello|dear|hey)\b[^.!?]*,\s*$)/i.test(l)).join('\n').trim() || content;
 }
+export function operationalPurpose(goal) {
+    return hasSignal(goal, /\b(?:inspect|review|record|complete|check|follow|carry out|perform|resolve|assign|handoff|operational instruction)\b/i);
+}
 export function analyzeContent(content, contentType, goal, opts = {}) {
     const analysis = {
         clarity: { score: 0, issues: [], suggestions: [] },
@@ -335,6 +338,8 @@ export function analyzeContent(content, contentType, goal, opts = {}) {
         findings: []
     };
     const note = (dimension, rule, penalty, text, suggestion, hard = false) => {
+        if (operationalPurpose(goal) && ['question', 'you-language', 'no-figure', 'hook', 'educate-length', 'audience'].includes(rule))
+            return;
         analysis.findings.push({ dimension, rule, penalty, text, suggestion, hard });
         analysis[dimension].issues.push(text);
         if (suggestion && !analysis[dimension].suggestions.includes(suggestion))

@@ -348,6 +348,10 @@ export function bodyOf(content: string): string {
   return content.split(/\n/).filter((l) => !/^\s*(?:subject:|(?:hi|hello|dear|hey)\b[^.!?]*,\s*$)/i.test(l)).join('\n').trim() || content;
 }
 
+export function operationalPurpose(goal: string): boolean {
+  return hasSignal(goal, /\b(?:inspect|review|record|complete|check|follow|carry out|perform|resolve|assign|handoff|operational instruction)\b/i);
+}
+
 export function analyzeContent(content: string, contentType: string, goal: string, opts: { audience?: string } = {}): ContentAnalysis {
   const analysis: ContentAnalysis = {
     clarity: { score: 0, issues: [], suggestions: [] },
@@ -358,6 +362,7 @@ export function analyzeContent(content: string, contentType: string, goal: strin
     findings: []
   };
   const note = (dimension: Finding['dimension'], rule: string, penalty: number, text: string, suggestion: string, hard = false) => {
+    if (operationalPurpose(goal) && ['question','you-language','no-figure','hook','educate-length','audience'].includes(rule)) return;
     analysis.findings.push({ dimension, rule, penalty, text, suggestion, hard });
     analysis[dimension].issues.push(text);
     if (suggestion && !analysis[dimension].suggestions.includes(suggestion)) analysis[dimension].suggestions.push(suggestion);

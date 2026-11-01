@@ -54,6 +54,7 @@ export declare const BUZZ: RegExp;
 export declare const SUPERLATIVE: RegExp;
 export declare const ASK: RegExp;
 export declare function bodyOf(content: string): string;
+export declare function operationalPurpose(goal: string): boolean;
 export declare function analyzeContent(content: string, contentType: string, goal: string, opts?: {
     audience?: string;
 }): ContentAnalysis;

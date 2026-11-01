@@ -1,3 +1,4 @@
+import { readerAction } from './reader-action.js';
 import { cap } from './utils.js';
 import { readContext, audienceLine, isClause } from "./sector.js";
 import { splitList, unpackTopic, fixNumbers, endSentence, capFirst, proseJoin, productParts, toYou, bestQuestion, softenClaims } from "./draft.js";
@@ -14,7 +15,7 @@ export function generateNewsletter(args) {
     const type = args.newsletter_type || 'educational';
     const tone = args.tone || 'professional';
     const previous = args.previous_topics ? splitList(stripGuardQuotes(args.previous_topics)) : [];
-    const ctaGoal = args.cta_goal.trim();
+    const ctaGoal = readerAction(args.cta_goal) || 'Confirm the reader action before sending';
     const product = (args.your_product || '').trim();
     const parts = unpackTopic(topic);
     const ctaProduct = /\babout\s+(.+)$/i.exec(ctaGoal)?.[1]?.trim() || '';
@@ -152,6 +153,14 @@ export function generateNewsletter(args) {
         const settle = waysToSettle(o.response);
         sections.unshift({ heading: 'The question you will hear', body: `${readers ? cap(readers) : `Teams in ${kind}`} often say: ${quotedEnd(o.objection)} ${settle}`.trim() });
     }
+    // Supplied checks define the issue; sector templates do not displace them.
+    const suppliedChecks = given ? splitList(soft.text).filter(Boolean) : [];
+    if (suppliedChecks.length >= 2) {
+        sections.splice(0, sections.length, ...suppliedChecks.map((point, i) => ({
+            heading: `Check ${i + 1}: ${cap(point.replace(/[.]+$/, ''))}`,
+            body: `Review this supplied check: "${point.replace(/[.]+$/, '')}". Record what you observed, the source and anything still unknown before drawing a conclusion.`
+        })));
+    }
     // ---- subject, preview, opening ------------------------------------------------------------------------------------
     const headSource = parts.problem ? parts.problem.split(/;\s+/)[0] : label;
     const headMax = parts.short ? 90 : 72;
@@ -169,7 +178,7 @@ export function generateNewsletter(args) {
         openLines.push(openingSentences(opening, who));
     else
         openLines.push(parts.short ? `This issue is about ${clause ? `"${label}"` : lower(label)}.` : `This issue is about ${lower(head)}.`);
-    if (v)
+    if (v && !given)
         openLines.push(`For ${forWhom}, the numbers to watch are ${proseJoin(v.metrics.slice(0, 2))}.`);
     if (previous.length) {
         const list = proseJoin(previous.map((x) => `"${x.replace(/[.\s]+$/, '')}"`));
@@ -189,7 +198,7 @@ export function generateNewsletter(args) {
     // ---- closing -----------------------------------------------------------------------------------------------------
     const about = productName && productDescription && productDescription !== productName && productDescription.length > productName.length + 3 ? `${productName} is ${lower(productDescription.replace(/\.$/, ''))}. ` : '';
     const next = VERB_START.test(ctaGoal) ? `you can ${lower(ctaGoal)}` : `the next step is ${lower(ctaGoal)}`;
-    const closing = `${about}${casual ? 'If this made you think, ' : 'If you would like to take this further, '}${next}.`;
+    const closing = given ? `${cap(ctaGoal)}.` : `${about}${casual ? 'If this made you think, ' : 'If you would like to take this further, '}${next}.`;
     // the button says the action in a few words: a bracket note is left out, and a long product name is the short name the issue already uses
     const buttonText = (() => {
         let b = ctaGoal.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();

@@ -1,0 +1,668 @@
+// Run 20 round 1b (owner decision D92): helpers shared by the eight tools so that a draft is built from the user's inputs
+// instead of pasting them into fixed sentence frames. Rule B82: nothing here adds a statistic, a quote or a named company; the
+// helpers only split, sort and label what the user typed, and join it with plain sentences of our own.
+import { LIST_COMMA, weldNames } from "./sector.js";
+// A comma typed inside a number ("2,000") that an upstream step turned into a semicolon ("2;000") is put back.
+export function fixNumbers(s) {
+    return s.replace(/(\d);(?=\d{3}(?!\d))/g, '$1,');
+}
+export function endSentence(s) {
+    const t = s.trim().replace(/[;,:\s]+$/, '');
+    return /[.!?]["'”’]?$/.test(t) ? t : `${t}.`;
+}
+export function capFirst(s) {
+    const t = s.trim();
+    if (/^[a-z]+[A-Z]/.test(t.split(/\s+/)[0] || ''))
+        return t;
+    return t.charAt(0).toUpperCase() + t.slice(1);
+}
+export function lowerFirstWord(s) {
+    const t = s.trim();
+    const w = t.split(/\s+/)[0] || '';
+    // keep acronyms, names with inner capitals and words with digits as typed
+    if (/[A-Z0-9]/.test(w.slice(1)) || w === 'I')
+        return t;
+    return t.charAt(0).toLowerCase() + t.slice(1);
+}
+// "a, b and c"
+export function proseJoin(items) {
+    const l = items.filter(Boolean);
+    if (l.length <= 1)
+        return l[0] || '';
+    return `${l.slice(0, -1).join(', ')} and ${l[l.length - 1]}`;
+}
+export function plural(n, one, many) {
+    return n === 1 ? one : (many || `${one}s`);
+}
+// Split text at a separator that is not inside parentheses.
+function splitOutsideParens(text, sep) {
+    const out = [];
+    let depth = 0;
+    let start = 0;
+    const g = new RegExp(sep.source, sep.flags.includes('g') ? sep.flags : sep.flags + 'g');
+    let m;
+    const depthAt = [];
+    for (let i = 0, d = 0; i < text.length; i++) {
+        if (text[i] === '(')
+            d++;
+        else if (text[i] === ')')
+            d = Math.max(0, d - 1);
+        depthAt[i] = d;
+    }
+    while ((m = g.exec(text))) {
+        if (m[0].length === 0) {
+            g.lastIndex++;
+            continue;
+        }
+        depth = depthAt[m.index] || 0;
+        if (depth === 0) {
+            out.push(text.slice(start, m.index));
+            start = m.index + m[0].length;
+        }
+    }
+    out.push(text.slice(start));
+    return out.map((x) => x.trim()).filter(Boolean);
+}
+const JOINER = /^(?:(?:not|but|and|or|so|which|that|because|while|with|without|including|plus|then|yet|rather)\b|i\.e\.|e\.g\.|vs\.|etc\.)/i;
+// A list typed by the user. Lines and semicolons separate items; a comma separates items only when the text has neither; a comma
+// inside parentheses or a number never separates. A fragment that opens with a joining word continues the item before it, and a
+// one or two word fragment ("fast", "transparent") is joined to the next item as part of a run of adjectives.
+export function splitList(raw) { return weldNames(splitListRaw(raw)); }
+// Run 42B: "design, review and handoff in one place" is one phrase (a short series of lower case parts ending in "x and y ..."), never several items.
+const PLACE_TAIL = /\b(?:in|across|from|to|throughout|within)\s+(?:the\s+)?[A-Z][\w.]*(?:,\s+(?:the\s+)?[A-Z][\w.]*)*$/;
+const PLACE_ONLY = /^(?:the\s+)?[A-Z][\w.]*(?:\s+(?:and|&)\s+(?:the\s+)?[A-Z][\w.]*)?(?:\s*\([^)]*\))?$/;
+function isOnePhrase(line) {
+    if (/;/.test(line) || line.split(/\s+/).length > 12)
+        return false;
+    const pieces = splitOutsideParens(line, LIST_COMMA).map((x) => x.trim());
+    if (pieces.length < 2)
+        return false;
+    const last = pieces[pieces.length - 1];
+    return pieces.slice(0, -1).every((x) => /^[a-z]/.test(x) && x.split(/\s+/).length <= 3) && /^[a-z]/.test(last) && /\b(?:and|or)\b/.test(last.split(/\s+/).slice(0, 2).join(' '));
+}
+// A quote typed with its speaker ("Quote from Jo Smith, Head of Freight, Acme: words") is cut at the commas of the speaker when the line
+// also holds semicolons; the pieces up to the colon are put back as one item, so the quote stays whole with its speaker.
+function joinSpeakerParts(pieces) {
+    const out = [];
+    for (let i = 0; i < pieces.length; i++) {
+        let cur = pieces[i];
+        if (/^(?:quotes?|words|testimonial) (?:from|by) [A-Z]/i.test(cur) && !/:/.test(cur)) {
+            let j = i + 1;
+            let acc = cur;
+            while (j < pieces.length && j <= i + 3) {
+                const hasColon = /^[^:]{1,60}:\s+\S/.test(pieces[j]);
+                if (!hasColon && countOfWords(pieces[j]) > 8)
+                    break;
+                acc += `, ${pieces[j]}`;
+                if (hasColon) {
+                    cur = acc;
+                    i = j;
+                    break;
+                }
+                j++;
+            }
+        }
+        out.push(cur);
+    }
+    return out;
+}
+const countOfWords = (s) => s.trim().split(/\s+/).filter(Boolean).length;
+function splitListRaw(raw) {
+    if (typeof raw !== 'string')
+        return [];
+    const text = fixNumbers(raw);
+    const lines = text.split(/\n/).map((x) => x.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
+    const hasBreaks = lines.length > 1 || /;/.test(text);
+    let parts = [];
+    // Run 42: items separated by ", Capital" with semicolons INSIDE the items ("a; the team pays the price; so b, C; d and e") keep each sentence whole:
+    // a semicolon followed by a small letter or a digit continues the item, only ", Capital" or "; Capital" starts the next one.
+    const mixed = lines.length === 1 && /;\s+(?![A-Z\s])/.test(text) && /,\s+[A-Z][a-z]/.test(text);
+    for (const line of lines) {
+        if (mixed) {
+            parts.push(...joinSpeakerParts(splitOutsideParens(line, /;\s+(?=[A-Z])|,\s+(?=[A-Z][a-z])/)).map((x) => x.replace(/;\s+(?![A-Z])/g, ', ')));
+            continue;
+        }
+        const bySemi = splitOutsideParens(line, /;/);
+        if (bySemi.length > 1 || hasBreaks)
+            parts.push(...bySemi);
+        else if (isOnePhrase(line))
+            parts.push(line);
+        else
+            parts.push(...splitOutsideParens(line, LIST_COMMA));
+    }
+    const merged = [];
+    for (const p of parts) {
+        const prevLast = merged.length ? (merged[merged.length - 1].split(/\s+/).pop() || '') : '';
+        // a short capitalised fragment after an item that ends in an acronym or place ("across the US; UK; EU") continues that list
+        const placeList = merged.length > 0 && (p.split(/\s+/).length <= 3 || (/^[A-Z]{2,5}\b/.test(p) && /^[A-Z]{2,5}[,.]?$/.test(prevLast) && p.split(/\s+/).length <= 7)) && /^[A-Z]/.test(p) && !/\d/.test(p) && (/^[A-Z]{2,5}[,.]?$/.test(prevLast) || /^[A-Z][a-z]+$/.test(prevLast));
+        // Run 42B: a place list cut at its semicolons ("a Great Place to Work in India; the UK; the USA; KSA and the UAE") is one item, not value propositions of its own
+        const places = merged.length > 0 && PLACE_TAIL.test(merged[merged.length - 1]) && PLACE_ONLY.test(p) && !/\d/.test(p.replace(/\([^)]*\)/g, ''));
+        // a phrase cut inside a run of describing words ("Operated in production for consumer; industrial and public platforms with ...") is one item:
+        // the item before ends on "for|of|across|to|in <one lower case word>" (not a plural), the next opens "<word> and <word> <noun>"
+        const prevItem = merged.length ? merged[merged.length - 1] : '';
+        const adjRun = merged.length > 0 && /^[A-Z][a-z]+(?: [a-z]+){2,7} (?:for|of|across|to|in|with|between|from) [a-z]{3,}[a-rt-z]$/.test(prevItem) && /^[a-z]+(?: [a-z]+)? (?:and|or) [a-z]+ [a-z]+/.test(p);
+        if (merged.length && (JOINER.test(p) || placeList || places || adjRun))
+            merged[merged.length - 1] += ', ' + p;
+        else
+            merged.push(p);
+    }
+    // short fragments: "fast; transparent; compliant and error free travel" is one run of adjectives
+    const out = [];
+    for (let i = 0; i < merged.length; i++) {
+        let cur = merged[i];
+        while (i < merged.length - 1 && !/\d/.test(cur) && ((cur.split(/\s+/).length <= 2 && /^[a-z]/.test(cur)) || /^[A-Z]{2,5}$/.test(cur))) {
+            i++;
+            cur += ', ' + merged[i];
+        }
+        out.push(cur);
+    }
+    // A list that was broken at both commas and semicolons ("a, b; c, d; with e") shows it by a fragment that opens with a joining word.
+    // Then a short fragment that starts with a small letter continues the item before it, up to 260 characters, so no heading is a stump.
+    const broken = parts.slice(1).some((x) => JOINER.test(x));
+    if (!broken)
+        return out;
+    const welded = [];
+    for (const cur of out) {
+        const prev = welded[welded.length - 1];
+        const stump = /^(?:instead of|by |from |for |with |built |backed |replacing |offering |plus |including |through |across |the world's )/i.test(cur);
+        if (prev !== undefined && ((/^[a-z]/.test(cur) && cur.split(/\s+/).length < 8) || stump) && !/[.!?]$/.test(prev) && prev.length + cur.length < 420)
+            welded[welded.length - 1] = `${prev}, ${cur}`;
+        else
+            welded.push(cur);
+    }
+    return welded;
+}
+// ---------------------------------------------------------------------------------------------------------------------------
+// Proof, results and recognition: sorted by what they are, never presented as something they are not.
+// ---------------------------------------------------------------------------------------------------------------------------
+// A real figure: a percentage, a money amount, a count with a unit, or a number of two or more digits; not a token such as 4G or 3PL.
+export const FIGURE = /[$₹€£]\s?\d|(?<![A-Za-z])\d[\d.,]*\s?(?:%|x\b|\+|k\b|m\b|mn\b|million|billion|lakhs?|crore|days?|hours?|weeks?|months?|years?|minutes?|seconds?|percent|sources|branches|sites|trucks|customers|businesses|companies)|(?<![A-Za-z0-9])\d{2,}(?![A-Za-z0-9])/i;
+const LABEL_WORDS = '(?:customer quote|partner quote|page claim|page banner|page teaser|page promo|case study title|case study|ebook title[^()]*|customer story title|success story title|story title|press release|analyst report|source|customer story|quote)';
+const LABEL_CLOSE = new RegExp(`\\(\\s*${LABEL_WORDS}[^()]*\\)\\s*[.;,]+\\s+(?=[A-Z0-9"“])`, 'g');
+const LABEL_END = new RegExp(`\\(\\s*(${LABEL_WORDS}[^()]*)\\)\\s*[.;]?\\s*$`, 'i');
+// Run 42: a quote stays whole and keeps its speaker. A quoted span ("..." '...' or curly) never splits at a comma, semicolon or line
+// break inside it; a speaker's name, title and "says" that were split apart ("Name; Title at Company; says ...") are put back together;
+// and a bare name or title (no verb) is never an item of its own.
+const QCOMMA = '', QSEMI = '', QNL = '';
+const QUOTED = /(?<=^|[\s:(\[])(?:"[^"\n]{8,}?"|'[^'\n]{8,}?'(?=[\s.,;:!?)]|$)|“[^”]{8,}?”|‘[^’]{8,}?’)/g;
+export function maskQuoted(t) {
+    return t.replace(QUOTED, (m) => m.replace(/,/g, QCOMMA).replace(/;/g, QSEMI).replace(/\n/g, QNL));
+}
+export function unmaskQuoted(t) {
+    return t.split(QCOMMA).join(',').split(QSEMI).join(';').split(QNL).join('\n');
+}
+const TITLE_WORDS = '(?:Director|Head|VP|Vice President|CEO|CTO|CFO|COO|CMO|CIO|CISO|CRO|President|Founder|Co-?founder|Manager|Lead|Officer|Chief|Principal|Partner|Owner|Engineer|Analyst|Architect|Consultant|Leader|Chairman|Chair|Controller|Treasurer|Accountant|Supervisor|Administrator|Coordinator|Specialist|Executive|Superintendent|Producer|Operator|Strategist|Developer|Buyer|Planner)';
+const TITLE_PRE = '(?:(?:Senior|Chief|Vice|Global|Group|Regional|Associate|Executive|Managing|Technical|Product|International|Deputy|Assistant)\\s+)*';
+const TITLE_START = new RegExp(`^${TITLE_PRE}${TITLE_WORDS}\\b`, 'i');
+const SPEECH_START = /^(?:says?|said|states?|notes?|explains?|adds?|told|reports?|shares?|believes?|commented|stated)\b/i;
+const NAME = "[A-Z][\\p{L}.'’-]+(?: [A-Z][\\p{L}.'’-]+){1,3}";
+const NAME_ONLY = new RegExp(`^${NAME}$`, 'u');
+const ATTRIBUTED = new RegExp(`^(?:${NAME}, )?${TITLE_PRE}${TITLE_WORDS}\\b[^:]{0,100}(?::|, (?:says?|said)\\b)|^${NAME},? (?:says?|said)\\b`, 'u');
+const TITLE_ONLY = (x) => TITLE_START.test(x) && !/:/.test(x) && !/\b(?:helped|has|have|had|is|are|was|were|reduced|cut|saved|improved|increased|grew)\b/i.test(x) && x.split(/\s+/).length <= 14;
+const NAME_COMMA = new RegExp(`^${NAME}, `, 'u');
+const isAttribution = (x) => !SPEECH_START.test(x) && ((NAME_ONLY.test(x) && !/\d/.test(x)) || TITLE_ONLY(x) || (NAME_COMMA.test(x) && TITLE_ONLY(x.replace(NAME_COMMA, ''))));
+// A statement with its speaker in front ("Name, Title at Company: ..." or "Name, Title, says ...") or a quotation followed by the speaker.
+export function isAttributed(x) {
+    return ATTRIBUTED.test(x) || /^\s*(?:"[^"]{8,}"|“[^”]{8,}”)\s*[,—-]\s*[A-Z]/.test(x);
+}
+function rejoinAttributed(list) {
+    // Run 42 round 2: "...with WNS; per Angela Maguire; Manager; Agency; Refunds and Chargebacks (page claim)" is one item: the words after
+    // "per", "by" or "said" and a name, and the short capitalised fragments of the title that follows, belong to the statement before them.
+    const items = [];
+    const ATTR_TAIL = /\b(?:per|by|from|according to|said|says) [A-Z][\p{L}.'’-]+(?: [A-Z][\p{L}.'’-]+)+(?:, [^,]{1,40}){0,4}$/u;
+    for (const x of list) {
+        const prev = items[items.length - 1];
+        const bare = x.replace(/\([^)]*\)[.\s]*$/, '').trim();
+        const startsWithBy = /^(?:per|by|according to) [A-Z]/.test(x);
+        const fragment = bare.split(/\s+/).length <= 6 && !/\d|:/.test(bare) && !OUTCOME_VERB.test(bare) && /^[A-Z][a-z]+(?: (?:and|of|&) [A-Z][a-z]+| [A-Z][a-z]+)*$/.test(bare);
+        if (prev !== undefined && (startsWithBy || (fragment && ATTR_TAIL.test(prev))))
+            items[items.length - 1] = prev.replace(/[;,]\s*$/, '') + ', ' + x;
+        else
+            items.push(x);
+    }
+    const out = [];
+    for (let i = 0; i < items.length; i++) {
+        let cur = items[i];
+        // a name or a title (no verb) goes with what follows it when that is a title or a "says ..." clause
+        while (i < items.length - 1 && isAttribution(cur) && (TITLE_START.test(items[i + 1]) || SPEECH_START.test(items[i + 1]))) {
+            i++;
+            cur += (SPEECH_START.test(items[i]) && NAME_ONLY.test(cur) ? ' ' : ', ') + items[i];
+        }
+        // Run 42 round 2: a name and title alone ("Tracy Weston, Controller") is never proof: it goes with the words after it (a department,
+        // a company, the statement), and with nothing after it the bare attribution is dropped.
+        const hasTitle = (x) => TITLE_START.test(x) || (NAME_COMMA.test(x) && TITLE_START.test(x.replace(NAME_COMMA, '')));
+        const bareTitle = (x) => isAttribution(x) && hasTitle(x) && !/\b(?:says?|said)\b/i.test(x);
+        while (i < items.length - 1 && bareTitle(cur)) {
+            i++;
+            cur += (/^[a-z]/.test(items[i]) ? ' ' : ', ') + items[i];
+        }
+        if (bareTitle(cur))
+            continue;
+        // "says ..." belongs to the speaker before it
+        if (out.length && SPEECH_START.test(cur) && isAttribution(out[out.length - 1])) {
+            out[out.length - 1] += ', ' + cur;
+            continue;
+        }
+        // the rest of a sentence that began with a speaker ("..., says X brought a, b and c.")
+        const prev = out[out.length - 1];
+        if (prev !== undefined && /^[a-z]/.test(cur) && isAttributed(prev) && /\b(?:says?|said)\b/i.test(prev) && !/[.!?]["'”’]?$/.test(prev)) {
+            out[out.length - 1] += ', ' + cur;
+            continue;
+        }
+        out.push(cur);
+    }
+    return out;
+}
+// Splits a list of proof points or results. A bracketed source label at the end of an item ("(page claim)") marks where it ends,
+// so a comma or a semicolon inside an item never splits it. Without labels, the general list rule applies.
+// The text before a piece ends on words after a colon that never reach a full stop: a speaker line cut inside the words, or a source line cut before its result.
+const SOURCE_LINE = /^[^:]{3,80}\b(?:quote|quoted|says?|said|headline|press|article|report|review)\b[^:]{0,60}:\s+\S/i;
+const LABELLED_QUOTE = /^(?:user|customer|partner|client|reviewer) (?:quote|words|review)\s*:/i;
+function cutAfterColon(prev, next) {
+    const colon = prev.indexOf(': ');
+    if (colon < 0)
+        return false;
+    const after = prev.slice(colon + 2).trim();
+    if (!after || /[.!?]["”'’]?$/.test(after) || /\)\s*$/.test(after) || after.split(/\s+/).length > 12)
+        return false;
+    const before = prev.slice(0, colon + 1);
+    const speaker = isAttributed(before.replace(/;/g, ','));
+    // a quote labelled "User quote:" with no speaker, cut before its sentence ends, and the next piece opens with an acronym ("CUDA and libraries ...")
+    if (LABELLED_QUOTE.test(prev))
+        return after.split(/\s+/).length <= 14 && /^[A-Z]{2,6}\b(?![.'’-])/.test(next) && !/^(?:Customer|Partner|User)\b/.test(next);
+    if (speaker)
+        return after.split(/\s+/).length <= 8;
+    // the next piece is a named company's result ("Acme picked up ...") and the source line has no result of its own
+    const RESULT = /\b(?:picked up|retained|saved|reduced|grew|increased|cut|achieved|reached|gained|raised|added|won|processed)\b/;
+    return SOURCE_LINE.test(prev) && !/^(?:customer|partner) (?:quote|words)/i.test(prev) && !RESULT.test(after) && /^[A-Z][\w&.-]*(?:\s[A-Z][\w&.-]*){0,2}\s+(?:picked up|retained|saved|reduced|grew|increased|cut|achieved|reached|gained|raised|added|won|processed)\b/.test(next);
+}
+export function splitProof(raw) { return weldNames(splitProofRaw(raw)); }
+function splitProofRaw(raw) {
+    if (typeof raw !== 'string')
+        return [];
+    const text = maskQuoted(fixNumbers(raw).trim());
+    if (!text)
+        return [];
+    const lines = text.split(/\n+/).map((x) => x.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
+    const out = [];
+    for (const line of lines) {
+        const marks = [...line.matchAll(LABEL_CLOSE)];
+        if (marks.length === 0) {
+            // an item that opens with a known opener ("Customer quote:", "Recognition", "Named a") starts a new item after a comma or a semicolon
+            const pieces = splitOutsideParens(line, /[,;]\s+(?=(?:Customer (?:quote|words)|Recognition|Named (?:a|as)|Featured in|Success story|[A-Z][A-Za-z]+ Market Recognition|[A-Z][A-Za-z-]+ Excellence Award|[A-Z][a-z]+(?:'s|’s) [A-Z]{2,})\b)/);
+            for (const piece of pieces)
+                out.push(...(pieces.length > 1 ? [piece.replace(/[,;]\s*$/, '')] : splitList(piece)));
+            continue;
+        }
+        let start = 0;
+        for (const m of marks) {
+            const end = m.index + m[0].lastIndexOf(')') + 1;
+            out.push(line.slice(start, end).trim());
+            start = m.index + m[0].length;
+        }
+        const rest = line.slice(start).trim();
+        if (rest)
+            out.push(rest);
+    }
+    // inside one chunk, "; Capital" outside brackets starts another item; "; 2,000+ man hours" continues the one before
+    const items = [];
+    for (const chunk of out) {
+        const raw = splitOutsideParens(chunk, /(?:;\s+(?=[A-Z0-9$₹€£"“])|(?<=[a-z]{5}\.),\s+(?=[A-Z0-9])|[,;]\s+(?=(?:Customer (?:quote|words)|Recognition|Named (?:a|as)|Featured in|Success story|[A-Z][A-Za-z]+ Market Recognition|[A-Z][A-Za-z-]+ Excellence Award|[A-Z][a-z]+(?:'s|’s) [A-Z]{2,})\b)|,\s+(?=[A-Z][a-z]+(?:\s[A-Z][a-z]+){0,3}\s(?:automates|cuts|reduced|reduces|saved|saves|achieved|launched|expanded|improves|boosts|grew|consolidated|digiti[sz]ed|validates|optimi[sz]es|secured|helps|delivers|moved)\b))/);
+        // a piece shorter than 60 characters is the start of the item that follows ("Success story: sensitive credentials exposed; Acme secured ...")
+        const pieces = [];
+        for (const piece of raw) {
+            const bare = piece.replace(/\([^)]*\)[.\s]*$/, '').trim();
+            // a name and title typed with semicolons ("per Angela Maguire; Manager; Agency; Refunds and Chargebacks") stay in the item they belong to
+            const prevTail = pieces.length ? pieces[pieces.length - 1].split(/,\s+/).pop() ?? '' : '';
+            const inAttribution = /\b(?:per|by|from|according to|said|says) [A-Z][\p{L}.'’-]+(?: [A-Z][\p{L}.'’-]+)+(?:, [^,]{1,40}){0,4}$/u.test(pieces.length ? pieces[pieces.length - 1] : '') || (TITLE_START.test(prevTail) && !/[.!?:]$/.test(prevTail) && prevTail.split(/\s+/).length <= 8);
+            if (inAttribution && bare.split(/\s+/).length <= 6 && !/\d|:/.test(bare) && !OUTCOME_VERB.test(piece) && (TITLE_START.test(piece) || /^[A-Z][a-z]+(?: (?:and|of|&) [A-Z][a-z]+| [A-Z][a-z]+)*$/.test(bare))) {
+                pieces[pieces.length - 1] += ', ' + piece;
+                continue;
+            }
+            // Run 42B: a source line ("Press quote: within days of an event") keeps the result that follows it ("; Acme picked up ..."), and a quote typed with
+            // a speaker stays whole when a semicolon cuts it before its sentence ends (the second pass below): neither becomes a fragment and a separate item
+            if (pieces.length && /^[A-Z]/.test(piece) && cutAfterColon(pieces[pieces.length - 1], piece)) {
+                pieces[pieces.length - 1] += (isAttributed(pieces[pieces.length - 1].replace(/;/g, ',')) || LABELLED_QUOTE.test(pieces[pieces.length - 1]) ? ', ' : '; ') + piece;
+                continue;
+            }
+            // Run 42B (round P): a bare speaker name after a finished sentence belongs to the item that follows it (its own title and words), never to the sentence before it
+            const nextSpeaker = pieces.length > 0 && /[.!?]["”'’]?$/.test(pieces[pieces.length - 1]) && NAME_ONLY.test(bare) && !/\d/.test(bare);
+            if (nextSpeaker) {
+                pieces.push(piece);
+                continue;
+            }
+            if (pieces.length && (pieces[pieces.length - 1].length < 60 || (/^\d/.test(piece) && bare.split(/\s+/).length < 5)))
+                pieces[pieces.length - 1] += ', ' + piece;
+            else
+                pieces.push(piece);
+        }
+        for (const piece of pieces.length ? pieces : [chunk])
+            items.push(piece.replace(/;\s+(?=[\d a-z])/g, ', '));
+    }
+    const joined = [];
+    for (const it of rejoinAttributed(items.map((x) => x.replace(/[;,]\s*$/, '').trim()).filter(Boolean))) {
+        const prev = joined[joined.length - 1];
+        if (prev !== undefined && /^[A-Z]/.test(it) && cutAfterColon(prev, it))
+            joined[joined.length - 1] = prev + (isAttributed(prev.replace(/;/g, ',')) || LABELLED_QUOTE.test(prev) ? ', ' : '; ') + it;
+        else
+            joined.push(it);
+    }
+    return joined.map(unmaskQuoted);
+}
+export const RECOGNITION = /\b(?:recogni[sz]ed|recognition|named (?:a |an |as )?(?:leader|major contender|contender|challenger|visionary|enterprise innovator|top)|leader in|leaders? in|ranked|ranking|award(?:s|ed)?|winner|magic quadrant|gartner|forrester|\bg2\b|everest|hfs|frost radar|frost & sullivan|idc\b|cio choice|enterprise innovator|best (?:[A-Za-z&\-]+ ){1,6}(?:platform|solution|tool|provider|vendor|product)|top \d+|one of the (?:best|top|most)\b[^.;]{0,40}|first and only|number (?:one|1)|no\.? ?1)\b|(?<![\w&])#\s?1\b/i;
+export const SCALE = /\b(?:\d[\d,.]*\+?\s*(?:m|mn|million|k|thousand|lakh|crore)?\+?\s+(?:businesses|customers|teams|companies|users|brands|enterprises|organi[sz]ations|developers|clients|countries)\b|(?:more than|over|up to)\s+\d[\d,.]*\+?\s*(?:million|thousand|k|m)?\s+\w+\s+(?:use|trust|rely)|\d[\d,.]*\+?\s*(?:million|mn|m|thousand|k)?\+?\s+\w+\s+(?:trust|use)\b)/i;
+const OUTCOME_VERB = /\b(?:reduc\w+|cut|cuts|saved?|saves|improv\w+|increas\w+|grew|grow|boost\w*|achiev\w+|automat\w+|consolidat\w+|digiti[sz]ed|expanded|scaled|deliver\w+|lower\w*|rais\w+|doubl\w+|halv\w+|faster|shorter|from \d[\d.,]*%? to|up from|down from|resulted in)\b/i;
+// Run 42B round S: a before and after figure with its unit ("from 1.25 Gbps to 5 Gbps") says what changed
+const FROM_TO_FIGURE = /\bfrom [\d.,]+\s*[A-Za-z%]*\s+to [\d.,]+/;
+const PROMO_OFFER = /\b(?:financ(?:e|es|ing)|loans?|credit lines?|working capital|[a-z]+ capital to fund|pay later|buy now|apply now|get funded|0% (?:apr|interest)|special offer|limited[- ]time)\b/i;
+const CERTIFIED = /\b(?:certified|certifications?|accredited|compliant with|soc ?2\+?|iso ?27001|pci[- ]?dss)\b/i;
+// Run 42B round S3: "Quote from Jo Smith, VP of Transport: words" and "Hillside School, The Czech Republic: words" are customer quotes
+const SPEAKER_QUOTE = /^(?:(?:[Qq]uotes?|[Ww]ords|[Tt]estimonial) (?:from|by) [A-Za-z][^:;]{1,120}|[A-Z][\w&.'-]*(?:\s+(?:[A-Z][\w&.'-]*|of|the|and|&)){0,6},\s+(?:The\s+)?[A-Z][\w&.'-]*(?:\s+[A-Z][\w&.'-]*){0,3}):\s+\S+(?:\s+\S+){5,}/;
+export function parseProof(raw) {
+    return splitProof(raw).map((item) => {
+        const m = LABEL_END.exec(item);
+        const label = m ? m[1].trim() : '';
+        const text = (m ? item.slice(0, m.index) : item).trim().replace(/[;,.\s]+$/, '').replace(/\s+on the (?:home|about|pricing|product|customers?) page\b/gi, '').replace(/^Recognition listed:?\s*/i, 'Recognition: ');
+        const l = label.toLowerCase();
+        const figure = FIGURE.test(text);
+        let kind;
+        if (/^(?:case study|customer story|success story|story)\s+(?:headlines?|titles?)\b/i.test(text) && !/quote/.test(l))
+            kind = 'title';
+        // a customer's own words with their speaker ("Name, Title, Company: the number one thing we can do ...") are a quote even when the words say "number one"
+        else if (RECOGNITION.test(text) && !/\bcustomer quote\b/.test(l) && !(/^[^:]{3,140}:\s+\S/.test(text) && (SPEAKER_QUOTE.test(text) || isAttributed(text) || LABELLED_QUOTE.test(text)) && !RECOGNITION.test(text.split(':')[0])))
+            kind = 'recognition';
+        else if (/quote/.test(l) || LABELLED_QUOTE.test(text) || isAttributed(text) || SPEAKER_QUOTE.test(text))
+            kind = 'quote';
+        // Run 42B round S: a story summary that states a figure and what changed ("upgraded bandwidth from 1.25 Gbps to 5 Gbps") is a result,
+        // not a title; a news item or launch is the vendor's own announcement, never a customer result
+        else if (/\bnews\b|press release|announcement/.test(l) || /\((?:[^()]*\s)?news item\)\s*$/i.test(text))
+            kind = 'claim';
+        // Run 42B round S3: a certification or compliance status is the vendor's own claim, never a customer result
+        else if (CERTIFIED.test(text) && !OUTCOME_VERB.test(text))
+            kind = 'claim';
+        else if ((/title|story|teaser|banner|promo|headline/.test(l) || /^(?:how|why)\b/i.test(text)) && !(/summary|\bstory\b/.test(l) && figure && (OUTCOME_VERB.test(text) || FROM_TO_FIGURE.test(text)) && !/headline|title|teaser|banner|promo/.test(l)))
+            kind = 'title';
+        // Run 42B (round P): a financing or promotional offer with no outcome is never proof of the platform
+        else if (PROMO_OFFER.test(text) && !figure && !OUTCOME_VERB.test(text))
+            kind = 'claim';
+        else if (SCALE.test(text) && !OUTCOME_VERB.test(text))
+            kind = 'scale';
+        else if (/page claim/.test(l) && !OUTCOME_VERB.test(text) && !(figure && FROM_TO_FIGURE.test(text)))
+            kind = 'claim';
+        else
+            kind = 'result';
+        // "Quote from Jo Smith, Head of X, Acme: words" is shown as the speaker and the words, without the typed prefix
+        const shownText = kind === 'quote' ? text.replace(/^(?:quotes?|words|testimonial) (?:from|by) (?=[A-Z][^:;]{1,120}:\s+\S)/i, '') : text;
+        return { text: shownText, label, kind, figure, shown: label ? `${shownText} (${label})` : shownText };
+    });
+}
+export const KIND_NOTE = {
+    result: 'a result',
+    quote: 'a customer quote',
+    recognition: 'a recognition or ranking, not a customer outcome',
+    title: 'a story title only, with no detail of the outcome',
+    scale: 'a company-wide count, not one customer\'s result',
+    claim: 'a claim from the vendor\'s own page'
+};
+const HOW_CAN = /^how\s+(.+?)\s+can\s+(?:tackle|address|solve|handle|fix|fight|reduce|manage|overcome|deal with|beat|stop|cut|improve)\s+(.+?)(?:,\s*(?:from|with|using|through|via)\s+([^,]+))?$/i;
+export function unpackTopic(topic) {
+    const t = fixNumbers(topic.trim().replace(/\s+/g, ' '));
+    const m = HOW_CAN.exec(t);
+    let audience = '';
+    let problem = '';
+    let company = '';
+    if (m) {
+        audience = m[1].trim();
+        problem = m[2].trim();
+        company = (m[3] || '').trim();
+    }
+    const source = problem || t;
+    const short = t.length <= 90;
+    let label = short ? t : '';
+    if (!label) {
+        // the first clause of the problem, whole; a long one is cut before its verb ("... means", "... is like") when what stays is a phrase
+        const first = source.split(/[,;:]| \(/)[0].trim();
+        const head = first.split(/\s+(?:means|is like|are|is|combine|combines|run|runs|rely|relies|chain|chains)\s+/i)[0].trim();
+        if (first.split(/\s+/).length >= 2 && first.length <= 70)
+            label = first;
+        else if (head.split(/\s+/).length >= 3 && head.length <= 90)
+            label = head;
+        else if (first.length <= 110)
+            label = first;
+        else
+            label = shortenClauses(source, 110);
+    }
+    return { audience, problem, company, label: label.replace(/[.!?]+$/, ''), short };
+}
+export function clipAtWord(s, max) {
+    const t = s.trim();
+    if (t.length <= max)
+        return t;
+    const cut = t.slice(0, max);
+    const at = cut.lastIndexOf(' ');
+    return dropTail((at > 20 ? cut.slice(0, at) : cut).replace(/[,;:\s-]+$/, ''));
+}
+// A cut never ends on a joining word ("... modernization and", "... with the"): those words are taken off the end.
+const TAIL = /\s+(?:and|or|the|a|an|of|to|with|for|in|on|by|as|while|that|which|from|at|than|so|but|plus|into|over|under|per|its|their|our|your|is|are|first|last|next|same|each|every|this|these|those|any|all|more|most|other|without|between|across|about|within|through|using|than|both|either)$/i;
+export function dropTail(s) {
+    let t = s.replace(/[,;:\s-]+$/, '');
+    for (let i = 0; i < 4 && TAIL.test(t); i++)
+        t = t.replace(TAIL, '').replace(/[,;:\s-]+$/, '');
+    return t;
+}
+// A person's role and employer typed as "CFO at Fintech" or "Head of IT, Acme": the role, then the rest.
+export function roleOf(audience) {
+    const a = (audience || '').trim();
+    const m = /^(.+?)\s+(?:at|in|of)\s+(.+)$/i.exec(a);
+    if (m && m[1].split(/\s+/).length <= 5)
+        return { role: m[1].trim(), field: m[2].trim() };
+    return { role: a, field: '' };
+}
+// Words of the sector that a text already uses (for "your text already speaks to ...").
+export function usesAny(text, words) {
+    const lower = text.toLowerCase();
+    return words.filter((w) => w.split(/\s+/).filter((x) => x.length >= 5).some((x) => lower.includes(x.toLowerCase())));
+}
+// A long sentence shortened for a short format (a post, a tweet, a card) without cutting a phrase: it ends at a clause boundary
+// (a semicolon, a colon or a comma), never in the middle of a word or an item. A sentence that fits is returned as it is. When even
+// the first clause does not fit, the first clause is returned whole (the format may then run over its limit, and says so).
+export function shortenClauses(sentence, max) {
+    const t = sentence.trim().replace(/[.!?]+$/, '');
+    if (t.length <= max)
+        return t;
+    // Boundaries outside brackets: a semicolon or a colon always ends a clause; a comma ends one only when the piece before it has three
+    // or more words and the piece after it has four or more (so "flights, hotels, cabs" is a list and is never cut in the middle).
+    const cuts = [];
+    let depth = 0;
+    for (let i = 0; i < t.length; i++) {
+        const c = t[i];
+        if (c === '(')
+            depth++;
+        else if (c === ')')
+            depth = Math.max(0, depth - 1);
+        if (depth > 0)
+            continue;
+        if (c === ';' || (c === ':' && /\s/.test(t[i + 1] || '') && t.slice(0, i).split(/\s+/).length >= 6))
+            cuts.push(i);
+        else if (c === ',' && /\s/.test(t[i + 1] || '') && !/\d$/.test(t.slice(0, i))) {
+            const prevSep = Math.max(t.lastIndexOf(',', i - 1), t.lastIndexOf(';', i - 1), t.lastIndexOf(': ', i - 1));
+            const before = t.slice(prevSep + 1, i).split(/\s+/).filter(Boolean).length;
+            const nextEnd = t.slice(i + 1).search(/[,;:]/);
+            const after = (nextEnd < 0 ? t.slice(i + 1) : t.slice(i + 1, i + 1 + nextEnd)).split(/\s+/).filter(Boolean).length;
+            if (before >= 3 && after >= 4)
+                cuts.push(i);
+        }
+    }
+    let best = -1;
+    for (const c of cuts)
+        if (c <= max)
+            best = c;
+    if (best < 0 && cuts.length && cuts[0] <= max * 1.5)
+        best = cuts[0];
+    // no clause boundary within reach: cut at a word and say so with "..." (a pasted text without punctuation)
+    if (best < 0)
+        return clipAtWord(t, max) + '...';
+    return dropTail(t.slice(0, best));
+}
+const camelTag = (t) => t.split(/[\s-]+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join('').replace(/[^A-Za-z0-9]/g, '');
+export function brandFrom(...texts) {
+    for (const raw of texts) {
+        const t = (raw || '').trim();
+        const m = /^([A-Z][A-Za-z0-9]+(?:\s[A-Z][A-Za-z0-9]+)?)\s*:/.exec(t)
+            || /^([A-Z][A-Za-z0-9]+(?:\s[A-Z][A-Za-z0-9]+)?)(?:'s|’s) (?:view|take|position)\b/.exec(t)
+            || /^([A-Z][A-Za-z0-9]+(?:\s[A-Z][A-Za-z0-9]+)?)\s+(?:team|group|company)\b/.exec(t)
+            || /\bAt ([A-Z][A-Za-z0-9]+(?:\s[A-Z][A-Za-z0-9]+)?) we\b/.exec(t)
+            || /\b(?:Head|Director|VP|Founder|CEO|CMO|Manager|Lead)[A-Za-z ]* (?:at|of) ([A-Z][A-Za-z0-9]+(?:\s[A-Z][A-Za-z0-9]+)?)\b/.exec(t);
+        if (m)
+            return m[1];
+    }
+    return '';
+}
+export function makeHashtags(text, brand, v, extra = []) {
+    const lower = text.toLowerCase();
+    const tags = [];
+    if (brand)
+        tags.push(camelTag(brand));
+    if (v)
+        for (const term of v.vocabulary)
+            if (tags.length < 4 && lower.includes(term.toLowerCase()))
+                tags.push(camelTag(term));
+    if (v && tags.length < 4)
+        tags.push(camelTag(v.name));
+    for (const e of extra)
+        if (tags.length < 4)
+            tags.push(camelTag(e));
+    const uniq = tags.filter((t, i) => t && tags.findIndex((x) => x.toLowerCase() === t.toLowerCase()) === i);
+    return uniq.length ? uniq.map((t) => `#${t}`).join(' ') : 'Hashtags: none are suggested because the text names no brand and no sector term. Add the brand name and one term your readers search for.';
+}
+// Claims in a text that need a source before they are published: superlatives and "first and only" style claims.
+const SUPERLATIVE_CLAIM = /\b(?:the first and only|first and only|the only|the first|world'?s first|world'?s largest|largest|#1|number one|best[- ]in[- ]class|world[- ]class|industry[- ]leading|market[- ]leading|leading provider|unrivall?ed|guaranteed|proven track record)\b/i;
+export function claimsToSource(texts) {
+    const out = [];
+    for (const t of texts) {
+        const m = SUPERLATIVE_CLAIM.exec(t);
+        if (m && !out.includes(m[0].toLowerCase()))
+            out.push(m[0].toLowerCase());
+    }
+    return out;
+}
+// A short label for a long topic or headline subject: up to 90 characters as it is; otherwise cut before a trailing description
+// (", described as", ", which", ", with") or at the first semicolon or colon outside brackets; never in the middle of a phrase.
+export function headlineSubject(topic, max = 90) {
+    const t = fixNumbers(topic.trim().replace(/\s+/g, ' '));
+    if (t.length <= max)
+        return t;
+    const cut = splitOutsideParens(t, /,\s+(?:described as|which|that|with|including|for|so|where)\b|[;:]\s+/)[0];
+    if (cut && cut.split(/\s+/).length >= 2 && cut.length <= max)
+        return cut;
+    const sc = shortenClauses(t, max);
+    return /\.\.\.$/.test(sc) ? clipAtWord(t, max) : sc;
+}
+// A customer or company name that names nobody ("a Lanehop customer (Retail)", "contact at a Branchwire customer (name not given)").
+export function isGenericName(name) {
+    return /^(?:an?|the|one of (?:our|the))\s+.{0,60}\bcustomers?\b|\bname not given\b|\bnot given\b|^customer\b|^client\b|^anonymous|^unnamed|^contact at\b/i.test(name.trim());
+}
+// Objections typed by the user. Lines and semicolons separate them; a comma separates them only when the next part opens with a capital
+// letter ("Setup will take too long, Our agents will make mistakes"), so one objection with commas inside it stays whole
+// ("Why not disconnected tools for design, build, test and release").
+export function splitObjections(raw) {
+    if (typeof raw !== 'string')
+        return [];
+    const text = fixNumbers(raw);
+    const out = [];
+    for (const line of text.split(/\n|;/).map((x) => x.trim().replace(/^[-*•]\s*/, '')).filter(Boolean)) {
+        out.push(...splitOutsideParens(line, /(?<=[A-Za-z0-9?)"'])\s*,\s+(?=[A-Z])/));
+    }
+    return out;
+}
+// The name of a product typed as "Name, a description: feature, feature (detail)", and the features it lists. A first segment of up to
+// five words is the name; otherwise the product has no short name and "the product" is used.
+export function productParts(product) {
+    const text = fixNumbers(product.trim().replace(/\s+/g, ' '));
+    const segs = splitOutsideParens(text, /,\s+|:\s+|;\s+/);
+    let first = segs[0] || text;
+    // run 21c round 3: a comma inside a list of what the product covers ("Integrated travel, expense and payment management platform") is not the end of a name
+    const second = segs[1] || '';
+    const listy = segs.length >= 2 && (segs[0] || '').split(/\s+/).length <= 3 && /^[a-z]/.test(second) && !/^(?:an?|the|our|its|their|it|is|are|that|which)\b/i.test(second) && /\band\b/i.test(second.split(/[,:;]/)[0]);
+    if (listy)
+        first = `${segs[0]}, ${second}`;
+    // "Brightfield managed services from Brightfield Software" is named by what comes before "from"
+    const from = /^(.+?)\s+(?:from|by|of)\s+[A-Z]/.exec(first);
+    if (first.split(/\s+/).length > 5 && from)
+        first = from[1];
+    const words = first.split(/\s+/);
+    // run 21c round 3: a long first segment is cut before its first joining word, so the short name is a noun phrase ("Enterprise AI platform"), never a clause fragment ("Enterprise AI platform that")
+    const joiner = first.search(/\s+(?:that|which|who|where|for|with|to|by|on|in|of|and|or|from|connects?|helps?|lets?|gives?|makes?|builds?|runs?|designs?|turns?|unifies?|joins?|uses?|brings?|powers?|automates?)\b/i);
+    const head = joiner > 0 ? first.slice(0, joiner).trim() : '';
+    const lead = [...words.slice(0, 4)];
+    while (lead.length > 2 && /^(?:that|which|who|where|for|with|to|by|on|in|of|and|or|from|the|a|an)$/i.test(lead[lead.length - 1]))
+        lead.pop();
+    const hw = head ? head.split(/\s+/).length : 0;
+    const listHead = listy ? (() => { const j2 = first.search(/\s+(?:for|that|which|who|where|with|by|from)\b/i); const h = (j2 > 0 ? first.slice(0, j2) : first).trim(); return h.split(/\s+/).length <= 8 ? h : h.split(/\s+/).slice(0, 6).join(' '); })() : '';
+    const name = listy ? listHead : words.length <= 5 && first.length <= 60 ? first : hw >= 2 && hw <= 4 ? head : lead.join(' ');
+    const rest = text.slice(text.indexOf(segs[0]) + segs[0].length).replace(/^[,:;\s]+/, '');
+    const facts = splitOutsideParens(rest || text, /,\s+|:\s+|;\s+/).map((x) => x.replace(/^(?:and|an?|the)\s+/i, '').trim()).filter((x) => x.length >= 3);
+    return { name, facts, description: rest || text };
+}
+// "the page claims X" is a note about where the point came from. In a point for a reader it becomes the claim with its source label:
+// "X (page claim)". A point that already carries the label is left as it is.
+export function tidyPoint(p) {
+    const m = /^the (?:page|site|website) claims\s+(?:that\s+)?(.+)$/i.exec(p.trim());
+    if (!m)
+        return p.trim().replace(/\s+on the (?:home|about|pricing|product) page\b/gi, '');
+    const rest = m[1].trim().replace(/\s+on the (?:home|about|pricing|product) page\b/gi, '');
+    return /\(page claim\)/i.test(rest) ? rest : `${rest.charAt(0).toUpperCase()}${rest.slice(1)} (page claim)`;
+}
+// A sector answer pattern is advice written as an instruction ("Show the gap between ..."). In a script or an article it reads as
+// "The answer is to show the gap between ..." — the same words, in a sentence the author can say.
+export function asAnswer(response) {
+    const r = response.trim();
+    const first = r.split(/\s+/)[0] || '';
+    const body = /^(?:Show|Ask|Offer|Compare|Name|Plan|Map|Tie|Propose|Prepare|Align|Start|Agree|State|Bring|Use|Give|Explain|Walk)$/.test(first) ? `The answer is to ${r.charAt(0).toLowerCase()}${r.slice(1)}` : r;
+    return /[.!?]$/.test(body) ? body : `${body}.`;
+}
+// Superlative claims ("the first and only", "the world's first", "the world's largest") are taken out of a sentence that is meant to be
+// published: "the first and only integrated platform" becomes "an integrated platform". The removed claims are returned so the tool can
+// name them once, as claims to prove before they are put back.
+export function softenClaims(text) {
+    const removed = [];
+    let t = text;
+    const rules = [
+        [/\bthe first and only\b/gi, 'a'], [/\bfirst and only\b/gi, 'a'], [/\bthe world'?s first\b/gi, 'an'], [/\bworld'?s first\b/gi, 'an'],
+        [/\bthe world'?s (?:largest|leading|best)\b/gi, 'a'], [/\b(?:industry|market|category)[- ]leading\b/gi, ''], [/\bbest[- ]in[- ]class\b/gi, ''], [/\bworld[- ]class\b/gi, ''],
+        [/\bunrivall?ed\b/gi, ''], [/\bproven track record\b/gi, 'track record']
+    ];
+    for (const [re, rep] of rules)
+        t = t.replace(re, (m) => { removed.push(m.toLowerCase()); return rep; });
+    t = t.replace(/\b(a|an) ([aeiou])/gi, (m, a, c) => (a.toLowerCase() === 'a' ? `an ${c}` : m)).replace(/\ban ([b-df-hj-np-tv-z])/gi, (m, c) => `a ${c}`).replace(/\s{2,}/g, ' ');
+    return { text: t, removed: [...new Set(removed)] };
+}
+// The question (from a list) that shares most words with a point; questions already used are skipped; none shared means the next unused one.
+export function bestQuestion(point, questions, used) {
+    const words = (x) => new Set((x.toLowerCase().match(/[a-z]{5,}/g) || []).map((w) => w.replace(/(?:ing|ed|es|s)$/, '')));
+    const pw = words(point);
+    const free = questions.filter((x) => !used.has(x));
+    const pool = free.length ? free : questions;
+    let best = pool[0];
+    let bestN = -1;
+    for (const qn of pool) {
+        const n = [...words(qn)].filter((w) => pw.has(w)).length;
+        if (n > bestN) {
+            best = qn;
+            bestN = n;
+        }
+    }
+    if (best)
+        used.add(best);
+    return best || '';
+}
+// Template wording written for the author ("the buyer uses") said to the audience ("you use").
+export function toYou(s) {
+    return s.replace(/\bthe buyer'?s own\b/gi, 'your own').replace(/\bthe buyer uses\b/gi, 'you use').replace(/\bthe buyer'?s\b/gi, 'your').replace(/\bthe buyer\b/gi, 'you');
+}
+// Source labels in brackets ("(page claim)", "(customer quote)") are bookkeeping for the author; a text to publish does not carry them.
+export function publishable(s) {
+    return s.replace(/\s*\((?:page claims?|customer quote|customer words|partner quote|case study(?: title)?|customer story title|story title|success story title|ebook title[^)]*|home page)\)/gi, '').replace(/\s{2,}/g, ' ').trim();
+}
+export const STAT = /\d[\d.,]*\s?(?:%|x\b|\+)|[$₹€£]\s?\d|\b\d[\d,]*\s?(?:million|billion|lakhs?|crore|M\+|k\+)/i;
+//# sourceMappingURL=draft.js.map

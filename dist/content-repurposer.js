@@ -1,3 +1,4 @@
+import { readerAction } from './reader-action.js';
 import { countWords } from './utils.js';
 import { splitItems, pickKeyPoints, readContext, audienceLine, firstSentence, sentencesOf, q } from "./sector.js";
 import { parseProof, fixNumbers, endSentence, shortenClauses, proseJoin, brandFrom, softenClaims, dropTail, KIND_NOTE, FIGURE } from "./draft.js";
@@ -71,7 +72,12 @@ const VENDOR_SENTENCE = /^(?:[A-Z][\w&.-]*(?:\s[A-Z][\w&.-]*)?\s+(?:is|are|helps
 export function generateContentRepurposer(args) {
     const claimsRemoved = [];
     const clean = (t) => { const r = cleanClaims(t); claimsRemoved.push(...r.removed); return r.text; };
-    const content = fixNumbers(args.source_content).split('\n').map(clean).join('\n');
+    const sourceLines = args.source_content.split('\n');
+    const meta = (label) => sourceLines.find(l => new RegExp('^' + label + ':', 'i').test(l.trim()))?.replace(/^[^:]+:\s*/, '').trim() || '';
+    const sourceUrl = /^https?:\/\/[^\s]+$/i.test(meta('Source URL')) ? meta('Source URL') : '';
+    const sender = meta('Sender');
+    const content = fixNumbers(sourceLines.filter(l => !/^(?:Reader action|Source URL|Sender):/i.test(l.trim())).join('\n')).split('\n').map(clean).join('\n');
+    const action = readerAction(meta('Reader action') || sentencesOf(content).find(s => /^(?:Review|Check|Record|Inspect|Compare|Confirm|Resolve|Assign)\b/i.test(s.trim())) || '');
     const sourceType = args.source_type;
     const targetFormats = args.target_formats ? splitItems(args.target_formats) : DEFAULT_FORMATS;
     const voice = args.brand_voice && VOICE[args.brand_voice] ? args.brand_voice : 'professional';
@@ -101,7 +107,7 @@ export function generateContentRepurposer(args) {
     const otherProof = proof.filter((p) => !customerProof.includes(p));
     const tags = hashtags(content, keyMessage, ctx.v);
     const kind = sourceType.replace(/_/g, ' ');
-    const k = { points, pointsFull, proof, bestProof, secondProof, hook, title, voice, keyMessage, kind, v: ctx.v, tags, content };
+    const k = { points, pointsFull, proof, bestProof, secondProof, hook, title, voice, keyMessage, kind, v: ctx.v, tags, content, action, sourceUrl, sender };
     // What the user must supply or add by hand, once.
     const notGiven = [];
     if (!proof.length)
@@ -119,9 +125,9 @@ export function generateContentRepurposer(args) {
         places.push('the last tweet');
     if (known.includes('video_script'))
         places.push('the video description');
-    const toDo = [places.length ? `link ${proseJoin(places)} to the full ${kind}` : '', known.includes('email') ? 'add the sender\'s name under the email sign-off' : ''].filter(Boolean);
+    const toDo = [places.length && !sourceUrl ? `confirm the source URL for ${proseJoin(places)} before sending` : '', known.includes('email') && !sender ? 'confirm the sender name before the email can be sent' : ''].filter(Boolean);
     const claimsLine = claimsRemoved.length ? `**Claims to source before you publish:** your source or key message used ${proseJoin([...new Set(claimsRemoved)].map((c) => `"${c}"`))}. The pieces leave it out; add it back once, in one place, and only if you can prove it with a source a reader can check.` : '';
-    const beforeUse = toDo.length ? `Before you use it: ${proseJoin(toDo)}.` : '';
+    const beforeUse = toDo.length ? `Draft only. Before sending: ${proseJoin(toDo)}. Supply confirmed Reader action, Source URL and Sender as labelled lines in the source notes.` : 'Source link and sender supplied; confirm the wording and publication permission before sending.';
     // Sentences of the source that no piece carries: the key points are the five the rule chose; the others are named in one line.
     const wordSet = (s) => new Set((s.toLowerCase().match(/[a-z]{4,}/g) || []).map((w) => w.slice(0, 5)));
     const carried = [title, ...pointsFull, keyMessage].filter(Boolean).map(wordSet);
@@ -308,7 +314,7 @@ function metricFor(k, text) {
 const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 // Host review 28 Oct 2026: a sentence that qualifies the whole source (synthetic, hypothetical, illustrative, not verified) travels with
 // every piece, because each piece can be shared on its own. It is added as typed, once, to a piece that does not already carry it.
-const CAVEAT = /\b(?:synthetic|hypothetical|illustrative|fictional|fictitious|unverified|not (?:yet )?verified|not real|for review only|example only|made[- ]up|demonstration (?:statements?|data|inputs?|only|scenario))\b/i;
+const CAVEAT = /\b(?:synthetic|hypothetical|illustrative|fictional|fictitious|unverified|not (?:yet )?verified|not real|for review only|example only|made[- ]up|demonstration (?:statements?|data|inputs?|only|scenario)|no (?:customer )?(?:outcome|result|impact)(?: figure)? (?:is )?(?:available|supplied|confirmed)|(?:customer )?(?:outcome|result) (?:figure )?(?:is |has )?not (?:available|supplied|confirmed|been measured))\b/i;
 const caveatsOf = (k) => sentencesOf(k.content).map((s) => s.trim()).filter((s) => CAVEAT.test(s)).slice(0, 2);
 function generateFormat(format, k) {
     const caveats = caveatsOf(k);
@@ -321,7 +327,7 @@ function generateFormat(format, k) {
     // the key message is said again only when the hook has not already said it
     const msg = msgRaw && !norm(msgRaw).includes(norm(k.hook)) && !norm(k.hook).includes(norm(msgRaw)) ? msgRaw : '';
     const proof = proofLine(k);
-    const close = k.voice === 'authoritative' && k.bestProof ? 'That is the position, and the evidence above supports it.' : vc.close;
+    const close = k.action ? endSentence(capFirstChar(k.action)) : k.voice === 'authoritative' && k.bestProof ? 'That is the position, and the evidence above supports it.' : vc.close;
     const spoken = (s) => s.replace(/"/g, "'");
     const roles = k.v ? proseJoin(k.v.buyerRoles.slice(0, 2).map((r) => r.toLowerCase())) : '';
     const generators = {
@@ -374,9 +380,10 @@ Subject: ${s1}
 
 ${vc.greet}
 
-${[...body, ...missingIn([s1, ...body]), `Read the full ${kind}`].filter(Boolean).join('\n\n')}
+${[...body, ...missingIn([s1, ...body]), k.action ? endSentence(capFirstChar(k.action)) : 'Confirm the reader action before sending.', k.sourceUrl ? `Read the full ${kind}: ${k.sourceUrl}` : 'Source link: unknown; confirm before sending.'].filter(Boolean).join('\n\n')}
 
 ${vc.bye}
+${k.sender || 'Sender: unknown; confirm before sending.'}
 
 ${alts.length ? `Other subject lines to test: ${alts.join('; ')}\n\n` : ''}---
 
@@ -500,7 +507,7 @@ ${endSentence(rest[0] || k.points[0] || k.hook)}
 
 ${(rest.length ? rest : k.points).slice(1, 4).map((p) => `- ${endSentence(p)}`).join('\n')}
 
-${[proof, msg, `Read the full ${kind}`].filter(Boolean).join('\n\n')}
+${[proof, msg, k.action ? endSentence(capFirstChar(k.action)) : 'Confirm the reader action before sending.', k.sourceUrl ? `Read the full ${kind}: ${k.sourceUrl}` : 'Source link: unknown; confirm before sending.'].filter(Boolean).join('\n\n')}
 
 ---
 

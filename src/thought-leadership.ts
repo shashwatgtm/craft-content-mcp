@@ -546,7 +546,7 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
         ];
         body.push(frames[(a.index + k) % frames.length]);
       } else {
-        body.push(['Pick one live piece of work and test the position on it before you change anything else.', 'Start with one team and one piece of work, and write down where it stands today.', 'Choose the piece of work that hurts most, and try the position on that one first.'][a.index % 3]);
+        body.push(['Pick one live piece of work and test the position on it before you change anything else.', 'Start with one team and one piece of work, and write down where it stands today.', 'Choose the piece of work that hurts most, and try the position on that one first.', 'Agree who will inspect the result before testing the change on a single workflow.', 'Record the current result for one case, then compare it after the proposed change.'][a.index % 5]);
       }
       const qs = questionsFor(a);
       if (qs.length) body.push(`Then take this question into the next meeting: "${bestQuestion(`${thesis} ${a.takeText}`, qs, a.askedQuestions)}"`);

@@ -1,3 +1,4 @@
+import { illustrativeProof } from './text-signals.ts';
 import { signal, hasSignal, readSignal, SIGNALS } from './text-signals.js';
 // Run 20 round 1b (owner decision D92): helpers shared by the eight tools so that a draft is built from the user's inputs
 // instead of pasting them into fixed sentence frames. Rule B82: nothing here adds a statistic, a quote or a named company; the
@@ -321,7 +322,8 @@ export function parseProof(raw: unknown): ProofItem[] {
     const l = label.toLowerCase();
     const figure = FIGURE.test(text);
     let kind: ProofKind;
-    if (signal(text, 'adverse_result').state === 'affirmed' || signal(text, 'cancelled').state === 'affirmed') kind = 'adverse';
+    if (illustrativeProof(item).state === 'affirmed') kind = 'unclear';
+    else if (signal(text, 'adverse_result').state === 'affirmed' || signal(text, 'cancelled').state === 'affirmed') kind = 'adverse';
     else if (signal(text, 'positive_result').state === 'negated' || readSignal(text, RECOGNITION, SIGNALS.recognition).state === 'negated') kind = 'unclear';
     else if (/^(?:case study|customer story|success story|story)\s+(?:headlines?|titles?)\b/i.test(text) && !/quote/.test(l)) kind = 'title';
     // a customer's own words with their speaker ("Name, Title, Company: the number one thing we can do ...") are a quote even when the words say "number one"

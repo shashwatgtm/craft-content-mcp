@@ -1,3 +1,4 @@
+import { quotedPassages } from './text-signals.js';
 import { SUGGESTION_FOOTER, clipEcho, cap, lowerFirstIfCommon } from './utils.js';
 import { q, readContext, startWords, firstSentence, sentencesOf, fromIndicator, type Vertical, type BusinessModel } from './sector.ts';
 import { parseProof, shortenClauses, fixNumbers, endSentence, lowerFirstWord, isGenericName, proseJoin, plural, type ProofItem, type ProofKind } from './draft.ts';
@@ -276,9 +277,8 @@ function generateFromNotes(notes: string, customerName: string, industry: string
   const results = given.results?.trim() || resultsMatches.slice(0, 3).join('; ') || '';
 
   // Look for quotes
-  const quotePatterns = /"[^"]+"/g;
-  const foundQuotes = notes.match(quotePatterns) || [];
-  const bestQuote = quote || foundQuotes[0]?.replace(/"/g, '') || '';
+  const foundQuotes = quotedPassages(notes);
+  const bestQuote = quote || foundQuotes[0]?.slice(1,-1) || '';
 
   const usedFromNotes = [!given.challenge?.trim() && challenge && 'the challenge', !given.solution?.trim() && solution && 'the solution', !given.results?.trim() && results && 'the results'].filter(Boolean) as string[];
   const notFound = [!challenge && 'the challenge', !solution && 'the solution', !results && 'the results'].filter(Boolean) as string[];
@@ -337,6 +337,23 @@ function generateFullCaseStudy(
   const generic = isGenericName(customerName);
   const items = results.trim() && results !== 'not supplied' ? parseProof(results) : [];
   const grp = (k: ProofKind[]) => items.filter((i) => k.includes(i.kind));
+  const adverse=grp(['adverse']);
+  if(adverse.length)return `# Case Study: ${customerName}
+
+## Publication held: adverse customer result
+
+The supplied result does not support a success story. Keep this as an internal account review; do not publish promotional copy or ask the customer to endorse a benefit that the facts do not show.
+
+### Supplied result
+
+${bullets(items)}
+
+${quote ? `### Supplied quote, held from publication
+
+${q(quote)}
+
+` : ''}Confirm the starting figure, the final figure and the period with the customer. Ask the account owner to investigate the decline or refund request and agree the next action. Any later story needs the customer's written approval and a result that supports its claims.
+`;
   const outcomes = grp(['result']);
   const quotes = grp(['quote']);
   const titles = grp(['title']);
@@ -358,7 +375,7 @@ function generateFullCaseStudy(
   const notUsed = extra?.notes ? `
 ## Inputs Not Used
 
-- **interview notes was not used** for this draft because you gave the challenge, the solution and the results directly. ${((extra.notes.match(/"[^"]+"/g) || []).length ? `The notes hold ${(extra.notes.match(/"[^"]+"/g) || []).length} quoted line(s): ${(extra.notes.match(/"[^"]+"/g) || []).slice(0, 2).join(' ')}. Use one as the customer quote.` : 'The notes hold no quoted line; ask the customer for one.')}
+- **interview notes was not used** for this draft because you gave the challenge, the solution and the results directly. ${(quotedPassages(extra.notes).length ? `The notes hold ${quotedPassages(extra.notes).length} quoted line(s): ${quotedPassages(extra.notes).slice(0, 2).join(' ')}. Use one as the customer quote.` : 'The notes hold no quoted line; ask the customer for one.')}
 
 ---
 ` : '';

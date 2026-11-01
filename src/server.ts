@@ -1,3 +1,4 @@
+import { decisionInputs, decisionHelp, decisionLimit } from './decision-limits.ts';
 import { readerLabel, readerIssue, claimRisk, outcomeReading } from './text-signals.ts';
 import { sectorChoiceNotice } from './text-signals.js';
 import { explainSector } from './verticals.js';
@@ -39,6 +40,8 @@ const TOOL_TITLES: Record<string, string> = {
   "sales_enablement_content": "Sales Enablement Content",
   "craft_content_improver": "CRAFT Content Improver"
 };
+
+for(const tool of tools){Object.assign(tool.inputSchema.properties||{},decisionInputs(tool.name));tool.description=(tool.description||'')+decisionHelp(tool.name);}
 
 export const listedTools = tools.map((tool) => {
   const title = TOOL_TITLES[tool.name] ?? tool.name;
@@ -179,6 +182,8 @@ export function createServer(): Server {
     }
 
     try {
+      const limit=decisionLimit(name,(args||{}) as Record<string,unknown>);
+      if(limit.stop)return {content:[{type:'text',text:limit.text}]};
       let result: string;
 
       switch (name) {
@@ -210,7 +215,7 @@ export function createServer(): Server {
           throw new Error(`Unknown tool: ${name}`);
       }
 
-      result = sectorChoiceNotice(name, (args || {}) as Record<string,unknown>, text=>{const r=explainSector({seller:[text]});return {id:r.vertical?.id,name:r.vertical?.name,source:r.source}}) + result;
+      result = limit.text + sectorChoiceNotice(name, (args || {}) as Record<string,unknown>, text=>{const r=explainSector({seller:[text]});return {id:r.vertical?.id,name:r.vertical?.name,source:r.source}}) + result;
 
       return {
         content: [

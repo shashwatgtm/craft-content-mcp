@@ -1,0 +1,461 @@
+[
+  {
+    "text": "Humbled to share this game-changer!\nThat's not a tool. That's a teammate.\nBig shift. Real impact.\nStart on Monday and see the difference.",
+    "skip_quotes": false,
+    "expected": {
+      "stats": {
+        "characters": 137,
+        "words": 23,
+        "sentences": 6,
+        "approx_reading_grade": 2.3,
+        "approx_band": "secondary school",
+        "banned_flags": 5,
+        "review_flags": 3
+      },
+      "flags": [
+        {
+          "line": 1,
+          "kind": "banned word",
+          "severity": "banned",
+          "span": "game-changer",
+          "rule": "banned word or phrase: game-changer"
+        },
+        {
+          "line": 1,
+          "kind": "banned word",
+          "severity": "banned",
+          "span": "Humbled to share",
+          "rule": "banned word or phrase: humbled to share"
+        },
+        {
+          "line": 1,
+          "kind": "exclamation",
+          "severity": "banned",
+          "span": "re this game-changer!",
+          "rule": "no exclamation marks in published text"
+        },
+        {
+          "line": 2,
+          "kind": "fragment",
+          "severity": "review",
+          "span": "That's a teammate.",
+          "rule": "staccato fragment of 1 to 3 words"
+        },
+        {
+          "line": 2,
+          "kind": "not X, Y",
+          "severity": "banned",
+          "span": "That's not a tool. That's",
+          "rule": "contrast LLMism: 'That's not X. That's Y'"
+        },
+        {
+          "line": 3,
+          "kind": "fragment",
+          "severity": "review",
+          "span": "Big shift.",
+          "rule": "staccato fragment of 1 to 3 words"
+        },
+        {
+          "line": 3,
+          "kind": "fragment",
+          "severity": "review",
+          "span": "Real impact.",
+          "rule": "staccato fragment of 1 to 3 words"
+        },
+        {
+          "line": 4,
+          "kind": "lazy line",
+          "severity": "banned",
+          "span": "Start on Monday",
+          "rule": "lazy 'start on Monday' line"
+        }
+      ]
+    }
+  },
+  {
+    "text": "In today's world, teams need robust tools to navigate change.",
+    "skip_quotes": false,
+    "expected": {
+      "stats": {
+        "characters": 61,
+        "words": 10,
+        "sentences": 1,
+        "approx_reading_grade": 4.8,
+        "approx_band": "secondary school",
+        "banned_flags": 2,
+        "review_flags": 1
+      },
+      "flags": [
+        {
+          "line": 1,
+          "kind": "banned word",
+          "severity": "banned",
+          "span": "In today's world",
+          "rule": "banned word or phrase: in today's world"
+        },
+        {
+          "line": 1,
+          "kind": "banned word",
+          "severity": "banned",
+          "span": "robust",
+          "rule": "banned word or phrase: robust"
+        },
+        {
+          "line": 1,
+          "kind": "review word",
+          "severity": "review",
+          "span": "navigate",
+          "rule": "banned for abstract things; fine for a literal route"
+        }
+      ]
+    }
+  },
+  {
+    "text": "The source says \"seamlessly supports the work\". My own review stays plain.",
+    "skip_quotes": true,
+    "expected": {
+      "stats": {
+        "characters": 74,
+        "words": 12,
+        "sentences": 2,
+        "approx_reading_grade": -0.8,
+        "approx_band": "secondary school",
+        "banned_flags": 0,
+        "review_flags": 1
+      },
+      "flags": [
+        {
+          "line": 1,
+          "kind": "fragment",
+          "severity": "review",
+          "span": "The source says                               .",
+          "rule": "staccato fragment of 1 to 3 words"
+        }
+      ]
+    }
+  },
+  {
+    "text": "The review is on Thursday, May 13, 2026.",
+    "skip_quotes": false,
+    "expected": {
+      "stats": {
+        "characters": 40,
+        "words": 8,
+        "sentences": 1,
+        "approx_reading_grade": 2.5,
+        "approx_band": "secondary school",
+        "banned_flags": 1,
+        "review_flags": 0
+      },
+      "flags": [
+        {
+          "line": 1,
+          "kind": "date",
+          "severity": "banned",
+          "span": "Thursday, May 13, 2026",
+          "rule": "that date is a Wednesday"
+        }
+      ]
+    }
+  },
+  {
+    "text": "A weekly review keeps the owner informed. What would you change?",
+    "skip_quotes": false,
+    "expected": {
+      "stats": {
+        "characters": 64,
+        "words": 11,
+        "sentences": 2,
+        "approx_reading_grade": 3.7,
+        "approx_band": "secondary school",
+        "banned_flags": 0,
+        "review_flags": 0
+      },
+      "flags": []
+    }
+  },
+  {
+    "text": "First, read the record.\nSecond, inspect the source.",
+    "skip_quotes": false,
+    "expected": {
+      "stats": {
+        "characters": 51,
+        "words": 8,
+        "sentences": 2,
+        "approx_reading_grade": 2.2,
+        "approx_band": "secondary school",
+        "banned_flags": 1,
+        "review_flags": 0
+      },
+      "flags": [
+        {
+          "line": 2,
+          "kind": "enumeration",
+          "severity": "banned",
+          "span": "Second, inspect the source.",
+          "rule": "no 'First... Second... Third...' enumeration in prose"
+        }
+      ]
+    }
+  },
+  {
+    "text": "The old thinking was scale. The new thinking is evidence.",
+    "skip_quotes": false,
+    "expected": {
+      "stats": {
+        "characters": 57,
+        "words": 10,
+        "sentences": 2,
+        "approx_reading_grade": 4.1,
+        "approx_band": "secondary school",
+        "banned_flags": 0,
+        "review_flags": 1
+      },
+      "flags": [
+        {
+          "line": 1,
+          "kind": "old/new",
+          "severity": "review",
+          "span": "old thinking was scale. The new thinking",
+          "rule": "'Old thinking / New thinking' framing"
+        }
+      ]
+    }
+  },
+  {
+    "text": "We work with dynamic pricing and just-in-time inputs.",
+    "skip_quotes": false,
+    "expected": {
+      "stats": {
+        "characters": 53,
+        "words": 8,
+        "sentences": 1,
+        "approx_reading_grade": 8.2,
+        "approx_band": "secondary school",
+        "banned_flags": 0,
+        "review_flags": 1
+      },
+      "flags": [
+        {
+          "line": 1,
+          "kind": "review word",
+          "severity": "review",
+          "span": "dynamic",
+          "rule": "banned as praise; fine as a technical term such as 'dynamic pricing'"
+        }
+      ]
+    }
+  },
+  {
+    "text": "The file uses a game-changing path. Read https://example.invalid/robust!",
+    "skip_quotes": false,
+    "expected": {
+      "stats": {
+        "characters": 72,
+        "words": 8,
+        "sentences": 2,
+        "approx_reading_grade": 9.1,
+        "approx_band": "secondary school",
+        "banned_flags": 1,
+        "review_flags": 0
+      },
+      "flags": [
+        {
+          "line": 1,
+          "kind": "banned word",
+          "severity": "banned",
+          "span": "game-changing",
+          "rule": "banned word or phrase: game-changing"
+        }
+      ]
+    }
+  },
+  {
+    "text": "The date is Friday, 30 February 2026.",
+    "skip_quotes": false,
+    "expected": {
+      "stats": {
+        "characters": 37,
+        "words": 7,
+        "sentences": 1,
+        "approx_reading_grade": 5.2,
+        "approx_band": "secondary school",
+        "banned_flags": 1,
+        "review_flags": 0
+      },
+      "flags": [
+        {
+          "line": 1,
+          "kind": "date",
+          "severity": "banned",
+          "span": "Friday, 30 February 2026",
+          "rule": "not a real date"
+        }
+      ]
+    }
+  },
+  {
+    "text": "A task \u2014 then another task.",
+    "skip_quotes": false,
+    "expected": {
+      "stats": {
+        "characters": 27,
+        "words": 6,
+        "sentences": 1,
+        "approx_reading_grade": 2.9,
+        "approx_band": "secondary school",
+        "banned_flags": 1,
+        "review_flags": 0
+      },
+      "flags": [
+        {
+          "line": 1,
+          "kind": "dash",
+          "severity": "banned",
+          "span": "A task \u2014 then another t",
+          "rule": "no long, short or spaced dashes"
+        }
+      ]
+    }
+  },
+  {
+    "text": "We are not just a tool. We are a team.",
+    "skip_quotes": false,
+    "expected": {
+      "stats": {
+        "characters": 38,
+        "words": 10,
+        "sentences": 2,
+        "approx_reading_grade": -1.8,
+        "approx_band": "secondary school",
+        "banned_flags": 1,
+        "review_flags": 1
+      },
+      "flags": [
+        {
+          "line": 1,
+          "kind": "not X, Y",
+          "severity": "banned",
+          "span": "not just a tool. We",
+          "rule": "contrast LLMism variant: 'not just X. They are Y'"
+        },
+        {
+          "line": 1,
+          "kind": "review word",
+          "severity": "review",
+          "span": "just",
+          "rule": "banned as filler; keep only when it carries meaning"
+        }
+      ]
+    }
+  },
+  {
+    "text": "I am a thought leader.",
+    "skip_quotes": false,
+    "expected": {
+      "stats": {
+        "characters": 22,
+        "words": 5,
+        "sentences": 1,
+        "approx_reading_grade": 0.5,
+        "approx_band": "secondary school",
+        "banned_flags": 1,
+        "review_flags": 1
+      },
+      "flags": [
+        {
+          "line": 1,
+          "kind": "review word",
+          "severity": "review",
+          "span": "thought leader",
+          "rule": "never applied to oneself"
+        },
+        {
+          "line": 1,
+          "kind": "self label",
+          "severity": "banned",
+          "span": "I am a thought leader",
+          "rule": "'thought leader' applied to oneself"
+        }
+      ]
+    }
+  },
+  {
+    "text": "Review the file.\nWhy now?\nA longer sentence follows with a concrete next step.",
+    "skip_quotes": false,
+    "expected": {
+      "stats": {
+        "characters": 78,
+        "words": 14,
+        "sentences": 3,
+        "approx_reading_grade": 3.1,
+        "approx_band": "secondary school",
+        "banned_flags": 0,
+        "review_flags": 2
+      },
+      "flags": [
+        {
+          "line": 1,
+          "kind": "fragment",
+          "severity": "review",
+          "span": "Review the file.",
+          "rule": "staccato fragment of 1 to 3 words"
+        },
+        {
+          "line": 2,
+          "kind": "question",
+          "severity": "review",
+          "span": "Why now?",
+          "rule": "rhetorical question in the body; a real open question at the close is fine"
+        }
+      ]
+    }
+  },
+  {
+    "text": "Run this task \u2192 then review \u2713.",
+    "skip_quotes": false,
+    "expected": {
+      "stats": {
+        "characters": 30,
+        "words": 7,
+        "sentences": 1,
+        "approx_reading_grade": 0.5,
+        "approx_band": "secondary school",
+        "banned_flags": 2,
+        "review_flags": 0
+      },
+      "flags": [
+        {
+          "line": 1,
+          "kind": "arrow",
+          "severity": "banned",
+          "span": "this task \u2192 then revi",
+          "rule": "no arrows in prose"
+        },
+        {
+          "line": 1,
+          "kind": "checkmark",
+          "severity": "banned",
+          "span": "en review \u2713.",
+          "rule": "no checkmarks or cross marks"
+        }
+      ]
+    }
+  },
+  {
+    "text": "A plain summary of the review appears here.",
+    "skip_quotes": false,
+    "expected": {
+      "stats": {
+        "characters": 43,
+        "words": 8,
+        "sentences": 1,
+        "approx_reading_grade": 5.2,
+        "approx_band": "secondary school",
+        "banned_flags": 0,
+        "review_flags": 0
+      },
+      "flags": []
+    }
+  }
+]

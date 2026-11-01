@@ -36,6 +36,8 @@ const HOSTILE = {
 
 // valid inputs that fill every text field of every tool (the test fails if a text field of a tool is missing here)
 const BASE = {
+  handcrafted_voice_check: {draft:'We ship the report on Friday.',proposed_revision:'We ship the report on Friday.'},
+  ...JSON.parse(readFileSync(new URL("./fixtures/wave2-inputs.json", import.meta.url), "utf8")),
   case_study_generator: { customer_name: "the regional carrier", customer_industry: "last-mile logistics", mode: "full", interview_notes: "Notes from a call with the carrier's operations lead.", challenge: "Failed first attempts kept rising across the network.", solution: "Our routing software planned routes around delivery windows.", results: "Failed first attempts fell in the first quarter", customer_quote: "The routing software changed how we plan every route.", your_product: "our routing software" },
   newsletter_builder: { topic: "Failed first-attempt deliveries in last-mile logistics", key_points: "Plan around windows; Tell the customer early; Measure first-attempt success", cta_goal: "register for the webinar", previous_topics: "Route planning basics", your_product: "our routing software" },
   webinar_script: { topic: "Failed first-attempt deliveries", target_audience: "Heads of logistics at regional carriers", webinar_type: "educational", key_takeaways: "Plan around windows; Tell the customer early", speakers: "The head of operations at a regional carrier; our product lead", include_polls: true, your_product: "our routing software" },
@@ -46,12 +48,19 @@ const BASE = {
   craft_content_improver: { content: "Our routing software helps carriers plan routes around delivery windows. One regional carrier saw fewer failed first attempts. Would you like to see how it works? Reply to this email and we can set up a call.", content_type: "email", goal: "book a first meeting", audience: "heads of logistics" },
 };
 
+BASE.launch_copy_check.as_of = '2026-11-01';
+const pastedCases = {launch_copy_check:'A supplied launch draft.',newsletter_source_check:'### Supplied story\nhttps://source.invalid/record\n2026-10-30\nA supplied excerpt.'};
+const withField = (name, field, value) => {
+ const args = {...BASE[name], [field]: value};
+ if (field === 'pasted_text') {delete args.assets; delete args.items; if(name === 'newsletter_source_check') args.pasted_text = pastedCases[name] + '\n' + value;}
+ return args;
+};
 const textFields = (t) => Object.entries(t.inputSchema.properties).filter(([, p]) => p.type === "string" && !p.enum).map(([k]) => k);
 const MARK = "Zebra marker phrase";
 
 for (const t of tools) {
   test(`${t.name}: the base inputs fill every text field and are valid`, async () => {
-    for (const k of textFields(t)) assert.ok(k in BASE[t.name], `${t.name}.${k} missing from BASE`);
+    for (const k of textFields(t)) assert.ok(k in BASE[t.name] || (k === 'pasted_text' && t.name in pastedCases), `${t.name}.${k} missing from BASE`);
     const r = await call(t.name, BASE[t.name]);
     assert.equal(r.isError, false, r.text.slice(0, 200));
   });
@@ -61,11 +70,11 @@ for (const t of tools) {
   for (const field of textFields(t)) {
     test(`${t.name}.${field}: hostile strings are made inert and the user's words stay`, async () => {
       // does this tool echo this field at all? (some fields are only read, never printed)
-      const benign = await call(t.name, { ...BASE[t.name], [field]: `${BASE[t.name][field]} ${MARK}` });
+      const benign = await call(t.name, withField(t.name, field, `${BASE[t.name][field] ?? pastedCases[t.name]} ${MARK}`));
       assert.equal(benign.isError, false, `${t.name}.${field}: ${benign.text.slice(0, 200)}`);
       const echoed = benign.text.includes(MARK);
       for (const [probe, [hostile, words]] of Object.entries(HOSTILE)) {
-        const r = await call(t.name, { ...BASE[t.name], [field]: hostile });
+        const r = await call(t.name, withField(t.name, field, hostile));
         const where = `${t.name}.${field} ${probe}`;
         assert.equal(r.isError, false, `${where}: ${r.text.slice(0, 200)}`);
         const text = r.text;

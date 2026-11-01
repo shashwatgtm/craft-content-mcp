@@ -7,3 +7,7 @@ deno.lock
 .mcpregistry_*
 .env
 .env.*
+
+# Internal run receipts belong in the private hub.
+wave2/
+wave3-*/

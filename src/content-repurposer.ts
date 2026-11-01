@@ -504,7 +504,14 @@ ${[proof, msg, k.action ? endSentence(capFirstChar(k.action)) : 'Confirm the rea
   };
 
   if (!generators[format]) return '';
-  const piece = generators[format]();
+  let piece = generators[format]();
+  // The source may already contain the closing reader action. Keep its final occurrence only.
+  if (k.action) {
+    const rows = piece.split('\n');
+    const matches = rows.map((line,i)=>norm(line)===norm(k.action)?i:-1).filter(i=>i>=0);
+    const last = matches[matches.length-1];
+    piece = rows.filter((line,i)=>!matches.includes(i)||i===last).join('\n').replace(/\n{3,}/g,'\n\n');
+  }
   // the email and the thread place a missing qualification inside the message above; every other piece gets it as its last line
   const add = format === 'email' || format === 'twitter_thread' ? [] : missingIn([piece]);
   const at = piece.lastIndexOf('\n---\n');

@@ -70,12 +70,21 @@ ${v.discovery.map((d, i) => `${i + 1}. ${d}`).join('\n')}
 }
 function generateDiscoveryKit(customerName, industry, product, knownResults, ctx) {
     const w = startWords(ctx.model);
+    const classified = parseProof(knownResults || '');
+    const usable = classified.filter(p => p.kind === 'result' || p.kind === 'quote');
+    const held = classified.filter(p => !usable.includes(p));
     return `# Case Study Discovery Kit
 ## For: ${customerName}
 
+## First questions before drafting
+1. What was the baseline, with its source and cohort?
+2. Over which measurement period did the result change, and what is the comparable after value?
+3. Has the customer approved the exact result, attribution and publication channel? Record permission before writing an approved story.
+${held.length ? `Held evidence: ${held.map(p => q(p.shown)).join('; ')}. These items are not approved story evidence.` : 'Publication permission is unconfirmed; obtain the customer approval before release.'}
+
 ---
-${knownResults ? `
-You already have one result: ${q(knownResults)}. Confirm the baseline and the timeframe.
+${usable.length ? `
+Supplied result to verify: ${usable.map(p => q(p.shown)).join('; ')}. Confirm the baseline, timeframe and publication permission.
 
 ---
 ` : ''}

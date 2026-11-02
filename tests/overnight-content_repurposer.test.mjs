@@ -22,3 +22,18 @@ test('Overnight repurposer: complete subjects, one result and the supplied reade
  const cards=out.split('### Quote Cards')[1].split('## Source Notes')[0].split(/\*\*(?:Quote|Stat) Card \d+:\*\*/).slice(1);
  assert.ok(cards.length);for(const card of cards)assert.match(card,/uncontrolled pilot/);
 });
+
+test('a separate key message does not duplicate an already displayed proof point',()=>{
+ const s=generateContentRepurposer({source_content:source,source_type:'blog_post',key_message:'Review a dispatch handoff before changing the process'});
+ for(const [start,end] of [['### LinkedIn Post','### Twitter'],['### Twitter','### Email'],['### Email','### Blog']]){
+  const section=s.split(start)[1].split(end)[0].split('Other subject lines to test:')[0];
+  assert.equal((section.match(/A regional fleet pilot reduced route adjustment time/g)||[]).length,1);
+  assert.match(section,/uncontrolled pilot/);
+ }
+});
+
+test('alternate email subjects do not repeat the same source clause under two labels',()=>{
+ const s=generateContentRepurposer({source_content:source,source_type:'blog_post',key_message:'Review a dispatch handoff before changing the process'});
+ const alts=s.match(/Other subject lines to test: (.+)/)?.[1] || '';
+ assert.ok((alts.match(/A regional fleet pilot reduced route adjustment time/g)||[]).length <= 1);
+});

@@ -1,4 +1,5 @@
 import { cap, lowerFirstIfCommon, titleWords } from './utils.js';
+import { readSignal } from './text-signals.js';
 import { cleanClaims, tagsFor } from "./content-repurposer.js";
 import { readContext, isClause, clipWords } from "./sector.js";
 import { parseProof, fixNumbers, RECOGNITION, endSentence, capFirst, shortenClauses, proseJoin, brandFrom, claimsToSource, headlineSubject, KIND_NOTE, bestQuestion, clipAtWord, dropTail } from "./draft.js";
@@ -8,6 +9,14 @@ import { cleanSectorLine, isInstruction, instructionNote, sharpenLine, stripGuar
 // Then one finished promo post per article. Nothing is added that the inputs or src/verticals.ts do not hold: no figure, no quote,
 // no customer, no story the author did not give (B82).
 const ECHO = 400; // a long pasted value is shortened to a whole clause at this length when it is repeated
+const INTERVIEW_TITLES = ['Trace the Reported Problem', 'Look for a Counterexample', 'Agree a Test and Its Limits', 'Check Whether the Result Travels', 'Decide What Can Be Published'];
+const INTERVIEW_QUESTIONS = [
+    'Can you reconstruct the reported case from its source records?',
+    'Which comparable case would make you narrow or reject this position?',
+    'What baseline, acceptance rule and reviewer would make the next test useful?',
+    'Would the same test hold with a different team or case mix?',
+    'Which statements have a source and permission, and which remain questions?'
+];
 // A long value shortened without a cut mark: a whole clause if one fits, else at a word.
 function clipEcho(text, max) {
     const t = text.trim();
@@ -71,7 +80,7 @@ export function generateThoughtLeadership(args) {
             return { ...i, kind: 'result' };
         return i;
     }) : [];
-    const interviewNote = /\binterviews?\b/i.test(proofRaw) && !/\b(?:no|never|not|without)\s+(?:\w+\s+){0,2}interviews?\b/i.test(proofRaw) && !isInstruction(proofRaw) && proofRaw.length <= 1600 ? proofRaw : '';
+    const interviewNote = readSignal(proofRaw, /\binterviews?\b/i).state === 'affirmed' && !isInstruction(proofRaw) ? proofRaw : '';
     // Keep the whole interview paragraph together: a comma split must not turn
     // the remainder of an interview note into a measured result.
     const interviewItems = interviewNote ? items : [];
@@ -114,7 +123,10 @@ export function generateThoughtLeadership(args) {
     const listedParts = new Map();
     const testUsed = new Set();
     const arts = [];
-    const heads = Array.from({ length: numArticles }, (_, i) => getArticleAngle(i, articleType, topicLabel, evidence.length + stories.length > 0));
+    const heads = Array.from({ length: numArticles }, (_, i) => {
+        const angle = getArticleAngle(i, articleType, topicLabel, evidence.length + stories.length > 0);
+        return interviewNote ? { ...angle, title: `${titleWords(topicLabel)}: ${INTERVIEW_TITLES[i % INTERVIEW_TITLES.length]}` } : angle;
+    });
     for (let i = 0; i < numArticles; i++) {
         const a = { index: i, total: numArticles, type: articleType, topic: topicLabel, parts, readerNoun, v, evidence, stories, mark, count, suggested, heads, askedQuestions, takeText, view, metricsSeries, listedParts, testUsed, conflicts, brand, interviewNote };
         arts.push(buildArticle(a, authorBackground, targetReader, credibility));
@@ -131,6 +143,8 @@ export function generateThoughtLeadership(args) {
         missing.push({ field: 'author_background', change: 'the bylines, which now read "the author"' });
     const notUsed = items.filter((i) => !interviewItems.includes(i) && !used.has(i) && !credibility.includes(i));
     const notes = [];
+    if (interviewNote)
+        notes.push('The evidence is an interview account. Check the original notes, attribution and quote permission before publication. The articles propose tests; they do not establish a measured result or answer every sector objection.');
     if (claims.length)
         notes.push(`**Claims to source before you publish:** your take or proof points use ${proseJoin(claims.map((c) => `"${c}"`))}. The articles and posts leave them out; add one back once, in one place, and only if you can prove it with a source a reader can check.`);
     if (notUsed.length)
@@ -150,7 +164,7 @@ export function generateThoughtLeadership(args) {
 
 ## Promotional Posts
 
-${generatePromotionalPosts(parts, arts.map((x) => x.leadItem), arts.map((x) => x.head.title), readerNoun, v, takeText)}
+${generatePromotionalPosts(parts, arts.map((x) => x.leadItem), arts.map((x) => x.head.title), readerNoun, v, takeText, interviewNote ? INTERVIEW_QUESTIONS : [])}
 ---
 
 ## Publishing Order
@@ -164,7 +178,7 @@ Link each promo post to its article. ${tags ? `Hashtags for the posts: ${tags}.`
 ## Proof Points Used
 
 ${interviewNote ? 'Interview notes are used as qualitative input in Article 1 and as the basis for the tests in later articles. Any figures in those notes remain reported observations, not independently measured outcomes.' : items.length || credibility.length ? `| Proof point | What it is | How it is used |\n|---|---|---|\n${[...items, ...credibility.filter((c) => !items.includes(c))].map((p) => `| ${clipEcho(p.shown, 600).replace(/\|/g, '/')} | ${noteOf(p)} | ${p.kind === 'missing' || p.kind === 'unclear' ? 'evidence still to gather' : credibility.includes(p) ? 'a credibility line, not an example' : used.has(p) ? `article ${used.get(p).join(' and ')}` : 'not used as an example'} |`).join('\n')}` : 'None were given.'}
-${sectorBlock(vFull, askedQuestions.has('who'))}${generic ? '\n- The readers you named do not match the readers this sector reading is written for, so the articles use none of its measures.\n' : ''}
+${sectorBlock(vFull, askedQuestions.has('who'), !!interviewNote)}${generic ? '\n- The readers you named do not match the readers this sector reading is written for, so the articles use none of its measures.\n' : ''}
 ---
 
 ## Notes for you
@@ -249,7 +263,7 @@ function splitTake(take) {
     return use.length ? use.map((p) => p.replace(/[.!?]+$/, '')) : [take.replace(/[.!?]+$/, '')];
 }
 // What readers in the sector usually raise against a take, and what a proof point that lands looks like (no figures, rule B82).
-function sectorBlock(v, whoShown = false) {
+function sectorBlock(v, whoShown = false, interviewOnly = false) {
     if (!v)
         return '';
     return `
@@ -257,7 +271,7 @@ function sectorBlock(v, whoShown = false) {
 
 ## Sector Notes: ${cap(v.name)}
 
-- **Counter-arguments your readers will raise:** ${v.objections.map((o) => o.objection.toLowerCase()).join('; ')}. The articles answer them in turn.
+- **${interviewOnly ? 'Sector objections to check with readers' : 'Counter-arguments your readers will raise'}:** ${v.objections.map((o) => o.objection.toLowerCase()).join('; ')}. ${interviewOnly ? 'Check whether these apply before adding them to the argument; the interview account does not establish them.' : 'The articles answer them in turn.'}
 - **Measures your readers use:** ${v.metrics.slice(0, 5).join(', ')}. Cite the ones your proof points really move.
 - **Terms your readers use:** ${v.vocabulary.slice(0, 6).join(', ')}.
 ${whoShown ? '' : `- **Who decides:** ${v.committee}\n`}- **A proof point that lands:** ${v.proofShape}
@@ -741,7 +755,7 @@ ${opener}
 ${sections.join('\n\n')}${sections.length ? '\n\n' : ''}${next ? `${next}\n\n` : ''}${about ? `${about}\n\n` : ''}*Notes on this article, not part of it:*
 
 **Lead proof point:** ${leadText}
-**Counter-argument it answers:** ${objection ? `"${objection.objection}"` : 'none read (the sector is not clear from your inputs)'}
+${a.interviewNote ? `**Question it tests:** ${INTERVIEW_QUESTIONS[a.index % INTERVIEW_QUESTIONS.length]}` : `**Counter-argument it answers:** ${objection ? `"${objection.objection}"` : 'none read (the sector is not clear from your inputs)'}`}
 **Draft length:** about ${bodyWords} words
 `;
     return { head, text: text.replace(/\n{3,}/g, '\n\n').replace(/^## (?!Article )/gm, '### '), lead: leadText, objection: objection ? objection.objection : '', leadItem: lead };
@@ -761,7 +775,7 @@ function listOthers(a, thesis) {
 }
 // One finished promo post per article: the new headline, the article's part of the take in short, its evidence (each item once), and a
 // question from the sector. A part, a proof point or a question is used in one post only.
-function generatePromotionalPosts(parts, leads, titles, readerNoun, v, takeText) {
+function generatePromotionalPosts(parts, leads, titles, readerNoun, v, takeText, reviewQuestions = []) {
     let posts = '';
     const qs = v ? v.discovery.filter((d) => !/\bclient'?s?\b|current provider|\bme\b|\bour\b/i.test(d)) : [];
     const asked = new Set();
@@ -772,7 +786,7 @@ function generatePromotionalPosts(parts, leads, titles, readerNoun, v, takeText)
             usedProof.add(proof);
         const proofLine = proof ? (proof.kind === 'quote' ? quotePost(proof) : `On record: ${endSentence(capFirst(clipEcho(proof.shown, 300).replace(/([.!?])\s+(?=[A-Z])/g, '; ')))}`) : '';
         const part = i < parts.length ? parts[i] : '';
-        const question = qs.length ? `A question for ${readerNoun}: "${bestQuestion(`${part} ${takeText}`, qs, asked)}"` : '';
+        const question = reviewQuestions[i] ? `A question for ${readerNoun}: "${reviewQuestions[i]}"` : qs.length ? `A question for ${readerNoun}: "${bestQuestion(`${part} ${takeText}`, qs, asked)}"` : '';
         const blocks = [`New article: "${titles[i]}".`, part ? `The short version: ${clipEcho(part, 300).replace(/[.]$/, '')}.` : '', proofLine, question].filter(Boolean);
         posts += `### Promo Post ${i + 1} (for Article ${i + 1})
 

@@ -34,3 +34,26 @@ test('comma splitting cannot detach a service interview observation from its evi
  assert.match(s,/qualitative input for a hypothesis/);assert.doesNotMatch(s,/The evidence above is a result on record|It shows that the idea has held up/);
  assert.doesNotMatch(s,/One Customer.s Case/);
 });
+
+test('headlines, article notes and promo questions describe the actual interview review jobs',()=>{
+ const s=generateThoughtLeadership({...args,num_articles:5});
+ assert.doesNotMatch(s,/What the Objections Miss|The Case Against the Usual View|Counter-argument it answers|The articles answer them in turn|Nothing in your inputs needed flagging/);
+ for(const title of ['Trace the Reported Problem','Look for a Counterexample','Agree a Test and Its Limits','Check Whether the Result Travels','Decide What Can Be Published'])assert.ok(s.includes(title));
+ const promo=s.split('## Promotional Posts')[1].split('## Publishing Order')[0];
+ assert.match(promo,/reconstruct the reported case/);assert.match(promo,/narrow or reject this position/);assert.match(promo,/baseline, acceptance rule and reviewer/);
+});
+test('a long interview account keeps its evidence limits instead of becoming measured proof',()=>{
+ const proof_points='In two interviews, reviewers described their work. '+('They needed to check source references before accepting a redline. '.repeat(28))+'No time saving study has been run.';
+ assert.ok(proof_points.length>1600);
+ const s=generateThoughtLeadership({...args,proof_points});
+ assert.match(s,/qualitative input for a hypothesis/);assert.match(s,/No time saving study has been run/);
+ assert.doesNotMatch(s,/The evidence above is a result on record|It shows that the idea has held up/);
+ assert.equal(s.split(proof_points).length-1,1);
+});
+
+test('negation after the interview noun does not establish an interview account',()=>{
+ for(const proof_points of ['Interviews were not conducted. No outcome evidence exists.','Interviews are not available.','We have not yet completed any interviews.']) {
+  const s=generateThoughtLeadership({...args,proof_points});
+  assert.doesNotMatch(s,/Supplied interview note, not independently verified|The evidence is an interview account/);
+ }
+});

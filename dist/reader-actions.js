@@ -1,3 +1,5 @@
+import { case_thought_leadership_series } from './reader-thought-leadership-series.js';
+import { renderCase } from './reader-case.js';
 const GUIDES = {
     pmf_scorecard: ['fit', 'The score compares supplied metrics with the selected benchmark. It does not establish product market fit outside that sample.', 'retention, cohort size and the benchmark choice', 'the decision to increase acquisition spending'],
     launch_commander: ['plan', 'This is a proposed launch sequence. A date and a goal do not establish delivery capacity.', 'the launch date, available capacity and buyer acceptance conditions', 'the launch scope'],
@@ -78,6 +80,8 @@ export function readingGuide(name, result, args = {}) {
         return '';
     const [kind, meaning, evidence, decision] = g;
     const held = /^# .*\bheld\b|^Use not approved|^Publication is not approved|^## Overall Score:[^\n]*\(NOT PROVED YET\)/im.test(result);
+    if (name === 'thought_leadership_series')
+        return renderCase(case_thought_leadership_series(args), held);
     const status = held ? ' Keep the stated hold in place; this guidance does not override it.' : '';
     let roles = kind === 'publish' ? [
         `Founder: check the central claim against the supplied evidence before endorsing ${decision}.`,

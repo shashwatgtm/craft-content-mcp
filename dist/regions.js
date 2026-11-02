@@ -12094,7 +12094,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "cloud-security: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "cloud-security: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for LI, MC, CH. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -12131,7 +12132,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "identity-security: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "identity-security: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for LI, MC, CH. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -12168,7 +12170,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "email-security: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "email-security: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for LI, MC, CH. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -12205,7 +12208,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "awareness-training: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "awareness-training: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for LI, MC, CH. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -12242,7 +12246,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "appsec: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "appsec: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for LI, MC, CH. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -12279,7 +12284,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "mobile-appsec: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "mobile-appsec: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for LI, MC, CH. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -12316,7 +12322,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "soc-services: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "soc-services: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for LI, MC, CH. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -12353,7 +12360,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "endpoint-network: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "endpoint-network: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for LI, MC, CH. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -12480,7 +12488,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "pentest: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "pentest: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for LI, MC, CH. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -12517,7 +12526,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "attack-surface-dast: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "attack-surface-dast: check National sector authority and privacy authority for AT BE FR DE LI LU MC NL CH; EU law only where applicability is verified for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for LI, MC, CH. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -14213,7 +14223,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "cloud-security: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "cloud-security: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for US, MX. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -14245,7 +14256,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "identity-security: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "identity-security: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for US, MX. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -14277,7 +14289,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "email-security: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "email-security: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for US, MX. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -14309,7 +14322,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "awareness-training: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "awareness-training: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for US, MX. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -14341,7 +14355,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "appsec: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "appsec: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for CA, MX. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -14373,7 +14388,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "mobile-appsec: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "mobile-appsec: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for US, MX. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -14405,7 +14421,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "soc-services: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "soc-services: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for US, MX. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -14437,7 +14454,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "endpoint-network: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "endpoint-network: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for US, MX. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -14559,7 +14577,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "pentest: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "pentest: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for CA, MX. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -14591,7 +14610,8 @@ export const REGION_DATA = [
                     "sales_motion": []
                 },
                 "pending_topics": [
-                    "attack-surface-dast: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded."
+                    "attack-surface-dast: check US federal and applicable state regulator; Canadian federal and applicable provincial regulator; Mexican sector authority and current legislation for country specific obligations, approval roles and evidence. No sourced finding of equivalence is recorded.",
+                    "No separately sourced subtype addition in this bounded pass for CA, MX. Applicable vertical notes remain available; do not apply the other country's guidance."
                 ]
             },
             {
@@ -18640,7 +18660,7 @@ export const REGION_TAXONOMY = {
 };
 export const REGION_GENERATION = {
     "schema_version": "1.0.0",
-    "data_sha256": "a22a7beace691c3befe64a62e2f3e3c17e31130763c763334cceaeac8c6a4f6b",
+    "data_sha256": "1b6c258e8f87fe58a4b29b5fc343e78b564f6b309f0735daa225b0998c95175d",
     "missing_regions": [],
     "complete": true,
     "coverage": {

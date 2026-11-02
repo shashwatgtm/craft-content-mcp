@@ -329,6 +329,7 @@ function generateFormat(format: string, k: Kit): string {
   const msg = msgRaw && !norm(msgRaw).includes(norm(k.hook)) && !norm(k.hook).includes(norm(msgRaw)) ? msgRaw : '';
   const leadContainsProof = !!k.bestProof && norm(lead).includes(norm(k.bestProof.shown));
   const proof = leadContainsProof ? (k.secondProof ? proofLineOf(k.secondProof, 'Another result') : '') : proofLine(k);
+  const proofMissingFrom = (shown: string[]): string => [k.bestProof, k.secondProof].filter((p): p is ProofItem => !!p).filter(p => !shown.some(line => norm(line).includes(norm(p.shown)))).map(p => proofLineOf(p, 'Result')).join(' ');
   const close = k.action ? endSentence(capFirstChar(k.action)) : k.voice === 'authoritative' && k.bestProof ? 'That is the position, and the evidence above supports it.' : vc.close;
   const spoken = (s: string) => s.replace(/"/g, "'");
   const roles = k.v ? proseJoin(k.v.buyerRoles.slice(0, 2).map((r) => r.toLowerCase())) : '';
@@ -339,7 +340,7 @@ function generateFormat(format: string, k: Kit): string {
 
 ---
 
-${[endSentence(lead), ...rest.slice(0, 4).map((p) => endSentence(p)), proof, msg, close, k.tags].filter(Boolean).join('\n\n')}
+${[endSentence(lead), ...rest.slice(0, 4).map((p) => endSentence(p)), proofMissingFrom([lead, ...rest.slice(0, 4), msg]), msg, close, k.tags].filter(Boolean).join('\n\n')}
 
 ---
 
@@ -347,7 +348,7 @@ ${[endSentence(lead), ...rest.slice(0, 4).map((p) => endSentence(p)), proof, msg
     twitter_thread: () => {
       const tweets: string[] = [`${tweet(k.hook)} A thread.`];
       for (const p of rest.slice(0, 5)) for (const part of tweetParts(p)) tweets.push(`${tweets.length}/ ${part}`);
-      if (k.bestProof && !leadContainsProof) for (const part of tweetParts(proofLineOf(k.bestProof, 'Result'))) tweets.push(`${tweets.length}/ ${part}`);
+      if (k.bestProof && !tweets.some(t => norm(t).includes(norm(k.bestProof!.shown)))) for (const part of tweetParts(proofLineOf(k.bestProof, 'Result'))) tweets.push(`${tweets.length}/ ${part}`);
       for (const c of missingIn(tweets)) for (const part of tweetParts(c)) tweets.push(`${tweets.length}/ ${part}`);
       tweets.push(`${tweets.length}/ ${[msg ? tweet(msg) : '', close].filter(Boolean).join(' ')}`);
       return `
@@ -363,11 +364,17 @@ ${tweets.map((t, i) => `**Tweet ${i + 1}${i === 0 ? ' (Hook)' : ''}:**\n${t}${t.
     },
     email: () => {
       const s1 = subjectSafe(k.title, 70) ? subjectSafe(k.title, 70) : subjectSafe(k.hook, 70) ? subjectSafe(k.hook, 70) : subjectCut(k.hook, 70) || subjectCut(k.title, 70) || `A short ${kind} summary`;
+      const altSubjects = new Set<string>();
       const alts = [
         subjectSafe(rest[0], 60) ? `What we learned: ${subjectSafe(rest[0], 60)}` : '',
         k.bestProof && subjectSafe(k.bestProof.text.replace(/^Customer (?:quote|words)(?: from [^:]*)?:\s*/i, '').replace(/^["“]|["”]$/g, ''), 60) ? `${k.bestProof.kind === 'title' ? 'A customer story' : 'Proof inside'}: ${subjectSafe(k.bestProof.text.replace(/^Customer (?:quote|words)(?: from [^:]*)?:\s*/i, '').replace(/^["“]|["”]$/g, ''), 60)}` : '',
-      ].filter((x) => x && norm(x) !== norm(s1));
-      const body = [subjectSafe(k.title, 70) === s1 ? '' : endSentence(lead), ...(rest.length ? rest : k.points).slice(0, 3).map((p) => endSentence(p)), proof, msg];
+      ].filter((x) => x && norm(x) !== norm(s1)).filter(x => {
+        const key = norm(x.replace(/^(?:What we learned|A customer story|Proof inside):\s*/i, ''));
+        if (altSubjects.has(key)) return false;
+        altSubjects.add(key); return true;
+      });
+      const body = [subjectSafe(k.title, 70) === s1 ? '' : endSentence(lead), ...(rest.length ? rest : k.points).slice(0, 3).map((p) => endSentence(p)), msg];
+      body.push(proofMissingFrom([s1, ...body]));
       return `
 ### Email Version
 

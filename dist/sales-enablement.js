@@ -1,3 +1,4 @@
+import { readSignal } from './text-signals.js';
 import { lowerFirstIfCommon, cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { q, qs, clipWords, readContext, answerFor, objectionKind, proofFor, sectorNotes, startWords } from "./sector.js";
 import { startsImperative } from "./rw-content.js";
@@ -261,7 +262,7 @@ ${valueRows.map((r) => `| ${r.vp} | ${r.proof || 'none of your proof points bear
 
 **ROI Conversation:**
 
-${customerResults.length ? `"Here is the supplied result, with its scope and limitations:
+${customerResults.length ? `"${customerResults.every(p => /\b(?:customers?|clients?)\b/i.test(p.text)) ? 'Let me share what customers have seen:' : 'Here is the supplied result, with its scope and limitations:'}
 
 ${customerResults.slice(0, 3).map((p) => `- ${clipEcho(p.shown, 300)}`).join('\n')}
 
@@ -373,7 +374,7 @@ ${SUGGESTION_FOOTER}
 // objection that none of the proof answers says so and names the proof that would.
 function generateObjectionHandler(objection, valueProps, proofTexts, facts, priceContext, v, usedProof, usedValue, productName = '', persona = '', strongestText = '') {
     // A compound objection must not hide a stated production risk behind its incumbent-tool clause.
-    const operationalRisk = /\b(?:cannot|can't|can not|won't|will not) (?:accept |take |tolerate )?risk\b|\b(?:worried|concerned) about\b|\b(?:unsafe|unapproved|uncontrolled)\b/i.test(objection)
+    const operationalRisk = readSignal(objection, /\b(?:cannot|can't|can not|won't|will not) (?:accept |take |tolerate )?risk\b|\b(?:worried|concerned) about\b|\b(?:unsafe|unapproved|uncontrolled)\b/i).state === 'affirmed'
         && /\b(?:automatic|automated|autonomous|live network|production|live systems?)\b/i.test(objection);
     if (operationalRisk) {
         const acknowledge = 'Your existing workflow and live environment need to stay protected.';

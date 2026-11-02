@@ -86,7 +86,7 @@ export function readingGuide(name, result, args = {}) {
     if (!g || !result || /^(?:Error|Invalid|Missing required|No contact|Contact declined)/i.test(result))
         return '';
     const [kind, meaning, evidence, decision] = g;
-    const held = /^# .*\b(?:held|on hold)\b|^Use not approved|^Publication is not approved|^## Overall Score:[^\n]*\(NOT PROVED YET\)/im.test(result);
+    const held = /^# .*\b(?:held|on hold)\b|^Use not approved|^Publication is not approved|^## Publication held:|^## Overall Score:[^\n]*\(NOT PROVED YET\)/im.test(result);
     if (name === 'thought_leadership_series')
         return renderCase(case_thought_leadership_series(args), held);
     if (name === 'content_repurposer')
@@ -94,7 +94,7 @@ export function readingGuide(name, result, args = {}) {
     if (name === 'webinar_script')
         return renderCase(case_webinar_script(args), held);
     if (name === 'case_study_generator')
-        return renderCase(case_case_study_generator(args), held);
+        return renderCase(case_case_study_generator(args, /^## Publication held: adverse customer result/m.test(result)), held);
     if (name === 'newsletter_builder')
         return renderCase(case_newsletter_builder(args), held);
     if (name === 'sales_enablement_content')

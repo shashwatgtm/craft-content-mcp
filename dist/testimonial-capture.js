@@ -1,4 +1,4 @@
-import { signal, evidenceLine } from './text-signals.js';
+import { signal, readSignal, evidenceLine } from './text-signals.js';
 import { cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { readContext, startWords } from "./sector.js";
 import { parseProof, fixNumbers, endSentence, capFirst, isGenericName, KIND_NOTE, missingEvidence } from "./draft.js";
@@ -20,7 +20,12 @@ export function generateTestimonialCapture(args) {
     const permissionText = args.use_case || '';
     const confirmation = (label) => permissionText.split(/[;\n]/).find(line => new RegExp('^Approved ' + label + ':\\s*\\S', 'i').test(line.trim()))?.replace(/^[^:]+:\s*/, '').trim() || '';
     const channel = confirmation('channel'), attribution = confirmation('attribution'), wording = confirmation('wording');
-    const permissionComplete = !!channel && !!attribution && !!wording;
+    const unknownScope = (value) => !value || /^(?:unknown|none|pending|not (?:yet )?(?:approved|supplied|confirmed)|tbd|to be confirmed)\b/i.test(value);
+    const permissionConflict = [storyFull, permissionText, args.relationship_context || ''].some(text => {
+        const state = readSignal(text, /\b(?:permission|approval|consent)\b/i).state;
+        return state === 'negated' || state === 'unclear' || /\b(?:permission|approval|consent)\b[^.!?;]{0,60}\b(?:absent|pending|withdrawn|revoked|declined)\b/i.test(text);
+    });
+    const permissionComplete = !permissionConflict && [channel, attribution, wording].every(value => !unknownScope(value));
     const incentive = args.incentive || '';
     // Run 19 (D80, problems 3, 4 and 8): the product the user named is used everywhere the old kit printed "[Product]"; the sector and the
     // business model are read from every text the user gave.
@@ -35,9 +40,9 @@ export function generateTestimonialCapture(args) {
     // The success story is sorted: only a result, a quote or a story with a figure can be said to belong to this company, and only when
     // the company is named. A result of another customer, a recognition or a company-wide count is never put in this contact's mouth.
     const items = parseProof(storyFull);
-    const evidenceLimit = (p) => missingEvidence(p.text) || /\bno (?:measured|verified)\b|\b(?:permission|approval|consent)\b.{0,60}\b(?:not|unknown|pending)\b/i.test(p.text);
+    const evidenceLimit = (p) => missingEvidence(p.text) || /\bno (?:measured|verified)\b|\b(?:permission|approval|consent)\b.{0,60}\b(?:not|unknown|pending|absent|withdrawn|revoked|declined)\b/i.test(p.text);
     const own = genericCo ? [] : items.filter(i => !evidenceLimit(i) && (i.kind === 'result' || i.kind === 'quote' || (i.kind === 'title' && i.figure)));
-    const evidenceNote = (p) => evidenceLimit(p) ? 'an evidence or permission limit, not a customer result' : !p.figure && /\b(?:said|says|reported|felt)\b/i.test(p.text) ? 'reported experience, not measured proof' : KIND_NOTE[p.kind];
+    const evidenceNote = (p) => evidenceLimit(p) ? 'an evidence or permission limit, not a customer result' : !p.figure && /\b(?:said|says|reported|felt|according to)\b/i.test(p.text) ? 'reported experience, not measured proof' : KIND_NOTE[p.kind];
     const elsewhere = items.filter((i) => !own.includes(i));
     const first = isGenericName(name) ? '' : name.replace(/\s*\(.*\)\s*$/, '').split(/\s+/)[0];
     const greeting = first ? `Hi ${first},` : 'Hello,';
@@ -86,7 +91,7 @@ ${items.length > 1 || (items.length === 1 && own.length === 0) ? `**What each pa
     output += generateRequestEmail(greeting, co, own, type, args.use_case || '', incentive, P, ctx.model, role);
     output += `
 
-*Notes for you, not part of the email: the time in the email (5 minutes to write, 15-20 minutes for a call) is an example, so change it to what you will really ask for.${args.use_case ? '' : ' use case was not given, so the email names no usage; add it if the customer should know where the quote will appear.'} Review sites suit software products; for other businesses a named reference call or a case study is the usual proof.*
+*Notes for you, not part of the email: all suggested times in the email are planning examples; confirm the actual effort before sending.${args.use_case ? '' : ' Usage was not given; agree the channel and scope with the customer before collecting permission.'} Review sites suit software products; for other businesses a named reference call or a case study is the usual proof.*
 
 ---
 
@@ -98,12 +103,12 @@ ${generateInterviewQuestions(type, P, co, role, ctx.v, ctx.model, w, own)}
 
 ## Testimonial Templates
 
-*Sentence starters to offer the customer. The customer completes them in their own words and approves the final text; nothing below is a quote until they do.*
+*Use these complete prompts to collect the customer’s own words. Do not draft a customer quote without their answer and approval.*
 
 ### Short Format (1-2 sentences)
 *Draft for customer wording review; publication channel and attribution require approval.*
 
-Starter: "Since we started with ${P}, ..."
+Ask: "What changed or stayed the same after you started using ${P}? Which part of that experience would you permit us to quote?"
 ${own.length ? `\nFact to check with the customer before quoting: ${endSentence(capFirst(clipEcho(own[0].shown, 220)))}\n` : ''}
 ${isGenericName(name) ? (role || 'Contact') : name}${isGenericName(name) || !role ? '' : `, ${role}`} at ${company}
 
@@ -112,7 +117,7 @@ ${isGenericName(name) ? (role || 'Contact') : name}${isGenericName(name) || !rol
 ### Medium Format (3-4 sentences)
 *For: Case study pull quotes, sales deck*
 
-Starters: "Before ${P}, ..." then "With ${P}, ..." then "What I value most is ..."
+Ask: "What was the work like before ${P}, what is it like now, and what worked or did not work for your team?" Record the answer without changing its meaning, then request approval of the exact excerpt.
 ${own.length ? `\nFacts to check with the customer before quoting:\n${own.slice(0, 3).map((p) => `- ${endSentence(capFirst(clipEcho(p.shown, 220)))}`).join('\n')}\n` : ''}
 ${isGenericName(name) ? (role || 'Contact') : name}${isGenericName(name) || !role ? '' : `, ${role}`} at ${company}
 
@@ -121,7 +126,7 @@ ${isGenericName(name) ? (role || 'Contact') : name}${isGenericName(name) || !rol
 ### Long Format (Full paragraph)
 *For: Case studies, press releases, testimonial pages*
 
-Starters: "At ${co}, the problem was ..." then "We chose ${P} because ..." then "The ${w.rollout} was ..." then "Within ... we saw ..."
+Ask the customer to describe the original problem, selection decision, ${w.rollout} and observed outcome. Include unchanged or adverse outcomes, the period and any measurement limits. Return the exact proposed paragraph for correction and permission.
 ${own.length ? `\nFacts to check with the customer before quoting:\n${own.slice(0, 4).map((p) => `- ${endSentence(capFirst(clipEcho(p.shown, 220)))}`).join('\n')}\n` : ''}
 ${isGenericName(name) ? (role || 'Contact') : name}${isGenericName(name) || !role ? '' : `, ${role}`} at ${company}
 
@@ -139,7 +144,7 @@ ${isGenericName(name) ? (role || 'Contact') : name}${isGenericName(name) || !rol
 ### Before Request
 - [ ] Confirm customer satisfaction (NPS/CSAT check)
 - [ ] Review account health and relationship history${args.relationship_context ? `: ${context}` : ''}
-- [ ] Identify specific success metrics to highlight
+- [ ] Identify observed outcomes and measurement limits, including unchanged or adverse results
 - [ ] Prepare any incentive details
 
 ### Request Phase
@@ -219,7 +224,7 @@ ${greeting}
 
 I'm writing to ask about your experience.
 ${about}
-Your story is exactly the kind that helps others facing similar challenges.
+The interview can cover what worked, what did not and what remains unmeasured.
 
 Would you be open to a brief video interview? Here's what it looks like:
 
@@ -245,10 +250,10 @@ I'd love to tell your story in a detailed case study. This would include:
 
 - **Interview:** 30-45 minute call about your journey
 - **Draft review:** You approve all content before publishing
-- **Exposure:** Featured on our website, and in our newsletter if you agree
+- **Usage:** We would agree the publication channel, attribution and exact wording with you first
 ${incentive ? `- **Thank you:** ${incentive}` : ''}
 
-Would you be open to a quick call to discuss? I can share examples of past case studies we've done if that helps.
+Would you be open to a quick call to discuss the scope and permission before deciding whether to take part?
 
 Best,
 
@@ -262,12 +267,12 @@ I'm writing to ask about your experience.
 ${about}
 Your experience with ${P} would really help others make informed decisions.
 
-Would you be willing to leave a quick review? Send them the link to the review page (add it before sending).
+Would you be willing to write a review? If so, I will confirm the review page and share its link.
 
 It takes only a few minutes, and you can be as detailed or brief as you'd like.
 ${incentive ? `\nAs a thank you: ${incentive}` : ''}
 
-Your honest feedback helps others like you find solutions that work. It would also help us understand what worked and what needs to improve.
+Please describe your own experience, including what did not work or stayed the same. We would like to understand it regardless of whether the review is favourable.
 
 Thanks for considering,
 
@@ -279,16 +284,16 @@ ${greeting}
 
 I'm writing to ask about your experience.
 ${about}
-A prospect who is evaluating ${P} would like to hear directly from someone who has been through the journey. (Name the prospect and their challenge in this paragraph, only if it is similar to what ${company} had.)
+Would you consider a reference call if we identify a relevant prospective buyer? Before any introduction, we would explain their situation and ask your permission to share your contact details.
 
-Would you be open to a brief reference call? Here's what it involves:
+A call would involve:
 
 - **Time:** 15-20 minutes at your convenience
 - **Topics:** Your experience with ${P} and results you've seen
 - **When:** We'll coordinate with your availability
 ${incentive ? `- **Thank you:** ${incentive}` : ''}
 
-These conversations are incredibly valuable to prospects making big decisions. I'll make sure it's scheduled at a time that works for you.
+You can decide whether the situation is relevant and decline any request. We would agree the participants, topics and timing with you before scheduling.
 
 Would you be willing?
 
@@ -313,7 +318,7 @@ const ROLE_QUESTIONS = [
         ]],
     [/product|pricing|billing|packaging/i, 'product', [
             'How did the way you launch or change pricing and packaging change, and how long does a change take now?',
-            'What did your finance and engineering teams stop having to do by hand?',
+            'Which tasks did your finance and engineering teams still do by hand, and which changed?',
             'What would you tell another product leader about moving off the old setup?'
         ]],
     [/engineer|developer|\bqa\b|devops|platform/i, 'engineering', [
@@ -327,18 +332,18 @@ const ROLE_QUESTIONS = [
             'What did your security or architecture review need to see?'
         ]],
     [/support|customer (?:service|experience|success)|\bcx\b/i, 'support', [
-            'How did your team\'s day change once the product took over the routine work?',
+            'What changed or stayed the same in your team\'s routine work, and which tasks still needed people?',
             'What did your agents think of it in the first month?',
             'Which kinds of cases do you still keep with people, and why?'
         ]],
     [/sales|marketing|revenue|growth|\bcro\b|distribution|national/i, 'revenue', [
             'What changed in the way your reps or campaigns work?',
-            'Which number moved first, and how soon did you see it?',
+            'Which numbers changed or stayed the same, over what period, and where were they recorded?',
             'How did you get your team to adopt it?'
         ]],
     [/operations|\bops\b|\bcoo\b|logistics|supply|transport|fleet|dispatch|last-mile|warehouse/i, 'operations', [
             'What did a normal day look like for your team before, and what is different now?',
-            'Which part of the daily work got easier first, and which part did not change?',
+            'Which parts of the daily work became easier, harder or stayed the same?',
             'How did your frontline team react in the first weeks?'
         ]],
     [/investment|portfolio|allocat|\bcio\b/i, 'investment', [
@@ -376,23 +381,23 @@ function generateInterviewQuestions(type, P, company, role, v, model, w, own) {
 7. How did you first hear about ${P}?
 8. What made you choose ${P} over alternatives?
 9. What was the ${w.rollout} like?
-10. How long did it take to ${w.reach}?
+10. Did you observe any results? If so, when, and what record supports them?
 
 ### Results
 11. What changed, if anything?
 12. What records show the starting point, current value and period? Keep unmeasured values unknown.
-13. How has this impacted your team's day-to-day?
+13. What changed or stayed the same in your team's daily work?
 14. What stayed the same or became harder with ${P}?
 ${figures.map((f, i) => `${15 + i}. You told us: "${clipEcho(f.text, 160)}". What was the figure before, what is it now, over what period, and who measured it?`).join('\n')}
 
 ### Recommendation
 ${15 + figures.length}. What would you tell someone considering ${P}?
-${16 + figures.length}. Who would you recommend ${P} to?
+${16 + figures.length}. Who, if anyone, would ${P} suit, and who would it not suit?
 
 ${roleBlock(role)}
 ${v ? `### Questions on the Measures ${cap(v.name)} Buyers Look For
 
-${v.metrics.slice(0, 3).map((m, i) => `${i + 1}. How did ${m} change after the ${w.rollout}? What was it before, and over what period?`).join('\n')}
+${v.metrics.slice(0, 3).map((m, i) => `${i + 1}. For ${m}, what did you measure before and after the ${w.rollout}, if anything? Give the period and source, or leave it unmeasured.`).join('\n')}
 
 ### Context Questions in the Language of ${cap(v.name)}
 Ask these in the past tense, about the time before ${P}:
@@ -403,7 +408,7 @@ ${v.discovery.filter((d) => !/\bwill\b/i.test(d)).slice(0, 3).map((d, i) => `${i
 *Terms this sector's buyers use, to listen for in the answers: ${v.vocabulary.slice(0, 6).join(', ')}.*
 ` : `### Questions on Measures
 
-1. Which one measure did the customer's leadership watch before, and what is it now? Ask for the value before, the value after and the period.
+1. Which one measure did the customer's leadership watch before, and what is it now? Ask for the value before, the value after and the period, or leave it unmeasured.
 2. What did the work cost them in time, money or risk before ${P}, and what does it cost now?
 3. Which part of the result would the customer's own manager or committee stand behind in writing?
 `}
@@ -416,16 +421,16 @@ ${v.discovery.filter((d) => !/\bwill\b/i.test(d)).slice(0, 3).map((d, i) => `${i
         video_interview: `
 
 ### Video-Specific Questions
-${n}. What was the moment you knew ${P} was working?
+${n}. When did you first have enough evidence to judge ${P}, and what did it show?
 ${n + 1}. If you could go back, what would you tell yourself about this decision?
 ${n + 2}. What surprised you most about working with us?`,
         case_study_interview: `
 
 ### Case Study Deep-Dive
-${n}. Can you walk me through a specific scenario where ${P} made a difference?
+${n}. Can you walk me through a specific scenario and explain what changed or stayed the same with ${P}?
 ${n + 1}. What metrics do you track? How have they changed?
 ${n + 2}. What does your team's workflow look like now vs. before?
-${n + 3}. Any unexpected benefits?`,
+${n + 3}. Were there unexpected benefits, costs or problems, or no change?`,
         reference_call: `
 
 ### Reference-Specific
@@ -452,8 +457,8 @@ function generateTypeSpecificGuidance(type, name, company, useCase, incentive, P
 1. Start with easy warm-up questions
 2. Let them tell their story naturally
 3. Ask follow-up questions for specifics
-4. Get the "sound bites" you need
-5. End with their recommendation
+4. Check the exact words and their context with the customer
+5. Ask who the product would and would not suit
 
 ### Post-Production
 - Edit down to 2-3 minute highlight (Example figure: replace with your own)
@@ -500,8 +505,8 @@ function generateTypeSpecificGuidance(type, name, company, useCase, incentive, P
 ### Gentle Prompts to Include
 If they ask what to write:
 - Your role and how you use ${P}
-- What problem it solves for you
-- Your favorite feature
+- What you tried to do and whether the product helped
+- Which features worked, did not work or were unused
 - Any areas for improvement
 - Who you'd recommend it to
 

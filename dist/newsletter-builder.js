@@ -25,7 +25,8 @@ export function generateNewsletter(args) {
     const ctx = readContext(undefined, { seller: [product, args.cta_goal], context: [topic, args.key_points, args.previous_topics], buyer: [parts.audience] }, args.your_sector);
     const vFull = ctx.v;
     const casual = /conversational|casual|friendly|warm|informal|relaxed/i.test(tone);
-    const productName = product ? productParts(product).name : '';
+    const descriptionOnly = /^(?:workflow|software|service|platform|tool|system|support|solution)\s+(?:for|to)\b/i.test(product);
+    const productName = product && !descriptionOnly ? productParts(product).name : '';
     const productDescription = product ? productParts(product).description : '';
     const who = productName || (parts.company && parts.company.split(/\s+/).length <= 4 ? parts.company : (companyFrom(topic) || parts.company)) || (ctaProduct ? productParts(ctaProduct).name : '');
     const readers = parts.audience ? shortReaders(parts.audience) : '';
@@ -45,7 +46,7 @@ export function generateNewsletter(args) {
     const soft = soft0.removed.length ? soft0 : { text: args.key_points || '', removed: [] };
     const softP = softenClaims(parts.problem || '');
     const readerPoints = soft.text.replace(/\bDo not claim (?:a )?measured improvement yet\.?/gi, 'No measured improvement has been established.');
-    const all = readPoints(readerPoints, { problem: soft0.removed.length || softP.removed.length ? softP.text : parts.problem || '' });
+    const all = readPoints(readerPoints, { problem: soft0.removed.length || softP.removed.length ? softP.text : parts.problem || '' }).map(p => p.role === 'capability' && /^(?:assign|count|record|inspect|audit|name|identify)\s+/i.test(p.text) ? { ...p, clause: true } : p);
     const orders = all.filter((p) => p.role === 'instruction').map((p) => p.text);
     const pts = all.filter((p) => p.role !== 'instruction');
     const problems = pts.filter((p) => p.role === 'problem');
@@ -207,8 +208,8 @@ export function generateNewsletter(args) {
     }
     const preview = (i) => previewOptions[i % previewOptions.length];
     // ---- closing -----------------------------------------------------------------------------------------------------
-    const about = productName && productDescription && productDescription !== productName && productDescription.length > productName.length + 3 ? `${productName} is ${lower(productDescription.replace(/\.$/, ''))}. ` : '';
-    const next = VERB_START.test(ctaGoal) ? `you can ${lower(ctaGoal)}` : `the next step is ${lower(ctaGoal)}`;
+    const about = descriptionOnly ? `This issue concerns ${lower(product)}. ` : productName && productDescription && productDescription !== productName && productDescription.length > productName.length + 3 ? `${productName} is ${lower(productDescription.replace(/\.$/, ''))}. ` : '';
+    const next = VERB_START.test(ctaGoal) ? `you can ${ctaGoal.charAt(0).toLowerCase() + ctaGoal.slice(1)}` : `the next step is ${lower(ctaGoal)}`;
     const closing = checkIssue ? `${cap(ctaGoal)}.` : `${about}${casual ? 'If this made you think, ' : 'If you would like to take this further, '}${next}.`;
     // the button says the action in a few words: a bracket note is left out, and a long product name is the short name the issue already uses
     const buttonText = (() => {
@@ -224,7 +225,7 @@ export function generateNewsletter(args) {
     const missing = [];
     if (!given)
         missing.push({ field: 'key_points', change: v ? "the sections, which now come from the sector's own objection, measures and questions instead of your points" : 'the sections, which cannot be written without points or a sector' });
-    if (!who)
+    if (!who && !product)
         missing.push({ field: 'your_product', change: 'the closing paragraph and every place the draft names what you sell' });
     const notes = [];
     if (soft.removed.length)

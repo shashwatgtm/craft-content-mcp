@@ -274,6 +274,8 @@ const SERVED_STOP = /\s+(?:that|to|with|who|which|so|in|by|on|from|across|where|
 function servedFrom(raw) {
     const t = raw.replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim().replace(SERVED_STOP, '').replace(/[.,;:!?]+$/, '').trim();
     const w = t.split(/\s+/);
+    if (/\b(?:exceptions|escalations|approvals|handoffs|alerts|tasks|records|transactions|workflows)(?: used)?$/i.test(t))
+        return '';
     if (!t || w.length > 5 || GENERIC_SERVED.test(t) || /^[A-Z][a-z]+[A-Z]|\d{3,}/.test(t) || !/[a-z]s\b/.test(t))
         return '';
     return t;

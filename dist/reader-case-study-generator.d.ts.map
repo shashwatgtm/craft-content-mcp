@@ -1,1 +1,1 @@
-{"version":3,"file":"reader-case-study-generator.d.ts","sourceRoot":"","sources":["../src/reader-case-study-generator.ts"],"names":[],"mappings":"AAAA,OAAO,EAAQ,KAAK,UAAU,EAAE,MAAM,kBAAkB,CAAC;AACzD,wBAAgB,yBAAyB,CAAC,IAAI,EAAE,MAAM,CAAC,MAAM,EAAC,OAAO,CAAC,GAAG,UAAU,CAgBlF"}
+{"version":3,"file":"reader-case-study-generator.d.ts","sourceRoot":"","sources":["../src/reader-case-study-generator.ts"],"names":[],"mappings":"AAAA,OAAO,EAAQ,KAAK,UAAU,EAAE,MAAM,kBAAkB,CAAC;AACzD,wBAAgB,yBAAyB,CAAC,IAAI,EAAE,MAAM,CAAC,MAAM,EAAC,OAAO,CAAC,EAAE,OAAO,UAAQ,GAAG,UAAU,CA2BnG"}

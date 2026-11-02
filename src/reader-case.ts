@@ -5,6 +5,7 @@ export function fact(args: Record<string, unknown>, key: string, fallback: strin
   const raw = args[key];
   if (typeof raw !== 'string' || !raw.trim() || /^(?:unknown|not supplied|not given|none)$/i.test(raw.trim())) return fallback;
   const clean = raw.replace(/[\r\n\t]+/g, ' ').replace(/[–—]/g, ', ').replace(/\\!/g, '.').replace(/!/g, '.').replace(/\s+/g, ' ').trim();
+  if (/\b(?:ignore|disregard|override)\b.{0,80}\binstructions?\b|\b(?:print|reveal|show)\b.{0,30}\bsystem prompt\b/i.test(clean)) return fallback;
   const quote = (value: string) => escapePiece(dropLoneBackslash(value.replace(/[“”]/g, '"').replace(/[.;]+$/, '')));
   const parts = clean.split(/(?<=[.;])\s+(?=[A-Z])/);
   const selected = match ? parts.find(p => match.test(p)) : clean;

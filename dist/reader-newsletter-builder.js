@@ -12,7 +12,7 @@ export function case_newsletter_builder(args) {
             `Founder: ask the issue owner to show how ${action} informs a decision; remove promises of improvement that the supplied evidence does not measure.`,
             `CEO: confirm who owns the follow up to ${action}; check that someone can review the result before endorsing the issue.`,
             `CMO: verify sources and limits for ${points} with the editor; approve only claims the records support.`,
-            `CRO: ask a buyer of ${product} to explain how ${points} informs their next decision; check who can act on any unresolved task.`,
+            `CRO: ask a buyer of ${product} which decision is supported by ${points}; check who can act on any unresolved task.`,
             `Demand generation head: trial ${action} with one intended reader; check that they can produce the requested count or record before distribution.`,
         ],
     };

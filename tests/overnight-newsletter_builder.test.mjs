@@ -23,3 +23,17 @@ test('denied count direction is not promoted to a reader action',()=>{
  assert.doesNotMatch(s,/Button: Count|Make the count traceable/);
  assert.match(s,/Confirm the reader action before sending/);
 });
+
+test('literal count actions and instruction points remain grammatical without an invented product name',()=>{
+ const s=generateNewsletter({topic:'How teams review hotel booking exceptions',cta_goal:'Count unresolved hotel booking exceptions in one batch with the hotel operations head',key_points:'Assign responsibility for hotel booking exceptions and record the unresolved task count in one batch. Improvement has not been measured.',your_product:'Workflow for hotel booking exceptions used by the hotel operations head',your_sector:'vertical_saas'});
+ const draft=s.split('## Subject Lines')[0];
+ assert.match(draft,/you can count unresolved/);assert.match(draft,/Assign responsibility for hotel booking exceptions/);
+ assert.doesNotMatch(s,/Workflow for hotel booking is workflow|What Workflow for hotel booking brings|at hotel booking exceptions used/);
+ assert.doesNotMatch(s,/give: your product|your product was not given/);
+});
+
+test('a workflow object is not the industry served, while an explicit buyer industry remains usable',async()=>{
+ const {servedIndustry}=await import('../dist/sector.js');
+ assert.equal(servedIndustry({seller:['Workflow for hotel booking exceptions used by the hotel operations head']}).served,'');
+ assert.equal(servedIndustry({seller:['Scheduling software for universities']}).served,'universities');
+});

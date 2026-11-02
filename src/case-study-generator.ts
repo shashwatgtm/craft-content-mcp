@@ -1,12 +1,36 @@
-import { frictionReading } from './text-signals.js';
+import { frictionReading, readSignal, illustrativeProof } from './text-signals.js';
 import { quotedPassages } from './text-signals.js';
 import { SUGGESTION_FOOTER, clipEcho, cap, lowerFirstIfCommon } from './utils.js';
 import { q, readContext, startWords, firstSentence, sentencesOf, fromIndicator, type Vertical, type BusinessModel } from './sector.ts';
-import { parseProof, shortenClauses, fixNumbers, endSentence, lowerFirstWord, isGenericName, proseJoin, plural, type ProofItem, type ProofKind } from './draft.ts';
+import { parseProof, shortenClauses, fixNumbers, endSentence, lowerFirstWord, isGenericName, proseJoin, plural, missingEvidence, type ProofItem, type ProofKind } from './draft.ts';
 // Run 42B round S3: freelancers, solo owners and small firms are not judged as teams
 const SOLO_WORDS = /\b(?:freelancers?|solopreneurs?|sole traders?|self[- ]employed|small business(?:es)?|micro[- ]?business(?:es)?)\b/i;
 
 type Ctx = { v: Vertical | null; model: BusinessModel | null; line: string };
+
+// Preserve a single observed comparison paragraph, including its period and limits.
+// Comma-separated list parsing must not detach "Across ten days in October".
+function caseResultItems(raw: string): ProofItem[] {
+  const items = parseProof(raw);
+  if (/[;\n]/.test(raw) || !/\b(?:pilot|customer|client|team)\b/i.test(raw)) return items;
+  const count = '(?:\\d+(?:\\.\\d+)?|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)';
+  const fromTo = new RegExp('\\b(?:fell|rose|reduced|increased|went)(?:\\s+from)?\\s+('+count+')\\s+to\\s+('+count+')\\b', 'i');
+  const instead = new RegExp('\\brecorded\\s+('+count+')([^.!?;]{1,120})\\binstead of\\s+('+count+')\\b', 'i');
+  const comparison = fromTo.test(raw) ? fromTo : instead;
+  const match = raw.match(comparison);
+  if (!match) return items;
+  const text = fixNumbers(raw.trim()).replace(/[.\s]+$/, '');
+  if (missingEvidence(raw) || illustrativeProof(raw).state === 'affirmed' || readSignal(raw, comparison).state !== 'affirmed') {
+    return [{text,shown:text,label:'',kind:missingEvidence(raw) ? 'missing' : 'unclear',figure:false}];
+  }
+  const words = ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'];
+  const number = (value: string) => words.includes(value.toLowerCase()) ? words.indexOf(value.toLowerCase()) : Number(value);
+  const before = number(comparison === fromTo ? match[1] : match[3]);
+  const after = number(comparison === fromTo ? match[2] : match[1]);
+  const worsening = after > before && /\b(?:exceptions|escalations|errors|delays|failures|failed handoffs|unowned urgent alerts|unresolved tickets)\b/i.test(raw);
+  return [{text,shown:text,label:'',kind:worsening ? 'adverse' : 'result',figure:true}];
+}
+
 
 export function generateCaseStudy(args: {
   your_sector?: string;
@@ -97,7 +121,7 @@ ${v.discovery.map((d, i) => `${i + 1}. ${d}`).join('\n')}
 
 function generateDiscoveryKit(customerName: string, industry: string, product: string, knownResults: string | undefined, ctx: Ctx): string {
   const w = startWords(ctx.model);
-  const classified = parseProof(knownResults || '');
+  const classified = caseResultItems(knownResults || '');
   const usable = classified.filter(p=>p.kind === 'result' || p.kind === 'quote');
   const held = classified.filter(p=>!usable.includes(p));
   return `# Case Study Discovery Kit
@@ -345,7 +369,7 @@ function generateFullCaseStudy(
   const v = ctx.v;
   const w = startWords(ctx.model);
   const generic = isGenericName(customerName);
-  const items = results.trim() && results !== 'not supplied' ? parseProof(results) : [];
+  const items = results.trim() && results !== 'not supplied' ? caseResultItems(results) : [];
   const grp = (k: ProofKind[]) => items.filter((i) => k.includes(i.kind));
   const adverse=grp(['adverse']);
   if(adverse.length)return `# Case Study: ${customerName}
@@ -395,7 +419,7 @@ ${q(quote)}
   const built = [
     `challenge: ${challengeText ? 'given' : 'not found'}`,
     `solution: ${solutionText ? 'given' : 'not found'}`,
-    `results: ${items.length ? `${items.length} ${plural(items.length, 'item')}${items.length > 1 ? ` (${[outcomes.length && `${outcomes.length} ${plural(outcomes.length, 'outcome')}`, quotes.length && `${quotes.length} ${plural(quotes.length, 'quote')}`, titles.length && `${titles.length} story ${plural(titles.length, 'title')}`, claims.length && `${claims.length} company-wide ${plural(claims.length, 'claim')}`, recognition.length && `${recognition.length} ${plural(recognition.length, 'recognition item')}`].filter(Boolean).join(', ')})` : ''}` : 'not found'}`,
+    `results: ${items.length ? `${items.length} ${plural(items.length, 'item')}${items.length > 1 ? ` (${[outcomes.length && `${outcomes.length} ${plural(outcomes.length, 'outcome')}`, quotes.length && `${quotes.length} ${plural(quotes.length, 'quote')}`, titles.length && `${titles.length} story ${plural(titles.length, 'title')}`, claims.length && `${claims.length} company-wide ${plural(claims.length, 'claim')}`, recognition.length && `${recognition.length} ${plural(recognition.length, 'recognition item')}`, missing.length && `${missing.length} evidence ${plural(missing.length, 'limit')}`].filter(Boolean).join(', ')})` : ''}` : 'not found'}`,
     `customer quote: ${quote ? 'given' : quotes.length ? 'taken from the results' : 'not given'}`,
     `industry: ${industryText ? 'given' : 'not given'}`
   ].join('; ');
@@ -405,12 +429,12 @@ ${q(quote)}
   const label = generic ? (() => { let x = customerName; for (let i = 0; i < 4; i++) x = x.replace(/\s*\([^()]*\)/g, ''); return x.replace(/\)+/g, '').replace(/^contact at /i, '').trim(); })() : customerName;
   const anonymousSingle = /^(?:anonymous\b|an? unnamed\b|confidential\b)/i.test(customerName) && !/\b(?:customers|companies|clients|teams|accounts)\b/i.test(customerName) && customerItems.length === 1;
   const manySources = generic && !anonymousSingle && (outcomes.length + quotes.length + titles.length) >= 1;
-  const permissionDenied = /\b(?:permission|approval|consent)\b[^.;]{0,70}\b(?:not|never|unknown|pending|declined|withdrawn)\b|\b(?:no|without)\b[^.;]{0,35}\b(?:permission|approval|consent)\b/i.test(results);
+  const permissionDenied = /\b(?:permission|approval|consent)\b[^.;]{0,70}\b(?:not|never|unknown|pending|absent|declined|withdrawn|revoked)\b|\b(?:no|without)\b[^.;]{0,35}\b(?:permission|approval|consent)\b/i.test(results);
   const headline = manySources ? `${product}${industryText ? ` in ${industryText}` : ''}: what customers report` : lead ? capFirst(lead.text.replace(/^customer (?:quote|words):\s*/i, '')) : `${label} and ${product}`;
   const headlineOk = (lead && headline.length <= 160) || manySources;
   const reported = (outcomes.length ? outcomes : quotes.length ? quotes : titles).slice(0, 2);
 
-  const genericNote = generic && items.length > 1 ? `
+  const genericNote = manySources && items.length > 1 ? `
 > **Whose results these are.** customer name is ${q(customerName)}, which does not name a company, and the results name their own sources. A case study tells one customer's story, so each result below stays with the company or source that reported it, and none is presented as this customer's own. To write the single story, pick one customer from the list and run this tool again with that name and only its results.
 ` : '';
 

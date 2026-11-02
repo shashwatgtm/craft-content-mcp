@@ -13,3 +13,25 @@ test('Overnight case study: an anonymous single pilot keeps its word-number resu
  const r=await call('case_study_generator',{customer_name:'Anonymous regional fleet',your_product:'Dispatch planning software',challenge:'Daily route adjustments took four hours',solution:'Give each depot a shared exception queue',results:'October pilot: route adjustment time fell from four to three hours across ten dispatch days. Customer publication permission has not been granted.'});
  const s=r.content.map(c=>c.text||'').join('\n');assert.match(s,/Your results:\*\* they carry a figure/);assert.match(s,/Use not approved/);assert.match(s,/Distribution held/);assert.doesNotMatch(s,/Other Dispatch planning software customers|own figures are not given yet|### Social media version/);assert.match(s,/Keep the stated hold/);
 });
+
+test('equivalent word-number comparisons keep the period and anonymous single-customer attribution',async()=>{
+ for(const results of ['October pilot: dispatch exceptions fell from ten to six per reviewed batch across ten days. This was uncontrolled. Customer publication permission has not been granted.','Across ten days in October, one uncontrolled pilot recorded six dispatch exceptions per batch instead of ten. Publication permission is still absent.']){
+  const r=await call('case_study_generator',{customer_name:'Anonymous regional fleet',your_product:'Dispatch planning software',challenge:'Ten exceptions per batch',solution:'Shared review queue',results});
+  const s=r.content.map(c=>c.text||'').join('\n');
+  assert.match(s,/Your results:\*\* they carry a figure/);assert.match(s,/Distribution held/);assert.match(s,/ten days/);assert.match(s,/uncontrolled/);
+  assert.doesNotMatch(s,/No customer outcome was given|Whose results these are|results: 2 items \(\)|own figures are not given/);
+ }
+});
+test('an increase in adverse operational counts holds promotional case-study copy',async()=>{
+ for(const results of ['October pilot: dispatch exceptions rose from six to ten per reviewed batch across ten days. This was uncontrolled.','One pilot recorded ten dispatch exceptions per batch instead of six.']){
+  const r=await call('case_study_generator',{customer_name:'Anonymous regional fleet',your_product:'Dispatch planning software',challenge:'Six exceptions per batch',solution:'Shared review queue',results});
+  const s=r.content.map(c=>c.text||'').join('\n');
+  assert.match(s,/Publication held: adverse customer result/);assert.match(s,/supports an internal account review, not a success story/);assert.match(s,/Keep the stated hold/);assert.doesNotMatch(s,/## Distribution Formats|### Social media version/);
+ }
+});
+test('denied and hypothetical comparisons do not become observed case-study outcomes',async()=>{
+ for(const results of ['The pilot did not reduce exceptions from ten to six. No measured outcome is available.','In a hypothetical pilot, exceptions fell from ten to six.']){
+  const r=await call('case_study_generator',{customer_name:'Anonymous regional fleet',your_product:'Dispatch planning software',challenge:'Ten exceptions per batch',solution:'Shared review queue',results});
+  const s=r.content.map(c=>c.text||'').join('\n');assert.match(s,/No customer outcome was given/);assert.doesNotMatch(s,/\*\*Outcomes\*\*/);
+ }
+});

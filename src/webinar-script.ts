@@ -624,7 +624,7 @@ function generateScriptSection(section: { name: string; duration: number; purpos
         `Put your questions in the chat at any time; we have set time aside for them near the end.${w.includePolls ? ' We will run polls along the way, so keep the poll window open.' : ''}`
       ]);
     case 'Speaker Introduction':
-      return seg(section, 'Speaker slide', [w.haveSpeakers ? `With us today: ${speakersSaid(w)}.` : `I am your host for this session${w.who ? `, from ${w.who}` : ''}. Over the next ${w.minutes} minutes we will look at the problem, the evidence on record and what to do first. (Host: add your name and one line on the work you have done in this area.)`]);
+      return seg(section, 'Speaker slide', [w.haveSpeakers ? `With us today: ${speakersSaid(w)}.` : `I am your host for this session${w.who ? `, from ${w.who}` : ''}. Over the next ${w.minutes} minutes we will look at the problem, the evidence on record and what to do first.`]);
     case 'Agenda & Learning Objectives':
       return seg(section, 'Agenda slide', [
         t.length ? agendaLine(w) : 'We will cover this topic.',

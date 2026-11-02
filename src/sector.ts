@@ -2,7 +2,7 @@ import { billingLine, detectBilling } from './verticals.ts';
 import { nonRecurringBilling } from './verticals.ts';
 import { clearanceAdvice } from './text-signals.js';
 import { sellerSectorLabel } from './text-signals.js';
-import { hasSignal, signal } from './text-signals.ts';
+import { hasSignal, signal, readSignal } from './text-signals.ts';
 // Run 19 R19-35 (owner decision D80): helpers shared by the eight tools for the problems of the real-world test.
 // They read the sector and the business model from what the user typed (src/verticals.ts, the one data file), quote typed
 // text instead of pasting it into fixed sentences, split typed lists, and pick whole sentences from a source text.
@@ -352,7 +352,7 @@ export function readContext(explicitModel: unknown, raw: ReaderInput, yourSector
   const chargeRead = detectModel(explicitModel, scrubbed);
   if (chargeRead.how === 'read') m = chargeRead;
   if (m.how !== 'input' && nonRecurringBilling(nonEmpty(scrubbed.seller).join(' . '))) m = { model: null, how: 'unknown' };
-  if (m.how !== 'input' && !detectBilling(explicitModel, scrubbed).model && /\b(?:IT services|technology services|operations and transformation company|managed services|outsourcing|consulting)\b/i.test(nonEmpty(scrubbed.seller).join(' . '))) m = {model:'services',how:'read'};
+  if (m.how !== 'input' && !detectBilling(explicitModel, scrubbed).model && readSignal(nonEmpty(scrubbed.seller).join(' . '), /\b(?:IT services|technology services|operations and transformation company|managed services|outsourcing|consulting)\b/i).state === 'affirmed') m = {model:'services',how:'read'};
   if (m.how === 'sector') m = { model: null, how: 'unknown' };
   const source = v ? (forced ? 'seller' : explainSector(input).source) : null;
   const chosen = gs.given && !!v;

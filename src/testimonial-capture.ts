@@ -241,7 +241,7 @@ ${useCase ? `- **Usage:** ${useCase}\n` : ''}${incentive ? `- **Thank you:** ${i
 I can even draft something based on what you've shared, and you just edit/approve. Would that work?
 
 Thanks for considering,
-[Your name]
+
 `,
     video_interview: `
 **Subject:** Invite: share your story in a quick video
@@ -265,7 +265,7 @@ If you say yes, tell me whether you want us to handle the production so you only
 Would next week work for you?
 
 Best,
-[Your name]
+
 `,
     case_study_interview: `
 **Subject:** ${company === 'your company' ? 'Feature your company' : `Feature ${company}`} in our next case study?
@@ -282,7 +282,7 @@ ${incentive ? `- **Thank you:** ${incentive}` : ''}
 Would you be open to a quick call to discuss? I can share examples of past case studies we've done if that helps.
 
 Best,
-[Your name]
+
 `,
     g2_review: `${reviewNote}
 **Subject:** Quick favor: a short review of ${P}?
@@ -301,7 +301,7 @@ ${incentive ? `\nAs a thank you: ${incentive}` : ''}
 Your honest feedback helps others like you find solutions that work. (And selfishly, helps us understand what we're doing right!)
 
 Thanks for considering,
-[Your name]
+
 `,
     reference_call: `
 **Subject:** Would you be a reference for ${P}?
@@ -324,7 +324,7 @@ These conversations are incredibly valuable to prospects making big decisions. I
 Would you be willing?
 
 Thanks,
-[Your name]
+
 `
   };
 

@@ -224,7 +224,7 @@ Would you be open to a 20-minute call where I ask a few questions about your exp
 Would a time next week work for a quick call?
 
 Thanks,
-[Your name]
+
 
 ---
 
@@ -454,7 +454,7 @@ ${story}
 
 ### About ${customerName}
 
-| | |
+| Detail | Supplied information |
 |---|---|
 | **Customer** | ${customerName} |
 | **Industry** | ${industryText || 'not given (add customer industry)'} |
@@ -467,7 +467,7 @@ ${genericNote}
 
 What the team was dealing with: ${challengeText ? challengeText : 'not found. Ask the customer what was happening before they started.'}
 
-**To finish this section** (ask the customer, and use their words):
+**Before publication, the account owner should confirm with the customer:**
 - What the problem cost them, with the starting value of ${v ? `one of: ${askMetrics}` : askMetrics}.
 ${v ? `- Interview question in the sector's language: "${v.discovery[0]}"` : '- What had they tried before, and why did it not work?'}
 
@@ -477,7 +477,7 @@ ${v ? `- Interview question in the sector's language: "${v.discovery[0]}"` : '- 
 
 What was put in place: ${solutionText ? solutionText : 'not found. Ask what was set up, by whom and in what order.'}
 
-**To finish this section:**
+**Before publication, the account owner should verify:**
 - Why ${customerName} chose ${product}${v ? `, and which alternative it weighed (a common reaction in ${sectorName}: "${v.objections[0].objection}")` : ''}.
 - How the ${w.rollout} went, and how long it took to ${w.reach}. Use only a duration the customer confirms.
 ${v ? `- Words to use as the customer says them: ${v.vocabulary.slice(0, 5).join(', ')}.` : ''}
@@ -488,7 +488,7 @@ ${v ? `- Words to use as the customer says them: ${v.vocabulary.slice(0, 5).join
 
 ${items.length ? outcomeBlocks.join('\n\n') : 'No results were given.'}
 ${noOutcome}
-**To finish this section:** for each figure, give the value before, the value after and the period it was measured over. ${v ? `A strong proof point here: ${v.proofShape}` : ''}${hasCustomerOutcome && v && missingMeasures(v, results).length < v.metrics.length ? ` Measures of this sector that the results do not yet show: ${proseJoin(missingMeasures(v, results).slice(0, 4))}. Add one if the customer tracks it.` : ''}
+**Before publication, the evidence owner should check each figure:** record the value before, the value after and the measurement period. ${v ? `A strong proof point here: ${v.proofShape}` : ''}${hasCustomerOutcome && v && missingMeasures(v, results).length < v.metrics.length ? ` Measures of this sector that the results do not yet show: ${proseJoin(missingMeasures(v, results).slice(0, 4))}. Add one if the customer tracks it.` : ''}
 
 ---
 

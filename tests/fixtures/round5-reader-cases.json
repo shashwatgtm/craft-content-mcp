@@ -1,0 +1,77 @@
+[
+  {
+    "tool": "case_study_generator",
+    "args": {
+      "customer_name": "Anonymous regional fleet",
+      "your_product": "Dispatch planning software",
+      "challenge": "Daily route adjustments took four hours",
+      "solution": "Give each depot a shared exception queue",
+      "results": "October pilot: route adjustment time fell from four to three hours across ten dispatch days. Customer publication permission has not been granted."
+    }
+  },
+  {
+    "tool": "newsletter_builder",
+    "args": {
+      "topic": "Why SOC teams still carry an alert backlog after adding automation",
+      "cta_goal": "Ask readers to count unowned urgent alerts in one shift",
+      "key_points": "Name one owner per urgent alert. Separate false positives from delayed responses. Do not claim a measured improvement yet.",
+      "your_product": "Alert triage software"
+    }
+  },
+  {
+    "tool": "webinar_script",
+    "args": {
+      "topic": "Reduce invoice exceptions before the payment run",
+      "target_audience": "Accounts payable heads at regional insurers",
+      "webinar_type": "educational",
+      "key_takeaways": "Count exceptions; name an approval owner; compare cycle time before and after one batch.",
+      "your_product": "Invoice processing service"
+    }
+  },
+  {
+    "tool": "content_repurposer",
+    "args": {
+      "source_content": "A regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch days in October. Dispatchers used one exception queue instead of calling each depot. This is one uncontrolled pilot, not a promise for other fleets. Ask readers to measure one dispatch shift before changing their process.",
+      "source_type": "blog_post",
+      "your_sector": "logistics_tech"
+    }
+  },
+  {
+    "tool": "thought_leadership_series",
+    "args": {
+      "topic": "AI assisted contract review needs an accountable reviewer",
+      "your_take": "The useful unit is an accepted redline, not a generated clause.",
+      "target_reader": "Legal operations leaders at SaaS companies",
+      "proof_points": "In two interviews, reviewers said missing source references slowed review. No time saving study has been run."
+    }
+  },
+  {
+    "tool": "testimonial_capture",
+    "args": {
+      "customer_name": "Pilot contact",
+      "customer_company": "Anonymous regional insurer",
+      "success_story": "The AP head said the exception queue was easier to inspect; no measured time saving. Written approval for a quote has not been received.",
+      "testimonial_type": "written_quote",
+      "your_product": "Invoice processing service",
+      "customer_role": "Accounts payable head"
+    }
+  },
+  {
+    "tool": "sales_enablement_content",
+    "args": {
+      "product": "Network incident automation",
+      "target_persona": "Network operations director",
+      "proof_points": "One October pilot reduced median recovery time from 80 to 50 minutes across 12 incidents; not controlled.",
+      "common_objections": "Our NOC already has an incident tool. We cannot risk automatic changes on the live network."
+    }
+  },
+  {
+    "tool": "craft_content_improver",
+    "args": {
+      "content": "Our revolutionary AI guarantees 50% faster claim resolution for every insurer. One pilot customer said the queue felt clearer, but we have not measured resolution time. Book a demo to transform operations.",
+      "content_type": "landing_page",
+      "goal": "Publish a defensible service page",
+      "audience": "Claims operations heads at regional insurers"
+    }
+  }
+]

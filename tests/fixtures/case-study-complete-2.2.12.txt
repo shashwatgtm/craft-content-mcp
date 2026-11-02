@@ -28,7 +28,7 @@ Any priced offer below requires a written quote and buyer agreement.
 
 ### About FlowOps
 
-| | |
+| Detail | Supplied information |
 |---|---|
 | **Customer** | FlowOps |
 | **Industry** | Logistics |
@@ -41,7 +41,7 @@ Any priced offer below requires a written quote and buyer agreement.
 
 What the team was dealing with: Dispatchers spent four hours a day planning routes by hand and late deliveries hit 18 percent.
 
-**To finish this section** (ask the customer, and use their words):
+**Before publication, the account owner should confirm with the customer:**
 - What the problem cost them, with the starting value of one of: on time delivery, cost per shipment or per order and order cycle time.
 - Interview question in the sector's language: "Which systems hold your orders, shipments and stock today, and who owns the data in them?"
 
@@ -51,7 +51,7 @@ What the team was dealing with: Dispatchers spent four hours a day planning rout
 
 What was put in place: RouteIQ planned routes automatically and sent drivers live updates.
 
-**To finish this section:**
+**Before publication, the account owner should verify:**
 - Why FlowOps chose RouteIQ, and which alternative it weighed (a common reaction in logistics tech: "We already have a system for this").
 - How the rollout went, and how long it took to see first results. Use only a duration the customer confirms.
 - Words to use as the customer says them: shipment, carrier, consignment, lead time, exception.
@@ -66,7 +66,7 @@ What was put in place: RouteIQ planned routes automatically and sent drivers liv
 - Planning time cut from 4 hours to 30 minutes.
 - 12% lower fuel cost.
 
-**To finish this section:** for each figure, give the value before, the value after and the period it was measured over. A strong proof point here: A before and after of on time delivery or cost per shipment on one lane, site or region, measured over a full cycle of busy and quiet weeks. Measures of this sector that the results do not yet show: on time delivery, cost per shipment or per order, order cycle time and exception rate. Add one if the customer tracks it.
+**Before publication, the evidence owner should check each figure:** record the value before, the value after and the measurement period. A strong proof point here: A before and after of on time delivery or cost per shipment on one lane, site or region, measured over a full cycle of busy and quiet weeks. Measures of this sector that the results do not yet show: on time delivery, cost per shipment or per order, order cycle time and exception rate. Add one if the customer tracks it.
 
 ---
 
@@ -118,3 +118,22 @@ Quick success story: Late deliveries down 60%. Add the link to the full story wh
 - Every figure comes from the customer or a page you can cite; page claims stay labelled as the vendor's own claims.
 - Nothing in the recognition or company-wide claims is shown as this customer's result.
 
+
+
+## Reading the answer
+
+For logistics tech case: The story is a draft based on the supplied results. Customer permission and source checks remain separate decisions. The conclusion needs review if new evidence changes the original result records and written permission for the exact story.
+
+## Decisions by role
+
+Proposed owners. Confirm the named person before acting.
+
+Founder: For logistics tech case, check the central claim against the supplied evidence before endorsing the customer story.
+
+CEO: For logistics tech case, confirm who can approve the customer story before committing the company to its claims.
+
+CMO: For logistics tech case, check the original result records and written permission for the exact story before approving the final copy.
+
+CRO: For logistics tech case, ask the relevant buyer whether the customer story answers their next decision before sales use.
+
+Demand generation head: For logistics tech case, test the stated reader action and destination before distributing the customer story.

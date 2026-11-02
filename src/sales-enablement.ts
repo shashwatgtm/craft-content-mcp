@@ -1,3 +1,4 @@
+import { readSignal } from './text-signals.js';
 import { lowerFirstIfCommon, cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { q, qs, clipWords, readContext, answerFor, objectionKind, proofFor, sectorNotes, startWords, type ObjectionKind, type Vertical } from './sector.ts';
 import { startsImperative } from './rw-content.ts';
@@ -400,7 +401,7 @@ function generateObjectionHandler(
   strongestText = ''
 ): { label: string; acknowledge: string; reframe: string; proof: string; facts: string; pattern: string; bridge: string; fullScript: string } {
   // A compound objection must not hide a stated production risk behind its incumbent-tool clause.
-  const operationalRisk = /\b(?:cannot|can't|can not|won't|will not) (?:accept |take |tolerate )?risk\b|\b(?:worried|concerned) about\b|\b(?:unsafe|unapproved|uncontrolled)\b/i.test(objection)
+  const operationalRisk = readSignal(objection, /\b(?:cannot|can't|can not|won't|will not) (?:accept |take |tolerate )?risk\b|\b(?:worried|concerned) about\b|\b(?:unsafe|unapproved|uncontrolled)\b/i).state === 'affirmed'
     && /\b(?:automatic|automated|autonomous|live network|production|live systems?)\b/i.test(objection);
   if (operationalRisk) {
     const acknowledge = 'Your existing workflow and live environment need to stay protected.';

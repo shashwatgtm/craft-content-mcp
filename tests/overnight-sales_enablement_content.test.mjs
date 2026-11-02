@@ -40,3 +40,12 @@ test('ROI introduction distinguishes explicitly attributed customer outcomes fro
  assert.doesNotMatch(pilot,/Let me share what customers have seen:/);
  assert.match(pilot,/supplied result, with its scope and limitations/);
 });
+
+test('denying operational concern does not select a live-risk objection script',()=>{
+ for(const common_objections of ['We are not worried about automatic actions. Our concern is price.','We are not concerned about automatic actions in production. We already have a provider.','The automatic process is not unsafe. We need to compare the cost.']){
+  const s=generateSalesEnablement({...salesBase,common_objections});
+  assert.doesNotMatch(s,/an operational risk objection|Would a read-only review or a non-production simulation/);
+ }
+ const s=generateSalesEnablement({...salesBase,common_objections:'We are worried about automatic actions in production.'});
+ assert.match(s,/an operational risk objection/);assert.match(s,/tested rollback/);
+});

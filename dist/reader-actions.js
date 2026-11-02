@@ -1,3 +1,4 @@
+import { case_content_repurposer } from './reader-content-repurposer.js';
 import { case_thought_leadership_series } from './reader-thought-leadership-series.js';
 import { renderCase } from './reader-case.js';
 const GUIDES = {
@@ -82,6 +83,8 @@ export function readingGuide(name, result, args = {}) {
     const held = /^# .*\bheld\b|^Use not approved|^Publication is not approved|^## Overall Score:[^\n]*\(NOT PROVED YET\)/im.test(result);
     if (name === 'thought_leadership_series')
         return renderCase(case_thought_leadership_series(args), held);
+    if (name === 'content_repurposer')
+        return renderCase(case_content_repurposer(args), held);
     const status = held ? ' Keep the stated hold in place; this guidance does not override it.' : '';
     let roles = kind === 'publish' ? [
         `Founder: check the central claim against the supplied evidence before endorsing ${decision}.`,

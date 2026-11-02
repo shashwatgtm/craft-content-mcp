@@ -87,6 +87,15 @@ export function generateContentRepurposer(args) {
     const proofParas = paras.filter((l) => /^(?:proof|results?|evidence|customer results?)\s*:/i.test(l));
     const proof = parseProof(proofParas.map((l) => l.replace(/^[A-Za-z ]+:\s*/, '')).join('\n'));
     const body = paras.filter((l) => !proofParas.includes(l)).join('\n');
+    if (!proofParas.length) {
+        for (const sentence of sentencesOf(body)) {
+            if (!/\b(?:pilot|customer|team|cohort|study)\b/i.test(sentence) || !/\bfrom\s+(?:\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:[a-z]+\s+){0,3}to\s+(?:\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten)\b/i.test(sentence))
+                continue;
+            if (/\b(?:if|would|could|might|aim|target|expect|forecast|promise|not|never|no)\b/i.test(sentence))
+                continue;
+            proof.push(...parseProof(sentence).filter(p => p.kind === 'result'));
+        }
+    }
     const titleInfo = extractTitle(body, keyMessage);
     const title = titleInfo.title;
     // a point is kept whole (a very long one is shortened at a clause boundary at 600 characters); a source label without a figure ("(page words)") is not left in public copy
@@ -111,7 +120,7 @@ export function generateContentRepurposer(args) {
     // What the user must supply or add by hand, once.
     const notGiven = [];
     if (!proof.length)
-        notGiven.push('Not given: a proof line. The source has no line that starts "Proof:" or "Results:", so no piece carries a customer result; add one customer result with its figure to the source to make the pieces stronger.');
+        notGiven.push('Not given: a proof line. No supported result was recognized in the source prose or its labelled proof; add a measured customer result with its scope and source.');
     if (!keyMessage)
         notGiven.push('Not given: key message. The hooks come from the source\'s title or first sentence; add key message to set the core message.');
     if (!points.length)

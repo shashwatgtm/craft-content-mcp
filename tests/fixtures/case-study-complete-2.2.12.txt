@@ -126,7 +126,7 @@ This story supports a draft account of “Late deliveries down 60%, planning tim
 
 ## Decisions by role
 
-Proposed owners. Confirm the named person before acting. Supplied statements below are inputs to check, not verified facts.
+Proposed owners. Confirm the named person before acting. Supplied statements below are inputs to check, not established findings.
 
 Founder: ask the evidence owner to distinguish observation from attribution in “Late deliveries down 60%, planning time cut from 4 hours to 30 minutes, 12% lower fuel cost”; endorse only the supported scope.
 

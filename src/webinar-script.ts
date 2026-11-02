@@ -762,7 +762,7 @@ function recap(w: W): string {
 
 // One main content block: the takeaways it teaches, the sector measure, the chat question, the objection for later blocks, and the product line.
 function blockScript(section: { name: string; duration: number }, w: W, mine: Pt[], k: number, blocks: number): string {
-  if (k === 0) {
+  if (k === 0 && (w.example || (!w.problemPts.length && !w.takeaways.some(p => p.role === 'problem' || /\b(?:by|with|because|before|after|daily|weekly|per)\b/i.test(p.text))))) {
     const work = Math.max(1, section.duration - 2);
     if (!w.example) return `### ${section.name} (${section.duration} min)\n\n**HOST PREPARATION, NOT SPOKEN:** This exercise needs an anonymised example and its starting records before delivery. Ask the host to supply them; no customer result is assumed.\n\nThe reserved ${section.duration} minutes cover the example, one participant decision record and a debrief on evidence and unknowns. Do not run this section until the example is ready.\n`;
     return seg(section, 'Worked example exercise', [ ...(w.productDescription ? [`For context: ${w.productDescription}`] : []), ...(w.example ? [

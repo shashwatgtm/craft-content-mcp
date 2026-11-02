@@ -1,6 +1,6 @@
 import { fact } from './reader-case.js';
 export function case_thought_leadership_series(args) {
-    const take = fact(args, "your_take", "the proposed argument");
+    const take = fact(args, "your_take", "the proposed argument", undefined, 120);
     const proof = fact(args, "proof_points", "the supplied evidence");
     const reader = fact(args, "target_reader", "the intended reader");
     const topic = fact(args, "topic", "the article topic");

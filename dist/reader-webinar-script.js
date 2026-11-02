@@ -1,7 +1,8 @@
 import { fact } from './reader-case.js';
 export function case_webinar_script(args) {
-    const topic = fact(args, "topic", "the webinar topic");
-    const takeaways = fact(args, "key_takeaways", "the promised takeaways");
+    const topic = fact(args, "topic", "the webinar topic", undefined, 110);
+    const takeawayArgs = { ...args, key_takeaways: String(args.key_takeaways || "").replace(/on the (?:home|about|product) page/gi, "in the supplied source") };
+    const takeaways = fact(takeawayArgs, "key_takeaways", "the promised takeaways", undefined, 160);
     const audience = fact(args, "target_audience", "the intended participants");
     const product = fact(args, "your_product", "the offer");
     return {

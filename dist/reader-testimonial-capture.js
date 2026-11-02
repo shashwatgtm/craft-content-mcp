@@ -24,7 +24,7 @@ export function case_testimonial_capture(args) {
         meaning: `This kit supports asking about ${story}. It is not a customer endorsement. Subjective experience is not measured improvement, and permission must cover the exact words and use.`,
         change: `the customer corrects the wording, the measurement record changes or permission is declined or withdrawn`,
         roles: [
-            `Founder: ask the evidence owner to separate opinion from measured outcome in ${story}; do not turn easier use into a time saving claim.`,
+            `Founder: ask the evidence owner to separate opinion from measured outcome in ${story}; do not turn subjective experience into a numerical outcome claim.`,
             `CEO: have the publication owner obtain written approval for ${type}; check wording, channels and withdrawal terms before external use.`,
             `CMO: read ${story} back to ${person}; let the customer correct the words before seeking permission.`,
             `CRO: ask ${person} for a recent example involving ${product}; record the baseline and limits without coaching a favourable result.`,

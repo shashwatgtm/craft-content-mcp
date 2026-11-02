@@ -257,7 +257,7 @@ ${handler.whenHeard}
 
 ---
 `).join('\n') : `
-*No competitor-specific objections provided. Add competitor objections parameter for battle cards.*
+*No competitor-specific objections provided. Supply the buyer's actual comparison question to prepare a response.*
 `}
 
 ## Price Justification
@@ -274,17 +274,15 @@ ${valueRows.map((r) => `| ${r.vp} | ${r.proof || 'none of your proof points bear
 
 **ROI Conversation:**
 
-${customerResults.length ? `"Let me share what customers have seen:
+${customerResults.length ? `"Here is the supplied result, with its scope and limitations:
 
 ${customerResults.slice(0, 3).map((p) => `- ${clipEcho(p.shown, 300)}`).join('\n')}
 
-Based on what you've shared about your situation, here's what that could mean for you:" then work it out from the prospect's own figures, which this kit does not have.` : '*No proof points with a result were given, so there is nothing to quote here. Add proof points.*'}
+Does this resemble your workflow? What is your current baseline, over what period, and what would a credible improvement be worth after the costs of a test and rollout?"\n\nDo not extrapolate the supplied result to this buyer. Calculate a buyer specific scenario only after its baseline, costs and assumptions are agreed.` : '*No proof points with a result were given, so there is nothing to quote here. Add proof points.*'}
 
 **If Price Pushback:**
 
-"I understand budget is a consideration. Let me ask: what does it cost you each month to leave this problem as it is?
-
-${valueProps[0] ? `${valueProps[0]}: ${v ? `put it in terms of ${v.metrics[0]}` : 'put it in the prospect\'s own numbers'}.` : 'Put the value in the prospect\'s own numbers.'} For a company your size, work out the saving from their figures, not from ours."
+"I understand budget is a consideration. What does this workflow cost today, and which part could realistically change? What costs or risks would an evaluation add? We can compare those figures with the approved price before deciding whether to proceed."
 
 ---
 
@@ -323,19 +321,17 @@ Subject: ${product} next steps
 
 Hi,
 
-Thanks for sharing how your team handles this today.
+Thank you for the conversation about ${product}.
 
-Based on what you described, here's what stands out (fill these in from your call notes):
-- the first challenge they named, and what it costs them
-- the second challenge, and the goal it blocks
+Before proposing an evaluation, could you confirm the workflow you want to improve, what happens today and who owns the decision?
 
-${product} addresses this${valueProps[0] ? `: ${midSentence(valueProps[0])}` : ''}.
+${valueProps[0] ? `One capability to evaluate is ${midSentence(valueProps[0])}. What would you need to observe to decide whether it fits your workflow?` : 'What would you need to observe to decide whether this is worth evaluating?'}
 
-${usable[0] ? `Relevant proof: ${clipEcho(usable[0].shown, 300)}` : ''}
+Please also flag any access, approval or operating constraints. We can then agree one bounded test, its success measure and a stop condition.
 
-Next step: name the specific action and the date.
+Who should join that discussion, and what time would suit them?
 
-When works for you?
+Thank you.
 
 ---
 
@@ -345,20 +341,15 @@ Subject: ${product} ${walk} follow-up + next steps
 
 Hi,
 
-Great connecting today. Here's a quick recap:
+Thank you for reviewing ${product}.
 
-**What we covered:**
-${(valueProps.length ? valueProps : usable.map((p) => p.text)).slice(0, 3).map((x) => `- ${clipEcho(x, 200)}`).join('\n') || '- the points you covered'}
+Which part, if any, fits how your team works today? Which question remains unanswered?
 
-**What resonated:** the moment they engaged (from your notes).
+Before we propose a next step, please confirm the result you would need to see, the person who would assess it and any restrictions on a test. A demonstration alone does not establish a result in your environment.
 
-**Your questions:** the answers to the questions they raised.
+Would a short review with the workflow owner help us decide whether to proceed, change the scope or stop? Please suggest a time and the people who should join.
 
-**Next step:** the specific action and date.
-
-Resources: the relevant case study and the one-pager.
-
-Talk soon,
+Thank you.
 
 ---
 
@@ -408,6 +399,18 @@ function generateObjectionHandler(
   persona = '',
   strongestText = ''
 ): { label: string; acknowledge: string; reframe: string; proof: string; facts: string; pattern: string; bridge: string; fullScript: string } {
+  // A compound objection must not hide a stated production risk behind its incumbent-tool clause.
+  const operationalRisk = /\b(?:cannot|can't|can not|won't|will not) (?:accept |take |tolerate )?risk\b|\b(?:worried|concerned) about\b|\b(?:unsafe|unapproved|uncontrolled)\b/i.test(objection)
+    && /\b(?:automatic|automated|autonomous|live network|production|live systems?)\b/i.test(objection);
+  if (operationalRisk) {
+    const acknowledge = 'Your existing workflow and live environment need to stay protected.';
+    const reframe = 'Which actions must remain under human approval, and what evidence would the operating owner require?';
+    const close = 'Would a read-only review or a non-production simulation help test the recommendation first? Any later live change would need a named approver, agreed stop conditions and a tested rollback.';
+    return {label: 'an operational risk objection', acknowledge, reframe,
+      proof: 'No supplied result establishes safe changes in this buyer\'s environment. Request evidence of approval controls, simulation results and rollback before proposing a live test.',
+      facts: '', pattern: 'Keep the incumbent workflow in place. Agree an offline or read-only scope, an operating owner and acceptance criteria before evaluating changes.', bridge: '',
+      fullScript: `I hear you: ${qs(objection)}. ${acknowledge} ${reframe} ${close}`};
+  }
   const kind = objectionKind(objection);
   const isQuestion = /\?\s*$/.test(objection.trim()) || /^(?:how|what|does|do|is|are|can|will|why|which|who|when)\b/i.test(objection.trim());
   const byKind = proofFor(kind, proofTexts, usedProof);
@@ -512,7 +515,7 @@ function generateCompetitorHandler(
   // "Why not X" names the alternative: ask about X itself. Any other wording is quoted whole.
   const named = objection.trim().match(/^why not (?:the )?(.+?)\??$/i);
   const subject = named ? named[1] : quoted;
-  const proof = relevant(objection, proofTexts)[0] || (proofTexts.length ? proofTexts[index % proofTexts.length] : '');
+  const proof = relevant(objection, proofTexts)[0] || '';
   const fact = relevant(objection, facts)[0];
   const measure = v ? v.metrics[index % v.metrics.length] : '';
   return {
@@ -537,9 +540,9 @@ function generateStagePitch(
     prospecting: `
 **Cold Outreach Framework:**
 
-"Hi, I'm reaching out because ${v ? `${midSentence(persona)} in ${v.name} often tell us about ${v.objections[0].objection.toLowerCase()}` : `people in your role often tell us about the same problem`}.
+"Hi, I'm reaching out about ${product}. ${v?.objections[0] ? `Is this a concern for your team: ${v.objections[0].objection.replace(/[.?!]+$/, '')}?` : 'Is improving this workflow a priority for your team?'}
 
-${lead ? `${lead}${proofTexts[0] && valueProps[0] ? `: ${proofTexts[0]}` : ''}` : `${product} helps with this.`}
+${lead ? `${lead}${proofTexts[0] && valueProps[0] ? `: ${proofTexts[0]}` : ''}` : 'I would like to understand whether there is a fit before proposing a solution.'}
 
 Worth a short conversation?"
 `,
@@ -566,14 +569,14 @@ ${v ? `\nStart with: "${v.discovery[0]}"\n` : ''}
 **${cap(walk)} Structure:**
 
 **Agenda (1 min):**
-"Here's what we'll cover: ${valueProps.slice(0, 3).join('; ') || 'the points on your pitch order'}. Sound good?"
+"Here's what we'll cover: ${valueProps.slice(0, 3).join('; ') || 'your workflow, the available evidence and what an evaluation would need to establish'}. Sound good?"
 
 **${cap(walk)} (20 min):**
-For each part, frame it as:
-"You mentioned this pain. Here's how we solve that..."
+For each part, confirm the workflow before showing it:
+"Is this a workflow your team needs to improve? What would you need to see here to judge whether it fits?"
 
 **Social Proof (3 min):**
-"${proofTexts[0] || 'Share a result from a customer like them, with its figure and period.'}"
+${proofTexts[0] ? `"${proofTexts[0]}"` : 'No customer result was supplied. Ask what evidence the buyer needs, then verify an appropriate source before quoting it.'}
 
 **Questions & Objections (10 min):**
 Address them with the objection handlers in this kit.
@@ -585,7 +588,7 @@ Address them with the objection handlers in this kit.
 **Negotiation Framework:**
 
 **Establish Value First:**
-"Before we discuss terms, let's align on value. You told us ${product} would help you reach an outcome. Based on your numbers, work out what that is worth."
+"Before we discuss terms, let's align on value. Which outcome would justify ${product} for you? What baseline, period and costs should we use to assess it?"
 
 **Bundle, Don't Discount:**
 If asked for a discount: "Instead of reducing price, let me add value. What if we included something of equal value to you?"
@@ -594,13 +597,13 @@ If asked for a discount: "Instead of reducing price, let me add value. What if w
 Give a deadline only if there is a legitimate reason for it, and say the reason.
 
 **Decision Timeline:**
-"What would it take to make a decision by the date you named?"
+"Is there a decision date we should work towards, and what must be resolved before then?"
 `,
     closing: `
 **Closing Framework:**
 
 **Summary of Value:**
-"Let me recap what you told us you needed. ${product} delivers ${valueProps.slice(0, 3).join('; ') || 'the points on your pitch order'}. ${proofTexts[0] ? proofTexts[0] : 'Add what similar customers have seen, only if you can prove it.'}"
+"Before we decide on ${product}, have we established the outcome you need, the evidence for it and who will own implementation? What remains unverified?"
 
 **The Ask:**
 "Based on everything we've discussed, are you ready to move forward?"

@@ -210,7 +210,7 @@ Subject: Quick favor: share your ${product} success story?
 
 Hello,
 
-I hope this finds you well!
+I'm writing to ask about your experience.
 
 I'm reaching out because I'd love to share how your team uses ${product} with others who might benefit.
 
@@ -329,7 +329,7 @@ ${q(quote)}
     const hasCustomerOutcome = !!lead;
     // Run 42B round S: whether the results carry a figure is read from the customer's own results and quotes (a figure written in words,
     // "from a week to a day", counts), never from a company-wide count or an award year, so the notes do not contradict The Results.
-    const WORD_FIGURE = /\bfrom (?:a|an|one|two|three|four|five|six|seven|eight|nine|ten|several)\s+\w+\s+to (?:a|an|one|two|three|four|five|six|seven|eight|nine|ten|minutes|hours|days|seconds)\b|\b(?:half|double|twice|tripled|doubled|halved)\b/i;
+    const WORD_FIGURE = /\bfrom (?:one|two|three|four|five|six|seven|eight|nine|ten) to (?:one|two|three|four|five|six|seven|eight|nine|ten) (?:seconds?|minutes?|hours?|days?|weeks?|months?|percent|accounts?|cases?)\b|\bfrom (?:a|an|one|two|three|four|five|six|seven|eight|nine|ten|several)\s+\w+\s+to (?:a|an|one|two|three|four|five|six|seven|eight|nine|ten|minutes|hours|days|seconds)\b|\b(?:half|double|twice|tripled|doubled|halved)\b/i;
     const customerItems = [...outcomes, ...quotes, ...titles];
     const figureState = !items.length ? (/\d/.test(results) || WORD_FIGURE.test(results) ? 'figure' : 'none') : !customerItems.length ? 'no-customer' : customerItems.some((i) => i.figure || /\d/.test(i.text) || WORD_FIGURE.test(i.text)) ? 'figure' : 'none';
     const challengeText = challenge && challenge !== 'not supplied' ? fixNumbers(challenge.trim()) : '';
@@ -356,7 +356,9 @@ ${q(quote)}
     // no one company's result is shown as the story's own.
     const label = generic ? (() => { let x = customerName; for (let i = 0; i < 4; i++)
         x = x.replace(/\s*\([^()]*\)/g, ''); return x.replace(/\)+/g, '').replace(/^contact at /i, '').trim(); })() : customerName;
-    const manySources = generic && (outcomes.length + quotes.length + titles.length) >= 1;
+    const anonymousSingle = /^(?:anonymous\b|an? unnamed\b|confidential\b)/i.test(customerName) && !/\b(?:customers|companies|clients|teams|accounts)\b/i.test(customerName) && customerItems.length === 1;
+    const manySources = generic && !anonymousSingle && (outcomes.length + quotes.length + titles.length) >= 1;
+    const permissionDenied = /\b(?:permission|approval|consent)\b[^.;]{0,70}\b(?:not|never|unknown|pending|declined|withdrawn)\b|\b(?:no|without)\b[^.;]{0,35}\b(?:permission|approval|consent)\b/i.test(results);
     const headline = manySources ? `${product}${industryText ? ` in ${industryText}` : ''}: what customers report` : lead ? capFirst(lead.text.replace(/^customer (?:quote|words):\s*/i, '')) : `${label} and ${product}`;
     const headlineOk = (lead && headline.length <= 160) || manySources;
     const reported = (outcomes.length ? outcomes : quotes.length ? quotes : titles).slice(0, 2);
@@ -421,7 +423,7 @@ ${bullets(quotes.slice(0, 2))}`
         }
         else if (manySources) {
             const others = [...outcomes, ...quotes, ...titles].slice(0, 3).map((r) => { const qp = quoteOf(r); return r.kind === 'quote' && qp.who ? `${qp.who} puts it this way: "${qp.words}."` : endSentence(capFirst(`${strip(r.text)}${r.label ? ` (${r.label})` : ''}`)); });
-            paras.push(`**The result.** ${Subj}'s own figures are not given yet, so this draft does not claim any. Other ${product} customers say what the change looked like for them. ${others.join(' ')}`);
+            paras.push(`**The result.** ${Subj}'s own figures are not given yet, so this draft does not claim any. The supplied records below need their source and customer attribution confirmed. ${others.join(' ')}`);
             slots.push(`${subj}'s own result: one measure${ms.length ? ` such as ${ms[0]}` : ''}, its value before and after, and the period`);
         }
         else
@@ -445,7 +447,7 @@ ${bullets(quotes.slice(0, 2))}`
 ${ctx.line}
 
 *Built from: ${built}.*
-
+${permissionDenied ? '\nUse not approved. The supplied permission statement does not authorise publication. Keep this draft internal until the customer approves the wording, attribution and channels.\n' : ''}
 ---
 
 ${story}
@@ -478,7 +480,7 @@ ${v ? `- Interview question in the sector's language: "${v.discovery[0]}"` : '- 
 What was put in place: ${solutionText ? solutionText : 'not found. Ask what was set up, by whom and in what order.'}
 
 **Before publication, the account owner should verify:**
-- Why ${customerName} chose ${product}${v ? `, and which alternative it weighed (a common reaction in ${sectorName}: "${v.objections[0].objection}")` : ''}.
+- Why ${customerName} chose ${product}${v?.objections[0] ? `, and which alternative it weighed (a common reaction in ${sectorName}: "${v.objections[0].objection}")` : ''}.
 - How the ${w.rollout} went, and how long it took to ${w.reach}. Use only a duration the customer confirms.
 ${v ? `- Words to use as the customer says them: ${v.vocabulary.slice(0, 5).join(', ')}.` : ''}
 
@@ -506,7 +508,7 @@ ${cta}
 ${v ? sectorBlock(v, results, figureState) : ''}${notUsed}
 ## Distribution Formats
 
-${manySources ? `### Until one customer is chosen
+${permissionDenied ? 'Distribution held. Obtain written approval for the exact wording, attribution and intended channels before drafting public versions.' : manySources ? `### Until one customer is chosen
 Use each result with its own source, never as one customer's story:
 ${reported.map((r) => `- ${endSentence(capFirst(clipEcho(r.shown, 260)))}`).join('\n')}
 ${reported.length ? '' : '- No result was given.'}

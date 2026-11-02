@@ -12,6 +12,8 @@ export function regionalInputs(args: unknown, industryRole: 'seller' | 'buyer' =
     if (typeof input[key] !== 'string') continue;
     for (const sentence of (input[key] as string).split(/(?<=[.!?])\s+|\n+/)) {
       if (/^\s*(?:we\s+(?:(?:do\s+not|never|currently|only|also)\s+)*(?:sell|serve|target|operate|offer|provide|are\s+(?:selling|not\s+selling))\b|our\s+(?:company|business|product|service|market)\s+(?:sells|serves|targets|operates|is|offers|provides)\b)/i.test(sentence)) seller.push(sentence);
+      const purchase = sentence.match(/\b(?:(?:is|are)\s+(?:buying|purchasing)|buys|purchases)\s+our\s+(?:(?!(?:competitor|rival|customer|partner|supplier|vendor)\b)[\p{L}\p{N}'-]+\s+){0,4}(?:software|product|platform|services?|solution)\b/iu);
+      if (purchase && !/\b(?:not|never|no longer|may|might|could|would|whether|considering|unconfirmed|hypothetical)\b|\?/i.test(sentence)) seller.push(sentence);
     }
   }
   const ownSector = typeof input.your_sector === 'string' && input.your_sector !== 'other'

@@ -78,6 +78,7 @@ export function generateContentImprover(args: {
 
   const buzzFound = analysis.findings.some((f) => f.rule === 'buzzwords');
   const hardFound = analysis.findings.some((f) => f.hard);
+  const outcomeHeld = analysis.findings.some(f => f.rule === 'unproved-claim') && /\b(?:guarantee\w*|promise\w*)\b/i.test(improved.text);
 
   let output = `# Content Analysis & Improvement Report
 
@@ -176,7 +177,7 @@ ${improved.edits.slice(0, 20).map((e, i) => `${i + 1}. Before: "${clipEcho(e.bef
 ` : ''}
 ## Improved Version
 
-${improved.edits.length > 0
+${outcomeHeld ? 'Publication held. The wording edits above do not substantiate the promised outcome. No copy-ready version is provided until the claim is removed or supported by measured evidence with its source, scope and date.' : improved.edits.length > 0
   ? `${improved.edits.length} edit${improved.edits.length === 1 ? '' : 's'} made (listed above). Everything else is your original text.
 
 ---
@@ -188,7 +189,7 @@ ${improved.text}`
 ${shorter ? `
 ## Suggested Shorter Version
 
-${shorter.text}
+${outcomeHeld ? 'The shorter version is also held: shortening an unsupported promise does not make it safe to publish.' : shorter.text}
 
 *Built only from your own text: nothing was added. ${shorter.left.length ? `Left out: ${shorter.left.map((l) => `"${l}"`).join('; ')}.` : ''} Check that nothing you need is missing before you use it.*
 

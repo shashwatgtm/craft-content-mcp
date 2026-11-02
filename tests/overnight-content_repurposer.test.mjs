@@ -14,3 +14,11 @@ test('Overnight repurposer: ordinary observed before and after prose becomes a s
 for(const line of ['No pilot reduced route adjustment time from four to three hours.','A customer pilot could reduce route adjustment time from four to three hours.']) test('Overnight repurposer: denial and prediction do not become observed proof '+line,()=>{
  const out=generateContentRepurposer({source_content:line,source_type:'blog_post'});assert.match(out,/Proof Items Found\*\* \| 0/);
 });
+test('Overnight repurposer: complete subjects, one result and the supplied reader action survive conversion',()=>{
+ const out=generateContentRepurposer({source_content:source+' Ask readers to measure one dispatch shift before changing their process.',source_type:'blog_post'});
+ const email=out.split('### Email Version')[1].split('### Blog Summary')[0];
+ const subject=email.match(/^Subject: (.+)$/m)[1];assert.doesNotMatch(subject,/from four$|\.\.\.$/);assert.match(email,/Measure one dispatch shift before changing your process/);assert.doesNotMatch(email,/Confirm the reader action/);
+ const linkedin=out.split('### LinkedIn Post')[1].split('### Twitter')[0];assert.equal((linkedin.match(/A regional fleet pilot reduced route adjustment time/g)||[]).length,1);assert.doesNotMatch(linkedin,/Ask readers to/);
+ const cards=out.split('### Quote Cards')[1].split('## Source Notes')[0].split(/\*\*(?:Quote|Stat) Card \d+:\*\*/).slice(1);
+ assert.ok(cards.length);for(const card of cards)assert.match(card,/uncontrolled pilot/);
+});

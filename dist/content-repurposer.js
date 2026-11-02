@@ -77,7 +77,7 @@ export function generateContentRepurposer(args) {
     const sourceUrl = /^https?:\/\/[^\s]+$/i.test(meta('Source URL')) ? meta('Source URL') : '';
     const sender = meta('Sender');
     const content = fixNumbers(sourceLines.filter(l => !/^(?:Reader action|Source URL|Sender):/i.test(l.trim())).join('\n')).split('\n').map(clean).join('\n');
-    const action = readerAction(meta('Reader action') || sentencesOf(content).find(s => /^(?:Review|Check|Record|Inspect|Compare|Confirm|Resolve|Assign)\b/i.test(s.trim())) || '');
+    const action = readerAction(meta('Reader action') || sentencesOf(content).find(s => /^(?:Review|Check|Record|Inspect|Compare|Confirm|Resolve|Assign|Measure|Count|Ask readers to|Invite readers to|Encourage readers to)\b/i.test(s.trim())) || '');
     const sourceType = args.source_type;
     const targetFormats = args.target_formats ? splitItems(args.target_formats) : DEFAULT_FORMATS;
     const voice = args.brand_voice && VOICE[args.brand_voice] ? args.brand_voice : 'professional';
@@ -99,7 +99,7 @@ export function generateContentRepurposer(args) {
     const titleInfo = extractTitle(body, keyMessage);
     const title = titleInfo.title;
     // a point is kept whole (a very long one is shortened at a clause boundary at 600 characters); a source label without a figure ("(page words)") is not left in public copy
-    const pointsFull = dedupe(pickKeyPoints(body, keyMessage, titleInfo.fromSource ? title : '', 5)).map(cleanPoint).map(tidyLabel).map((p) => (p.length > 600 ? shortenClauses(p, 600) : p));
+    const pointsFull = dedupe(pickKeyPoints(body, keyMessage, titleInfo.fromSource ? title : '', 5)).filter(p => !action || !/^(?:ask|invite|encourage)\s+(?:the\s+)?readers?\s+to\b/i.test(p) || norm(readerAction(p)) !== norm(action)).map(cleanPoint).map(tidyLabel).map((p) => (p.length > 600 ? shortenClauses(p, 600) : p));
     const points = pointsFull;
     const wordCount = countWords(content);
     // The sentence that says what the company is or sells ("X is ...", "X helps ...", "At X we built ...") is the seller's own description and is read first.
@@ -204,7 +204,7 @@ function subjectCut(text, max) {
     let best = '';
     for (const m of t.matchAll(/[,;:]\s|\s(?=(?:that|from which|from|with|so|and|which|where|for|to)\s)/g)) {
         const cut = dropTail(t.slice(0, m.index).trim());
-        if (cut.length <= max && cut.split(/\s+/).length >= 4)
+        if (cut.length <= max && cut.split(/\s+/).length >= 4 && !(/\bfrom\b/i.test(cut) && /\bfrom\b.+\bto\b/i.test(t) && !/\bfrom\b.+\bto\b/i.test(cut)))
             best = cut;
     }
     return best;
@@ -230,8 +230,8 @@ function cleanPoint(p) {
 function subjectSafe(text, max) {
     if (!text)
         return '';
-    const t = shortenClauses(text.replace(/^(?:The problem|The obstacle|What [\w&.\s-]+ built):\s*/, ''), max);
-    return t.length <= max && !/\.\.\.$/.test(t) ? t : '';
+    const t = text.replace(/^(?:The problem|The obstacle|What [\w&.\s-]+ built):\s*/, '').trim().replace(/[.!?]+$/, '');
+    return t.length <= max ? t : subjectCut(t, max);
 }
 // Two key points that say the same thing (more than half of their long words shared) are one point; the earlier stays.
 function dedupe(points) {
@@ -258,7 +258,7 @@ function extractTitle(content, keyMessage) {
     if (keyMessage)
         return { title: shortenClauses(keyMessage.trim(), 100), fromSource: false };
     const first = sentencesOf(content)[0] || '';
-    return { title: shortenClauses(first, 100), fromSource: false };
+    return { title: subjectSafe(first, 100) || 'Observations from the supplied source', fromSource: false };
 }
 // The best proof as a line: a customer quote is shown as its words and the person named; a result or a story is shown as typed, with its label.
 const proofLine = (k, label = 'Result') => {
@@ -323,7 +323,7 @@ function metricFor(k, text) {
 const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 // Host review 28 Oct 2026: a sentence that qualifies the whole source (synthetic, hypothetical, illustrative, not verified) travels with
 // every piece, because each piece can be shared on its own. It is added as typed, once, to a piece that does not already carry it.
-const CAVEAT = /\b(?:synthetic|hypothetical|illustrative|fictional|fictitious|unverified|not (?:yet )?verified|not real|for review only|example only|made[- ]up|demonstration (?:statements?|data|inputs?|only|scenario)|no (?:customer )?(?:outcome|result|impact)(?: figure)? (?:is )?(?:available|supplied|confirmed)|(?:customer )?(?:outcome|result) (?:figure )?(?:is |has )?not (?:available|supplied|confirmed|been measured))\b/i;
+const CAVEAT = /\b(?:uncontrolled|not a promise|not causal|synthetic|hypothetical|illustrative|fictional|fictitious|unverified|not (?:yet )?verified|not real|for review only|example only|made[- ]up|demonstration (?:statements?|data|inputs?|only|scenario)|no (?:customer )?(?:outcome|result|impact)(?: figure)? (?:is )?(?:available|supplied|confirmed)|(?:customer )?(?:outcome|result) (?:figure )?(?:is |has )?not (?:available|supplied|confirmed|been measured))\b/i;
 const caveatsOf = (k) => sentencesOf(k.content).map((s) => s.trim()).filter((s) => CAVEAT.test(s)).slice(0, 2);
 function generateFormat(format, k) {
     const caveats = caveatsOf(k);
@@ -335,7 +335,8 @@ function generateFormat(format, k) {
     const msgRaw = k.keyMessage ? endSentence(capFirstChar(shortenClauses(k.keyMessage, 200))) : '';
     // the key message is said again only when the hook has not already said it
     const msg = msgRaw && !norm(msgRaw).includes(norm(k.hook)) && !norm(k.hook).includes(norm(msgRaw)) ? msgRaw : '';
-    const proof = proofLine(k);
+    const leadContainsProof = !!k.bestProof && norm(lead).includes(norm(k.bestProof.shown));
+    const proof = leadContainsProof ? (k.secondProof ? proofLineOf(k.secondProof, 'Another result') : '') : proofLine(k);
     const close = k.action ? endSentence(capFirstChar(k.action)) : k.voice === 'authoritative' && k.bestProof ? 'That is the position, and the evidence above supports it.' : vc.close;
     const spoken = (s) => s.replace(/"/g, "'");
     const roles = k.v ? proseJoin(k.v.buyerRoles.slice(0, 2).map((r) => r.toLowerCase())) : '';
@@ -355,7 +356,7 @@ ${[endSentence(lead), ...rest.slice(0, 4).map((p) => endSentence(p)), proof, msg
             for (const p of rest.slice(0, 5))
                 for (const part of tweetParts(p))
                     tweets.push(`${tweets.length}/ ${part}`);
-            if (k.bestProof)
+            if (k.bestProof && !leadContainsProof)
                 for (const part of tweetParts(proofLineOf(k.bestProof, 'Result')))
                     tweets.push(`${tweets.length}/ ${part}`);
             for (const c of missingIn(tweets))
@@ -413,7 +414,7 @@ ${alts.length ? `Other subject lines to test: ${alts.join('; ')}\n\n` : ''}---
 **${k.title}**
 ${openLine ? `\n${openLine}\n` : ''}
 ${pts.length ? pts.map((p) => `- ${endSentence(p)}`).join('\n') : 'No key point was found in the source: paste the finished text.'}
-${k.bestProof ? `\n**Proof:** ${endSentence(k.bestProof.shown)}\n` : ''}
+${k.bestProof && ![openLine, ...pts].some(p => norm(p).includes(norm(k.bestProof.shown))) ? `\n**Proof:** ${endSentence(k.bestProof.shown)}\n` : ''}
 ${k.v ? `This is written for readers such as ${roles}, who watch ${proseJoin(k.v.metrics.slice(0, 3))}.\n` : ''}
 ${msg || msgRaw ? `**The bottom line:** ${msgRaw}\n` : ''}
 ---
@@ -500,7 +501,7 @@ ${k.v ? `- Measures this audience watches: ${proseJoin(k.v.metrics.slice(0, 3))}
 
 ---
 
-${cards.length ? cards.map((qt, i) => qt.stat ? `**Stat Card ${i + 1}:**\n> ${qt.text}\n` : `**Quote Card ${i + 1}:**\n> "${qt.text}"${qt.by ? `\n>\n> ${qt.by}` : ''}\n`).join('\n') : 'No sentence of 180 characters or less was found, so there is no card text. Add a short line to the source or a key message.\n'}
+${cards.length ? cards.map((qt, i) => (qt.stat ? `**Stat Card ${i + 1}:**\n> ${qt.text}\n` : `**Quote Card ${i + 1}:**\n> "${qt.text}"${qt.by ? `\n>\n> ${qt.by}` : ''}\n`) + missingIn([qt.text]).map(c => `Source limit: ${c}\n`).join('')).join('\n') : 'No sentence of 180 characters or less was found, so there is no card text. Add a short line to the source or a key message.\n'}
 ---
 
 `;

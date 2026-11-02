@@ -1,0 +1,922 @@
+{
+  "contract": {
+    "tools": [
+      {
+        "name": "case_study_generator",
+        "description": "Builds a customer case study from the customer name, your product and the challenge, solution and results you give (mode full), or an interview kit for collecting them (mode discovery). Optional customer industry, quote, interview notes and business model fit the wording to the customer. Returns a headline, the story with each result you list, a customer quote, social and email copy and sector notes when the sector can be read from your text. A bracket marks anything you did not give. Ask whether written customer approval covers the exact material and intended use.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "customer_name": {
+              "type": "string",
+              "description": "Customer or company name"
+            },
+            "customer_industry": {
+              "type": "string",
+              "description": "The customer's industry, used for context"
+            },
+            "mode": {
+              "type": "string",
+              "description": "full builds the case study and needs the challenge, solution and results; discovery returns interview questions for collecting them",
+              "enum": [
+                "full",
+                "discovery"
+              ]
+            },
+            "interview_notes": {
+              "type": "string",
+              "description": "Optional: raw interview notes or a transcript. In full mode they fill a missing challenge, solution or results; the answer says they were not used when you gave all three"
+            },
+            "challenge": {
+              "type": "string",
+              "description": "The customer's challenge or problem (needed in full mode)"
+            },
+            "solution": {
+              "type": "string",
+              "description": "How your product solved it (needed in full mode)"
+            },
+            "results": {
+              "type": "string",
+              "description": "Measurable outcomes, one per line or per semicolon (needed in full mode)"
+            },
+            "customer_quote": {
+              "type": "string",
+              "description": "Optional: a direct quote from the customer"
+            },
+            "your_product": {
+              "type": "string",
+              "description": "Your product or service name"
+            },
+            "business_model": {
+              "type": "string",
+              "description": "Optional: how you charge, so the advice fits it. If omitted, it is read from your text and the answer says how.",
+              "enum": [
+                "saas",
+                "services",
+                "connectivity",
+                "transactions",
+                "marketplace",
+                "hardware_software",
+                "investment"
+              ]
+            },
+            "your_sector": {
+              "type": "string",
+              "description": "Optional: your company's own industry (not your customers'). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear.",
+              "enum": [
+                "logistics_tech",
+                "fintech",
+                "saas",
+                "vertical_saas",
+                "ai_native",
+                "ites",
+                "telecom",
+                "software",
+                "cybersecurity",
+                "other"
+              ]
+            },
+            "publication_approval": {
+              "type": "string",
+              "enum": [
+                "approved",
+                "not_approved",
+                "unknown"
+              ],
+              "description": "Optional confirmed written approval for this exact customer name, figures, quote and intended use. Ask before publication. A draft cannot grant customer permission."
+            }
+          },
+          "required": [
+            "customer_name",
+            "your_product"
+          ]
+        },
+        "title": "Case Study Generator",
+        "annotations": {
+          "title": "Case Study Generator",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "newsletter_builder",
+        "description": "Writes a first draft of a newsletter issue from your topic and the action you want readers to take. Optional key points, audience segment, newsletter type, tone, earlier topics and your product fit it to the reader. Returns a subject line and preview, an opening, a short section for each key point, your own call to action as the button, A/B subject lines, alternative opening hooks and sector notes. Without key points it suggests some from the topic and sector. The draft uses only what you gave: it adds no statistic or customer story, and says what it did not get. Ask whether written customer approval covers the exact material and intended use.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "topic": {
+              "type": "string",
+              "description": "The main topic or theme of the newsletter"
+            },
+            "key_points": {
+              "type": "string",
+              "description": "Optional: key points to cover, one per line, per semicolon or comma-separated. If not provided, points are suggested from the topic and newsletter type"
+            },
+            "cta_goal": {
+              "type": "string",
+              "description": "The action readers should take, in your own words (for example 'register for the webinar', 'book a call', 'read the guide'); it becomes the button"
+            },
+            "audience_segment": {
+              "type": "string",
+              "description": "Who the newsletter is for; sets tone and depth",
+              "enum": [
+                "executives",
+                "practitioners",
+                "technical",
+                "general",
+                "prospects",
+                "customers"
+              ]
+            },
+            "newsletter_type": {
+              "type": "string",
+              "description": "The kind of newsletter",
+              "enum": [
+                "educational",
+                "product_update",
+                "industry_news",
+                "thought_leadership",
+                "curated_links"
+              ]
+            },
+            "tone": {
+              "type": "string",
+              "description": "The writing tone",
+              "enum": [
+                "professional",
+                "conversational",
+                "authoritative",
+                "friendly",
+                "urgent"
+              ]
+            },
+            "previous_topics": {
+              "type": "string",
+              "description": "Optional: recent newsletter topics, to avoid repetition and suggest connections"
+            },
+            "your_product": {
+              "type": "string",
+              "description": "Optional: your product or service name, used in the answer. Without it the answer says so and shows a placeholder."
+            },
+            "your_sector": {
+              "type": "string",
+              "description": "Optional: your company's own industry (not your customers'). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear.",
+              "enum": [
+                "logistics_tech",
+                "fintech",
+                "saas",
+                "vertical_saas",
+                "ai_native",
+                "ites",
+                "telecom",
+                "software",
+                "cybersecurity",
+                "other"
+              ]
+            },
+            "publication_approval": {
+              "type": "string",
+              "enum": [
+                "approved",
+                "not_approved",
+                "unknown"
+              ],
+              "description": "Optional confirmed written approval for this exact customer name, figures, quote and intended use. Ask before publication. A draft cannot grant customer permission."
+            }
+          },
+          "required": [
+            "topic",
+            "cta_goal"
+          ]
+        },
+        "title": "Newsletter Builder",
+        "annotations": {
+          "title": "Newsletter Builder",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "webinar_script",
+        "description": "Writes a webinar run of show and a full spoken script from your topic, target audience and webinar type. Optional duration, key takeaways, speakers, polls, product mention level, your product and business model shape it. Returns the run of show, the script with the speaker lines and on-screen cues for each segment built from your takeaways and speakers, polls with answer options, anticipated questions with answers, a follow-up email sequence and sector notes. Without key takeaways it suggests them from the topic and type. The script uses only what you gave and says what it did not get. Ask whether written customer approval covers the exact material and intended use.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "topic": {
+              "type": "string",
+              "description": "The webinar topic or title"
+            },
+            "target_audience": {
+              "type": "string",
+              "description": "Who will attend (for example 'Support leaders at consumer apps')"
+            },
+            "webinar_type": {
+              "type": "string",
+              "description": "The kind of webinar; sets the structure",
+              "enum": [
+                "educational",
+                "product_demo",
+                "panel_discussion",
+                "customer_story",
+                "workshop",
+                "ama"
+              ]
+            },
+            "duration": {
+              "type": "string",
+              "description": "The webinar length",
+              "enum": [
+                "30_min",
+                "45_min",
+                "60_min",
+                "90_min"
+              ]
+            },
+            "key_takeaways": {
+              "type": "string",
+              "description": "Optional: what attendees should learn, one per line, per semicolon or comma-separated. If not provided, takeaways are suggested from the topic"
+            },
+            "speakers": {
+              "type": "string",
+              "description": "Optional: speakers as you want them listed. Separate speakers with semicolons or line breaks ('Name, Title; Name, Title'), or with commas if each is one phrase"
+            },
+            "include_polls": {
+              "type": "boolean",
+              "description": "Include poll suggestions with answer options"
+            },
+            "product_mention_level": {
+              "type": "string",
+              "description": "Whether to add product tie-in placeholders to the script ('none' leaves them out)",
+              "enum": [
+                "none",
+                "subtle",
+                "moderate",
+                "heavy"
+              ]
+            },
+            "your_product": {
+              "type": "string",
+              "description": "Optional: your product or service name, used in the answer. Without it the answer says so and shows a placeholder."
+            },
+            "business_model": {
+              "type": "string",
+              "description": "Optional: how you charge, so the advice fits it. If omitted, it is read from your text and the answer says how.",
+              "enum": [
+                "saas",
+                "services",
+                "connectivity",
+                "transactions",
+                "marketplace",
+                "hardware_software",
+                "investment"
+              ]
+            },
+            "your_sector": {
+              "type": "string",
+              "description": "Optional: your company's own industry (not your customers'). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear.",
+              "enum": [
+                "logistics_tech",
+                "fintech",
+                "saas",
+                "vertical_saas",
+                "ai_native",
+                "ites",
+                "telecom",
+                "software",
+                "cybersecurity",
+                "other"
+              ]
+            },
+            "publication_approval": {
+              "type": "string",
+              "enum": [
+                "approved",
+                "not_approved",
+                "unknown"
+              ],
+              "description": "Optional confirmed written approval for this exact customer name, figures, quote and intended use. Ask before publication. A draft cannot grant customer permission."
+            }
+          },
+          "required": [
+            "topic",
+            "target_audience",
+            "webinar_type"
+          ]
+        },
+        "title": "Webinar Script",
+        "annotations": {
+          "title": "Webinar Script",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "content_repurposer",
+        "description": "Turns a source text into finished versions for other channels: a LinkedIn post, an X thread, an email, a blog summary and quote cards. Needs the source text and its type. Optional target formats, brand voice and a key message steer the result. Each version is written from whole sentences of your source, with key points chosen by a stated rule and kept in the source order; claims it cannot support are listed to source, and any requested format it does not know is named. Returns the versions, notes on the key points and proof used, and sector notes. Ask whether written customer approval covers the exact material and intended use.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "source_content": {
+              "type": "string",
+              "description": "The original content to repurpose (a blog post, article or transcript, for example)"
+            },
+            "source_type": {
+              "type": "string",
+              "description": "The kind of content the source is",
+              "enum": [
+                "blog_post",
+                "webinar_transcript",
+                "podcast_transcript",
+                "whitepaper",
+                "case_study",
+                "research_report",
+                "presentation"
+              ]
+            },
+            "target_formats": {
+              "type": "string",
+              "description": "Optional: formats to generate, comma-separated. Defaults to: linkedin_post, twitter_thread, email, blog_summary, quote_cards. Other options: infographic_outline, video_script, podcast_talking_points, slide_deck_outline, newsletter_section. A name outside this list is reported, not written"
+            },
+            "brand_voice": {
+              "type": "string",
+              "description": "The brand voice to keep",
+              "enum": [
+                "professional",
+                "casual",
+                "authoritative",
+                "friendly",
+                "bold"
+              ]
+            },
+            "key_message": {
+              "type": "string",
+              "description": "Optional: the core message to emphasize in every format"
+            },
+            "your_sector": {
+              "type": "string",
+              "description": "Optional: your company's own industry (not your customers'). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear.",
+              "enum": [
+                "logistics_tech",
+                "fintech",
+                "saas",
+                "vertical_saas",
+                "ai_native",
+                "ites",
+                "telecom",
+                "software",
+                "cybersecurity",
+                "other"
+              ]
+            },
+            "publication_approval": {
+              "type": "string",
+              "enum": [
+                "approved",
+                "not_approved",
+                "unknown"
+              ],
+              "description": "Optional confirmed written approval for this exact customer name, figures, quote and intended use. Ask before publication. A draft cannot grant customer permission."
+            }
+          },
+          "required": [
+            "source_content",
+            "source_type"
+          ]
+        },
+        "title": "Content Repurposer",
+        "annotations": {
+          "title": "Content Repurposer",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "thought_leadership_series",
+        "description": "Writes a first draft of each article in a thought leadership series from your topic, your take and the reader you write for. Optional proof points, author background, number of articles and article style shape them. Returns, for each article, a headline, a short draft with the objection it answers, your proof and a way to test the idea, a promotional post for each article, a publishing order and sector notes. Your take and proof points are quoted as you wrote them and no result, customer or figure is invented. Without proof points it names the evidence to gather. Ask whether written customer approval covers the exact material and intended use.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "topic": {
+              "type": "string",
+              "description": "The topic you want to build authority on"
+            },
+            "your_take": {
+              "type": "string",
+              "description": "Your own view on this topic: what you believe that others do not, or your contrarian view"
+            },
+            "target_reader": {
+              "type": "string",
+              "description": "Who should read this, named specifically (for example 'Heads of IT at companies with many branches' rather than 'managers')"
+            },
+            "proof_points": {
+              "type": "string",
+              "description": "Optional: evidence supporting your take: personal stories, client examples, data or stats, one per line, per semicolon or comma-separated. If not provided, proof points to gather are suggested"
+            },
+            "author_background": {
+              "type": "string",
+              "description": "Optional: your role and why you are credible (for example 'a long career in enterprise sales')"
+            },
+            "num_articles": {
+              "type": "integer",
+              "description": "How many articles to outline, a whole number from 1 to 5. If left out, the series has three articles",
+              "minimum": 1,
+              "maximum": 5
+            },
+            "article_type": {
+              "type": "string",
+              "description": "The style of the articles",
+              "enum": [
+                "contrarian",
+                "how_to",
+                "lessons_learned",
+                "prediction",
+                "framework"
+              ]
+            },
+            "your_sector": {
+              "type": "string",
+              "description": "Optional: your company's own industry (not your customers'). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear.",
+              "enum": [
+                "logistics_tech",
+                "fintech",
+                "saas",
+                "vertical_saas",
+                "ai_native",
+                "ites",
+                "telecom",
+                "software",
+                "cybersecurity",
+                "other"
+              ]
+            },
+            "publication_approval": {
+              "type": "string",
+              "enum": [
+                "approved",
+                "not_approved",
+                "unknown"
+              ],
+              "description": "Optional confirmed written approval for this exact customer name, figures, quote and intended use. Ask before publication. A draft cannot grant customer permission."
+            }
+          },
+          "required": [
+            "topic",
+            "your_take",
+            "target_reader"
+          ]
+        },
+        "title": "Thought Leadership Series",
+        "annotations": {
+          "title": "Thought Leadership Series",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "testimonial_capture",
+        "description": "Prepares a testimonial request from the customer's name, company, success story and the type of testimonial you want. Optional role, relationship, intended use, incentive, your product and business model fit it to the customer. Returns a request email, interview questions for the customer's role and sector, quote drafts for the customer to edit and a sign-off checklist. It uses your product name when you give it and says so when you do not. Ask whether written customer approval covers the exact material and intended use.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "customer_status": {
+              "type": "string",
+              "enum": [
+                "active",
+                "cancelled",
+                "unknown"
+              ],
+              "description": "Ask whether the customer is active or cancelled before a testimonial request. A confirmed typed fact takes precedence over cancellation wording."
+            },
+            "customer_name": {
+              "type": "string",
+              "description": "The customer's name"
+            },
+            "customer_company": {
+              "type": "string",
+              "description": "The customer's company"
+            },
+            "customer_role": {
+              "type": "string",
+              "description": "The customer's job title"
+            },
+            "relationship_context": {
+              "type": "string",
+              "description": "How long they have been a customer and the key interactions"
+            },
+            "success_story": {
+              "type": "string",
+              "description": "A short description of their success with your product"
+            },
+            "testimonial_type": {
+              "type": "string",
+              "description": "The kind of testimonial you need",
+              "enum": [
+                "written_quote",
+                "video_interview",
+                "case_study_interview",
+                "g2_review",
+                "reference_call"
+              ]
+            },
+            "use_case": {
+              "type": "string",
+              "description": "Where the testimonial will be used (the website or a sales deck, for example)"
+            },
+            "incentive": {
+              "type": "string",
+              "description": "Optional: what you are offering in return"
+            },
+            "your_product": {
+              "type": "string",
+              "description": "Optional: your product or service name, used in the answer. Without it the answer says so and shows a placeholder."
+            },
+            "business_model": {
+              "type": "string",
+              "description": "Optional: how you charge, so the advice fits it. If omitted, it is read from your text and the answer says how.",
+              "enum": [
+                "saas",
+                "services",
+                "connectivity",
+                "transactions",
+                "marketplace",
+                "hardware_software",
+                "investment"
+              ]
+            },
+            "your_sector": {
+              "type": "string",
+              "description": "Optional: your company's own industry (not your customers'). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear.",
+              "enum": [
+                "logistics_tech",
+                "fintech",
+                "saas",
+                "vertical_saas",
+                "ai_native",
+                "ites",
+                "telecom",
+                "software",
+                "cybersecurity",
+                "other"
+              ]
+            },
+            "publication_approval": {
+              "type": "string",
+              "enum": [
+                "approved",
+                "not_approved",
+                "unknown"
+              ],
+              "description": "Optional confirmed written approval for this exact customer name, figures, quote and intended use. Ask before publication. A draft cannot grant customer permission."
+            }
+          },
+          "required": [
+            "customer_name",
+            "customer_company",
+            "success_story",
+            "testimonial_type"
+          ]
+        },
+        "title": "Testimonial Capture",
+        "annotations": {
+          "title": "Testimonial Capture",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "sales_enablement_content",
+        "description": "Builds a sales kit from your product, the persona you sell to and your proof points. Optional objections, value propositions, competitor objections, price context, sales stage and business model shape it. Returns a pitch order, a script for each objection answered with the sector's pattern and the proof point that fits it, competitor responses, discovery questions and follow-up templates. Without objections it suggests the ones your sector raises.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "product": {
+              "type": "string",
+              "description": "The product name and what it does"
+            },
+            "target_persona": {
+              "type": "string",
+              "description": "Who sales is pitching to (role and company type)"
+            },
+            "proof_points": {
+              "type": "string",
+              "description": "Evidence for your claims: case studies, metrics and quotes, one per line, per semicolon or comma-separated"
+            },
+            "common_objections": {
+              "type": "string",
+              "description": "Optional: sales objections you hear, one per line, per semicolon or comma-separated. If not provided, likely objections for your sector are suggested"
+            },
+            "value_props": {
+              "type": "string",
+              "description": "Optional: key value propositions, one per line, per semicolon or comma-separated. Taken from the proof points if not provided"
+            },
+            "competitor_objections": {
+              "type": "string",
+              "description": "Optional: 'why not [competitor]' objections"
+            },
+            "price_context": {
+              "type": "string",
+              "description": "Optional: your pricing against the market (for example 'Premium, above market', 'Budget option' or 'Mid-market')"
+            },
+            "sales_stage": {
+              "type": "string",
+              "description": "The stage of the sales funnel",
+              "enum": [
+                "prospecting",
+                "discovery",
+                "demo",
+                "negotiation",
+                "closing"
+              ]
+            },
+            "business_model": {
+              "type": "string",
+              "description": "Optional: how you charge, so the advice fits it. If omitted, it is read from your text and the answer says how.",
+              "enum": [
+                "saas",
+                "services",
+                "connectivity",
+                "transactions",
+                "marketplace",
+                "hardware_software",
+                "investment"
+              ]
+            },
+            "your_sector": {
+              "type": "string",
+              "description": "Optional: your company's own industry (not your customers'). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear.",
+              "enum": [
+                "logistics_tech",
+                "fintech",
+                "saas",
+                "vertical_saas",
+                "ai_native",
+                "ites",
+                "telecom",
+                "software",
+                "cybersecurity",
+                "other"
+              ]
+            }
+          },
+          "required": [
+            "product",
+            "target_persona",
+            "proof_points"
+          ]
+        },
+        "title": "Sales Enablement Content",
+        "annotations": {
+          "title": "Sales Enablement Content",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "craft_content_improver",
+        "description": "Reviews pasted copy and its content type against listed rules: buzzwords, claims that need proof, fragments, unfilled merge fields, claims about the reader and a missing figure or ask. Optional goal, audience and tone preference refine the review. Returns a score for each area with each deduction quoted from your text, and the edits it made. If it finds no edit to make, it says so and prints no improved version.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "string",
+              "description": "The content to review"
+            },
+            "content_type": {
+              "type": "string",
+              "description": "The kind of content; it changes which checks apply",
+              "enum": [
+                "blog_post",
+                "email",
+                "landing_page",
+                "social_post",
+                "sales_email",
+                "product_description",
+                "press_release",
+                "case_study"
+              ]
+            },
+            "goal": {
+              "type": "string",
+              "description": "Optional: what the content should achieve (for example 'book a first meeting' or 'educate readers'). If not given, a goal is chosen from the content type"
+            },
+            "audience": {
+              "type": "string",
+              "description": "Optional: who the content is for. The review reports when the text never mentions them"
+            },
+            "tone_preference": {
+              "type": "string",
+              "description": "The tone you want. Only more_formal and more_casual are checked in the text; any other value is named in the answer as not used",
+              "enum": [
+                "more_formal",
+                "more_casual",
+                "more_urgent",
+                "more_friendly",
+                "more_authoritative",
+                "keep_same"
+              ]
+            },
+            "your_sector": {
+              "type": "string",
+              "description": "Optional: your company's own industry (not your customers'). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear.",
+              "enum": [
+                "logistics_tech",
+                "fintech",
+                "saas",
+                "vertical_saas",
+                "ai_native",
+                "ites",
+                "telecom",
+                "software",
+                "cybersecurity",
+                "other"
+              ]
+            }
+          },
+          "required": [
+            "content",
+            "content_type"
+          ]
+        },
+        "title": "CRAFT Content Improver",
+        "annotations": {
+          "title": "CRAFT Content Improver",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "openWorldHint": false
+        }
+      }
+    ]
+  },
+  "cases": [
+    {
+      "tool": "case_study_generator",
+      "args": {
+        "customer_name": "Anonymous regional fleet",
+        "your_product": "Dispatch planning software",
+        "challenge": "Daily route adjustments took four hours",
+        "solution": "Give each depot a shared exception queue",
+        "results": "October pilot: route adjustment time fell from four to three hours across ten dispatch days. Customer publication permission has not been granted."
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "# Case Study: Anonymous regional fleet\n\n## Dispatch planning software: what customers report\n\n*Sector: read from your inputs as logistics tech. Business model: not stated. Tell us how you charge and the plan will adjust.*\n\n*Built from: challenge: given; solution: given; results: 1 item; customer quote: not given; industry: not given.*\n\n---\n\n## The Story (draft)\n\n**The situation.** Anonymous regional fleet is in the logistics tech segment. (General note for logistics tech, not from your inputs: teams are usually judged on on time delivery and cost per shipment or per order.)\n\n**The challenge.** Before Dispatch planning software, the team was dealing with this, in your words: daily route adjustments took four hours.\n\n**The approach.** The team put Dispatch planning software in place: give each depot a shared exception queue.\n\n**The result.** Anonymous regional fleet's own figures are not given yet, so this draft does not claim any. Other Dispatch planning software customers say what the change looked like for them. October pilot: route adjustment time fell from four to three hours across ten dispatch days. Customer publication permission has not been granted.\n\n**To add before this is published:** (1) Anonymous regional fleet's own result: one measure such as on time delivery, its value before and after, and the period; (2) one line Anonymous regional fleet would say aloud about what changed, approved in writing.\n\n*The sections below hold the detail behind each part of the story and the questions that finish it.*\n\n---\n\n### About Anonymous regional fleet\n\n| Detail | Supplied information |\n|---|---|\n| **Customer** | Anonymous regional fleet |\n| **Industry** | not given (add customer industry) |\n| **Product** | Dispatch planning software |\n| **Lead result** | none for one customer: see The Results |\n\n---\n\n## The Challenge\n\nWhat the team was dealing with: Daily route adjustments took four hours\n\n**Before publication, the account owner should confirm with the customer:**\n- What the problem cost them, with the starting value of one of: on time delivery, cost per shipment or per order and order cycle time.\n- Interview question in the sector's language: \"Which systems hold your orders, shipments and stock today, and who owns the data in them?\"\n\n---\n\n## The Solution\n\nWhat was put in place: Give each depot a shared exception queue\n\n**Before publication, the account owner should verify:**\n- Why Anonymous regional fleet chose Dispatch planning software, and which alternative it weighed (a common reaction in logistics tech: \"We already have a system for this\").\n- How the implementation went, and how long it took to see value. Use only a duration the customer confirms.\n- Words to use as the customer says them: shipment, carrier, consignment, lead time, exception.\n\n---\n\n## The Results\n\n**Outcomes**\n\n- October pilot: route adjustment time fell from four to three hours across ten dispatch days. Customer publication permission has not been granted.\n\n**Before publication, the evidence owner should check each figure:** record the value before, the value after and the measurement period. A strong proof point here: A before and after of on time delivery or cost per shipment on one lane, site or region, measured over a full cycle of busy and quiet weeks.\n\n---\n\n## In Their Words\n\nNo customer quote was given. Ask for one line the customer would say aloud about what changed in on time delivery, and get written approval before you print it.\n\n---\n\n## Where This Goes Next\n\nBefore changing your process, record the starting point for Dispatch planning software in one comparable case. Agree the measure and review period with the person who owns the work, then compare the result before extending the change.\n\n---\n\n## Sector Notes: Logistics tech\n\n- **A strong proof point here:** A before and after of on time delivery or cost per shipment on one lane, site or region, measured over a full cycle of busy and quiet weeks.\n- **What readers in this sector measure:** on time delivery, cost per shipment or per order, order cycle time, exception rate, delay and damage claims, service level attainment, manual planning time.\n- **Terms this sector's buyers use:** shipment, carrier, consignment, lead time, exception, service level, proof of delivery, third party logistics provider, transport management system, warehouse management system.\n- **Your results:** they carry no figure. A case study without a number is easy to ignore: ask the customer for the starting value, the end value and the timeframe of one measure.\n\n---\n\n## Distribution Formats\n\n### Until one customer is chosen\nUse each result with its own source, never as one customer's story:\n- October pilot: route adjustment time fell from four to three hours across ten dispatch days. Customer publication permission has not been granted.\n\nRead the full story: add the link when the case study is published.\n\n---\n\n## Check Before You Publish\n\n- The customer has approved the story, every figure and the quote in writing.\n- Every figure comes from the customer or a page you can cite; page claims stay labelled as the vendor's own claims.\n- Nothing in the recognition or company-wide claims is shown as this customer's result.\n\n\n\n## Reading the answer\n\nThis story supports a draft account of “October pilot: route adjustment time fell from four to three hours across ten dispatch days. Customer publication permission has not been granted”. Source verification and written permission for the exact wording remain separate checks. A single pilot is not proof of general or causal improvement. The conclusion needs review if the original records alter the baseline, measurement period or sample, or the customer declines the proposed wording or use.\n\n## Decisions by role\n\nProposed owners. Confirm the named person before acting. Supplied statements below are inputs to check, not established findings.\n\nFounder: ask the evidence owner to distinguish observation from attribution in “October pilot: route adjustment time fell from four to three hours across ten dispatch days. Customer publication permission has not been granted”; endorse only the supported scope.\n\nCEO: ask the publication owner for written customer approval of “October pilot: route adjustment time fell from four to three hours across ten dispatch days. Customer publication permission has not been granted” and the intended channels; keep distribution on hold until it is recorded.\n\nCMO: compare “Daily route adjustments took four hours” and “October pilot: route adjustment time fell from four to three hours across ten dispatch days. Customer publication permission has not been granted” with the original records; retain sample and period in the final story before requesting approval.\n\nCRO: ask the account owner whether “Give each depot a shared exception queue” explains the buyer's next decision; do not promise another account the same outcome.\n\nDemand generation head: test a reader action to measure the starting point for “Dispatch planning software”; check the destination and permission before distributing the story.\n"
+          }
+        ]
+      }
+    },
+    {
+      "tool": "newsletter_builder",
+      "args": {
+        "topic": "Why SOC teams still carry an alert backlog after adding automation",
+        "cta_goal": "Ask readers to count unowned urgent alerts in one shift",
+        "key_points": "Name one owner per urgent alert. Separate false positives from delayed responses. Do not claim a measured improvement yet.",
+        "your_product": "Alert triage software"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "# Newsletter issue draft\n\n**Subject:** Why SOC teams still carry an alert backlog after adding automation\n\n**Preview:** This issue is about \"Why SOC teams still carry an alert backlog after adding automation\".\n\n---\n\nThis issue is about \"Why SOC teams still carry an alert backlog after adding automation\".\n\nIn this issue: how it works and what to check in your own operation.\n\n### 1. How it works\n\nName one owner per urgent alert. Separate false positives from delayed responses. Do not claim a measured improvement yet.\n\n### 2. What to check in your own operation\n\nPut these two questions to your own team this week. First, \"Where does this happen in your own work today, and who feels it first?\" Second, \"Which one number would tell you whether it is getting better?\" Whatever the answers, write them down, so that the next change has a baseline to beat.\n\n---\n\nIf you would like to take this further, the next step is count unowned urgent alerts in one shift.\n\nButton: Count unowned urgent alerts in one shift\n\n---\n\n## Subject Lines (A/B Test These)\n\nThe subject above is the first option. Test it against these three:\n\n**Next step: count unowned urgent alerts in one shift**\n- Preview text: Inside: how it works and what to check in your own operation.\n\n**A question for your team**\n- Preview text: From Alert triage software: why SOC teams still carry an alert backlog after adding automation.\n\n**A short read for your team**\n- Preview text: Why SOC teams still carry an alert backlog after adding automation.\n\n---\n\n## Notes for you\n\n- Link the button to the page or the reply address that does what the call to action says.\n\n## Sector notes\n\n*Sector: not clear from your inputs (name the industry for sector notes, or choose your sector). Business model: not stated. Tell us how you charge and the plan will adjust.*\n\n### What this draft was built from\n\n| Setting | Value |\n|---------|-------|\n| **Topic** | Why SOC teams still carry an alert backlog after adding automation |\n| **Product** | Alert triage software |\n| **Segment** | general (default) |\n| **Type** | educational (default) |\n| **Tone** | professional (default) |\n| **CTA Goal** | count unowned urgent alerts in one shift |\n\n\n## Reading the answer\n\nThis issue supports “Ask readers to count unowned urgent alerts in one shift”. It does not establish that “Name one owner per urgent alert. Separate false positives from delayed responses. Do not claim a measured improvement yet” will improve results. The proposed action still needs a reader test. The conclusion needs review if the source does not support a claim or readers cannot complete the action using their own records.\n\n## Decisions by role\n\nProposed owners. Confirm the named person before acting. Supplied statements below are inputs to check, not established findings.\n\nFounder: ask the issue owner to show how “Ask readers to count unowned urgent alerts in one shift” informs a decision; remove promises of improvement that the supplied evidence does not measure.\n\nCEO: confirm who owns the follow up to “Ask readers to count unowned urgent alerts in one shift”; check that someone can review the result before endorsing the issue.\n\nCMO: verify sources and limits for “Name one owner per urgent alert. Separate false positives from delayed responses. Do not claim a measured improvement yet” with the editor; approve only claims the records support.\n\nCRO: ask a buyer of “Alert triage software” to explain how “Name one owner per urgent alert. Separate false positives from delayed responses. Do not claim a measured improvement yet” informs their next decision; check who can act on any unresolved task.\n\nDemand generation head: trial “Ask readers to count unowned urgent alerts in one shift” with one intended reader; check that they can produce the requested count or record before distribution.\n"
+          }
+        ]
+      }
+    },
+    {
+      "tool": "webinar_script",
+      "args": {
+        "topic": "Reduce invoice exceptions before the payment run",
+        "target_audience": "Accounts payable heads at regional insurers",
+        "webinar_type": "educational",
+        "key_takeaways": "Count exceptions; name an approval owner; compare cycle time before and after one batch.",
+        "your_product": "Invoice processing service"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "# Webinar Script: Reduce invoice exceptions before the payment run\n\n---\n\n## Exercise preparation\nExample needed before delivery: supply one anonymised case, its starting records and the decision participants should make. No exercise result is invented. State it as an Example line in the existing takeaway notes.\n\n## Key Takeaways for Audience\n\n1. We will look at what Invoice processing service brings: Count exceptions.\n2. You will learn how to name an approval owner.\n3. You will learn how to compare cycle time before and after one batch.\n\n---\n\n## Run of Show\n\n| Time | Duration | Section | Purpose |\n|------|----------|---------|----------|\n| 0:00 | 3 min | Welcome & Housekeeping | Set expectations |\n| 0:03 | 2 min | Speaker Introduction | Build credibility |\n| 0:05 | 2 min | Agenda & Learning Objectives | Preview value |\n| 0:07 | 5 min | Context Setting | Why this matters now |\n| 0:12 | 12 min | Main Content Block 1 | Core teaching |\n| 0:24 | 12 min | Main Content Block 2 | Core teaching |\n| 0:36 | 10 min | Main Content Block 3 | Core teaching |\n| 0:46 | 4 min | Summary & Key Takeaways | Reinforce learning |\n| 0:50 | 8 min | Q&A | Address questions |\n| 0:58 | 2 min | Close & CTA | Next steps |\n\n---\n\n## Full Script\n\n### Welcome & Housekeeping (3 min)\n\n**ON SCREEN: Title slide with the webinar name**\n\n**SPEAKER:**\n\"Welcome to today's session on 'Reduce invoice exceptions before the payment run' with Invoice processing service. This session runs 60 minutes and is for accounts payable heads at regional insurers.\n\nPut your questions in the chat at any time; we have set time aside for them near the end. We will run polls along the way, so keep the poll window open.\"\n\n### Speaker Introduction (2 min)\n\n**ON SCREEN: Speaker slide**\n\n**SPEAKER:**\n\"I am your host for this session, from Invoice processing service. Over the next 60 minutes we will look at the problem, the evidence on record and what to do first.\"\n\n### Agenda & Learning Objectives (2 min)\n\n**ON SCREEN: Agenda slide**\n\n**SPEAKER:**\n\"Here is how we will use the time. Part one covers Count exceptions. Part two covers how to name an approval owner. Part three covers how to compare cycle time before and after one batch.\n\nBy the end of this session, you should be able to say where you stand on approval cycle time and what to change first.\"\n\n### Context Setting (5 min)\n\n**ON SCREEN: Context slide**\n\n**SPEAKER:**\n\"Our topic today is 'Reduce invoice exceptions before the payment run'.\n\nFor accounts payable heads at regional insurers, the usual yardsticks are approval cycle time and payment success rate.\n\nAmong regional insurers, the people who decide this are usually Chief Financial Officer, Finance Controller and Head of Accounts Payable.\n\n**LAUNCH POLL: 'Which of these is closest to your situation today?'**\nPoll options:\n- We measure approval cycle time today and know where we stand\n- We know approval cycle time matters but do not measure it yet\n- Migration will disrupt the close: that is what holds us back\n- This is not a priority this year\"\n\n### Main Content Block 1 (12 min)\n\n**ON SCREEN: Key concept slide**\n\n**SPEAKER:**\n\"Let's start with the first idea. Point one: We will look at what Invoice processing service brings: Count exceptions.\n\nQuestion for the chat: 'Where does this show up in your own work today?'\n\nA proof point worth asking for in spend and expense: close time or reconciliation effort before and after for one entity, signed off by the finance controller.\n\nTry it on one live case from your own work this week.\n\nNext is point two, how to name an approval owner. Any questions before we move on? Put them in the chat.\"\n\n### Main Content Block 2 (12 min)\n\n**ON SCREEN: Key concept slide**\n\n**SPEAKER:**\n\"That brings us to the next part. Point two: You will learn how to name an approval owner.\n\nThe measure this part speaks to is approval cycle time. Question for the chat: 'What did the last audit say about spend controls or approvals?'\n\nTake one case from your own work and note where it stands on approval cycle time today.\n\nOne concern that comes up often: 'Our ERP already does this'. A fair way to settle it is to ask to see the gap between the ERP module and the daily workflow (approvals, receipts, cards, posting) using one month of your own transactions.\n\nNext is point three, how to compare cycle time before and after one batch. Any questions before we move on? Put them in the chat.\"\n\n### Main Content Block 3 (10 min)\n\n**ON SCREEN: Key concept slide**\n\n**SPEAKER:**\n\"Last, and the most practical part. Point three: You will learn how to compare cycle time before and after one batch.\n\nThe yardstick to keep in view here is approval cycle time. Question for the chat: 'Which part of this is hardest for your team?'\n\nBefore you change anything, write down where you stand today on approval cycle time, so there is a number to beat.\n\nAnother concern we hear: 'Security and compliance review'. A fair way to settle it is to prepare the answers before they are asked: data residency, access controls, audit logs, certifications you actually hold.\n\nThat covers the takeaways. Next, the summary. Any questions before we move on? Put them in the chat.\"\n\n### Summary & Key Takeaways (4 min)\n\n**ON SCREEN: Takeaways slide**\n\n**SPEAKER:**\n\"To sum up, you have covered Count exceptions, how to name an approval owner and how to compare cycle time before and after one batch.\"\n\n### Q&A (8 min)\n\n**ON SCREEN: Q&A slide**\n\n**SPEAKER:**\n\"Now your questions. I will read each one aloud from the chat and answer it.\n\nIf the chat is quiet, I will start with a concern we hear a lot: 'Migration will disrupt the close'. A fair way to settle it is to plan the cut over just after a month end close and run old and new in parallel for one cycle.\n\nQuestions we do not reach will be answered in the follow-up email.\"\n\n### Close & CTA (2 min)\n\n**ON SCREEN: Next step slide**\n\n**SPEAKER:**\n\"If you do one thing this week, name an approval owner.\n\nIf you would like to take this further, reply to the follow-up email and ask for a conversation about the first step.\n\nThank you for joining.\"\n\n**END WEBINAR**\n\n---\n\n## Q&A Preparation (for the host, not read aloud)\n\n### Anticipated Questions\n\n1. **\"How do we get started with this?\"**\n   - Answer pattern: Deals in fintech, spend and expense usually start like this: CFO led with a security and compliance review inside the cycle; proof through a pilot on one entity or department.\n\n2. **\"Our ERP already does this\"**\n   - Answer pattern: Show the gap between the ERP module and the daily workflow (approvals, receipts, cards, posting) using one month of the buyer's own transactions.\n\n3. **\"Security and compliance review\"**\n   - Answer pattern: Prepare the answers before they are asked: data residency, access controls, audit logs, certifications you actually hold.\n\n4. **\"Migration will disrupt the close\"**\n   - Answer pattern: Plan the cut over just after a month end close and run old and new in parallel for one cycle.\n\n5. **\"Can you share more examples of this: Count exceptions?\"**\n   - Answer pattern: Use an example that follows this shape: close time or reconciliation effort before and after for one entity, signed off by the finance controller.\n\n6. **\"How does this compare to what we do today?\"**\n   - Answer pattern: Ask what their current setup does not do (reconciliation, month end close are good places to look), then show the difference on that point only.\n\n---\n\n## Follow-Up Sequence\n\n### Email 1: Same day\n\n**Subject:** Thank you for joining: Reduce invoice exceptions before the payment run\n\nThank you for joining.\n\nThe takeaways, in short:\n1. Count exceptions\n2. How to name an approval owner\n3. How to compare cycle time before and after one batch\n\nQuestions? Reply to this email.\n\n---\n\n### Email 2: Day 3\n\n**Subject:** A concern from the session: Regulatory caution\n\nThe concern we hear most is \"Regulatory caution\". A fair way to settle it is to map each requirement you name to the control or report that meets it; never claim a compliance status you cannot show.\n\n---\n\n### Email 3: Day 7\n\n**Subject:** Your next step after the session\n\nThe natural next step is a conversation about the first step. Reply to this email if you would like it, or if you want to talk it through with Invoice processing service.\n\n---\n\n---\n\n## Sector Notes: Fintech, spend and expense\n\n- Readers in fintech, spend and expense are usually Chief Financial Officer, Finance Controller, Head of Accounts Payable. They watch days to close the books, reconciliation effort, policy breach rate, approval cycle time.\n- **Who sits in the buying group:** The CFO signs; the Finance Controller or the head of the affected finance team champions; internal audit and compliance review controls; IT checks ERP integration and security; HR joins when employees are affected.\n- **Terms this audience uses:** reconciliation, month end close, policy controls, audit trail, accounts payable, ERP posting.\n- **Objections to expect:** our erp already does this; security and compliance review; migration will disrupt the close; regulatory caution.\n- **A proof point that lands:** Close time or reconciliation effort before and after for one entity, signed off by the finance controller.\n\n## Notes for you\n\n*Sector: read from your inputs as fintech, spend and expense. Business model: not stated. Tell us how you charge and the plan will adjust.*\n\nAny priced offer below requires a written quote and buyer agreement.\n\n- Invoice processing service is mentioned at the \"subtle\" level.\n- If you record the session, add a line at the start that says so, and link the recording and slides in the first follow-up email only if you share them.\n- Confirm that you offer a conversation about the first step before you say it in the close; the script names it because it is the usual first step for this kind of business.\n\n### What this script was built from\n\n| Setting | Value |\n|---------|-------|\n| **Topic** | Reduce invoice exceptions before the payment run |\n| **Duration** | 60 minutes (default) |\n| **Type** | educational |\n| **Audience** | Accounts payable heads at regional insurers |\n| **Speakers** | not given |\n| **Product Mentions** | subtle (default) |\n\n## Reading the answer\n\nThis script supports preparation for “Reduce invoice exceptions before the payment run”. Promised takeaways need a worked exercise and a confirmed speaker before delivery. Preparation notes are not evidence that an exercise has been completed. The conclusion needs review if the host cannot demonstrate a takeaway with the worked example, or participants cannot complete the action.\n\n## Decisions by role\n\nProposed owners. Confirm the named person before acting. Supplied statements below are inputs to check, not established findings.\n\nFounder: ask the host to demonstrate “Count exceptions; name an approval owner; compare cycle time before and after one batch” using one worked case; remove a promise the exercise cannot support.\n\nCEO: confirm the host and rehearsal owner for “Reduce invoice exceptions before the payment run”; approve delivery only after timing and evidence checks pass.\n\nCMO: have the editor distinguish spoken copy from preparation notes for “Reduce invoice exceptions before the payment run”; verify each claim against its source before rehearsal.\n\nCRO: ask “Accounts payable heads at regional insurers” which approval or workflow decision the exercise must inform; test that decision in rehearsal before proposing a sales follow up.\n\nDemand generation head: match invitations for “Invoice processing service” to “Accounts payable heads at regional insurers”; check that the registration promise is delivered by the exercise before promotion.\n\nTo sharpen this, give: speakers (it would change the introduction, which now says \"your host\"); how you charge (it would change the commercial next step; it is conditional until you state how you charge); duration (it would change the timings, which assume 60 minutes).\n"
+          }
+        ]
+      }
+    },
+    {
+      "tool": "content_repurposer",
+      "args": {
+        "source_content": "A regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch days in October. Dispatchers used one exception queue instead of calling each depot. This is one uncontrolled pilot, not a promise for other fleets. Ask readers to measure one dispatch shift before changing their process.",
+        "source_type": "blog_post",
+        "your_sector": "logistics_tech"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "# Content Repurposing Kit\n\nNot given: key message. The hooks come from the source's title or first sentence; add key message to set the core message.\nDraft only. Before you use it: confirm the source URL for the \"Read the full blog post\" line of the email and the last tweet before sending and confirm the sender name before the email can be sent. Supply confirmed Reader action, Source URL and Sender as labelled lines in the source notes.\n\n## Repurposed Content\n\n\n### LinkedIn Post\n\n---\n\nA regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch days in October.\n\nDispatchers used one exception queue instead of calling each depot.\n\nThis is one uncontrolled pilot, not a promise for other fleets.\n\nAsk readers to measure one dispatch shift before changing their process.\n\nResult: A regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch days in October.\n\nWhat is your view?\n\n#LogisticsTech\n\n---\n\n\n### Twitter/X Thread\n\n---\n\n**Tweet 1 (Hook):**\nA regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch days in October. A thread.\n\n**Tweet 2:**\n1/ Dispatchers used one exception queue instead of calling each depot.\n\n**Tweet 3:**\n2/ This is one uncontrolled pilot, not a promise for other fleets.\n\n**Tweet 4:**\n3/ Ask readers to measure one dispatch shift before changing their process.\n\n**Tweet 5:**\n4/ Result: A regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch days in October.\n\n**Tweet 6:**\n5/ What is your view?\n\n---\n\n\n### Email Version\n\n---\n\nSubject: A regional fleet pilot reduced route adjustment time from four\n\nHello,\n\nA regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch days in October.\n\nDispatchers used one exception queue instead of calling each depot.\n\nThis is one uncontrolled pilot, not a promise for other fleets.\n\nAsk readers to measure one dispatch shift before changing their process.\n\nResult: A regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch days in October.\n\nConfirm the reader action before sending.\n\nSource link: unknown; confirm before sending.\n\nBest regards,\nSender: unknown; confirm before sending.\n\n---\n\n\n### Blog Summary\n\n---\n\n**A regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch...**\n\nA regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch days in October.\n\n- Dispatchers used one exception queue instead of calling each depot.\n- This is one uncontrolled pilot, not a promise for other fleets.\n- Ask readers to measure one dispatch shift before changing their process.\n\n**Proof:** A regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch days in October.\n\nThis is written for readers such as chief operating officer and head of supply chain, who watch on time delivery, cost per shipment or per order and order cycle time.\n\n\n---\n\n\n### Quote Cards\n\n---\n\n**Quote Card 1:**\n> \"A regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch days in October\"\n\n**Quote Card 2:**\n> \"Dispatchers used one exception queue instead of calling each depot\"\n\n**Quote Card 3:**\n> \"This is one uncontrolled pilot, not a promise for other fleets\"\n\n**Quote Card 4:**\n> \"Ask readers to measure one dispatch shift before changing their process\"\n\n---\n\n\n---\n\n## Source Notes\n\n| Attribute | Value |\n|-----------|-------|\n| **Source Type** | blog post |\n| **Word Count** | 51 |\n| **Key Points Found** | 4 |\n| **Proof Items Found** | 1 (1 usable as results or quotes, 0 kept out: none) |\n| **Brand Voice** | professional (default) |\n| **Core Message** | A regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch days in October |\n| **Formats** | Default top 5 |\n\n### Key Points Extracted\n1. A regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch days in October\n2. Dispatchers used one exception queue instead of calling each depot\n3. This is one uncontrolled pilot, not a promise for other fleets\n4. Ask readers to measure one dispatch shift before changing their process\n\n*Chosen as whole sentences from your source, in its order. In the posts and tweets a sentence over 260 characters is shortened at a clause boundary; the list above and the blog summary keep the longer form.*\n\n**Brand voice (professional):** plain and formal greeting, sign-off and closing question; the sentences taken from your source are kept as you wrote them.\n\n### Proof Used\n- A regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch days in October. *(a result)*\n\n---\n\n## Sector Notes\n\n### Audience Notes\n\n*Sector: from your choice: logistics tech. Business model: not stated. Tell us how you charge and the plan will adjust.*\n\nAny priced offer below requires a written quote and buyer agreement.\n- Readers in logistics tech are usually Chief Operating Officer, Head of Supply Chain, Head of Logistics. They watch on time delivery, cost per shipment or per order, order cycle time, exception rate.\n- If your source has a figure for one of these measures, put it in the first line of each piece: on time delivery, cost per shipment or per order, order cycle time, exception rate.\n- **Terms this audience uses:** shipment, carrier, consignment, lead time, exception, service level.\n- **A proof point that lands:** A before and after of on time delivery or cost per shipment on one lane, site or region, measured over a full cycle of busy and quiet weeks.\n\n\n## Reading the answer\n\nThese drafts support reuse of the supplied excerpt “A regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch days in October” (read with the complete source and its limits). Changing format does not validate the result or permit a broader claim. Preserve the sample, period and study limitations supplied in the source in every destination. The conclusion needs review if the original record contradicts the result, permission changes or a channel version drops a qualification.\n\n## Decisions by role\n\nProposed owners. Confirm the named person before acting. Supplied statements below are inputs to check, not established findings.\n\nFounder: ask the source owner to verify the supplied excerpt “A regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch days in October” (read with the complete source and its limits) before endorsing derived claims; keep each observation within its recorded scope.\n\nCEO: confirm the approver and permitted uses of “blog post” with the content owner; do not infer permission from having the source text.\n\nCMO: compare each draft with the supplied excerpt “A regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch days in October” (read with the complete source and its limits); check that the baseline, period and caveat survive editing before approval.\n\nCRO: ask the buyer which decision the source's central message supports; hold wider outcome promises until comparable evidence is available.\n\nDemand generation head: test the requested action from the supplied excerpt “A regional fleet pilot reduced route adjustment time from four to three hours across ten dispatch days in October” (read with the complete source and its limits) in each destination; verify the link and that no channel implies stronger evidence than the source.\n"
+          }
+        ]
+      }
+    },
+    {
+      "tool": "thought_leadership_series",
+      "args": {
+        "topic": "AI assisted contract review needs an accountable reviewer",
+        "your_take": "The useful unit is an accepted redline, not a generated clause.",
+        "target_reader": "Legal operations leaders at SaaS companies",
+        "proof_points": "In two interviews, reviewers said missing source references slowed review. No time saving study has been run."
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "# Thought Leadership Series\n\n---\n\n## Article 1 of 3\n\n**Headline:** AI Assisted Contract Review Needs an Accountable Reviewer: The Case Against the Usual View\n\n---\n\n# AI Assisted Contract Review Needs an Accountable Reviewer: The Case Against the Usual View\n\n*By the author. Written for Legal operations leaders at SaaS companies.*\n\nThe useful unit is an accepted redline, not a generated clause.\n\n### Trace the reported problem\n\nStart with the observation in the interview note. Ask the person who reported it to walk through a recent example and identify where the delay, error or extra work occurred. Record the starting condition and the evidence they used. A reported experience can explain a concern; it cannot establish how common the concern is.\n\n### What the interviews support\n\nSupplied interview note, not independently verified: In two interviews, reviewers said missing source references slowed review. No time saving study has been run.\n\nThis is qualitative input for a hypothesis. It does not measure a time saving, establish causation or demonstrate a result for the wider market.\n\n### The decision for the reader\n\nTreat the position, \"The useful unit is an accepted redline, not a generated clause.\", as a question to test on your own work. Name the person who can reconstruct the reported case and agree when that review will happen.\n\nNext in the series: AI Assisted Contract Review Needs an Accountable Reviewer: What the Objections Miss.\n\n*Notes on this article, not part of it:*\n\n**Lead proof point:** none of your proof points is a customer result\n**Counter-argument it answers:** \"We already have a tool for this\"\n**Draft length:** about 167 words\n\n---\n\n## Article 2 of 3\n\n**Headline:** AI Assisted Contract Review Needs an Accountable Reviewer: What the Objections Miss\n\n---\n\n# AI Assisted Contract Review Needs an Accountable Reviewer: What the Objections Miss\n\n*Part 2 of 3, by the author.*\n\nThis picks up from \"AI Assisted Contract Review Needs an Accountable Reviewer: The Case Against the Usual View\" and takes the same position one step further.\n\n### Look for a counterexample\n\nFind a comparable case where the reported problem did not occur. Ask what differed in the inputs, the reviewer and the handoff. If the same conditions produced a different outcome, narrow the position before prescribing a change. Do not recruit only people who already agree.\n\n### What the interviews support\n\nThe interview note in Article 1 remains the evidence boundary. This is qualitative input for a hypothesis. It does not measure a time saving, establish causation or demonstrate a result for the wider market.\n\n### The decision for the reader\n\nTreat the position, \"The useful unit is an accepted redline, not a generated clause.\", as a question to test on your own work. Keep the recommendation open until the counterexample has been compared with the reported case.\n\nNext in the series: AI Assisted Contract Review Needs an Accountable Reviewer: What to Do First.\n\n*Notes on this article, not part of it:*\n\n**Lead proof point:** none of your proof points is a customer result\n**Counter-argument it answers:** \"The price grows as we grow\"\n**Draft length:** about 158 words\n\n---\n\n## Article 3 of 3\n\n**Headline:** AI Assisted Contract Review Needs an Accountable Reviewer: What to Do First\n\n---\n\n# AI Assisted Contract Review Needs an Accountable Reviewer: What to Do First\n\n*Part 3 of 3, by the author.*\n\nThis picks up from \"AI Assisted Contract Review Needs an Accountable Reviewer: What the Objections Miss\" and takes the same position one step further.\n\n### Agree a test and its limits\n\nChoose a measure for the reported problem before changing the workflow. Record the starting value, case mix, observation period and acceptance rule. Assign a person to inspect the result. A small before and after comparison can guide the next experiment, but other changes may explain the difference.\n\n### What the interviews support\n\nThe interview note in Article 1 remains the evidence boundary. This is qualitative input for a hypothesis. It does not measure a time saving, establish causation or demonstrate a result for the wider market.\n\n### The decision for the reader\n\nTreat the position, \"The useful unit is an accepted redline, not a generated clause.\", as a question to test on your own work. Write down what evidence would make you keep, narrow or reject the position before the next review.\n\n*Notes on this article, not part of it:*\n\n**Lead proof point:** none of your proof points is a customer result\n**Counter-argument it answers:** \"Switching cost\"\n**Draft length:** about 163 words\n\n---\n\n## Promotional Posts\n\n### Promo Post 1 (for Article 1)\n\n---\n\nNew article: \"AI Assisted Contract Review Needs an Accountable Reviewer: The Case Against the Usual View\".\n\nThe short version: The useful unit is an accepted redline, not a generated clause.\n\nA question for legal operations leaders at SaaS companies: \"What does a new user have to do before they get value, and how long does it take today?\"\n\n---\n\n### Promo Post 2 (for Article 2)\n\n---\n\nNew article: \"AI Assisted Contract Review Needs an Accountable Reviewer: What the Objections Miss\".\n\nA question for legal operations leaders at SaaS companies: \"Which tools would this replace or connect to?\"\n\n---\n\n### Promo Post 3 (for Article 3)\n\n---\n\nNew article: \"AI Assisted Contract Review Needs an Accountable Reviewer: What to Do First\".\n\nA question for legal operations leaders at SaaS companies: \"Who owns the number this would move?\"\n\n---\n\n\n---\n\n## Publishing Order\n\n1. Article 1, \"AI Assisted Contract Review Needs an Accountable Reviewer: The Case Against the Usual View\", then its promo post.\n2. Article 2, \"AI Assisted Contract Review Needs an Accountable Reviewer: What the Objections Miss\", then its promo post.\n3. Article 3, \"AI Assisted Contract Review Needs an Accountable Reviewer: What to Do First\", then its promo post.\n\nLink each promo post to its article. Hashtags for the posts: #SaaS.\n\n---\n\n## Proof Points Used\n\n| Proof point | What it is | How it is used |\n|---|---|---|\n| In two interviews | the fact was not clear; not a customer result | evidence still to gather |\n| reviewers said missing source references slowed review. No time saving study has been run | the fact was not clear; not a customer result | evidence still to gather |\n\n---\n\n## Sector Notes: SaaS\n\n- **Counter-arguments your readers will raise:** we already have a tool for this; the price grows as we grow; switching cost; security and it review. The articles answer them in turn.\n- **Measures your readers use:** time to value, adoption by the target team, renewal rate, expansion revenue, support load. Cite the ones your proof points really move.\n- **Terms your readers use:** onboarding, time to value, renewal, integration, admin controls, single sign on.\n- **A proof point that lands:** One team or a cohort of customers before and after, on adoption, time saved or retention, with the period and the owner named.\n\n---\n\n## Notes for you\n\n*Sector: read from your inputs as SaaS (the buyer's industry names it; your own description names no sector). Business model: not stated. Tell us how you charge and the plan will adjust.*\n\nAny priced offer below requires a written quote and buyer agreement.\n\n3 articles in the contrarian style, written for legal operations leaders at SaaS companies.\n\n- Not used as examples: \"In two interviews\" and \"reviewers said missing source references slowed review. No time saving study has been run\", because the 3 articles have room for only so many; they are listed under the proof points below.\n\n### What this series was built from\n\n| Element | Detail |\n|---------|--------|\n| **Topic** | AI assisted contract review needs an accountable reviewer |\n| **Your Take** | The useful unit is an accepted redline, not a generated clause. |\n| **Target Reader** | Legal operations leaders at SaaS companies |\n| **Author** | not given |\n| **Articles** | 3 in the contrarian style |\n\n## Reading the answer\n\nThis series supports an argument around “The useful unit is an accepted redline, not a generated clause”. “In two interviews, reviewers said missing source references slowed review. No time saving study has been run” remains supplied evidence with its original limits. Interview observations are not a measured effect. The conclusion needs review if a counterexample weakens the argument, an attributable source changes the evidence, or the intended reader cannot apply the proposed action.\n\n## Decisions by role\n\nProposed owners. Confirm the named person before acting. Supplied statements below are inputs to check, not established findings.\n\nFounder: ask the author to seek a counterexample to “The useful unit is an accepted redline, not a generated clause”; retain the argument only within the scope that survives it.\n\nCEO: confirm the evidence owner for “In two interviews, reviewers said missing source references slowed review. No time saving study has been run”; approve no company outcome claim beyond the recorded scope.\n\nCMO: have the editor compare every article with “In two interviews, reviewers said missing source references slowed review. No time saving study has been run”; keep unmeasured effects and interview observations visibly distinct.\n\nCRO: ask “Legal operations leaders at SaaS companies” whether the argument addresses a live decision; record a concrete objection before using it in sales.\n\nDemand generation head: test one article about “AI assisted contract review needs an accountable reviewer” with “Legal operations leaders at SaaS companies”; check whether they can name the next action before distributing the series.\n\nTo sharpen this, give: author background (it would change the bylines, which now read \"the author\").\n"
+          }
+        ]
+      }
+    },
+    {
+      "tool": "testimonial_capture",
+      "args": {
+        "customer_name": "Pilot contact",
+        "customer_company": "Anonymous regional insurer",
+        "success_story": "The AP head said the exception queue was easier to inspect; no measured time saving. Written approval for a quote has not been received.",
+        "testimonial_type": "written_quote",
+        "your_product": "Invoice processing service",
+        "customer_role": "Accounts payable head"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "# Testimonial Capture Kit\n\n## Publication permission first\nUse not approved. The material below is for interview and permission review only; no publishable quote is approved.\n| Confirmation | Status |\n| --- | --- |\n| Channel | Unknown; ask where the customer permits use |\n| Attribution | Unknown; confirm name, role, company or anonymity |\n| Permitted wording | Unknown; ask the customer to approve the exact words |\nKeep the customer permission record and date with the final quote. Suggested wording remains a draft for the customer to correct.\n## Pilot contact at Anonymous regional insurer\n\n---\n\n## Customer Profile\n\n| Detail | Information |\n|--------|-------------|\n| **Name** | Pilot contact |\n| **Company** | Anonymous regional insurer |\n| **Role** | Accounts payable head |\n| **Product** | Invoice processing service |\n| **Relationship** | not supplied |\n| **Testimonial Type** | written quote |\n| **Use Case** | Use not approved |\n\n*Sector: read from your inputs as fintech, spend and expense. Business model: not stated. Tell us how you charge and the plan will adjust.*\n\nAny priced offer below requires a written quote and buyer agreement.\n\n---\n\n## Success Story Summary\n\nThe AP head said the exception queue was easier to inspect; no measured time saving. Written approval for a quote has not been received.\n\n**What each part of the story is, and how this kit uses it:**\n\n1. The AP head said the exception queue was easier to inspect. *(the fact was not clear; not a customer result; your contact's company is not named, so this is not put to them as their own)*\n2. No measured time saving. Written approval for a quote has not been received. *(a claim from the vendor's own page; your contact's company is not named, so this is not put to them as their own)*\n\n*The company name (Anonymous regional insurer) does not name a company, so none of these is put to the contact as their own result. The request email asks about their experience instead, and the results are kept for you to check against what the contact tells you.*\n\n---\n\n## Request Email\n\n\n**Subject:** Quick favor: share your experience with Invoice processing service?\n\nHi Pilot,\n\nI hope this finds you well!\n\nI would like to hear how Invoice processing service has worked for you and for your team.\n\nWould you be willing to share a brief quote about your experience? Just 2-3 sentences about what Invoice processing service has meant for your team.\n\nHere's what it involves:\n- **Time:** 5 minutes to write (or I can draft it for you)\n- **Approval:** You'll see and approve anything before it's used\n\n\nI can even draft something based on what you've shared, and you just edit/approve. Would that work?\n\nThanks for considering,\n\n\n\n*Notes for you, not part of the email: the time in the email (5 minutes to write, 15-20 minutes for a call) is an example, so change it to what you will really ask for. use case was not given, so the email names no usage; add it if the customer should know where the quote will appear. Review sites suit software products; for other businesses a named reference call or a case study is the usual proof.*\n\n---\n\n## Interview Questions\n\n\n### Warm-Up\n1. Tell me about your role at your company.\n2. How long have you been using Invoice processing service?\n\n### Before Invoice processing service\n3. What was happening before you found Invoice processing service?\n4. What specific challenges were you trying to solve?\n5. What was the impact of those challenges on your team/business?\n6. What had you tried before?\n\n### Decision & Rollout\n7. How did you first hear about Invoice processing service?\n8. What made you choose Invoice processing service over alternatives?\n9. What was the rollout like?\n10. How long did it take to see first results?\n\n### Results\n11. What specific results have you seen?\n12. Can you put numbers on that? (%, $, time saved)\n13. How has this impacted your team's day-to-day?\n14. What's the biggest win you've had with Invoice processing service?\n\n\n### Recommendation\n15. What would you tell someone considering Invoice processing service?\n16. Who would you recommend Invoice processing service to?\n\n### Questions for this role (Accounts payable head)\n\n1. How did the month-end close, the approvals or the audit preparation change for your team?\n2. What did your own review or audit say before and after?\n3. Who in finance had to be convinced, and what convinced them?\n\n### Questions on the Measures Fintech, spend and expense Buyers Look For\n\n1. How did days to close the books change after the rollout? What was it before, and over what period?\n2. How did reconciliation effort change after the rollout? What was it before, and over what period?\n3. How did policy breach rate change after the rollout? What was it before, and over what period?\n\n### Context Questions in the Language of Fintech, spend and expense\nAsk these in the past tense, about the time before Invoice processing service:\n\n1. How many days does the month end close take today, and which step takes longest?\n2. How are card spends, claims and invoices matched to the ledger today, and by whom?\n3. What did the last audit say about spend controls or approvals?\n\n*A strong proof point here: Close time or reconciliation effort before and after for one entity, signed off by the finance controller.*\n*Terms this sector's buyers use, to listen for in the answers: reconciliation, month end close, policy controls, audit trail, accounts payable, ERP posting.*\n\n### Approval and Sign-Off\n- Who at your company needs to approve a named quote or a logo (legal, communications, the customer's own manager)?\n- Is there anything about your company's use that must not be mentioned (customer data, security details, pricing)?\n\n\n---\n\n## Testimonial Templates\n\n*Sentence starters to offer the customer. The customer completes them in their own words and approves the final text; nothing below is a quote until they do.*\n\n### Short Format (1-2 sentences)\n*Draft for customer wording review; publication channel and attribution require approval.*\n\nStarter: \"Since we started with Invoice processing service, ...\"\n\nPilot contact, Accounts payable head at Anonymous regional insurer\n\n---\n\n### Medium Format (3-4 sentences)\n*For: Case study pull quotes, sales deck*\n\nStarters: \"Before Invoice processing service, ...\" then \"With Invoice processing service, ...\" then \"What I value most is ...\"\n\nPilot contact, Accounts payable head at Anonymous regional insurer\n\n---\n\n### Long Format (Full paragraph)\n*For: Case studies, press releases, testimonial pages*\n\nStarters: \"At your company, the problem was ...\" then \"We chose Invoice processing service because ...\" then \"The rollout was ...\" then \"Within ... we saw ...\"\n\nPilot contact, Accounts payable head at Anonymous regional insurer\n\n---\n\n\n---\n\n## Process Checklist\n\n### Before Request\n- [ ] Confirm customer satisfaction (NPS/CSAT check)\n- [ ] Review account health and relationship history\n- [ ] Identify specific success metrics to highlight\n- [ ] Prepare any incentive details\n\n### Request Phase\n- [ ] Send personalized request email\n- [ ] Follow up after 3 days if no response\n- [ ] Schedule at their convenience\n- [ ] Send questions in advance\n\n### Capture Phase\n- [ ] Record session (with permission)\n- [ ] Take detailed notes\n- [ ] Ask for specific numbers/outcomes\n- [ ] Request approval for quotes\n\n### Post-Capture\n- [ ] Send thank you + any promised incentive\n- [ ] Draft testimonial for their approval\n- [ ] Get written sign-off before publishing\n- [ ] Add to testimonial database\n- [ ] Track usage across channels\n\n---\n\n## Testimonial Usage Matrix\n\n| Channel | Format | Status |\n|---------|--------|--------|\n| Website homepage | Short quote | Pending |\n| Case study page | Full story | Pending |\n| Sales deck | Medium quote | Pending |\n| Social media | Short + photo | Pending |\n| Press release | Full paragraph | Pending |\n| Review site | Review post | Pending |\n\n---\n\nSuggested timings, lengths and counts: adjust them to your own.\n\n\n## Reading the answer\n\nThis kit supports asking about “The AP head said the exception queue was easier to inspect; no measured time saving. Written approval for a quote has not been received”. It is not a customer endorsement. Subjective experience is not measured improvement, and permission must cover the exact words and use. Keep the stated hold in place; this guidance does not override it. The conclusion needs review if the customer corrects the wording, the measurement record changes or permission is declined or withdrawn.\n\n## Decisions by role\n\nProposed owners. Confirm the named person before acting. Supplied statements below are inputs to check, not established findings.\n\nFounder: ask the evidence owner to separate opinion from measured outcome in “The AP head said the exception queue was easier to inspect; no measured time saving. Written approval for a quote has not been received”; do not turn subjective experience into a numerical outcome claim.\n\nCEO: have the publication owner obtain written approval for “written quote”; check wording, channels and withdrawal terms before external use.\n\nCMO: read “The AP head said the exception queue was easier to inspect; no measured time saving. Written approval for a quote has not been received” back to “Accounts payable head”; let the customer correct the words before seeking permission.\n\nCRO: ask “Accounts payable head” for a recent example involving “Invoice processing service”; record the baseline and limits without coaching a favourable result.\n\nDemand generation head: verify the approval record for “written quote” with the publication owner before reuse; remove the asset if approval is withdrawn.\n"
+          }
+        ]
+      }
+    },
+    {
+      "tool": "sales_enablement_content",
+      "args": {
+        "product": "Network incident automation",
+        "target_persona": "Network operations director",
+        "proof_points": "One October pilot reduced median recovery time from 80 to 50 minutes across 12 incidents; not controlled.",
+        "common_objections": "Our NOC already has an incident tool. We cannot risk automatic changes on the live network."
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "# Sales Enablement Kit\n## Network incident automation | Network operations director\n\n*Sector: not clear from your inputs (name the industry for sector notes, or choose your sector). Business model: not stated. Tell us how you charge and the plan will adjust.*\n\nAny priced offer below requires a written quote and buyer agreement.\n\n---\n\n\n## Quick Reference Card\n\n| Element | Detail |\n|---------|--------|\n| **Product** | Network incident automation |\n| **Persona** | Network operations director |\n| **Price Position** | Price position unknown |\n| **Sales Stage** | demo (default) |\n| **Note** | No value props given: the pitch order below leads with your proof points |\n\n---\n\n## Value Propositions\n\n### Pitch Order (Lead with Strongest)\n\n\n**1. One October pilot reduced median recovery time from 80 to 50 minutes across 12 incidents, not controlled.**\n- *Why it matters to network operations director:* tie it to a measure this buyer owns\n\n\n---\n\n## Pitch Script by Stage\n\n### Demo Stage\n\n\n**Demo Structure:**\n\n**Agenda (1 min):**\n\"Here's what we'll cover: the points on your pitch order. Sound good?\"\n\n**Demo (20 min):**\nFor each part, frame it as:\n\"You mentioned this pain. Here's how we solve that...\"\n\n**Social Proof (3 min):**\n\"One October pilot reduced median recovery time from 80 to 50 minutes across 12 incidents, not controlled\"\n\n**Questions & Objections (10 min):**\nAddress them with the objection handlers in this kit.\n\n**Next Step (1 min):**\n\"Based on what you've seen, what would it take to move forward?\"\n\n\n---\n\n## Objection Handlers\n\n\n### Objection 1: \"Our NOC already has an incident tool. We cannot risk automatic changes on the live network.\"\n\n**What this is:** an objection about a tool or provider they already have\n\n**Acknowledge:**\n> Makes sense: you already have something in place and it should be respected.\n\n**Reframe:**\n> What does it not do for you today, and what does that cost?\n\n**Proof Point:**\n> One October pilot reduced median recovery time from 80 to 50 minutes across 12 incidents, not controlled\n\n**From your product description, the facts that bear on this:**\n> Network incident automation\n\n**Your answer pattern (advice for you, not a line to read out):**\n> Ask what the current setup does not do today and what that costs; position alongside it where you can, and replace only where the buyer sees the gap.\n\n**Full Response Script:**\n> \"I hear you: 'Our NOC already has an incident tool. We cannot risk automatic changes on the live network'. Makes sense: you already have something in place and it should be respected. What does it not do for you today, and what does that cost? From what we offer: Network incident automation. One October pilot reduced median recovery time from 80 to 50 minutes across 12 incidents, not controlled. Would it help to see where we work alongside it and where we would replace it?\"\n\n---\n\n\n## Competitive Responses\n\n\n*No competitor-specific objections provided. Add competitor objections parameter for battle cards.*\n\n\n## Price Justification\n\n### Position: Price position unknown\n\n**Value Framework:**\n\n| Value | Proof you can cite |\n|-------|--------------------|\n| One October pilot reduced median recovery time from 80 to 50 minutes across 12 incidents, not controlled | the same item |\n\n**Investment:** Price position unknown. Supply the approved price position before using a pricing claim.\n\n**ROI Conversation:**\n\n\"Let me share what customers have seen:\n\n- One October pilot reduced median recovery time from 80 to 50 minutes across 12 incidents, not controlled\n\nBased on what you've shared about your situation, here's what that could mean for you:\" then work it out from the prospect's own figures, which this kit does not have.\n\n**If Price Pushback:**\n\n\"I understand budget is a consideration. Let me ask: what does it cost you each month to leave this problem as it is?\n\nPut the value in the prospect's own numbers. For a company your size, work out the saving from their figures, not from ours.\"\n\n---\n\n## Discovery Questions for network operations director\n\n### Opening Questions\n1. \"Tell me how your team handles this today.\"\n2. \"What's working well? What's not?\"\n3. \"How is this affecting the measures you are judged on?\"\n\n### Pain Discovery\n4. \"What happens if you don't solve this in the next 6 months?\"\n5. \"How much time/money does this currently cost you?\"\n6. \"Who else is affected by this problem?\"\n\n### Solution Mapping\n7. \"What have you tried before? What happened?\"\n8. \"What would success look like for you?\"\n9. \"If you could wave a magic wand, what would be different?\"\n\n### Qualification\n10. \"What's your timeline for making a decision?\"\n11. \"Who else needs to be involved in this evaluation?\"\n12. \"What's your budget range for solving this?\"\n\n---\n\n## Follow-Up Templates\n\n### After Discovery Call\n\nSubject: Network incident automation next steps\n\nHi,\n\nThanks for sharing how your team handles this today.\n\nBased on what you described, here's what stands out (fill these in from your call notes):\n- the first challenge they named, and what it costs them\n- the second challenge, and the goal it blocks\n\nNetwork incident automation addresses this.\n\nRelevant proof: One October pilot reduced median recovery time from 80 to 50 minutes across 12 incidents, not controlled\n\nNext step: name the specific action and the date.\n\nWhen works for you?\n\n---\n\n### After Demo\n\nSubject: Network incident automation demo follow-up + next steps\n\nHi,\n\nGreat connecting today. Here's a quick recap:\n\n**What we covered:**\n- One October pilot reduced median recovery time from 80 to 50 minutes across 12 incidents, not controlled\n\n**What resonated:** the moment they engaged (from your notes).\n\n**Your questions:** the answers to the questions they raised.\n\n**Next step:** the specific action and date.\n\nResources: the relevant case study and the one-pager.\n\nTalk soon,\n\n---\n\n## Call Prep Checklist\n\nBefore every demo call:\n\n- [ ] Research: Reviewed LinkedIn, recent news, annual report\n- [ ] Context: Know their industry challenges\n- [ ] Personalization: Have a few specific observations\n- [ ] Objection prep: Anticipate their top 2 concerns\n- [ ] Proof ready: Have relevant case study queued\n- [ ] Questions ready: Top 5 discovery questions\n- [ ] CTA clear: Know exactly what next step to propose\n- [ ] Start plan ready: Know what the rollout would involve and how you will say it\n\n---\n\n## Quick Stats to Quote\n\n- One October pilot reduced median recovery time from 80 to 50 minutes across 12 incidents, not controlled\n\n---\n\n*Generated for network operations director at demo stage*\n\nSuggested timings, lengths and counts: adjust them to your own.\n\n\n## Reading the answer\n\nThis material supports a sales conversation about “Network incident automation”. “One October pilot reduced median recovery time from 80 to 50 minutes across 12 incidents; not controlled” does not establish causal improvement or a safe rollout beyond its measured scope. The conclusion needs review if a comparable buyer test changes the outcome, attribution or acceptance conditions, or the buyer confirms a different objection.\n\n## Decisions by role\n\nProposed owners. Confirm the named person before acting. Supplied statements below are inputs to check, not established findings.\n\nFounder: ask the evidence owner to explain the baseline, sample and attribution limits in “One October pilot reduced median recovery time from 80 to 50 minutes across 12 incidents; not controlled”; hold a general performance promise without wider evidence.\n\nCEO: ask the delivery owner to define a reversible acceptance test for “Network incident automation”; approve no rollout beyond the buyer agreed scope.\n\nCMO: verify “One October pilot reduced median recovery time from 80 to 50 minutes across 12 incidents; not controlled” against the original records; preserve the measurement period and study limitations in every sales asset.\n\nCRO: ask “Network operations director” to test “Our NOC already has an incident tool. We cannot risk automatic changes on the live network” against the current workflow; agree pass conditions and the approver before advancing the deal.\n\nDemand generation head: have sales review whether “Our NOC already has an incident tool. We cannot risk automatic changes on the live network” recurs in the next account sample; check buyer fit before reusing “Network incident automation” claims in campaigns.\n"
+          }
+        ]
+      }
+    },
+    {
+      "tool": "craft_content_improver",
+      "args": {
+        "content": "Our revolutionary AI guarantees 50% faster claim resolution for every insurer. One pilot customer said the queue felt clearer, but we have not measured resolution time. Book a demo to transform operations.",
+        "content_type": "landing_page",
+        "goal": "Publish a defensible service page",
+        "audience": "Claims operations heads at regional insurers"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "# Content Analysis & Improvement Report\n\n## Confirm the purpose\nYou supplied: \"Publish a defensible service page\". Confirm this is the intended reader task.\nReview mode: purpose awaiting confirmation. Style suggestions are optional; factual and publication checks still apply.\n\n## Evidence and suggestions\n- **Evidence check (buzzwords)**: Buzzwords (1): \"revolutionary\" in \"Our revolutionary AI guarantees 50% faster claim resolution for every insurer.\". Exact span: \"revolutionary\"; \"Our revolutionary AI guarantees 50% faster claim resolution for every insurer.\". Say what the product does in plain words: \"use\" instead of \"leverage\" or \"utilize\", \"help\" instead of \"empower\", \"improve\" instead of \"optimize\".\n- **Suggestion (question)**: No questions to engage reader. Scope: whole draft; no single triggering span. Add a rhetorical question to draw readers in\n- **Suggestion (you-language)**: Limited \"you\" language: feels impersonal. Scope: whole draft; no single triggering span. Reframe benefits in terms of \"you\": \"You'll save time\" vs \"It saves time\"\n- **Evidence check (superlative)**: Claims that need proof (1): \"guarantees\" in \"Our revolutionary AI guarantees 50% faster claim resolution for every insurer.\". Exact span: \"guarantees\"; \"Our revolutionary AI guarantees 50% faster claim resolution for every insurer.\". Remove the claim or back it with a result you can show.\n- **Evidence check (unproved-claim)**: Evidence missing: \"One pilot customer said the queue felt clearer, but we have not measured resolution time.\". Exact span: \"One pilot customer said the queue felt clearer, but we have not measured resolution time.\". Do not publish the claimed result as fact. Supply measured evidence or state it as a target to test.\n\n## Content Overview\n- **Type:** landing page\n- **Goal:** Publish a defensible service page\n- **Audience:** Claims operations heads at regional insurers\n- **Word Count:** 32\n- **Avg Sentence Length:** 10.7 words\n\n---\n\n## Overall Score: 4.9/10 (NOT PROVED YET)\n\nOptional scoring reference; review the evidence and proposed changes above first.\n\n*How this is scored: each score starts at 10 and loses points only for the findings listed below, each quoted from your text. The overall score is the average of the four scores and the lowest one, so one weak area cannot hide behind three strong ones. An unproved claim or an unsupported claim about the reader is labelled NOT PROVED YET, never GOOD or EXCELLENT. Other publication defects prevent an EXCELLENT rating. These checks do not judge whether your claims are true.*\n\n| Dimension | Score | Status |\n|-----------|-------|--------|\n| Clarity | 9/10 | Note |\n| Structure | 10/10 | Yes |\n| Engagement | 2/10 | No |\n| Goal Alignment | 10/10 | Yes |\n\n---\n\n## Readability Analysis\n\n**Flesch Score:** 37/100 (Difficult)\n\nAcademic level. May be too complex for general audience.\n\n---\n\n## Detailed Analysis\n\n### Clarity Issues Found\n- Buzzwords (1): \"revolutionary\" in \"Our revolutionary AI guarantees 50% faster claim resolution for every insurer.\"\n\n### Structure Issues Found\n- No structure issues found by these checks\n\n### Engagement Issues Found\n- No questions to engage reader\n- Limited \"you\" language: feels impersonal\n- Claims that need proof (1): \"guarantees\" in \"Our revolutionary AI guarantees 50% faster claim resolution for every insurer.\"\n- Evidence missing: \"One pilot customer said the queue felt clearer, but we have not measured resolution time.\"\n\n### Goal Alignment Issues Found\n- No goal alignment issues found by these checks\n\n---\n\n## Review the proposed changes\n\n1. **Evidence check: Engagement**: Evidence missing: \"One pilot customer said the queue felt clearer, but we have not measured resolution time.\". Fix: Do not publish the claimed result as fact. Supply measured evidence or state it as a target to test.\n\n2. **Suggestion: Engagement**: No questions to engage reader. Fix: Add a rhetorical question to draw readers in\n\n3. **Suggestion: Engagement**: Limited \"you\" language: feels impersonal. Fix: Reframe benefits in terms of \"you\": \"You'll save time\" vs \"It saves time\"\n\n4. **Evidence check: Clarity**: Buzzwords (1): \"revolutionary\" in \"Our revolutionary AI guarantees 50% faster claim resolution for every insurer.\". Fix: Say what the product does in plain words: \"use\" instead of \"leverage\" or \"utilize\", \"help\" instead of \"empower\", \"improve\" instead of \"optimize\".\n\n5. **Evidence check: Engagement**: Claims that need proof (1): \"guarantees\" in \"Our revolutionary AI guarantees 50% faster claim resolution for every insurer.\". Fix: Remove the claim or back it with a result you can show.\n\n---\n\n## Your Text, With the Findings Marked\n\n> Our revolutionary AI guarantees 50% faster claim resolution for every insurer. **[buzzword; claim needs proof]** One pilot customer said the queue felt clearer, but we have not measured resolution time. Book a demo to transform operations.\n\n---\n\n## Edits Made\n\n1. Before: \"Our revolutionary AI guarantees 50% faster claim resolution for every insurer.\"\n   After: \"Our AI guarantees 50% faster claim resolution for every insurer.\"\n\n*Each edit replaces a buzzword with a plainer word, or removes a claim that needs proof (add it back only with proof), or splits a very long sentence, or cuts a long subject line to its first clause, or fixes a grammar or paste slip listed above. Nothing else in your text was changed.*\n\n---\n\n## Improved Version\n\n1 edit made (listed above). Everything else is your original text.\n\n---\n\nOur AI guarantees 50% faster claim resolution for every insurer. One pilot customer said the queue felt clearer, but we have not measured resolution time. Book a demo to transform operations.\n\n---\n\n## Before/After Comparison\n\n### Original First Sentence:\n> Our revolutionary AI guarantees 50% faster claim resolution for every insurer\n\n### Suggested Opening:\n> Do not lead with the unproved claim. Add a measured result with its source, scope and date before using it as an opening.\n\n---\n\n## What This Audience Looks For\n\n*Sector: read from your inputs as AI native. Business model: not stated. Tell us how you charge and the plan will adjust.*\n\nAny priced offer below requires a written quote and buyer agreement.\n\n- Readers in AI native are usually Business owner of the process the AI changes, Head of Data and AI, Chief Technology Officer. They watch accuracy on the buyer's own data, how often a person has to step in, time to a working pilot, time saved on the task.\n- **Measures readers watch:** accuracy on the buyer's own data, how often a person has to step in, time to a working pilot, time saved on the task, cost to run the task.\n- **Terms this audience uses:** accuracy on your own data, human in the loop, guardrails, explainability, data privacy, pilot, inference cost.\n- **A proof point that lands:** A pilot on the buyer's own data, scored against the way the work is judged today, with how often a person had to step in.\n- Your text names none of these measures. If you have a figure you can prove for one of them, put it in the first two sentences.\n- **Questions this reader asks before they reply:** \"AI gets answers wrong\"; \"Where does our data go?\"; \"It will not fit our existing systems\"; \"We cannot explain what it produced\"; \"Is the vendor stable enough?\". A text for this audience answers the first one or two in a line each.\n- **Who else reads it:** The owner of the process the AI changes signs; the business lead who feels the problem champions it and the data or AI lead evaluates the model on the buyer's own data; security, risk and compliance review where data goes and how decisions are explained; the team that works with the AI output uses it.\n\n---\n\n## Tips for this landing page\n\n\n- **Headline:** Clear benefit in a few words\n- **Subheadline:** Expand on how you deliver the benefit\n- **Social proof:** Above the fold\n- **CTA:** Visible without scrolling, repeated where the page is long\n- **Form fields:** Minimize: each field reduces conversion\n\n---\n\n## Quick Checklist\n\n- [ ] Clear, jargon-free language (Flesch 37: hard to read)\n- Yes: Logical structure\n- [ ] Engaging opening hook\n- Yes: Aligns with stated goal\n- [ ] No unproven claims, fragments or unfilled merge fields\n- [ ] Benefit-driven headline\n- [ ] Social proof included\n- [ ] CTA above the fold\n\n---\n\nSuggested timings, lengths and counts: adjust them to your own.\n\n\n## Reading the answer\n\nThis review supports wording and evidence corrections for “Publish a defensible service page”. A score does not validate a claim in “Our revolutionary AI guarantees 50% faster claim resolution for every insurer. One pilot customer said the queue felt clearer, but we have not measured resolution time. Book a demo to transform operations”. Unmeasured guarantees remain held regardless of writing quality. Keep the stated hold in place; this guidance does not override it. The conclusion needs review if measured evidence supports a narrower claim, the source contradicts it or the intended audience cannot complete the revised action.\n\n## Decisions by role\n\nProposed owners. Confirm the named person before acting. Supplied statements below are inputs to check, not established findings.\n\nFounder: ask the evidence owner to substantiate the strongest outcome claim in “Our revolutionary AI guarantees 50% faster claim resolution for every insurer. One pilot customer said the queue felt clearer, but we have not measured resolution time. Book a demo to transform operations”; remove any guarantee the evidence cannot support.\n\nCEO: confirm who can approve external use of “landing page”; hold publication until the evidence owner signs off on scope and permission.\n\nCMO: revise “Our revolutionary AI guarantees 50% faster claim resolution for every insurer. One pilot customer said the queue felt clearer, but we have not measured resolution time. Book a demo to transform operations” to separate measured facts from hypotheses; compare the revised claim with the original record before approval.\n\nCRO: ask “Claims operations heads at regional insurers” what decision the copy helps them make; check that the next step fits that decision before sales use.\n\nDemand generation head: test the revised reader action for “Publish a defensible service page” with “Claims operations heads at regional insurers”; verify the destination and keep unsupported claims out of distribution.\n"
+          }
+        ]
+      }
+    }
+  ],
+  "invalid": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Missing required input for Case Study Generator: customer name, your product. Provide them and call the tool again."
+      }
+    ],
+    "isError": true
+  },
+  "referralArgs": {
+    "customer_name": "Anonymous regional fleet",
+    "your_product": "Recommend software to buy for our team.",
+    "challenge": "Daily route adjustments took four hours",
+    "solution": "Give each depot a shared exception queue",
+    "results": "October pilot: route adjustment time fell from four to three hours across ten dispatch days. Customer publication permission has not been granted."
+  },
+  "referral": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Which software fits your case is a judgement call. Ask Shashwat: book 45 minutes at https://calendly.com/shashwat-gtmhelix/45min"
+      }
+    ]
+  }
+}

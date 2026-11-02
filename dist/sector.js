@@ -1,3 +1,4 @@
+import { nonRecurringBilling } from "./verticals.js";
 import { clearanceAdvice } from './text-signals.js';
 import { sellerSectorLabel } from './text-signals.js';
 import { hasSignal, signal } from "./text-signals.js";
@@ -390,8 +391,13 @@ export function readContext(explicitModel, raw, yourSector, ownWords) {
     let v = gs.given ? gs.v : forced ?? detectVertical(input);
     // With your_sector the model follows the sector unless the user's own words (business_model, or the seller's wording) state it.
     const given = gs.given && forced ? (() => { const r = detectModel(explicitModel, input); if (r.how === 'sector' && detectVertical(input)?.id === forced.id)
-        return r; return r.how === 'input' || (r.how === 'read' && STATED_MODEL.test(nonEmpty(input.seller).join(' '))) ? r : { model: SECTOR_MODEL[forced.id], how: 'sector' }; })() : null;
+        return r; return r.how === 'input' || r.how === 'read' ? r : { model: SECTOR_MODEL[forced.id], how: 'sector' }; })() : null;
     let m = given ? given : gs.given ? detectModel(explicitModel, input) : ov.vertical ? detectModel(explicitModel, { seller: ov.seller }) : forced && !(typeof explicitModel === 'string' && explicitModel) ? { model: SECTOR_MODEL[forced.id], how: 'sector' } : detectModel(explicitModel, input);
+    const chargeRead = detectModel(explicitModel, scrubbed);
+    if (chargeRead.how === 'read')
+        m = chargeRead;
+    if (m.how !== 'input' && nonRecurringBilling(nonEmpty(scrubbed.seller).join(' . ')))
+        m = { model: null, how: 'unknown' };
     const source = v ? (forced ? 'seller' : explainSector(input).source) : null;
     const chosen = gs.given && !!v;
     // A seller that manages money gets the investment notes (profileFor), and an AI native seller of support automation the support notes.

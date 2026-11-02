@@ -318,7 +318,7 @@ export interface ContentAnalysis {
 // Buzzwords (whole words and their forms): each distinct one found takes 1 clarity point, at most 4.
 export const BUZZ = /\b(?:leverag(?:e|es|ed|ing)|utili[sz](?:e|es|ed|ing)|synerg(?:y|ies)|paradigms?|optimi[sz](?:e|es|ed|ing)|facilitat(?:e|es|ed|ing)|methodolog(?:y|ies)|empower(?:s|ed|ing)?|streamlin(?:e|es|ed|ing)|unlock(?:s|ed|ing)?|delight(?:s|ed|ing)?|cutting-edge|innovative|seamless(?:ly)?|robust|holistic|state-of-the-art|game-chang(?:ing|er)|revolutionary|next-generation|best-of-breed|turnkey|mission-critical)\b/gi;
 // Superlatives and promises that need proof: each distinct one takes 1 engagement point, at most 3.
-export const SUPERLATIVE = /\b(?:best[- ]in[- ]class|world[- ]class|industry[- ]leading|market[- ]leading|category[- ]leading|number one|unrivall?ed|unmatched|unparalleled|guaranteed|proven track record|the only)\b|(?:^|\s)#1\b/gi;
+export const SUPERLATIVE = /\b(?:best[- ]in[- ]class|world[- ]class|industry[- ]leading|market[- ]leading|category[- ]leading|number one|unrivall?ed|unmatched|unparalleled|guarantee(?:s|d|ing)?|proven track record|the only)\b|(?:^|\s)#1\b/gi;
 // A claim about the reader that the writer may not be able to support (sales emails and emails): 2 engagement points.
 const READER_CLAIM = /\bI (?:noticed|saw|read|came across|heard|see)\b[^.!?\n]*\b(?:your|you|you're)\b[^.!?\n]*/i;
 // An unfilled merge field or placeholder: 2 structure points.
@@ -464,6 +464,10 @@ export function analyzeContent(content: string, contentType: string, goal: strin
   if (supers.length > 0) {
     note('engagement', 'superlative', Math.min(3, supers.length), `Claims that need proof (${supers.length}): ${supers.slice(0, 4).map((s) => `"${s}" in "${sentenceWith(content, s)}"`).join('; ')}`, 'Remove the claim or back it with a result you can show.', true);
   }
+  const unsupported = sentencesOf(content).filter(s => /\b(?:unmeasured|unproved|unproven|not (?:yet )?(?:measured|validated|verified|proven|proved)|no (?:supporting )?(?:evidence|measurement|proof))\b/i.test(s));
+  if (unsupported.length && /\d+(?:\.\d+)?\s*%|\bguarantee(?:s|d)?\b/i.test(content)) {
+    note('engagement', 'unproved-claim', 3, `Evidence missing: ${unsupported.slice(0, 3).map(s => `"${clipEcho(s, 160)}"`).join('; ')}`, 'Do not publish the claimed result as fact. Supply measured evidence or state it as a target to test.', true);
+  }
   if (emailLike) {
     const claim = confirmedMatches(content, READER_CLAIM);
     if (claim.length) {
@@ -511,7 +515,8 @@ export function analyzeContent(content: string, contentType: string, goal: strin
   else if (analysis.overall.score >= 6) analysis.overall.rating = 'GOOD';
   else if (analysis.overall.score >= 4) analysis.overall.rating = 'NEEDS WORK';
   else analysis.overall.rating = 'MAJOR REVISION NEEDED';
-  if (analysis.overall.rating === 'EXCELLENT' && analysis.findings.some((f) => f.hard)) analysis.overall.rating = 'GOOD';
+  if (analysis.findings.some(f => ['superlative', 'unproved-claim', 'reader-claim'].includes(f.rule))) analysis.overall.rating = 'NOT PROVED YET';
+  else if (analysis.overall.rating === 'EXCELLENT' && analysis.findings.some((f) => f.hard)) analysis.overall.rating = 'GOOD';
   return analysis;
 }
 

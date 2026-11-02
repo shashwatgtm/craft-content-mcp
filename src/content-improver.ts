@@ -105,7 +105,7 @@ ${analysis.findings.length ? analysis.findings.map(f => {
 
 Optional scoring reference; review the evidence and proposed changes above first.
 
-*How this is scored: each score starts at 10 and loses points only for the findings listed below, each quoted from your text. The overall score is the average of the four scores and the lowest one, so one weak area cannot hide behind three strong ones. A rating of EXCELLENT is not given while a buzzword, an unproven claim, a fragment, an unfilled merge field or an unsupported claim about the reader is open. These checks do not judge whether your claims are true.*
+*How this is scored: each score starts at 10 and loses points only for the findings listed below, each quoted from your text. The overall score is the average of the four scores and the lowest one, so one weak area cannot hide behind three strong ones. An unproved claim or an unsupported claim about the reader is labelled NOT PROVED YET, never GOOD or EXCELLENT. Other publication defects prevent an EXCELLENT rating. These checks do not judge whether your claims are true.*
 
 | Dimension | Score | Status |
 |-----------|-------|--------|
@@ -267,6 +267,7 @@ function measuresNamed(content: string, metrics: string[]): string {
 // Run 19 (D80, problems 2 and 5): the suggested opening is built from the text itself. It is never a blank template: with no fact
 // to lead with, it says what is missing.
 function suggestOpening(content: string): string {
+  if (missingEvidence(content) || /\bguarantee(?:s|d|ing)?\b/i.test(content)) return 'Do not lead with the unproved claim. Add a measured result with its source, scope and date before using it as an opening.';
   const body = sentencesOf(bodyOf(content));
   // a piece of a sentence (split at semicolons) that holds a figure and says what changed; else one with a figure
   const pieces = body.flatMap((s) => s.split(/;\s+/)).map((x) => x.trim()).filter(Boolean);
@@ -279,7 +280,7 @@ function suggestOpening(content: string): string {
   const fragment = /^[\d$₹€£]/.test(proof) && !/\b(?:is|are|was|were|has|have|had|fell|rose|grew|cut|saved?|resolves?|helps?)\b/i.test(proof);
   return fragment
     ? `Your strongest proof is "${clean}". Open with it as a full sentence that says who got it and what changed.`
-    : `Lead with the proof you already have: "${clean}".`;
+    : `Possible opening from your text, not independently verified: "${clean}".`;
 }
 
 // Run 42B round S: slips a reader sees at once, read line by line. Each is quoted with the fix made (or, where no safe fix exists,

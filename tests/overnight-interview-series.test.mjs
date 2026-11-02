@@ -91,3 +91,27 @@ test('a report statistic stays distinct from customer outcome evidence and keeps
  assert.equal((s.match(/^### A reported statistic to verify/gm)||[]).length,1);
  assert.match(s,/### Check the scope of the reported statistic/);
 });
+
+test('equivalent observed batch comparisons retain the whole observation and its limits',()=>{
+ for(const article_type of ['contrarian','how_to','lessons_learned','prediction','framework'])for(const proof_points of [
+  'Unresolved invoice approvals fell from 10 to 6 in one reviewed batch. The period and staffing were not controlled, so this does not establish causation.',
+  'A reviewed batch had six unresolved invoice approvals instead of ten in the preceding batch. The period and staffing were not controlled, so this does not establish causation.'
+ ]){
+  const s=generateThoughtLeadership({...args,article_type,proof_points});
+  assert.match(s,/Supplied result, not independently verified/);assert.match(s,/period and staffing were not controlled/);
+  assert.doesNotMatch(s,/none of your proof points is a customer result|shows that the idea has held up|number to beat|expect to hear|One Customer.s Case|A Customer Story|One Customer.s Lesson|Nothing in your inputs needed flagging/);
+ }
+});
+test('denied and hypothetical batch comparisons remain unverified source notes',()=>{
+ for(const proof_points of ['The team did not reduce unresolved approvals from 10 to 6 in one batch.','A pilot could reduce unresolved approvals from ten to six.','A batch had six unresolved approvals instead of ten (hypothetical).']){
+  const s=generateThoughtLeadership({...args,proof_points});assert.doesNotMatch(s,/Supplied result, not independently verified/);
+ }
+});
+test('missing proof has evidence-gathering headlines and framework checks rather than assumed lessons',()=>{
+ for(const article_type of ['contrarian','how_to','lessons_learned','prediction','framework']){
+  const s=generateThoughtLeadership({...args,article_type,proof_points:undefined});
+  assert.match(s,/Define the Evidence Needed/);assert.match(s,/Look for a Counterexample/);assert.match(s,/Agree a Test and Its Limits/);
+  assert.doesNotMatch(s,/Who had to be won over|What the Objections Miss|The Pushback, and What It Taught|expect to hear|number to beat|every step in between uses only what is already on record/);
+  if(article_type==='framework')assert.match(s,/Check the possible objection/);
+ }
+});

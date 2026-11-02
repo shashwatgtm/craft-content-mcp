@@ -1,5 +1,5 @@
 import { cap, lowerFirstIfCommon, titleWords } from './utils.js';
-import { readSignal } from './text-signals.js';
+import { readSignal, illustrativeProof } from './text-signals.js';
 import { cleanClaims, tagsFor } from "./content-repurposer.js";
 import { readContext, isClause, clipWords } from "./sector.js";
 import { parseProof, fixNumbers, RECOGNITION, endSentence, capFirst, shortenClauses, proseJoin, brandFrom, claimsToSource, headlineSubject, KIND_NOTE, bestQuestion, clipAtWord, dropTail } from "./draft.js";
@@ -26,6 +26,23 @@ function clipEcho(text, max) {
     if (t.length <= max)
         return t;
     return shorten(t, max, true) || dropTail(clipAtWord(t, max));
+}
+// A single observed comparison retains its source scope and causal limits.
+// Unknown or denied comparisons are not made into results by a numeric match.
+function thoughtProofItems(raw) {
+    const items = parseProof(raw);
+    if (items.length !== 1 || items[0].kind === 'quote')
+        return items;
+    if (/[;\n]/.test(raw) || !/\b(?:customer|client|team|batch|cohort|pilot)\b/i.test(raw) || /\binterviews?\b/i.test(raw))
+        return items;
+    const count = '(?:\\d+(?:\\.\\d+)?|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)';
+    const comparison = new RegExp('\\bfrom\\s+' + count + '(?:\\s+(?:seconds?|minutes?|hours?|days?|weeks?|cases?|errors?|tickets?))?\\s+to\\s+' + count + '\\b|\\b(?:had|recorded|took|measured)\\s+' + count + '[^.!?;]{1,140}\\binstead of\\s+' + count + '\\b', 'i');
+    const claim = raw.split(/[.!?](?:\s|$)/)[0];
+    if (!comparison.test(claim))
+        return items;
+    const text = fixNumbers(raw.trim()).replace(/[.\s]+$/, '');
+    const held = illustrativeProof(raw).state === 'affirmed' || readSignal(claim, comparison).state !== 'affirmed' || /\b(?:did not|didn't|never|would|could|might|will|should|aim|target|expect|forecast|promise)\b/i.test(claim);
+    return [{ ...items[0], text, shown: text, kind: held ? 'unclear' : 'result', figure: !held }];
 }
 export function generateThoughtLeadership(args) {
     const g = (x) => stripGuardQuotes((x || '').trim());
@@ -67,7 +84,7 @@ export function generateThoughtLeadership(args) {
     const removedClaims = [];
     const soft = (t) => { const r = cleanClaims(t); removedClaims.push(...r.removed); return r.text; };
     const SAYS = /^(.{3,90}?)\s+says?:\s*['"“](.+?)['"”]\.?$/;
-    const items = proofRaw ? parseProof(splitQuoteRuns(proofRaw).replace(/\bon the (home|about|pricing|product|customers?) page card\b/gi, 'on the $1-page card').replace(/,\s+(?=(?:Named an?|Named as|Recogni[sz]ed as|Featured in|Winner of)\b)/g, '; ')).filter((i) => { if (isInstruction(i.text)) {
+    const items = proofRaw ? thoughtProofItems(splitQuoteRuns(proofRaw).replace(/\bon the (home|about|pricing|product|customers?) page card\b/gi, 'on the $1-page card').replace(/,\s+(?=(?:Named an?|Named as|Recogni[sz]ed as|Featured in|Winner of)\b)/g, '; ')).filter((i) => { if (isInstruction(i.text)) {
         orders.push(i.text);
         return false;
     } if (isDisclaimer(i.text)) {
@@ -127,7 +144,11 @@ export function generateThoughtLeadership(args) {
     const testUsed = new Set();
     const arts = [];
     const heads = Array.from({ length: numArticles }, (_, i) => {
-        const angle = getArticleAngle(i, articleType, topicLabel, evidence.length + stories.length > 0);
+        const angle = getArticleAngle(i, articleType, topicLabel, stories.length > 0 || evidence.some(p => p.kind === 'quote' || /\b(?:customer|client|case study)\b/i.test(p.shown)));
+        if (suggested) {
+            const jobs = ['Define the Evidence Needed', 'Look for a Counterexample', 'Agree a Test and Its Limits', 'Check the Scope of the Test', 'Decide What Can Be Published'];
+            return { ...angle, title: `${titleWords(topicLabel)}: ${jobs[i % jobs.length]}` };
+        }
         return interviewNote ? { ...angle, title: `${titleWords(topicLabel)}: ${i === 0 && deniedInterviewEffect(interviewNote) ? "Trace the Reported Observation" : INTERVIEW_TITLES[i % INTERVIEW_TITLES.length]}` } : angle;
     });
     for (let i = 0; i < numArticles; i++) {
@@ -192,7 +213,7 @@ ${cleanSectorLine(ctx.line)}
 
 ${numArticles === 1 ? 'One article' : `${numArticles} articles`} in the ${articleType.replace(/_/g, ' ')} style, written for ${readerNoun}.
 
-${notes.length ? notes.map((n) => (n.startsWith('**') ? n : `- ${n}`)).join('\n\n') : 'Nothing in your inputs needed flagging.'}
+${notes.length ? notes.map((n) => (n.startsWith('**') ? n : `- ${n}`)).join('\n\n') : 'No additional pattern flags were found. Source verification, scope and permission still need review before publication.'}
 
 ### What this series was built from
 
@@ -484,12 +505,12 @@ function frameworkSteps(a, v) {
     }
     const o = v && v.objections.length ? v.objections[0] : null;
     if (o)
-        add('Clear the objection', `expect to hear ${quotedEnd(o.objection)} Agree the test that would answer it before any pilot starts.`);
+        add('Check the possible objection', `A possible concern to check: ${quotedEnd(o.objection)} Ask whether it applies to this reader, then agree the evidence needed to address it before proposing a pilot.`);
     const m = rankMetrics(v, a.takeText).find((x) => x.ok)?.m || '';
     if (m)
         add(`Read it on ${toYou(m)}`, 'for one live piece of work, before and after the change.');
     else
-        add('Write down where one live piece of work stands today', 'so that the change has a number to beat.');
+        add('Write down where one live piece of work stands today', 'so that any comparison has a starting record, period and scope to check.');
     return steps.slice(0, 5);
 }
 function buildArticle(a, authorBackground, targetReader, credibility) {
@@ -587,6 +608,8 @@ function buildArticle(a, authorBackground, targetReader, credibility) {
             }
         }
         else if (kind === 'who') {
+            if (a.suggested)
+                heading = 'Who needs to review it';
             if (v && !a.askedQuestions.has('who')) {
                 a.askedQuestions.add('who');
                 body.push(`Confirm who can approve, review and use the proposed change. A possible role map to check is: ${toYou(v.committee)} The actual people and approval rights need confirmation.`);
@@ -627,7 +650,7 @@ function buildArticle(a, authorBackground, targetReader, credibility) {
             const mine = (a.index % steps.length) + 1;
             const fname = frameworkName(steps.length);
             const body = a.index === 0
-                ? `${steps.map((s, i) => `${i + 1}. ${s.text}`).join('\n')}\n\nCall it ${fname}: it starts from the position and ends on a number, and every step in between uses only what is already on record. The articles that follow take the steps one at a time.`
+                ? `${steps.map((s, i) => `${i + 1}. ${s.text}`).join('\n')}\n\nCall it ${fname}: it starts from the position and ends with a measurement check. Its proposed questions and sector guidance still need confirmation; they are not findings about this reader. The articles that follow take the steps one at a time.`
                 : `This article works on step ${mine} of ${steps.length} in ${fname} from the first article: "${steps[mine - 1].name}".${a.index === 1 ? " The sections below apply that step to this part of the position." : ""}`;
             sections.splice(Math.min(1, sections.length), 0, `## ${a.index === 0 ? `The framework in ${steps.length} steps` : `Step ${mine} of the framework`}
 
@@ -749,7 +772,7 @@ ${work[a.index - 1]}`);
             ...credibility.map((c) => `**Credibility line** (${noteOf(c)}, for the byline or the footer): ${endSentence(capFirst(clipEcho(c.shown, 300)))}`)].filter(Boolean).join('\n\n')
         : '';
     const bodyWords = [opener, ...sections].join(' ').split(/\s+/).length;
-    const leadText = lead ? (lead.kind === 'quote' ? `${quoteParts(lead).who ? `${capFirst(quoteParts(lead).who)}: ` : ''}"${quoteParts(lead).words.replace(/[.]$/, '')}."${lead.label ? ` (${lead.label})` : ''}` : endSentence(capFirst(clipEcho(lead.shown, 300)))) : a.suggested ? 'none given' : 'none of your proof points is a customer result';
+    const leadText = lead ? (lead.kind === 'quote' ? `${quoteParts(lead).who ? `${capFirst(quoteParts(lead).who)}: ` : ''}"${quoteParts(lead).words.replace(/[.]$/, '')}."${lead.label ? ` (${lead.label})` : ''}` : endSentence(capFirst(clipEcho(lead.shown, 300)))) : a.suggested ? 'none given' : a.evidence.length || a.stories.length ? 'no additional lead assigned; see the source and its limits in the earlier articles' : 'none of your proof points is a customer result';
     const text = `
 ---
 
@@ -768,7 +791,7 @@ ${opener}
 ${sections.join('\n\n')}${sections.length ? '\n\n' : ''}${next ? `${next}\n\n` : ''}${about ? `${about}\n\n` : ''}*Notes on this article, not part of it:*
 
 **Lead proof point:** ${leadText}
-${a.interviewNote ? `**Question it tests:** ${INTERVIEW_QUESTIONS[a.index % INTERVIEW_QUESTIONS.length]}` : `**Counter-argument it answers:** ${objection ? `"${objection.objection}"` : 'none read (the sector is not clear from your inputs)'}`}
+${a.interviewNote ? `**Question it tests:** ${INTERVIEW_QUESTIONS[a.index % INTERVIEW_QUESTIONS.length]}` : `**Counter-argument it answers:** ${objection ? `"${objection.objection}" (possible concern to confirm, not an established finding)` : 'none read (the sector is not clear from your inputs)'}`}
 **Draft length:** about ${bodyWords} words
 `;
     return { head, text: text.replace(/\n{3,}/g, '\n\n').replace(/^## (?!Article )/gm, '### '), lead: leadText, objection: objection ? objection.objection : '', leadItem: lead };

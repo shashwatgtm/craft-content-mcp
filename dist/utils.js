@@ -1,4 +1,4 @@
-import { hasSignal, SIGNALS, confirmedMatches } from "./text-signals.js";
+import { readSignal, hasSignal, SIGNALS, confirmedMatches } from "./text-signals.js";
 // Utility functions for content analysis and generation
 import { pickKeyPoints, sentencesOf, LIST_COMMA } from "./sector.js";
 // Last line of any output that suggests timings, lengths or counts (lengths in words, time boxes, cadences).
@@ -328,6 +328,12 @@ export function bodyOf(content) {
 export function operationalPurpose(goal) {
     return hasSignal(goal, /\b(?:inspect|review|record|complete|check|follow|carry out|perform|resolve|assign|handoff|operational instruction)\b/i);
 }
+// A promise of an outcome needs evidence in either active or passive wording.
+// A denial of that promise is not itself an outcome claim.
+export function outcomePromises(content) {
+    return sentencesOf(content).filter(sentence => readSignal(sentence, /\b(?:guarantee(?:s|d|ing)?|promis(?:e|es|ed|ing))\b/i).state === 'affirmed'
+        && /\d+(?:\.\d+)?\s*%|\b(?:half|double|twice|reduc\w*|faster|slower|sav\w*|increas\w*|improv\w*|every (?:customer|client)|all (?:customers|clients))\b/i.test(sentence));
+}
 export function analyzeContent(content, contentType, goal, opts = {}) {
     const analysis = {
         clarity: { score: 0, issues: [], suggestions: [] },
@@ -428,7 +434,7 @@ export function analyzeContent(content, contentType, goal, opts = {}) {
     }
     const youCount = (content.match(/\byou\b|\byour\b/gi) || []).length;
     if (youCount < 3 && contentType !== 'press_release') {
-        note('engagement', 'you-language', 2, 'Limited "you" language: feels impersonal', 'Reframe benefits in terms of "you": "You\'ll save time" vs "It saves time"');
+        note('engagement', 'you-language', 2, 'Limited "you" language: feels impersonal', 'Address the reader directly where it helps them act; preserve the evidence limits and do not add a benefit the draft cannot support');
     }
     if (words >= 20 && !/\d/.test(content)) {
         note('engagement', 'no-figure', 2, 'No specific figure in the text', 'Add one result you can prove, with its number and timeframe, or a named example.');
@@ -437,9 +443,11 @@ export function analyzeContent(content, contentType, goal, opts = {}) {
     if (supers.length > 0) {
         note('engagement', 'superlative', Math.min(3, supers.length), `Claims that need proof (${supers.length}): ${supers.slice(0, 4).map((s) => `"${s}" in "${sentenceWith(content, s)}"`).join('; ')}`, 'Remove the claim or back it with a result you can show.', true);
     }
-    const unsupported = sentencesOf(content).filter(s => /\b(?:unmeasured|unproved|unproven|not (?:yet )?(?:measured|validated|verified|proven|proved)|no (?:supporting )?(?:evidence|measurement|proof))\b/i.test(s));
-    if (unsupported.length && /\d+(?:\.\d+)?\s*%|\bguarantee(?:s|d)?\b/i.test(content)) {
-        note('engagement', 'unproved-claim', 3, `Evidence missing: ${unsupported.slice(0, 3).map(s => `"${clipEcho(s, 160)}"`).join('; ')}`, 'Do not publish the claimed result as fact. Supply measured evidence or state it as a target to test.', true);
+    const unsupported = sentencesOf(content).filter(s => /\b(?:unmeasured|unproved|unproven|not (?:yet )?(?:measured|validated|verified|proven|proved)|no (?:supporting )?(?:evidence|measurement|proof)|no (?:outcome|time saving|controlled) stud(?:y|ies))\b/i.test(s));
+    const promises = outcomePromises(content);
+    if (promises.length || unsupported.length && /\d+(?:\.\d+)?\s*%|\bguarantee(?:s|d)?\b/i.test(content)) {
+        const evidence = [...promises, ...unsupported];
+        note('engagement', 'unproved-claim', 3, `Evidence missing: ${evidence.slice(0, 3).map(s => `"${clipEcho(s, 160)}"`).join('; ')}`, 'Do not publish the promised outcome as fact. Remove the promise or supply measured evidence with its source, scope and date; a limited result does not justify a guarantee for every customer.', true);
     }
     if (emailLike) {
         const claim = confirmedMatches(content, READER_CLAIM);
@@ -507,7 +515,7 @@ export function annotateText(content) {
             const flags = [];
             if (new RegExp(BUZZ.source, 'i').test(s))
                 flags.push('buzzword');
-            if (new RegExp(SUPERLATIVE.source, 'i').test(s))
+            if (confirmedMatches(s, SUPERLATIVE, SIGNALS.unique).length || outcomePromises(s).length)
                 flags.push('claim needs proof');
             if (/^[\d$\u20b9\u20ac\u00a3]/.test(s) && s.split(/\s+/).length >= 3 && !s.split(/\s+/).some((w) => VERBISH.test(w.replace(/[^A-Za-z]/g, '')) || (w.length > 4 && /(?:ed|ing)$/i.test(w.replace(/[^A-Za-z]/g, '')))))
                 flags.push('fragment');

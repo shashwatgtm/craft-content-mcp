@@ -1,5 +1,5 @@
 import { sellerSectorLabel } from './text-signals.js';
-import { operationalPurpose, analyzeContent, generateImprovedVersion, editSentence, toneCheck, annotateText, bodyOf, countWords, avgWordsPerSentence, calculateReadability, SUGGESTION_FOOTER, clipEcho, ASK } from './utils.js';
+import { operationalPurpose, outcomePromises, analyzeContent, generateImprovedVersion, editSentence, toneCheck, annotateText, bodyOf, countWords, avgWordsPerSentence, calculateReadability, SUGGESTION_FOOTER, clipEcho, ASK } from './utils.js';
 import { lowerFirstIfCommon, isCommonWord } from './utils.js';
 import { readContext, audienceLine, sentencesOf } from "./sector.js";
 import { shortenClauses, clipAtWord, endSentence, fixNumbers, missingEvidence, FIGURE, dropTail } from "./draft.js";
@@ -69,7 +69,7 @@ export function generateContentImprover(args) {
     });
     const buzzFound = analysis.findings.some((f) => f.rule === 'buzzwords');
     const hardFound = analysis.findings.some((f) => f.hard);
-    const outcomeHeld = analysis.findings.some(f => f.rule === 'unproved-claim') && /\b(?:guarantee\w*|promise\w*)\b/i.test(improved.text);
+    const outcomeHeld = analysis.findings.some(f => f.rule === 'unproved-claim') && outcomePromises(improved.text).length > 0;
     let output = `# Content Analysis & Improvement Report
 
 ## Confirm the purpose
@@ -173,7 +173,7 @@ ${outcomeHeld ? 'Publication held. The wording edits above do not substantiate t
 ---
 
 ${improved.text}`
-        : `No automatic edits were found. The text above contains no buzzword, long sentence or unproven claim that this tool can replace on its own, so there is no improved version to show. The findings in Priority Fixes need your facts or your judgement.`}
+        : `No automatic wording change is proposed. Review the findings above: any evidence gap still needs a source or removal of the claim, and style suggestions need your judgement. This is not publication approval.`}
 
 ---
 ${shorter ? `
@@ -210,8 +210,8 @@ ${ctx.line}
 - **Terms this audience uses:** ${ctx.v.vocabulary.join(', ')}.
 - **A proof point that lands:** ${ctx.v.proofShape}
 - ${measuresNamed(content, ctx.v.metrics)}
-- **Questions this reader asks before they reply:** ${ctx.v.objections.map((o) => `"${o.objection}"`).join('; ')}. A text for this audience answers the first one or two in a line each.
-- **Who else reads it:** ${ctx.v.committee}
+- **Possible objections to check with this reader:** ${ctx.v.objections.map((o) => `"${o.objection}"`).join('; ')}. Confirm which apply, then address the relevant ones with evidence.
+- **Possible reviewers to confirm:** ${ctx.v.committee} Confirm the actual people and their approval rights.
 
 ---
 ` : ''}
@@ -258,7 +258,7 @@ function measuresNamed(content, metrics) {
 // Run 19 (D80, problems 2 and 5): the suggested opening is built from the text itself. It is never a blank template: with no fact
 // to lead with, it says what is missing.
 function suggestOpening(content) {
-    if (missingEvidence(content) || /\bguarantee(?:s|d|ing)?\b/i.test(content))
+    if (missingEvidence(content) || outcomePromises(content).length)
         return 'Do not lead with the unproved claim. Add a measured result with its source, scope and date before using it as an opening.';
     const body = sentencesOf(bodyOf(content));
     // a piece of a sentence (split at semicolons) that holds a figure and says what changed; else one with a figure
@@ -453,7 +453,7 @@ function getContentTypeTips(contentType, goal) {
 - **Subheadline:** Expand on how you deliver the benefit
 - **Social proof:** Above the fold
 - **CTA:** Visible without scrolling, repeated where the page is long
-- **Form fields:** Minimize: each field reduces conversion`,
+- **Form fields:** Ask only for information needed for the next step; test the form with readers before claiming a conversion effect`,
         social_post: `
 - **Hook:** First line must stop the scroll
 - **Format:** Short paragraphs, line breaks, emojis sparingly

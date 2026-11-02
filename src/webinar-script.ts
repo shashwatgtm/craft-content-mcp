@@ -160,6 +160,8 @@ ${generateRunOfShow(structure, minutes)}
     const isBlock = /^Main Content Block/.test(section.name);
     output += generateScriptSection(section, w, isBlock ? block++ : 0, blocks);
   }
+  const spokenWords = [...output.matchAll(/\*\*SPEAKER:\*\*\n"([\s\S]*?)"\n/g)].reduce((n, m) => n + m[1].trim().split(/\s+/).filter(Boolean).length, 0);
+  notes.push(`Timing check: ${spokenWords} words are marked as spoken copy, about ${(spokenWords / 140).toFixed(1)} minutes at the planning assumption of 140 words per minute. The ${minutes} minute run of show also reserves time for discussion, exercises and questions; it is not a claim that this text fills that time. Rehearse each section and prepare the remaining activity before delivery.`);
 
   output += `
 ---
@@ -423,13 +425,13 @@ function howTo(text: string): string {
 // verb that does not fit it.
 function tk(p0: Pt, w: W, after = false): string {
   if (missingEvidence(p0.text)) return endSentence(`Evidence still to gather: ${p0.text}`);
-  const shape = shapeOf(p0);
+  const shape = /^(?:count|name|record|inspect|audit)\b/i.test(p0.text) && !p0.label ? 'imperative' : shapeOf(p0);
   const claim = !p0.label && shape !== 'imperative' && shape !== 'example' && p0.role !== 'instruction' && p0.role !== 'problem' && CLAIM_WORD.test(p0.text) && w.takeaways.includes(p0) && w.haveTakeaways;
   const p: Pt = claim ? { ...p0, label: VENDOR } : p0;
   const t = withLabel(p);
   switch (shape) {
     case 'clause': return endSentence(capFirst(t));
-    case 'imperative': return endSentence(after ? `How to ${howTo(withLabel(p))}` : `You will learn how to ${howTo(withLabel(p))}`);
+    case 'imperative': { const action = howTo(withLabel(p)); const spokenAction = action.charAt(0).toLowerCase() + action.slice(1); return endSentence(after ? `How to ${spokenAction}` : `You will learn how to ${spokenAction}`); }
     case 'example': return endSentence(`For example, ${lower(withLabel({ ...p, text: p.text.replace(/^(?:such as|for example|e\.g\.)\s+/i, '') }))}`);
     case 'participle': return w.who ? sentenceOf(p, w.who) : endSentence(`A point to cover: ${lower(t)}`);
     case 'adjective': return endSentence(`${w.who || 'The approach'} is ${lower(t)}`);
@@ -604,7 +606,14 @@ const nextStep = (w: W): string => `If you would like to take this further, repl
 const settleLine = (w: W, response: string, mode: 'block' | 'qa' | 'email' = 'block'): string => waysToSettle(response) || (mode === 'qa' ? '' : mode === 'email' ? 'Reply to this email and we will answer it.' : 'We will take it in the questions at the end.');
 
 function seg(section: { name: string; duration: number }, screen: string, lines: string[]): string {
-  return `\n### ${section.name} (${section.duration} min)\n\n**ON SCREEN: ${screen}**\n\n**SPEAKER:**\n"${lines.filter(Boolean).join('\n\n').replace(/"/g, "'")}"\n\n`;
+  const blocks: string[] = []; let spoken: string[] = [];
+  const flush = () => { if (spoken.length) { blocks.push(`**SPEAKER:**\n"${spoken.join('\n\n').replace(/"/g, "'")}"`); spoken = []; } };
+  for (const line of lines.filter(Boolean)) {
+    if (/^\*\*LAUNCH POLL:/.test(line)) { flush(); blocks.push(line); }
+    else spoken.push(line);
+  }
+  flush();
+  return `\n### ${section.name} (${section.duration} min)\n\n**ON SCREEN: ${screen}**\n\n${blocks.join('\n\n')}\n\n`;
 }
 
 function generateScriptSection(section: { name: string; duration: number; purpose: string }, w: W, blockIndex: number, blocks: number): string {
@@ -762,7 +771,9 @@ function recap(w: W): string {
 
 // One main content block: the takeaways it teaches, the sector measure, the chat question, the objection for later blocks, and the product line.
 function blockScript(section: { name: string; duration: number }, w: W, mine: Pt[], k: number, blocks: number): string {
-  if (k === 0 && (w.example || (!w.problemPts.length && !w.takeaways.some(p => p.role === 'problem' || /\b(?:by|with|because|before|after|daily|weekly|per)\b/i.test(p.text))))) {
+  const actionOnly = (p: Pt) => startsImperative(p.text) || /^(?:count|name|record|review|check|inspect|audit|map|list)\b/i.test(p.text);
+  const hasTeachingSource = w.problemPts.some(p => !actionOnly(p)) || w.takeaways.some(p => !actionOnly(p) && (p.role === 'problem' || /\b(?:by|with|because|before|after|daily|weekly|per)\b/i.test(p.text)));
+  if (k === 0 && (w.example || !hasTeachingSource)) {
     const work = Math.max(1, section.duration - 2);
     if (!w.example) return `### ${section.name} (${section.duration} min)\n\n**HOST PREPARATION, NOT SPOKEN:** This exercise needs an anonymised example and its starting records before delivery. Ask the host to supply them; no customer result is assumed.\n\nThe reserved ${section.duration} minutes cover the example, one participant decision record and a debrief on evidence and unknowns. Do not run this section until the example is ready.\n`;
     return seg(section, 'Worked example exercise', [ ...(w.productDescription ? [`For context: ${w.productDescription}`] : []), ...(w.example ? [

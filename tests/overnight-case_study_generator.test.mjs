@@ -4,6 +4,20 @@ checkReader("case_study_generator", [{"index": 0, "key": "results", "a": "The su
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {call} from './overnight-reader-helper.mjs';
+test('case discovery collects neutral evidence with a complete request and no approved story implication',async()=>{
+ const r=await call('case_study_generator',{customer_name:'Anonymous team',your_product:'Exception review workflow',challenge:'Ten unresolved exceptions per batch',solution:'Shared review queue',your_sector:'fintech'});
+ const s=r.content.map(c=>c.text||'').join('\n');
+ assert.match(s,/Case Study Discovery Kit/);assert.match(s,/It does not establish a result or supply an approved story/);
+ assert.doesNotMatch(s,/Why didn't it work|moment you knew this was working|Percentage improvement|really saved the day|Benefit:\*\* add|mode="full"|This story supports a draft account|DATE:\s*\n/);
+ assert.match(s,/what changed or stayed the same/i);assert.match(s,/approve the exact wording, attribution and publication channel/);
+});
+test('case study does not turn a seller sector into a customer industry',async()=>{
+ const args={customer_name:'Anonymous team',your_product:'Exception review workflow',challenge:'Ten exceptions per batch',solution:'Shared review queue',results:'One pilot recorded six exceptions per batch instead of ten. No publication permission.',your_sector:'fintech'};
+ const r=await call('case_study_generator',args);const s=r.content.map(c=>c.text||'').join('\n');
+ assert.match(s,/Its industry was not supplied/);assert.doesNotMatch(s,/Anonymous team is in the Fintech segment/);
+ const known=await call('case_study_generator',{...args,customer_industry:'Hotel operations'});
+ assert.match(known.content.map(c=>c.text||'').join('\n'),/is in the Hotel operations segment/);
+});
 test('Overnight case story: closing action is written for the reader',async()=>{
  const r=await call('case_study_generator',{customer_name:'Anonymous fleet',your_product:'Dispatch planning software',challenge:'Route adjustments took four hours',solution:'One exception queue',results:'One pilot took three hours over ten days; no publication permission.'});
  const t=r.content.map(c=>c.text||'').join('\n');assert.match(t,/Before changing your process, record the starting point/);assert.doesNotMatch(t,/Close with one action for the reader|Write the reader.s next step/);

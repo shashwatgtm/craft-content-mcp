@@ -1,9 +1,20 @@
 import { fact, type ReaderCase } from './reader-case.js';
-export function case_case_study_generator(args: Record<string,unknown>, adverse = false): ReaderCase {
+export function case_case_study_generator(args: Record<string,unknown>, adverse = false, discovery = false): ReaderCase {
   const result = fact(args, "results", "the supplied customer results");
   const challenge = fact(args, "challenge", "the original customer problem");
   const solution = fact(args, "solution", "the proposed intervention");
   const product = fact(args, "your_product", "the offer");
+  if (discovery) return {
+    meaning: 'This kit supports collecting a customer account and checking whether it contains usable evidence. It does not establish a result or supply an approved story.',
+    change: 'the customer and source records establish the original problem, actual approach and observed outcome, with limits and permission for the proposed use',
+    roles: [
+      `Founder: have the evidence owner verify the baseline for ${challenge}; record unknowns before choosing a story angle.`,
+      `CEO: have the publication owner obtain the customer's wording, attribution and channel permissions for ${product}; keep distribution held until the record is complete.`,
+      `CMO: ask the interviewer to test ${challenge} against the customer's account; retain unchanged or adverse outcomes alongside any improvement.`,
+      `CRO: have the account owner confirm what was actually implemented in ${solution}; compare that record with the customer's experience before requesting advocacy.`,
+      `Demand generation head: hold a campaign about ${product}; ask the evidence owner for a dated result and the publication owner for written permission before preparing distribution.`,
+    ],
+  };
   if (adverse) return {
     meaning: `The supplied result ${result} supports an internal account review, not a success story. Keep promotional copy and endorsement requests on hold while the account owner verifies the decline.`,
     change: `the customer and original records establish a corrected result with its scope and approve the exact proposed use`,

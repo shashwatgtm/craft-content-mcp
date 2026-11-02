@@ -102,7 +102,7 @@ function generateDiscoveryKit(customerName, industry, product, knownResults, ctx
 
 ## First questions before drafting
 1. What was the baseline, with its source and cohort?
-2. Over which measurement period did the result change, and what is the comparable after value?
+2. What was measured over which period, and did it improve, worsen or stay the same?
 3. Has the customer approved the exact result, attribution and publication channel? Record permission before writing an approved story.
 ${held.length ? `Held evidence: ${held.map(p => q(p.shown)).join('; ')}. These items are not approved story evidence.` : 'Publication permission is unconfirmed; obtain the customer approval before release.'}
 
@@ -114,7 +114,7 @@ Supplied result to verify: ${usable.map(p => q(p.shown)).join('; ')}. Confirm th
 ` : ''}
 ## Information Needed
 
-Before we can create a compelling case study, we need to gather the customer story. Here's your interview guide.
+Collect the customer account and its limits before deciding whether it supports a case study. Use these questions without assuming a successful outcome.
 
 ---
 
@@ -125,7 +125,7 @@ Before we can create a compelling case study, we need to gather the customer sto
 Ask these questions to understand their "before" state:
 
 1. **"Take me back to before you started using ${product}. What was happening in your business?"**
-   - Listen for: Pain points, frustrations, failed solutions
+   - Listen for: The original work, problems and anything that already worked
 
 2. **"What specific problem were you trying to solve?"**
    - Listen for: Quantifiable issues (time, money, efficiency)
@@ -133,7 +133,7 @@ Ask these questions to understand their "before" state:
 3. **"How was this problem affecting your team/customers/revenue?"**
    - Listen for: Business impact metrics
 
-4. **"What had you tried before? Why didn't it work?"**
+4. **"What had you tried before? What worked, did not work or remained unresolved?"**
    - Listen for: Competitor mentions, DIY attempts
 
 5. **"What made you start looking for a solution when you did?"**
@@ -154,8 +154,8 @@ Ask these questions about their journey to ${product}:
 8. **"Walk me through the ${w.rollout}. What was that like?"**
    - Listen for: ${capFirst(w.rollout)} experience, ${w.value}
 
-9. **"What was the moment you knew this was working?"**
-   - Listen for: Quotable moments, early wins
+9. **"When did you first have enough evidence to judge the change, and what did it show?"**
+   - Listen for: Observations, uncertainty and the records behind the assessment
 
 ---
 
@@ -163,72 +163,50 @@ Ask these questions about their journey to ${product}:
 
 Ask these questions to capture outcomes:
 
-10. **"What results have you seen since starting with ${product}?"**
+10. **"What changed or stayed the same after starting with ${product}?"**
     - Listen for: Metrics, before/after comparisons
 
-11. **"Can you put numbers on that? Percentage improvement, time saved, revenue impact?"**
-    - Listen for: Specific, quotable statistics
+11. **"What were the starting value, later value and period? Which records support them, or was the effect unmeasured?"**
+    - Listen for: Comparable measures, source records and limits
 
 12. **"How has this affected your team's day-to-day work?"**
-    - Listen for: Quality of life improvements
+    - Listen for: Benefits, costs, difficulties or unchanged work
 
 13. **"What would you tell someone considering ${product}?"**
-    - Listen for: Ready-made testimonial quote
+    - Listen for: Their own assessment, including who the product would not suit
 
 ---
 
 ### Bonus Questions for Rich Stories
 
-14. **"Was there a moment where ${product} really saved the day?"**
-    - Listen for: Anecdotes, crisis averted stories
+14. **"Can you describe a specific occasion when ${product} helped, failed or made no difference?"**
+    - Listen for: The actual sequence, outcome and evidence
 
 15. **"What surprised you most about working with us?"**
-    - Listen for: Unexpected benefits, delighters
+    - Listen for: Unexpected benefits, costs or problems
 ${discoverySector(ctx)}
 ---
 
-## Interview Notes Template
+## Interview record
 
-Use this structure to capture responses:
+Record the customer's answers and source references. Mark an unanswered item as unknown.
 
-\`\`\`
-CUSTOMER: ${customerName}
-INDUSTRY: ${industry || 'not given'}
-DATE:
-INTERVIEWER:
-
-CHALLENGE:
-- Main problem:
-- Business impact:
-- Previous attempts:
-- Trigger event:
-
-SOLUTION:
-- Discovery channel:
-- Why ${product}:
-- ${capFirst(w.rollout)} experience:
-- ${capFirst(w.value)}:
-
-RESULTS:
-- Key metric 1:
-- Key metric 2:
-- Key metric 3:
-- Team impact:
-
-QUOTES:
-- Best quote:
-- Backup quote:
-
-STORY ANGLE:
-- Unique aspect:
-- Emotional hook:
-\`\`\`
+| Item | What to record |
+| --- | --- |
+| Customer | ${customerName} |
+| Industry | ${industry || 'Not supplied; confirm with the customer'} |
+| Interview | Date, interviewer and permission to record |
+| Original work | Problem, impact, previous attempts and decision trigger |
+| Approach | Selection criteria, what was put in place and the ${w.rollout} experience |
+| Outcome | Starting and later values, period, source, unchanged or adverse results and limitations |
+| Customer words | Exact wording with context; keep approval status beside each proposed excerpt |
+| Publication | Approved wording, attribution, channel, date and the person granting permission |
 
 ---
 
 ## Interview Request Email Template
 
-Subject: Quick favor: share your ${product} success story?
+Subject: Share your experience with ${product}?
 
 ---
 
@@ -241,24 +219,24 @@ I'm reaching out because I'd love to share how your team uses ${product} with ot
 Would you be open to a 20-minute call where I ask a few questions about your experience? Here's what it would involve:
 
 - **Time:** 20-minute video call at your convenience
-- **Topics:** Your challenges before, how you use ${product}, results you've seen
-- **Approval:** You'll review the final case study before it goes live
-- **Benefit:** add what ${customerName} gains from being featured, only if it is true (for example a link to their site)
+- **Topics:** Your work before, how you use ${product}, and what changed or stayed the same
+- **Approval:** We will ask you to approve the exact wording, attribution and publication channel before any use
+- **Choice:** You can decline or leave any question unanswered
 
 Would a time next week work for a quick call?
 
 Thanks,
-
+Your account team
 
 ---
 
 ## Once You Have the Story
 
-Run this tool again with mode="full" and include:
-- **challenge:** What they were struggling with
-- **solution:** How ${product} helped
-- **results:** Quantifiable outcomes
-- **customer quote:** Their best testimonial quote
+Once the evidence is checked, request a full case study with:
+- **Customer problem:** The original work and any problem the customer confirms
+- **Approach:** What was actually put in place
+- **Observed outcomes:** Values, period, source and measurement limits, including no change or adverse results
+- **Customer wording:** An exact quote only if the customer approves its wording and use
 
 ---
 
@@ -428,7 +406,7 @@ ${bullets(quotes.slice(0, 2))}`
         const ms = v ? v.metrics.slice(0, 2) : [];
         // Host review 28 Oct 2026: the story states only what was typed. What is usual in a sector is a general note, said as one and named
         // by the sector it comes from (the sector notes come from your_sector, which can differ from the customer's industry).
-        paras.push(`**The situation.** ${Subj} is in the ${industryText || sectorName || 'its market'} segment.${ms.length ? ` (General note for ${sectorName}, not from your inputs: ${SOLO_WORDS.test(industryText || '') ? 'the work is usually judged on' : 'teams are usually judged on'} ${proseJoin(ms)}.)` : ''}`);
+        paras.push(`**The situation.** ${industryText ? `${Subj} is in the ${industryText} segment.` : `The customer is ${subj}. Its industry was not supplied; confirm it before publication.`}${ms.length ? ` (General note for ${sectorName}, not from your inputs: ${SOLO_WORDS.test(industryText || '') ? 'the work is usually judged on' : 'teams are usually judged on'} ${proseJoin(ms)}.)` : ''}`);
         if (challengeText)
             paras.push(`**The challenge.** Before ${product}, the team was dealing with this, in your words: ${lowerFirstIfCommon(strip(challengeText))}.`);
         else

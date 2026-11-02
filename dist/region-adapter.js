@@ -14,7 +14,7 @@ export function regionalInputs(args, industryRole = 'seller') {
         if (typeof input[key] !== 'string')
             continue;
         for (const sentence of input[key].split(/(?<=[.!?])\s+|\n+/)) {
-            if (/^\s*(?:we\s+(?:(?:do\s+not|never|currently|only|also)\s+)*(?:sell|serve|target|operate|offer|provide|are\s+(?:selling|not\s+selling))\b|our\s+(?:company|business|product|service|market)\s+(?:sells|serves|targets|operates|is|offers|provides)\b)/i.test(sentence))
+            if (/^\s*(?:we\s+(?:(?:do\s+not|never|currently|now|only|also|stopped|ceased|used\s+to)\s+)*(?:sell(?:ing)?|sold|serve|target|operate|offer|provide|are\s+(?:selling|not\s+selling))\b|our\s+(?:company|business|product|service|market)\s+(?:sells|serves|targets|operates|is|offers|provides)\b)/i.test(sentence))
                 seller.push(sentence);
             const purchase = sentence.match(/\b(?:(?:is|are)\s+(?:buying|purchasing)|buys|purchases)\s+our\s+(?:(?!(?:competitor|rival|customer|partner|supplier|vendor)\b)[\p{L}\p{N}'-]+\s+){0,4}(?:software|product|platform|services?|solution)\b/iu);
             if (purchase && !/\b(?:not|never|no longer|may|might|could|would|whether|considering|unconfirmed|hypothetical)\b|\?/i.test(sentence))

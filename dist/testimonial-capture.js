@@ -1,7 +1,7 @@
 import { signal, evidenceLine } from './text-signals.js';
 import { cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { readContext, startWords } from "./sector.js";
-import { parseProof, fixNumbers, endSentence, capFirst, isGenericName, KIND_NOTE } from "./draft.js";
+import { parseProof, fixNumbers, endSentence, capFirst, isGenericName, KIND_NOTE, missingEvidence } from "./draft.js";
 export function generateTestimonialCapture(args) {
     const cancellation = signal([args.success_story, args.relationship_context].filter(Boolean).join('; '), 'cancelled');
     const adverse = signal(args.success_story, 'adverse_result');
@@ -35,12 +35,14 @@ export function generateTestimonialCapture(args) {
     // The success story is sorted: only a result, a quote or a story with a figure can be said to belong to this company, and only when
     // the company is named. A result of another customer, a recognition or a company-wide count is never put in this contact's mouth.
     const items = parseProof(storyFull);
-    const own = genericCo ? [] : items.filter((i) => i.kind === 'result' || i.kind === 'quote' || (i.kind === 'title' && i.figure));
+    const evidenceLimit = (p) => missingEvidence(p.text) || /\bno (?:measured|verified)\b|\b(?:permission|approval|consent)\b.{0,60}\b(?:not|unknown|pending)\b/i.test(p.text);
+    const own = genericCo ? [] : items.filter(i => !evidenceLimit(i) && (i.kind === 'result' || i.kind === 'quote' || (i.kind === 'title' && i.figure)));
+    const evidenceNote = (p) => evidenceLimit(p) ? 'an evidence or permission limit, not a customer result' : !p.figure && /\b(?:said|says|reported|felt)\b/i.test(p.text) ? 'reported experience, not measured proof' : KIND_NOTE[p.kind];
     const elsewhere = items.filter((i) => !own.includes(i));
     const first = isGenericName(name) ? '' : name.replace(/\s*\(.*\)\s*$/, '').split(/\s+/)[0];
     const greeting = first ? `Hi ${first},` : 'Hello,';
     const person = isGenericName(name) ? 'the contact' : name;
-    const storyBlock = items.length ? `${items.map((p, i) => `${i + 1}. ${endSentence(capFirst(clipEcho(p.shown, 300)))} *(${KIND_NOTE[p.kind]}${own.includes(p) ? `; used as ${company}'s result` : genericCo ? "; your contact's company is not named, so this is not put to them as their own" : '; not put to this contact'})*`).join('\n')}` : '';
+    const storyBlock = items.length ? `${items.map((p, i) => `${i + 1}. ${endSentence(capFirst(clipEcho(p.shown, 300)))} *(${evidenceNote(p)}${own.includes(p) ? `; used as ${company}'s result` : genericCo ? "; your contact's company is not named, so this is not put to them as their own" : '; not put to this contact'})*`).join('\n')}` : '';
     let output = `# Testimonial Capture Kit
 
 ## Publication permission first
@@ -196,7 +198,7 @@ function generateRequestEmail(greeting, company, own, type, useCase, incentive, 
 
 ${greeting}
 
-I hope this finds you well!
+I'm writing to ask about your experience.
 ${about}
 Would you be willing to share a brief quote about your experience? Just 2-3 sentences about what ${P} has meant for your team.
 
@@ -215,7 +217,7 @@ Thanks for considering,
 
 ${greeting}
 
-I hope you're doing well!
+I'm writing to ask about your experience.
 ${about}
 Your story is exactly the kind that helps others facing similar challenges.
 
@@ -256,7 +258,7 @@ Best,
 
 ${greeting}
 
-I hope you're well!
+I'm writing to ask about your experience.
 ${about}
 Your experience with ${P} would really help others make informed decisions.
 
@@ -265,7 +267,7 @@ Would you be willing to leave a quick review? Send them the link to the review p
 It takes only a few minutes, and you can be as detailed or brief as you'd like.
 ${incentive ? `\nAs a thank you: ${incentive}` : ''}
 
-Your honest feedback helps others like you find solutions that work. (And selfishly, helps us understand what we're doing right!)
+Your honest feedback helps others like you find solutions that work. It would also help us understand what worked and what needs to improve.
 
 Thanks for considering,
 
@@ -275,7 +277,7 @@ Thanks for considering,
 
 ${greeting}
 
-I hope you're doing well!
+I'm writing to ask about your experience.
 ${about}
 A prospect who is evaluating ${P} would like to hear directly from someone who has been through the journey. (Name the prospect and their challenge in this paragraph, only if it is similar to what ${company} had.)
 
@@ -377,10 +379,10 @@ function generateInterviewQuestions(type, P, company, role, v, model, w, own) {
 10. How long did it take to ${w.reach}?
 
 ### Results
-11. What specific results have you seen?
-12. Can you put numbers on that? (%, $, time saved)
+11. What changed, if anything?
+12. What records show the starting point, current value and period? Keep unmeasured values unknown.
 13. How has this impacted your team's day-to-day?
-14. What's the biggest win you've had with ${P}?
+14. What stayed the same or became harder with ${P}?
 ${figures.map((f, i) => `${15 + i}. You told us: "${clipEcho(f.text, 160)}". What was the figure before, what is it now, over what period, and who measured it?`).join('\n')}
 
 ### Recommendation

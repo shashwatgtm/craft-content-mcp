@@ -57,3 +57,25 @@ test('negation after the interview noun does not establish an interview account'
   assert.doesNotMatch(s,/Supplied interview note, not independently verified|The evidence is an interview account/);
  }
 });
+
+test('denied interview effects use neutral reconstruction and comparison questions',()=>{
+ const s=generateThoughtLeadership({...args,proof_points:'In two interviews, reviewers said missing source records did not delay review. No time saving study has been run.'});
+ assert.match(s,/Trace the Reported Observation/);assert.match(s,/identify whether a delay, error or extra work occurred/);
+ assert.match(s,/If they reported no effect, retain that denial/);
+ assert.doesNotMatch(s,/identify where the delay|where the reported problem did not occur|Choose a measure for the reported problem/);
+});
+test('missing proof is flagged without inventing buyer objections or approval rights',()=>{
+ for(const your_sector of ['logistics_tech','fintech','saas','vertical_saas','ai_native','ites','telecom','software','cybersecurity']){
+ const s=generateThoughtLeadership({...args,proof_points:undefined,your_sector});
+ assert.match(s,/No proof points were supplied/);assert.match(s,/actual people and approval rights need confirmation/);
+ assert.match(s,/Sector objections to check with readers/);
+ assert.doesNotMatch(s,/Nothing in your inputs needed flagging|Someone at the table will say|The objection to expect|will push back with this|The articles answer them in turn|Whoever reads this will not decide alone/);
+ }
+});
+test('a hypothetical comparison never establishes that the argument held in a real setting',()=>{
+ const s=generateThoughtLeadership({...args,proof_points:'Review time fell from 80 to 50 minutes across 12 cases (hypothetical figure).'});
+ assert.match(s,/illustration, not measured evidence/);
+ assert.match(s,/evidence still to gather/);
+ assert.doesNotMatch(s,/Here is a result:|A result on record|Supplied result, not independently verified/);
+ assert.doesNotMatch(s,/It shows that the idea has held up|It is a sign that the point holds somewhere|One result on record:/);
+});

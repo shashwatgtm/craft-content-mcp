@@ -12,6 +12,8 @@ import { cleanSectorLine, looksClause, isInstruction, instructionNote, sharpenLi
 
 const ECHO = 400; // a long pasted value is shortened to a whole clause at this length when it is repeated
 const INTERVIEW_TITLES = ['Trace the Reported Problem', 'Look for a Counterexample', 'Agree a Test and Its Limits', 'Check Whether the Result Travels', 'Decide What Can Be Published'];
+const deniedInterviewEffect = (s: string) => /\b(?:did not|didn't|never)\s+(?:cause|delay|slow|affect|change)\b/i.test(s);
+const illustrative = (p: ProofItem) => /\b(?:hypothetical|illustrative|fictional|example only|not a measured result)\b/i.test(`${p.text} ${p.label}`);
 const INTERVIEW_QUESTIONS = [
   'Can you reconstruct the reported case from its source records?',
   'Which comparable case would make you narrow or reject this position?',
@@ -126,7 +128,7 @@ export function generateThoughtLeadership(args: {
   const arts: { head: Angle; text: string; lead: string; objection: string; leadItem?: ProofItem }[] = [];
   const heads = Array.from({ length: numArticles }, (_, i) => {
     const angle = getArticleAngle(i, articleType, topicLabel, evidence.length + stories.length > 0);
-    return interviewNote ? {...angle, title:`${titleWords(topicLabel)}: ${INTERVIEW_TITLES[i % INTERVIEW_TITLES.length]}`} : angle;
+    return interviewNote ? {...angle, title:`${titleWords(topicLabel)}: ${i === 0 && deniedInterviewEffect(interviewNote) ? "Trace the Reported Observation" : INTERVIEW_TITLES[i % INTERVIEW_TITLES.length]}`} : angle;
   });
   for (let i = 0; i < numArticles; i++) {
     const a: Art = { index: i, total: numArticles, type: articleType, topic: topicLabel, parts, readerNoun, v, evidence, stories, mark, count, suggested, heads, askedQuestions, takeText, view, metricsSeries, listedParts, testUsed, conflicts, brand, interviewNote };
@@ -140,9 +142,10 @@ export function generateThoughtLeadership(args: {
   if (!hasAuthor) missing.push({ field: 'author_background', change: 'the bylines, which now read "the author"' });
   const notUsed = items.filter((i) => !interviewItems.includes(i) && !used.has(i) && !credibility.includes(i));
   const notes: string[] = [];
+  if (suggested) notes.push('No proof points were supplied. The articles present a position and proposed tests, not an established outcome. Confirm sources, scope and permission before publishing evidence claims.');
   if (interviewNote) notes.push('The evidence is an interview account. Check the original notes, attribution and quote permission before publication. The articles propose tests; they do not establish a measured result or answer every sector objection.');
   if (claims.length) notes.push(`**Claims to source before you publish:** your take or proof points use ${proseJoin(claims.map((c) => `"${c}"`))}. The articles and posts leave them out; add one back once, in one place, and only if you can prove it with a source a reader can check.`);
-  if (notUsed.length) notes.push(`Not used as examples: ${proseJoin(notUsed.map((i) => `"${clipEcho(i.shown, 180)}"`))}, because ${numArticles === 1 ? 'the article has' : `the ${numArticles} articles have`} room for only so many; ${notUsed.length === 1 ? 'it is' : 'they are'} listed under the proof points below.`);
+  if (notUsed.length) notes.push(`Not used as examples: ${proseJoin(notUsed.map((i) => `"${clipEcho(i.shown, 180)}" (${noteOf(i)})`))}. Review the source type and scope before using an item as outcome evidence; unused items remain listed in the proof table.`);
   if (conflicts.length) notes.push(`Two different figures are given for one result: ${proseJoin(conflicts.map((c) => `"${clipEcho(c.shown, 200)}"`))}. They differ, so the articles show both as typed and mark the case.`);
   if (orders.length) notes.push(instructionNote(orders));
   if (droppedLegal.length) notes.push(`Legal or regulatory wording left out of the articles: ${proseJoin([...new Set(droppedLegal)].map((x) => `"${clipEcho(x, 160)}"`))}. A disclaimer is not a topic or a point; keep it as the footer of the page it belongs to.`);
@@ -198,7 +201,7 @@ ${missing.length ? `\n${sharpenLine(missing)}\n` : ''}`;
 
 // A statement from a partner (a label such as "partner quote") is not a customer's word and is never used as customer proof.
 const isPartner = (p: ProofItem) => /partner/i.test(p.label);
-const noteOf = (p: ProofItem) => (isPartner(p) ? 'a partner statement, not a customer\'s words' : KIND_NOTE[p.kind]);
+const noteOf = (p: ProofItem) => (illustrative(p) ? 'illustration, not measured evidence' : isPartner(p) ? 'a partner statement, not a customer\'s words' : KIND_NOTE[p.kind]);
 
 const OPENS: Record<string, string> = {
   contrarian: 'This article makes the case for it.',
@@ -235,7 +238,10 @@ function shortTopicRaw(topic: string): string {
 function readerPhrase(target: string): string {
   const first = target.split(/;/)[0].trim();
   const keep = /^[A-Z][a-z]+ \d/.test(first); // a name with a number ("Fortune 500 companies") keeps its capital
-  if (first.length <= 110) return keep ? first : lowerFirstIfCommon(first);
+  if (first.length <= 110) {
+    const phrase = keep ? first : lowerFirstIfCommon(first);
+    return !/^(?:a|an|the)\b/i.test(phrase) && /\b(?:head|lead|manager|supervisor|director|officer)$/.test(phrase) ? `the ${phrase}` : phrase;
+  }
   const short = shortenClauses(first, 110);
   return /\.\.\.$/.test(short) ? 'these readers' : keep ? short : lowerFirstIfCommon(short);
 }
@@ -262,7 +268,7 @@ function sectorBlock(v: Vertical | null, whoShown = false, interviewOnly = false
 
 ## Sector Notes: ${cap(v.name)}
 
-- **${interviewOnly ? 'Sector objections to check with readers' : 'Counter-arguments your readers will raise'}:** ${v.objections.map((o) => o.objection.toLowerCase()).join('; ')}. ${interviewOnly ? 'Check whether these apply before adding them to the argument; the interview account does not establish them.' : 'The articles answer them in turn.'}
+- **Sector objections to check with readers:** ${v.objections.map((o) => o.objection.toLowerCase()).join('; ')}. Check whether these apply before adding them to the argument; the supplied material does not establish the audience's objections.
 - **Measures your readers use:** ${v.metrics.slice(0, 5).join(', ')}. Cite the ones your proof points really move.
 - **Terms your readers use:** ${v.vocabulary.slice(0, 6).join(', ')}.
 ${whoShown ? '' : `- **Who decides:** ${v.committee}\n`}- **A proof point that lands:** ${v.proofShape}
@@ -520,9 +526,9 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
       if (objection) {
         const settle = waysToSettle(objection.response);
         const frames = [
-          `${cap(a.readerNoun)} will push back with this: ${quotedEnd(objection.objection)}`,
-          `The objection to expect from ${a.readerNoun} is ${quotedEnd(objection.objection)}`,
-          `Someone at the table will say: ${quotedEnd(objection.objection)}`,
+          `A possible objection to check with ${a.readerNoun}: ${quotedEnd(objection.objection)}`,
+          `Another possible concern for ${a.readerNoun} is ${quotedEnd(objection.objection)}`,
+          `A reader may ask: ${quotedEnd(objection.objection)}`,
         ];
         body.push(`${frames[(a.index + k) % frames.length]}${settle ? ` ${settle}` : ''}`);
         const m = relevantMetric(`${objection.objection} ${objection.response}`);
@@ -536,19 +542,20 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
         const seen = a.count(item);
         a.mark(item, a.index + 1);
         const hh = (HEADINGS[a.type] || HEADINGS.contrarian)[item.kind === 'quote' ? 'quote' : item.kind === 'title' ? 'story' : 'evidence'];
-        heading = item.kind === 'result' ? [hh, 'A result on record', 'More evidence'][a.index % 3] : hh;
+        heading = item.kind === 'result' ? illustrative(item) ? 'An illustration to check' : [hh, 'A supplied result to verify', 'More evidence'][a.index % 3] : hh;
         if (item.kind === 'quote') body.push(quoteLine(item, seen));
-        else if (item.kind === 'title') { const nS = [...a.askedQuestions].filter((x) => x.startsWith('story:')).length; a.askedQuestions.add(`story:${item.text}`); const t0 = clipEcho(item.shown, ECHO).replace(/[.]$/, ''); body.push(seen >= 2 ? `The same customer story once more, from the angle of this piece: ${t0}.` : seen === 1 ? `Back to the customer story: ${t0}. Its headline gives no result of its own.` : nS === 0 ? `One customer story points the same way: ${t0}. Its headline carries no result, so none is claimed for it here.` : `Another customer story points the same way: ${t0}, again a headline with no result of its own.`); }
+        else if (item.kind === 'title') { const nS = [...a.askedQuestions].filter((x) => x.startsWith('story:')).length; a.askedQuestions.add(`story:${item.text}`); const t0 = clipEcho(item.shown, ECHO).replace(/[.]$/, ''); body.push(seen >= 2 ? `The same customer story once more, from the angle of this piece: ${t0}.` : seen === 1 ? `Back to the customer story: ${t0}. Its headline gives no result of its own.` : nS === 0 ? `A supplied customer story title: ${t0}. Its headline carries no result, so none is claimed for it here.` : `Another supplied customer story title: ${t0}, again a headline with no result of its own.`); }
         else {
           const flag = a.conflicts.includes(item) ? ' (two different figures are given for this case)' : '';
           const shownT = clipEcho(seen > 0 ? item.shown.replace(/([.!?])\s+(?=[A-Z])/g, '; ') : item.shown, ECHO);
-          const frames = [`The evidence: ${endSentence(capFirst(shownT + flag))}`, `Here is a result: ${endSentence(capFirst(shownT + flag))}`, `One result on record: ${endSentence(capFirst(shownT + flag))}`];
+          const source = illustrative(item) ? 'Illustration, not measured evidence' : 'Supplied result, not independently verified';
+          const frames = [`${source}: ${endSentence(capFirst(shownT + flag))}`, `${source}: ${endSentence(capFirst(shownT + flag))}`, `${source}: ${endSentence(capFirst(shownT + flag))}`];
           body.push(frames[seen % frames.length]);
         }
         if (v && !a.askedQuestions.has('proofShape')) { a.askedQuestions.add('proofShape'); body.push(`Evidence of this kind is strongest when it looks like this: ${lowerFirst(toYou(v.proofShape)).replace(/\.$/, '')}.`); }
       }
     } else if (kind === 'who') {
-      if (v && !a.askedQuestions.has('who')) { a.askedQuestions.add('who'); body.push(`Whoever reads this will not decide alone. ${toYou(v.committee)}`); }
+      if (v && !a.askedQuestions.has('who')) { a.askedQuestions.add('who'); body.push(`Confirm who can approve, review and use the proposed change. A possible role map to check is: ${toYou(v.committee)} The actual people and approval rights need confirmation.`); }
     } else if (kind === 'next') {
       // what to do next: test the position on one live piece of work, and the question to take into the next meeting
       heading = NEXT_HEADINGS[a.index % NEXT_HEADINGS.length];
@@ -563,7 +570,7 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
         ];
         body.push(frames[(a.index + k) % frames.length]);
       } else {
-        body.push(['Pick one live piece of work and test the position on it before you change anything else.', 'Start with one team and one piece of work, and write down where it stands today.', 'Choose the piece of work that hurts most, and try the position on that one first.', 'Agree who will inspect the result before testing the change on a single workflow.', 'Record the current result for one case, then compare it after the proposed change.'][a.index % 5]);
+        body.push(['Pick one live piece of work and test the position on it before you change anything else.', 'Start with one team and one piece of work, and write down where it stands today.', 'Choose one relevant case and record the decision it could inform before proposing a test.', 'Agree who will inspect the result before testing the change on a single workflow.', 'Record the current result for one case, then compare it after the proposed change.'][a.index % 5]);
       }
       const qs = questionsFor(a);
       if (qs.length) body.push(`Then take this question into the next meeting: "${bestQuestion(`${thesis} ${a.takeText}`, qs, a.askedQuestions)}"`);
@@ -592,7 +599,11 @@ ${body}`);
   // plain slot says what to add (at most three in the series). No figure, customer, quote or claim is added.
   const lowT = asClaim(lowerFirst(clipEcho(thesis, ECHO)).replace(/[.]$/, ''), a.brand);
   const ms = v ? rankMetrics(v, a.takeText).filter((x) => x.ok).map((x) => toYou(x.m)) : [];
-  const argFrames = [
+  const argFrames = a.suggested ? [
+    `The proposed position is this: ${lowT}. No outcome evidence was supplied, so the first job is to define what would support or contradict it. Ask ${a.readerNoun} to choose a recent, relevant case and identify its source records. Keep the position open if the case cannot be reconstructed. The possible objection below is a question to check with the reader, not a finding about this audience.`,
+    `This part asks what could make the proposed position wrong. Compare a case that appears to support it with one that does not. Record differences in the work, people and period before attributing either experience to the proposed change. Ask ${a.readerNoun} which alternative explanation deserves a test, and retain a contrary observation rather than dropping it from the story.`,
+    `A useful next step needs an agreed decision rule. Ask ${a.readerNoun} to name the measure, starting record, reviewer and conditions for stopping before any change is tried. The test can inform a bounded decision; it cannot establish a market-wide outcome. Record what remains unknown and which evidence would justify a wider claim.`
+  ] : [
     `The argument of this piece rests on one point: ${lowT}. ${ms.length ? `For ${a.readerNoun}, an idea like this is only worth the time if it shows up in the numbers the work is judged on, ${proseJoin(ms.slice(0, 2))}, so that is where it is tested here.` : `It is tested here the way ${a.readerNoun} would test it: against the evidence on record and against the pushback it will meet.`} The sections below take it in order: how the parts fit, what the evidence shows, the objection it has to survive and a way to try it on your own work.`,
     `This piece makes one claim, about ${a.index < n && lowT.length <= 160 ? lowT : 'the position set out in the first article'}. ${ms.length ? `It stands or falls on ${proseJoin(ms.slice(0, 2))}, the measures ${a.readerNoun} already report on.` : `It stands or falls on whether ${a.readerNoun} can check it on their own work.`} What follows sets the claim next to the rest of the position, the proof and the strongest objection, and ends with a test you can run.`,
     `Here the claim is narrower than in the pieces before. ${ms.length ? `The reason it matters is practical. ${cap(a.readerNoun)} are asked about ${proseJoin(ms.slice(0, 2))}, and a change that does not move those is hard to defend in a review.` : `The reason it matters is practical: a change that cannot be checked is hard to defend in a review.`} The rest of this piece shows how the claim connects to the other parts, where the evidence stops and how to put it to work.`,
@@ -610,15 +621,15 @@ ${body}`);
   const usedHere = [...picked].filter((p) => p.kind !== 'title');
   if (usedHere.length) {
     const p = usedHere[0];
-    const what = p.kind === 'quote' ? 'one customer\'s account in their own words' : 'a result on record';
+    const what = illustrative(p) ? 'an illustration, not an observed outcome' : p.kind === 'quote' ? 'a supplied account in the speaker\'s own words' : 'a supplied result that still needs source verification';
     const at = sections.findIndex((s) => s.includes(quoteParts(p).words.slice(0, 30)) || s.includes(p.text.slice(0, 30)));
     const evH = ['What the evidence shows, and what it does not', 'Reading the evidence', 'How far the evidence goes'][a.index % 3];
     const evB = [
-      `The evidence above is ${what}${p.label ? ` (${p.label})` : ''}. It shows that the idea has held up for someone in a real setting. It does not show what it will do for your own operation, so read it as a reason to run a test, not as a forecast.`,
-      `Read the evidence for what it is: ${what}${p.label ? ` (${p.label})` : ''}. It is a sign that the point holds somewhere, not a promise about your numbers, and it is strongest when you can ask the people behind it how they measured.`,
-      `This evidence is ${what}${p.label ? ` (${p.label})` : ''}, and it goes as far as one setting. Before it carries a decision, set it next to a figure from your own work, taken the same way.`,
+      `The evidence above is ${what}${p.label ? ` (${p.label})` : ''}. Check whether its scope and comparison support the position at all. It does not establish causation or predict what will happen in your own operation.`,
+      `Read the evidence for what it is: ${what}${p.label ? ` (${p.label})` : ''}. Ask who supplied it, how it was measured and which alternative explanation could fit. Retain its limits instead of treating it as proof of the whole argument.`,
+      `This evidence is ${what}${p.label ? ` (${p.label})` : ''}, and its scope must be checked before it carries a decision. Compare it with evidence from your own work, collected using the same definitions.`,
     ][a.index % 3];
-    const evS = v && !a.askedQuestions.has('settleProof') ? (a.askedQuestions.add('settleProof'), ` The proof that would settle it for ${a.readerNoun} is ${lowerFirst(toYou(v.proofShape)).replace(/\.$/, '')}.`) : '';
+    const evS = v && !a.askedQuestions.has('settleProof') ? (a.askedQuestions.add('settleProof'), ` Evidence to assess with ${a.readerNoun} would include ${lowerFirst(toYou(v.proofShape)).replace(/\.$/, '')}.`) : '';
     sections.splice(at >= 0 ? at + 1 : sections.length, 0, `## ${evH}
 
 ${evB}${evS}`);
@@ -626,16 +637,16 @@ ${evB}${evS}`);
     const slots = [...a.askedQuestions].filter((x) => x.startsWith('slot:')).length;
     if (slots < 1) {
       a.askedQuestions.add(`slot:${a.index}`);
-      sections.push(`## Evidence to add\n\n**To add before publishing:** one result or quote from a customer of yours that bears on this part, with the figure, the period and the customer's approval. Nothing is invented here to fill the gap, so this piece argues from the position alone until you add it.`);
+      sections.push(`## Evidence to add\n\nThe position remains untested without a source that bears on it. A useful evidence record names the observation, its source, the period and scope, and the person who can confirm it. Include contrary cases and permission for any identifiable account. Until then, use the argument to frame a question rather than claim an outcome.`);
     }
   }
   // later articles also show how to put the point to work: a fair test, built from the sector's measures and words only
   if (a.index >= 1) {
     const m0 = ms[0] || ''; const vocab = v ? v.vocabulary.slice(0, 3) : [];
     const work = [
-      `To put this to work, start where the cost of the problem is easiest to see. Choose one piece of work${m0 ? ` where ${m0} is already tracked` : ''}, write down today's figure and the period it covers, and agree who will read the result. Run the change on that piece of work only and keep everything else as it is, so that the comparison is fair.`,
+      `To put this to work, start where the cost of the problem is easiest to see. Choose one piece of work${m0 ? ` where ${m0} is already tracked` : ''}, write down today's figure and the period it covers, and agree who will read the result. Agree an approved test on that piece of work, with a stop rule and a reviewer. Record other changes that could affect the comparison; a before and after result alone cannot establish cause.`,
       `A test like this needs three things agreed in advance: the measure${m0 ? ` (${m0})` : ''}, the period and the person who signs the result off. Without them a good result is easy to dismiss and a poor one is easy to explain away.${vocab.length ? ` Write the test in the words the team already uses (${proseJoin(vocab)}), so everyone reads the result the same way.` : ''}`,
-      `Keep the first test small enough to finish. One team, one piece of work and one number${m0 ? `, ${m0},` : ''} are enough to show whether the point holds; a wider rollout can wait for that answer.`,
+      `Keep the first test small enough to finish. One team, one piece of work and one number${m0 ? `, ${m0},` : ''} can inform the next decision, but cannot establish that the point holds everywhere; a wider rollout needs further evidence.`,
       `When the test is done, share the before and after with the people who will be asked to change how they work. A result they helped measure is easier to accept than one they are shown.`,
     ];
     if (work[a.index - 1]) sections.splice(Math.max(sections.length - 1, 0), 0, `## ${['Putting it to work', 'Making the test fair', 'Keeping it small', 'Sharing the result'][a.index - 1]}
@@ -643,11 +654,11 @@ ${evB}${evS}`);
 ${work[a.index - 1]}`);
   }
   const closeFrames = [
-    `If you keep one thing from this piece, keep the point it opened with, and the test that checks it.${objection ? ` The pushback, "${objection.objection.replace(/[.?!]+$/, '')}", is fair, and it is answered by a test on real work rather than by argument.` : ''}`,
-    `To close, the point stands or falls on one live test.${objection ? ` Expect to hear "${objection.objection.replace(/[.?!]+$/, '')}", and answer it with the test above, not with a slide.` : ''}`,
-    `The short version: write down where you stand today, run the change on one piece of work, and compare.${objection ? ` When someone says "${objection.objection.replace(/[.?!]+$/, '')}", agree on the test first and let the result decide.` : ''}`,
+    `If you keep one thing from this piece, keep the point it opened with, and the test that checks it.${objection ? ` If "${objection.objection.replace(/[.?!]+$/, '')}" is a real concern, agree what evidence would address it before proposing a change.` : ''}`,
+    `To close, use a bounded test to decide what to investigate next.${objection ? ` Check whether "${objection.objection.replace(/[.?!]+$/, '')}" is an actual concern, then agree what evidence would address it.` : ''}`,
+    `The short version: record the starting point, agree an approved test on one piece of work, and compare with its limits visible.${objection ? ` When someone says "${objection.objection.replace(/[.?!]+$/, '')}", agree on the test first and review alternative explanations beside the result.` : ''}`,
     `What this piece asks of you is small: one test, on one piece of work, read on one number.`,
-    `Hold the point loosely until your own numbers back it, then hold it firmly.`,
+    `Keep the position open to revision even when your own numbers support it; check whether the scope or conditions have changed.`,
   ];
   sections.push(`## ${['The takeaway', 'In short', 'The bottom line', 'What it asks of you', 'Before you act'][a.index % 5]}\n\n${a.index < closeFrames.length ? closeFrames[a.index] : ''}`);
 
@@ -656,9 +667,9 @@ ${work[a.index - 1]}`);
   // sequence that preserves the complete note and makes its limits actionable.
   if (a.interviewNote && !a.evidence.length && !a.stories.length) {
     const steps = [
-      ['Trace the reported problem', `Start with the observation in the interview note. Ask the person who reported it to walk through a recent example and identify where the delay, error or extra work occurred. Record the starting condition and the evidence they used. A reported experience can explain a concern; it cannot establish how common the concern is.`],
-      ['Look for a counterexample', `Find a comparable case where the reported problem did not occur. Ask what differed in the inputs, the reviewer and the handoff. If the same conditions produced a different outcome, narrow the position before prescribing a change. Do not recruit only people who already agree.`],
-      ['Agree a test and its limits', `Choose a measure for the reported problem before changing the workflow. Record the starting value, case mix, observation period and acceptance rule. Assign a person to inspect the result. A small before and after comparison can guide the next experiment, but other changes may explain the difference.`],
+      [deniedInterviewEffect(a.interviewNote) ? 'Trace the reported observation' : 'Trace the reported problem', `Start with the observation in the interview note. Ask the person who reported it to walk through a recent example and identify whether a delay, error or extra work occurred. If they reported no effect, retain that denial and ask what records support it. Record the starting condition and the evidence they used. A reported experience can explain a concern; it cannot establish how common the concern is.`],
+      ['Look for a counterexample', `Find a comparable case with a different reported experience. Ask what differed in the inputs, the reviewer and the handoff, including cases where no problem or benefit was observed. If the same conditions produced a different outcome, narrow the position before prescribing a change. Do not recruit only people who already agree.`],
+      ['Agree a test and its limits', `Choose a measure that can test the reported observation before changing the workflow. Record the starting value, case mix, observation period and acceptance rule. Assign a person to inspect the result. A small before and after comparison can guide the next experiment, but other changes may explain the difference.`],
       ['Check whether the result travels', `Repeat the agreed test with a different team or case mix. Keep unsuccessful cases in the record. If the direction changes, describe the conditions under which the position may hold instead of generalising from the first team.`],
       ['Decide what can be published', `Separate the interview observation, the author's position and any later measured result. Obtain permission for identifiable quotes. Publish a numerical outcome only with its source, period, denominator and limitations; otherwise publish the question and the test still needed.`],
     ];
@@ -671,7 +682,7 @@ ${work[a.index - 1]}`);
 
   const isFirst = a.index === 0;
   const aboutAuthor = authorBackground ? clipEcho(authorBackground.replace(/[.!?]+\s*$/, ''), 200) : 'the author';
-  const byline = isFirst ? `*By ${aboutAuthor}. Written for ${clipEcho(targetReader, ECHO)}.*` : `*Part ${a.index + 1} of ${a.total}, by ${aboutAuthor}.*`;
+  const byline = isFirst ? `*By ${aboutAuthor}. Written for ${a.readerNoun}.*` : `*Part ${a.index + 1} of ${a.total}, by ${aboutAuthor}.*`;
   const repeat = a.index >= n;
   // the opening: the author's own words. A take with several parts opens the series with a lead-in and lists the parts; later articles open on their own part.
   const lowThesis = lowerFirst(clipEcho(thesis, ECHO)).replace(/[.]$/, '');

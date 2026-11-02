@@ -28,3 +28,9 @@ test('one through five articles have distinct review jobs',()=>{
   if(num_articles===5)assert.match(s,/Decide what can be published/);
  }
 });
+
+test('comma splitting cannot detach a service interview observation from its evidence type',()=>{
+ const s=generateThoughtLeadership({...args,your_sector:'ites',proof_points:'In two interviews, service delivery head said missing source records delayed service handoff exceptions. No time saving study has been run.'});
+ assert.match(s,/qualitative input for a hypothesis/);assert.doesNotMatch(s,/The evidence above is a result on record|It shows that the idea has held up/);
+ assert.doesNotMatch(s,/One Customer.s Case/);
+});

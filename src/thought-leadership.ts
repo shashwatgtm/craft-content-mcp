@@ -71,9 +71,11 @@ export function generateThoughtLeadership(args: {
     return i;
   }) : [];
   const interviewNote = /\binterviews?\b/i.test(proofRaw) && !/\b(?:no|never|not|without)\s+(?:\w+\s+){0,2}interviews?\b/i.test(proofRaw) && !isInstruction(proofRaw) && proofRaw.length <= 1600 ? proofRaw : '';
-  const interviewItems = interviewNote ? items.filter(i => /\binterviews?\b/i.test(i.text)) : [];
+  // Keep the whole interview paragraph together: a comma split must not turn
+  // the remainder of an interview note into a measured result.
+  const interviewItems = interviewNote ? items : [];
   const evidence = items.filter((i) => !interviewItems.includes(i) && (i.kind === 'result' || i.kind === 'quote') && !isPartner(i));
-  const stories = items.filter((i) => i.kind === 'title');
+  const stories = items.filter((i) => !interviewItems.includes(i) && i.kind === 'title');
   const credibilityItems = items.filter((i) => !interviewItems.includes(i) && !evidence.includes(i) && !stories.includes(i) && i.kind !== 'missing' && i.kind !== 'unclear' && i.kind !== 'adverse');
 
   const topicNorm = topic.toLowerCase().replace(/\W+/g, ' ').trim();
@@ -124,7 +126,7 @@ export function generateThoughtLeadership(args: {
   if (suggested) missing.push({ field: 'proof_points', change: `every article, which now quotes no result, customer or figure${v ? ` and names instead what would carry the argument in this field: ${lowerFirst(v.proofShape).replace(/\.$/, '')}` : ''}` });
   for (const c of conflicts) { const pc = [...new Set((c.text.match(/\d[\d.,]*\s?%/g) || []).map((x) => x.replace(/\s/g, '')))]; missing.push({ field: `which figure to use, ${pc.join(' or ')}, for one case`, change: 'the evidence sentence, which now shows both figures as typed and flags that they differ' }); }
   if (!hasAuthor) missing.push({ field: 'author_background', change: 'the bylines, which now read "the author"' });
-  const notUsed = items.filter((i) => !used.has(i) && !credibility.includes(i));
+  const notUsed = items.filter((i) => !interviewItems.includes(i) && !used.has(i) && !credibility.includes(i));
   const notes: string[] = [];
   if (claims.length) notes.push(`**Claims to source before you publish:** your take or proof points use ${proseJoin(claims.map((c) => `"${c}"`))}. The articles and posts leave them out; add one back once, in one place, and only if you can prove it with a source a reader can check.`);
   if (notUsed.length) notes.push(`Not used as examples: ${proseJoin(notUsed.map((i) => `"${clipEcho(i.shown, 180)}"`))}, because ${numArticles === 1 ? 'the article has' : `the ${numArticles} articles have`} room for only so many; ${notUsed.length === 1 ? 'it is' : 'they are'} listed under the proof points below.`);
@@ -155,7 +157,7 @@ Link each promo post to its article. ${tags ? `Hashtags for the posts: ${tags}.`
 
 ## Proof Points Used
 
-${items.length || credibility.length ? `| Proof point | What it is | How it is used |\n|---|---|---|\n${[...items, ...credibility.filter((c) => !items.includes(c))].map((p) => `| ${clipEcho(p.shown, 600).replace(/\|/g, '/')} | ${noteOf(p)} | ${p.kind === 'missing' || p.kind === 'unclear' ? 'evidence still to gather' : credibility.includes(p) ? 'a credibility line, not an example' : used.has(p) ? `article ${(used.get(p) as number[]).join(' and ')}` : 'not used as an example'} |`).join('\n')}` : 'None were given.'}
+${interviewNote ? 'Interview notes are used as qualitative input in Article 1 and as the basis for the tests in later articles. Any figures in those notes remain reported observations, not independently measured outcomes.' : items.length || credibility.length ? `| Proof point | What it is | How it is used |\n|---|---|---|\n${[...items, ...credibility.filter((c) => !items.includes(c))].map((p) => `| ${clipEcho(p.shown, 600).replace(/\|/g, '/')} | ${noteOf(p)} | ${p.kind === 'missing' || p.kind === 'unclear' ? 'evidence still to gather' : credibility.includes(p) ? 'a credibility line, not an example' : used.has(p) ? `article ${(used.get(p) as number[]).join(' and ')}` : 'not used as an example'} |`).join('\n')}` : 'None were given.'}
 ${sectorBlock(vFull, askedQuestions.has('who'))}${generic ? '\n- The readers you named do not match the readers this sector reading is written for, so the articles use none of its measures.\n' : ''}
 ---
 

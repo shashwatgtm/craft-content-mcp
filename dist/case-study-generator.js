@@ -74,10 +74,10 @@ function sentence(text) {
 function capFirst(text) {
     return text.charAt(0).toUpperCase() + text.slice(1);
 }
-function discoverySector(ctx) {
+function discoverySector(ctx, industry) {
     const v = ctx.v;
     if (!v)
-        return `\n---\n\n## Sector Questions\n\n${ctx.line}\n\nNo sector could be read from what you typed, so only the general questions are below. Name the customer's industry or your product category to get questions in the sector's own language.\n`;
+        return `\n---\n\n## Sector Questions\n\n${ctx.line.replace('name the industry for sector notes', 'name the product category for sector notes')}\n\n${industry.trim() ? `Customer industry supplied: ${industry}. ` : ''}The product sector is not clear from the product description. Use the general interview questions; add the product category or choose your sector for product-specific questions. The customer's industry does not establish the seller's sector.\n`;
     return `
 ---
 
@@ -184,7 +184,7 @@ Ask these questions to capture outcomes:
 
 15. **"What surprised you most about working with us?"**
     - Listen for: Unexpected benefits, costs or problems
-${discoverySector(ctx)}
+${discoverySector(ctx, industry)}
 ---
 
 ## Interview record

@@ -18,6 +18,15 @@ test('case study does not turn a seller sector into a customer industry',async()
  const known=await call('case_study_generator',{...args,customer_industry:'Hotel operations'});
  assert.match(known.content.map(c=>c.text||'').join('\n'),/is in the Hotel operations segment/);
 });
+test('discovery acknowledges a supplied customer industry without inferring the seller sector',async()=>{
+ for(const customer_industry of ['Telecommunications','Hotel operations','Banking']){
+  const r=await call('case_study_generator',{customer_name:'Anonymous customer',your_product:'Example service',customer_industry,mode:'discovery'});
+  const s=r.content.map(c=>c.text||'').join('\n');
+  assert.ok(s.includes('Customer industry supplied: '+customer_industry));
+  assert.match(s,/product sector is not clear/);assert.match(s,/customer.s industry does not establish the seller.s sector/);
+  assert.doesNotMatch(s,/Name the customer.s industry|name the industry for sector notes/);
+ }
+});
 test('Overnight case story: closing action is written for the reader',async()=>{
  const r=await call('case_study_generator',{customer_name:'Anonymous fleet',your_product:'Dispatch planning software',challenge:'Route adjustments took four hours',solution:'One exception queue',results:'One pilot took three hours over ten days; no publication permission.'});
  const t=r.content.map(c=>c.text||'').join('\n');assert.match(t,/Before changing your process, record the starting point/);assert.doesNotMatch(t,/Close with one action for the reader|Write the reader.s next step/);

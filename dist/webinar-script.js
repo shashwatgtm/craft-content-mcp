@@ -7,6 +7,8 @@ import { looksClause, cleanSectorLine, readPoints, groupPhrases, sentenceOf, wit
 const TEACHING_ACTION = /^(?:for (?:one|a|the|each) (?:batch|case|team|shift|period)[^,]{0,40},\s*)?(?:count|name|record|review|check|inspect|audit|map|list|identify|compare|measure|keep|do not|don't)\b/i;
 const EVIDENCE_LIMIT = /^(?:do not|don't|never)\s+(?:claim|promise|infer|assume)|^keep\b[^.!?]*\b(?:unchanged|on hold|paused)\b/i;
 function readWebinarPoints(raw, known) {
+    if (!/\n/.test(raw) && /;\s+[a-z]/.test(raw) && /,\s+[A-Z][a-z]/.test(raw))
+        return readPoints(raw, known);
     const chunks = raw.split(/[;\n]/).map(x => x.trim()).filter(Boolean);
     if (!chunks.some(x => TEACHING_ACTION.test(x)))
         return readPoints(raw, known);
@@ -484,7 +486,7 @@ function problemSpoken(w) {
 function painPoint(w) {
     const v = w.ctx.v;
     const who = w.role ? `${whoIs(w)}${w.field ? ` ${w.connector} ${w.field}` : ''}` : 'this audience';
-    const measures = v && w.metrics.length ? `For ${who}, measures to consider are ${proseJoin(w.metrics.slice(0, 3))}.` : '';
+    const measures = v && w.metrics.length ? `Sector guidance suggests this starting point: For ${who}, the usual yardsticks are ${proseJoin(w.metrics.slice(0, 3))}. Confirm which measures the audience actually uses before teaching from them.` : '';
     return [problemSpoken(w), measures].filter(Boolean).join(' ') || `Today's audience: ${w.audience}.`;
 }
 // The product line of a content block, by product_mention_level.

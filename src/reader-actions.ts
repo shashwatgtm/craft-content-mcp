@@ -1,3 +1,4 @@
+import { case_craft_content_improver } from './reader-craft-content-improver.js';
 import { case_testimonial_capture } from './reader-testimonial-capture.js';
 import { case_sales_enablement_content } from './reader-sales-enablement-content.js';
 import { case_newsletter_builder } from './reader-newsletter-builder.js';
@@ -75,6 +76,7 @@ export function readingGuide(name: string, result: string, args: Record<string,u
   if (name === 'newsletter_builder') return renderCase(case_newsletter_builder(args), held);
   if (name === 'sales_enablement_content') return renderCase(case_sales_enablement_content(args), held);
   if (name === 'testimonial_capture') return renderCase(case_testimonial_capture(args), held);
+  if (name === 'craft_content_improver') return renderCase(case_craft_content_improver(args), held);
   const status = held ? ' Keep the stated hold in place; this guidance does not override it.' : '';
   let roles = kind === 'publish' ? [
     `Founder: check the central claim against the supplied evidence before endorsing ${decision}.`,

@@ -776,6 +776,8 @@ function recap(w) {
 function blockScript(section, w, mine, k, blocks) {
     if (k === 0) {
         const work = Math.max(1, section.duration - 2);
+        if (!w.example)
+            return `### ${section.name} (${section.duration} min)\n\n**HOST PREPARATION, NOT SPOKEN:** This exercise needs an anonymised example and its starting records before delivery. Ask the host to supply them; no customer result is assumed.\n\nThe reserved ${section.duration} minutes cover the example, one participant decision record and a debrief on evidence and unknowns. Do not run this section until the example is ready.\n`;
         return seg(section, 'Worked example exercise', [...(w.productDescription ? [`For context: ${w.productDescription}`] : []), ...(w.example ? [
                 `Here is the supplied example: ${w.example}`,
                 `Take ${work} minutes to apply these checks: ${w.takeaways.slice(0, 3).map(p => withLabel(p)).join('; ')}. Record the owner, the starting evidence, your decision and the evidence still needed.`,

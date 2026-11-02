@@ -70,9 +70,11 @@ export function generateThoughtLeadership(args: {
     if (i.kind === 'claim' && i.figure && /\b(?:avoid\w*|sav(?:e|ed|es|ing|ings)|reduc\w+|cut|lower\w*|improv\w+|increas\w+|faster|fewer|gain\w*|growth|grew|raised|cost)\b/i.test(i.text)) return { ...i, kind: 'result' };
     return i;
   }) : [];
-  const evidence = items.filter((i) => (i.kind === 'result' || i.kind === 'quote') && !isPartner(i));
+  const interviewNote = /\binterviews?\b/i.test(proofRaw) && !/\b(?:no|never|not|without)\s+(?:\w+\s+){0,2}interviews?\b/i.test(proofRaw) && !isInstruction(proofRaw) && proofRaw.length <= 1600 ? proofRaw : '';
+  const interviewItems = interviewNote ? items.filter(i => /\binterviews?\b/i.test(i.text)) : [];
+  const evidence = items.filter((i) => !interviewItems.includes(i) && (i.kind === 'result' || i.kind === 'quote') && !isPartner(i));
   const stories = items.filter((i) => i.kind === 'title');
-  const credibilityItems = items.filter((i) => !evidence.includes(i) && !stories.includes(i) && i.kind !== 'missing' && i.kind !== 'unclear' && i.kind !== 'adverse');
+  const credibilityItems = items.filter((i) => !interviewItems.includes(i) && !evidence.includes(i) && !stories.includes(i) && i.kind !== 'missing' && i.kind !== 'unclear' && i.kind !== 'adverse');
 
   const topicNorm = topic.toLowerCase().replace(/\W+/g, ' ').trim();
   const takeAll = splitTake(soft(yourTake));
@@ -113,7 +115,7 @@ export function generateThoughtLeadership(args: {
   const arts: { head: Angle; text: string; lead: string; objection: string; leadItem?: ProofItem }[] = [];
   const heads = Array.from({ length: numArticles }, (_, i) => getArticleAngle(i, articleType, topicLabel, evidence.length + stories.length > 0));
   for (let i = 0; i < numArticles; i++) {
-    const a: Art = { index: i, total: numArticles, type: articleType, topic: topicLabel, parts, readerNoun, v, evidence, stories, mark, count, suggested, heads, askedQuestions, takeText, view, metricsSeries, listedParts, testUsed, conflicts, brand };
+    const a: Art = { index: i, total: numArticles, type: articleType, topic: topicLabel, parts, readerNoun, v, evidence, stories, mark, count, suggested, heads, askedQuestions, takeText, view, metricsSeries, listedParts, testUsed, conflicts, brand, interviewNote };
     arts.push(buildArticle(a, authorBackground, targetReader, credibility));
   }
 
@@ -348,7 +350,7 @@ const NO_CUSTOMER: Record<string, [(t: string) => string, string]> = {
 function getArticleAngle(index: number, articleType: string, topic: string, hasCustomer = true): Angle {
   // run 21c round 3: a cut inside a bracket note drops the open bracket and what follows it
   const T = titleWords(clipWords(topic, 120)).replace(/\s*\([^)]*$/, '').trim();
-  const clause = isClause(topic);
+  const clause = isClause(topic) || /\b(?:needs?|requires?|depends?|deserves?|means?|changes?|fails?|works?)\b/i.test(topic);
   const list = TITLES[articleType] || TITLES.contrarian;
   let [phrase, suffix] = list[index % list.length];
   if (!hasCustomer && (/customer/i.test(phrase('x')) || /customer/i.test(suffix))) [phrase, suffix] = NO_CUSTOMER[articleType] || NO_CUSTOMER.contrarian;
@@ -360,7 +362,7 @@ interface Art {
   index: number; total: number; type: string; topic: string; parts: string[]; readerNoun: string; v: Vertical | null;
   evidence: ProofItem[]; stories: ProofItem[]; mark: (p: ProofItem, article: number) => void; count: (p: ProofItem) => number;
   suggested: boolean; heads: Angle[]; askedQuestions: Set<string>; takeText: string; view: string;
-  metricsSeries: Set<string>; listedParts: Map<string, number>; testUsed: Set<string>; conflicts: ProofItem[]; brand?: string;
+  metricsSeries: Set<string>; listedParts: Map<string, number>; testUsed: Set<string>; conflicts: ProofItem[]; brand?: string; interviewNote: string;
 }
 
 const lowerFirst = (s: string) => lowerFirstSafe(s);
@@ -633,6 +635,24 @@ ${work[a.index - 1]}`);
     `Hold the point loosely until your own numbers back it, then hold it firmly.`,
   ];
   sections.push(`## ${['The takeaway', 'In short', 'The bottom line', 'What it asks of you', 'Before you act'][a.index % 5]}\n\n${a.index < closeFrames.length ? closeFrames[a.index] : ''}`);
+
+  // Interview notes motivate a test. They are not measured customer outcomes.
+  // When they are the only evidence, replace the generic proof argument with a
+  // sequence that preserves the complete note and makes its limits actionable.
+  if (a.interviewNote && !a.evidence.length && !a.stories.length) {
+    const steps = [
+      ['Trace the reported problem', `Start with the observation in the interview note. Ask the person who reported it to walk through a recent example and identify where the delay, error or extra work occurred. Record the starting condition and the evidence they used. A reported experience can explain a concern; it cannot establish how common the concern is.`],
+      ['Look for a counterexample', `Find a comparable case where the reported problem did not occur. Ask what differed in the inputs, the reviewer and the handoff. If the same conditions produced a different outcome, narrow the position before prescribing a change. Do not recruit only people who already agree.`],
+      ['Agree a test and its limits', `Choose a measure for the reported problem before changing the workflow. Record the starting value, case mix, observation period and acceptance rule. Assign a person to inspect the result. A small before and after comparison can guide the next experiment, but other changes may explain the difference.`],
+      ['Check whether the result travels', `Repeat the agreed test with a different team or case mix. Keep unsuccessful cases in the record. If the direction changes, describe the conditions under which the position may hold instead of generalising from the first team.`],
+      ['Decide what can be published', `Separate the interview observation, the author's position and any later measured result. Obtain permission for identifiable quotes. Publish a numerical outcome only with its source, period, denominator and limitations; otherwise publish the question and the test still needed.`],
+    ];
+    const [heading, step] = steps[a.index % steps.length];
+    sections.splice(0, sections.length,
+      `## ${heading}\n\n${step}`,
+      `## What the interviews support\n\n${a.index === 0 ? `Supplied interview note, not independently verified: ${a.interviewNote}\n\n` : 'The interview note in Article 1 remains the evidence boundary. '}This is qualitative input for a hypothesis. It does not measure a time saving, establish causation or demonstrate a result for the wider market.`,
+      `## The decision for the reader\n\nTreat the position, "${sentence(thesis)}", as a question to test on your own work. ${a.index === 0 ? 'Name the person who can reconstruct the reported case and agree when that review will happen.' : a.index === 1 ? 'Keep the recommendation open until the counterexample has been compared with the reported case.' : 'Write down what evidence would make you keep, narrow or reject the position before the next review.'}`);
+  }
 
   const isFirst = a.index === 0;
   const aboutAuthor = authorBackground ? clipEcho(authorBackground.replace(/[.!?]+\s*$/, ''), 200) : 'the author';

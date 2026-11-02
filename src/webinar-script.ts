@@ -118,7 +118,7 @@ export function generateWebinarScript(args: {
   if (!haveTakeaways) missing.push({ field: 'key_takeaways', change: ctx.v ? "the teaching content, which now comes from the sector's own measures, objection and proof shape" : 'the teaching content, which cannot be written without takeaways or a sector' });
   if (!product && productLevel !== 'none') missing.push({ field: 'your_product', change: 'every line that names what you sell' });
   if (bareClaimsFor.length) missing.push({ field: `a source for ${bareClaimsFor.length <= 2 ? proseJoin(bareClaimsFor.map((p) => `"${claimPart(p.text)}"`)) : 'each claim the script marks as the vendor\'s description'}`, change: `the ${bareClaimsFor.length === 1 ? 'line' : 'lines'} that mark ${bareClaimsFor.length === 1 ? 'it' : 'them'} as the vendor's description` });
-  if (!args.business_model && ctx.v && ctx.how !== 'input') missing.push({ field: 'business_model', change: 'the wording that depends on how you sell, which now follows the usual model of this sector' });
+  if (!args.business_model && ctx.v && ctx.how !== 'input') missing.push({ field: 'business_model', change: 'the commercial next step; it is conditional until you state how you charge' });
   if (!durationSupplied) missing.push({ field: 'duration', change: `the timings, which assume ${minutes} minutes` });
   const notes: string[] = [];
   if (productNote) notes.push(productNote.replace(/^your_product was not given; /, 'No product was given; '));

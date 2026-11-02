@@ -49,3 +49,43 @@ test('denying operational concern does not select a live-risk objection script',
  const s=generateSalesEnablement({...salesBase,common_objections:'We are worried about automatic actions in production.'});
  assert.match(s,/an operational risk objection/);assert.match(s,/tested rollback/);
 });
+
+const reviewedArgs={product:'Workflow for hotel booking exceptions used by the hotel operations head',target_persona:'hotel operations head',your_sector:'vertical_saas',common_objections:'We already have a workflow for hotel booking exceptions. We cannot interrupt live work.'};
+test('equivalent observed sales comparisons keep period, sample and uncontrolled scope',()=>{
+ for(const proof_points of ['One October pilot reduced time spent handling hotel booking exceptions from 80 to 50 minutes across 12 cases. The pilot was not controlled.','Across 12 cases in October, one uncontrolled pilot recorded 50 minutes for handling hotel booking exceptions instead of 80.']){
+ const s=generateSalesEnablement({...reviewedArgs,proof_points});
+ const social=s.split('**Social Proof (3 min):**')[1].split('**Questions')[0];
+ assert.match(social,/October/);assert.match(social,/12 cases/);assert.match(social,/80/);assert.match(social,/50/);assert.match(social,/not controlled|uncontrolled/);
+ assert.doesNotMatch(social,/No supported success evidence/);
+ assert.doesNotMatch(s,/it speaks to adoption|Subject: Workflow for hotel booking\b/);
+ }
+});
+test('adverse time comparisons stay out of the sales pitch and remain in source notes',()=>{
+ for(const proof_points of ['One October pilot increased time spent handling hotel booking exceptions from 50 to 80 minutes across 12 cases. The pilot was not controlled.','Across 12 cases in October, one uncontrolled pilot recorded 80 minutes for handling hotel booking exceptions instead of 50.']){
+ const s=generateSalesEnablement({...reviewedArgs,proof_points});
+ assert.match(s,/Proof held out of sales copy/);
+ const social=s.split('**Social Proof (3 min):**')[1].split('**Questions')[0];
+ assert.match(social,/No supported success evidence/);assert.doesNotMatch(social,/80 minutes|from 50/);
+ assert.match(s.split('## Quick Stats to Quote')[1],/October/);assert.match(s,/adverse/i);
+ }
+});
+test('generic live-work constraints get an operating hold before the incumbent-tool pitch',()=>{
+ for(const common_objections of ['We already have a workflow. We cannot interrupt live work.','We already have a provider. No downtime is acceptable.','Production must remain running during any evaluation.']){
+ const s=generateSalesEnablement({...reviewedArgs,common_objections,proof_points:'No measured outcome supplied.'});
+ const response=s.split('**Full Response Script:**')[1].split('## Competitive')[0];
+ assert.match(response,/read-only review|non-production simulation/);assert.match(response,/named approver/);assert.match(response,/stop conditions/);assert.match(response,/tested rollback/);
+ assert.doesNotMatch(response,/where we would replace it/);
+ }
+});
+test('hypothetical and denied comparison sentences cannot become social proof',()=>{
+ for(const proof_points of ['One October pilot could record 50 minutes for handling exceptions instead of 80.','One October pilot did not reduce handling time from 80 to 50 minutes.','One October pilot reduced handling time from 80 to 50 minutes (hypothetical figure).']){
+ const s=generateSalesEnablement({...reviewedArgs,proof_points});
+ const social=s.split('**Social Proof (3 min):**')[1].split('**Questions')[0];assert.match(social,/No supported success evidence/);
+ }
+});
+
+test('a vendor capability without a customer result stays out of the social proof slot',()=>{
+ const s=generateSalesEnablement({...reviewedArgs,proof_points:'Workflow support includes approval routing and a shared review record (vendor claim).'});
+ const social=s.split('**Social Proof (3 min):**')[1].split('**Questions')[0];
+ assert.match(social,/No supported success evidence/);assert.doesNotMatch(social,/includes approval routing/);
+});

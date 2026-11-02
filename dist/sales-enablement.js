@@ -1,8 +1,8 @@
-import { readSignal } from './text-signals.js';
+import { readSignal, illustrativeProof } from './text-signals.js';
 import { lowerFirstIfCommon, cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { q, qs, clipWords, readContext, answerFor, objectionKind, proofFor, sectorNotes, startWords } from "./sector.js";
 import { startsImperative } from "./rw-content.js";
-import { splitList, splitObjections, parseProof, productParts, fixNumbers, endSentence, capFirst, proseJoin, roleOf, shortenClauses, KIND_NOTE, RECOGNITION } from "./draft.js";
+import { splitList, splitObjections, parseProof, productParts, fixNumbers, endSentence, capFirst, roleOf, shortenClauses, KIND_NOTE, RECOGNITION, missingEvidence } from "./draft.js";
 // Text only (run 8): an input phrase used as a whole sentence inside a script ends with a full stop.
 function asSentence(text) {
     if (!text)
@@ -67,16 +67,43 @@ function relevant(objection, candidates) {
         .sort((x, y) => y.n - x.n)
         .map((x) => x.c);
 }
+// Preserve one observed comparison with its period and limits instead of
+// splitting its scope at a comma. Direction is evaluated only for known measures.
+function salesProofItems(raw) {
+    const items = parseProof(raw);
+    if (/[;\n]/.test(raw) || !/\b(?:pilot|customer|client|team|cohort)\b/i.test(raw))
+        return items;
+    const count = '(?:\\d+(?:\\.\\d+)?|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)';
+    const fromTo = new RegExp('\\bfrom\\s+(' + count + ')(?:\\s+(?:seconds?|minutes?|hours?|days?|weeks?|cases?|errors?|tickets?))?\\s+to\\s+(' + count + ')\\b', 'i');
+    const instead = new RegExp('\\b(?:recorded|took|measured)\\s+(' + count + ')([^.!?;]{1,140})\\binstead of\\s+(' + count + ')\\b', 'i');
+    const comparison = fromTo.test(raw) ? fromTo : instead;
+    const match = raw.match(comparison);
+    if (!match)
+        return items;
+    const text = fixNumbers(raw.trim()).replace(/[.\s]+$/, '');
+    const claim = raw.split(/[.!?](?:\s|$)/)[0];
+    if (missingEvidence(raw) || illustrativeProof(raw).state === 'affirmed' || readSignal(raw, comparison).state !== 'affirmed' || /\b(?:did not|didn't|never|would|could|might|will|should|aim|target|expect|forecast|promise|hypothetical|illustrative)\b/i.test(claim))
+        return [{ text, shown: text, label: '', kind: missingEvidence(raw) ? 'missing' : 'unclear', figure: false }];
+    const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+    const number = (v) => words.includes(v.toLowerCase()) ? words.indexOf(v.toLowerCase()) : Number(v);
+    const before = number(comparison === fromTo ? match[1] : match[3]);
+    const after = number(comparison === fromTo ? match[2] : match[1]);
+    const lowerIsBetter = /\b(?:time spent|handling time|completion time|cycle time|minutes?|hours?|delays?|errors?|failures?|costs?|exceptions|escalations|unresolved tickets)\b/i.test(claim);
+    const higherIsBetter = /\b(?:revenue|sales|retention|collections|conversion rate|uptime)\b/i.test(claim);
+    const adverse = lowerIsBetter && after > before || !lowerIsBetter && higherIsBetter && after < before;
+    return [{ text, shown: text, label: '', kind: adverse ? 'adverse' : 'result', figure: true }];
+}
 export function generateSalesEnablement(args) {
     // Run 19 (B15-L1): the heading and the Quick Reference table print the product and the persona as typed; every other mention uses the
     // product's short name. Run 20 (round 1b): "Name, a description: feature, feature" is read into the name and the features it lists.
     const productFull = fixNumbers(args.product.trim());
     const pp = productParts(productFull);
-    const product = pp.name;
+    const descriptionOnly = /^(?:workflow(?: support)?|software|service|platform|tool|system|support|solution)\s+(?:for|to)\b/i.test(productFull);
+    const product = descriptionOnly ? 'the proposed workflow' : pp.name;
     const persona = args.target_persona.trim();
     const { role, field } = roleOf(persona);
     const roleShown = role || persona;
-    const items = parseProof(args.proof_points);
+    const items = salesProofItems(args.proof_points);
     // Customer results, quotes and the vendor's own claims can answer an objection; recognition and company-wide counts are credibility only.
     const usable = items.filter((i) => ['result', 'quote', 'claim'].includes(i.kind));
     const customerResults = usable.filter(i => i.kind === 'result' || i.kind === 'quote');
@@ -101,8 +128,8 @@ export function generateSalesEnablement(args) {
     else if (v) {
         objections = v.objections.map((o) => o.objection);
         objectionsNote = args.competitor_objections
-            ? `\n**NOTE:** You gave one or more objections under competitor objections (answered under Competitive Responses). We have added handlers for the objections ${v.name} buyers raise most; replace them with the ones you hear.\n`
-            : `\n**NOTE:** You didn't provide objections. We've generated handlers for the objections ${v.name} buyers raise most. Update these with real objections you hear from prospects.\n`;
+            ? `\n**NOTE:** You gave one or more objections under competitor objections (answered under Competitive Responses). We have added handlers for the objections ${v.name} sector guidance suggests checking with buyers; replace them with the ones you hear.\n`
+            : `\n**NOTE:** You didn't provide objections. We've generated handlers for the objections ${v.name} sector guidance suggests checking with buyers. Update these with real objections you hear from prospects.\n`;
     }
     else {
         objections = [];
@@ -120,7 +147,7 @@ export function generateSalesEnablement(args) {
     // Run 42B round S3: the strongest proof is named once, under the first objection that no proof answers, not repeated under every one
     let strongestNamed = false;
     const objectionHandlers = objections.map((obj) => {
-        const h = generateObjectionHandler(obj, valueProps, usableTexts, pp.facts, priceContext, v, usedProof, usedValue, pp.name, roleShown, strongestNamed ? '' : strongestText);
+        const h = generateObjectionHandler(obj, valueProps, usableTexts, pp.facts, priceContext, v, usedProof, usedValue, descriptionOnly ? '' : pp.name, roleShown, strongestNamed ? '' : strongestText);
         if (strongestText && h.proof.includes(strongestText))
             strongestNamed = true;
         return h;
@@ -182,7 +209,7 @@ ${valueRows.length ? valueRows.map((r, i) => `
 ${r.why ? `- *Why it matters to ${midSentence(roleShown)}${field ? ` in ${field}` : ''}:* ${r.why}\n` : ''}- *Proof:* ${r.proof || 'none of your proof points bears on this one'}
 `).join('\n') : (lead.length ? lead : usable.slice(0, 3)).map((p, i) => `
 **${i + 1}. ${endSentence(capFirst(clipEcho(p.shown, 300)))}**
-- *Why it matters to ${midSentence(roleShown)}${field ? ` in ${field}` : ''}:* ${v ? `it speaks to ${proseJoin(v.metrics.slice(0, 2))}, measures ${v.name} buyers track` : 'tie it to a measure this buyer owns'}
+- *Why it matters to ${midSentence(roleShown)}${field ? ` in ${field}` : ''}:* check the supplied measure, period and scope with the buyer; do not infer an effect on other sector measures
 `).join('\n') || '\n*No usable value propositions or customer proof points were given, so there is no pitch order. Add value props or proof points.*\n'}
 
 ---
@@ -191,7 +218,7 @@ ${v ? `\n${sectorNotes(v, 'all', ctx.model)}\n\n---\n` : ''}
 
 ### ${stage.charAt(0).toUpperCase() + stage.slice(1).replace(/_/g, ' ')} Stage
 
-${generateStagePitch(stage, product, valueProps, roleShown, usableTexts, walk, v)}
+${generateStagePitch(stage, product, valueProps, roleShown, customerResults.map(i => clipEcho(i.shown, 300)), walk, v)}
 
 ---
 
@@ -211,7 +238,7 @@ ${objectionHandlers.length ? objectionHandlers.map((handler, i) => `
 **Proof Point:**
 > ${handler.proof}
 ${handler.facts ? `
-**From your product description, the facts that bear on this:**
+**From your product description, statements to verify:**
 > ${handler.facts}
 ` : ''}
 **Your answer pattern (advice for you, not a line to read out):**
@@ -266,7 +293,7 @@ ${customerResults.length ? `"${customerResults.every(p => /\b(?:customers?|clien
 
 ${customerResults.slice(0, 3).map((p) => `- ${clipEcho(p.shown, 300)}`).join('\n')}
 
-Does this resemble your workflow? What is your current baseline, over what period, and what would a credible improvement be worth after the costs of a test and rollout?"\n\nDo not extrapolate the supplied result to this buyer. Calculate a buyer specific scenario only after its baseline, costs and assumptions are agreed.` : '*No proof points with a result were given, so there is nothing to quote here. Add proof points.*'}
+Does this resemble your workflow? What is your current baseline, over what period, and what would a credible improvement be worth after the costs of a test and rollout?"\n\nDo not extrapolate the supplied result to this buyer. Calculate a buyer specific scenario only after its baseline, costs and assumptions are agreed.` : '*No supported customer outcome is available for an ROI claim. Keep illustrative, adverse and unverified items in the source notes; request the buyer baseline and costs before calculating a scenario.*'}
 
 **If Price Pushback:**
 
@@ -285,14 +312,14 @@ ${v.discovery.map((d, i) => `${i + 1}. "${d}"`).join('\n')}
 3. "How is this affecting the measures you are judged on${v ? `, such as ${v.metrics[0]}` : ''}?"
 
 ### Pain Discovery
-4. "What happens if you don't solve this in the next 6 months?"
-5. "How much time/money does this currently cost you?"
-6. "Who else is affected by this problem?"
+4. "What happens if the current workflow stays as it is over your decision period?"
+5. "What time or cost, if any, can you trace to this issue, and over what period?"
+6. "Who else, if anyone, is affected, and what have they observed?"
 
 ### Solution Mapping
 7. "What have you tried before? What happened?"
 8. "What would success look like for you?"
-9. "If you could wave a magic wand, what would be different?"
+9. "Which specific change would matter, and what evidence would show that it worked?"
 
 ### Qualification
 10. "What's your timeline for making a decision?"
@@ -349,7 +376,7 @@ Before every ${stage.replace(/_/g, ' ')} call:
 - [ ] Context: Know their industry challenges
 - [ ] Personalization: Have a few specific observations
 - [ ] Objection prep: Anticipate their top 2 concerns
-- [ ] Proof ready: Have relevant case study queued
+- [ ] Proof ready: Verify the source, scope and permission for any evidence you plan to quote; retain a hold if none is available
 - [ ] Questions ready: Top 5 discovery questions
 - [ ] CTA clear: Know exactly what next step to propose
 - [ ] Start plan ready: Know what the ${w.rollout} would involve and how you will say it
@@ -358,7 +385,8 @@ Before every ${stage.replace(/_/g, ' ')} call:
 
 ## Quick Stats to Quote
 
-${items.length ? items.map((p) => `- ${clipEcho(p.shown, 400)}${p.kind === 'result' || p.kind === 'quote' ? '' : ` *(${KIND_NOTE[p.kind]})*`}`).join('\n') : '- No proof points were given.'}
+${[...usable, ...credibility].length ? [...usable, ...credibility].map((p) => `- ${clipEcho(p.shown, 400)}${p.kind === 'result' || p.kind === 'quote' ? '' : ` *(${KIND_NOTE[p.kind]})*`}`).join('\n') : '- No supported success statistic is ready to quote.'}
+${held.length ? `\n### Source notes, not sales proof\n\n${held.map(p => `- ${clipEcho(p.shown, 400)} *(${KIND_NOTE[p.kind]})*`).join('\n')}\nKeep these items out of success claims. Review the original records and retain adverse or unknown outcomes in the decision record.\n` : ''}
 ${credibility.length ? `\n*Recognition and company-wide counts are credibility lines for the opening of a call or the footer of an email. They do not answer an objection, so the handlers above do not use them.*\n` : ''}
 ---
 
@@ -374,7 +402,8 @@ ${SUGGESTION_FOOTER}
 // objection that none of the proof answers says so and names the proof that would.
 function generateObjectionHandler(objection, valueProps, proofTexts, facts, priceContext, v, usedProof, usedValue, productName = '', persona = '', strongestText = '') {
     // A compound objection must not hide a stated production risk behind its incumbent-tool clause.
-    const operationalRisk = readSignal(objection, /\b(?:cannot|can't|can not|won't|will not) (?:accept |take |tolerate )?risk\b|\b(?:worried|concerned) about\b|\b(?:unsafe|unapproved|uncontrolled)\b/i).state === 'affirmed'
+    const continuityConstraint = /\b(?:cannot|can't|can not|must not|mustn't|will not|won't)\s+(?:interrupt|disrupt|stop|pause)\b[^.!?]{0,70}\b(?:live|production|operations|work|service)\b|\b(?:no|zero)\s+(?:downtime|interruption)|\b(?:live|production)\b[^.!?]{0,50}\b(?:must stay|must remain)\s+(?:available|running|uninterrupted)\b/i.test(objection);
+    const operationalRisk = continuityConstraint || readSignal(objection, /\b(?:cannot|can't|can not|won't|will not) (?:accept |take |tolerate )?risk\b|\b(?:worried|concerned) about\b|\b(?:unsafe|unapproved|uncontrolled)\b/i).state === 'affirmed'
         && /\b(?:automatic|automated|autonomous|live network|production|live systems?)\b/i.test(objection);
     if (operationalRisk) {
         const acknowledge = 'Your existing workflow and live environment need to stay protected.';
@@ -535,7 +564,7 @@ For each part, confirm the workflow before showing it:
 "Is this a workflow your team needs to improve? What would you need to see here to judge whether it fits?"
 
 **Social Proof (3 min):**
-${proofTexts[0] ? `"${proofTexts[0]}"` : 'No customer result was supplied. Ask what evidence the buyer needs, then verify an appropriate source before quoting it.'}
+${proofTexts[0] ? `"${proofTexts[0]}"` : 'No supported success evidence is available for this section. Ask what evidence the buyer needs, then verify an appropriate source before quoting it.'}
 
 **Questions & Objections (10 min):**
 Address them with the objection handlers in this kit.

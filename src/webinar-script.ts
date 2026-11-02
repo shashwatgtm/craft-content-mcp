@@ -19,6 +19,18 @@ interface W {
   metrics: string[]; objectionHeld: string; haveTakeaways: boolean; haveSpeakers: boolean; problemPts: Pt[]; minutes: number; productDescription: string; productName: string; model: BusinessModel | null; type: string; shortTopic: boolean; who: string;
 }
 
+// Keep a scoped task or evidence limit whole. A leading time/scope phrase is
+// not a separate takeaway, and a limit is not a product capability.
+const TEACHING_ACTION = /^(?:for (?:one|a|the|each) (?:batch|case|team|shift|period)[^,]{0,40},\s*)?(?:count|name|record|review|check|inspect|audit|map|list|identify|compare|measure|keep|do not|don't)\b/i;
+const EVIDENCE_LIMIT = /^(?:do not|don't|never)\s+(?:claim|promise|infer|assume)|^keep\b[^.!?]*\b(?:unchanged|on hold|paused)\b/i;
+function readWebinarPoints(raw: string, known: {problem?: string}): Pt[] {
+  const chunks = raw.split(/[;\n]/).map(x=>x.trim()).filter(Boolean);
+  if (!chunks.some(x=>TEACHING_ACTION.test(x))) return readPoints(raw, known);
+  return chunks.flatMap(text=>TEACHING_ACTION.test(text)
+    ? [{text:text.replace(/[.\s]+$/,''),label:'',role:'capability' as const,clause:false,figure:false}]
+    : readPoints(text,known));
+}
+
 export function generateWebinarScript(args: {
   your_sector?: string;
   topic: string;
@@ -52,6 +64,7 @@ export function generateWebinarScript(args: {
   const productLevel = args.product_mention_level || 'subtle';
   const given = (args.your_product || '').trim();
   const company = parts.company && parts.company.split(/\s+/).length <= 4 ? parts.company : (companyFrom(topic) || parts.company);
+  const descriptionOnly = /^(?:workflow(?: support)?|software|service|platform|tool|system|support|solution)\s+(?:for|to)\b/i.test(given);
   const product = given || (productLevel === 'none' ? '' : company);
   const ctx: Ctx = readContext(args.business_model, { seller: [given || parts.company || company, parts.problem || topic], context: [args.key_takeaways, args.speakers], role: [audienceFull], buyer: [parts.audience, audienceFull] }, args.your_sector);
 
@@ -62,7 +75,7 @@ export function generateWebinarScript(args: {
   const soft0 = softenClaims(takeawayText);
   const soft = soft0.removed.length ? soft0 : { text: takeawayText, removed: [] as string[] };
   const softP = softenClaims(parts.problem || '');
-  const all = readPoints(soft.text, { problem: soft0.removed.length || softP.removed.length ? softP.text : parts.problem || '' });
+  const all = readWebinarPoints(soft.text, { problem: soft0.removed.length || softP.removed.length ? softP.text : parts.problem || '' });
   for (const p of all) if (p.role === 'instruction') orders.push(p.text);
   // Run 42B: a typed takeaway that only sounds like a problem ("integrations ... are not needed") but is a vendor claim with no source label is a claim, not the problem: it is
   // taught as a takeaway under the vendor's-description label, never spoken as the fact of the problem.
@@ -81,7 +94,7 @@ export function generateWebinarScript(args: {
     given2.push(p);
   }
   const takeaways: Pt[] = given2.length ? given2 : takeawaysFromSector(ctx.v);
-  const productLabel = given ? productParts(given).name : product;
+  const productLabel = descriptionOnly ? '' : given ? productParts(given).name : product;
   const w: W = { example, usedQ: new Set<string>(), usedM: new Set<string>(), topic, label, clause, problem: parts.problem || '', audience, role, field, connector, takeaways, speakers, product, productLevel, includePolls, ctx, haveSpeakers: speakers.length > 0, haveTakeaways, problemPts, metrics: [], objectionHeld: '', minutes: 0, productDescription: '', productName: '', model: ctx.model, type, shortTopic: parts.short, who: productLevel === 'none' ? '' : productLabel };
   // the sector's measures that fit the kind of product and the topic: they share a word with it or belong to the same theme (security with blocked
   // or fraud measures, price with cost measures); the measures of another kind of product are left out
@@ -103,8 +116,8 @@ export function generateWebinarScript(args: {
   w.minutes = minutes;
   const durationSupplied = !!args.duration && Object.prototype.hasOwnProperty.call(durationMap, args.duration);
   const pp = given ? productParts(given) : null;
-  w.productName = productLevel === 'none' ? '' : (pp ? pp.name : product);
-  w.productDescription = pp && pp.description !== pp.name && pp.description.length > pp.name.length + 3 ? pp.description.replace(/\.$/, '') : '';
+  w.productName = productLevel === 'none' || descriptionOnly ? '' : (pp ? pp.name : product);
+  w.productDescription = descriptionOnly ? given : pp && pp.description !== pp.name && pp.description.length > pp.name.length + 3 ? pp.description.replace(/\.$/, '') : '';
   const structure = getWebinarStructure(type, minutes);
 
   const productNote = given
@@ -222,9 +235,9 @@ function sectorNotes(ctx: Ctx, w: W): string {
 ## Sector Notes: ${cap(v.name)}
 
 - ${audienceLine(v)}
-- **Who sits in the buying group:** ${v.committee}
+- **Possible buying group, to confirm:** ${v.committee} Confirm the actual people and approval rights before using this map.
 - **Terms this audience uses:** ${v.vocabulary.slice(0, 6).join(', ')}.
-- **Objections to expect:** ${v.objections.map((o) => o.objection.toLowerCase()).join('; ')}.
+- **Possible objections to check with the audience:** ${v.objections.map((o) => o.objection.toLowerCase()).join('; ')}.
 - **A proof point that lands:** ${v.proofShape}
 `;
 }
@@ -348,7 +361,7 @@ function nextStepPhrase(model: BusinessModel | null): string {
     case 'transactions': return 'a look at the integration steps and the first live transactions';
     case 'marketplace': return 'a look at the sign-up checks and the first listing';
     case 'hardware_software': return 'a site visit and a plan for pilot units';
-    default: return 'a conversation about the first step';
+    default: return 'a review of one case, its source records and the person who can confirm them';
   }
 }
 
@@ -358,7 +371,7 @@ function pollOptions(w: W): string[] {
   if (v && w.metrics.length) {
     return [
       `We measure ${w.metrics[0]} today and know where we stand`,
-      `We know ${w.metrics[0]} matters but do not measure it yet`,
+      `We see this as relevant but do not yet measure ${w.metrics[0]}`,
       w.objectionHeld ? `${cap(w.objectionHeld)}: that is what holds us back` : 'Something else is holding us back',
       'This is not a priority this year'
     ];
@@ -424,8 +437,11 @@ function howTo(text: string): string {
 // run of instructions is what the listener will learn to do; a phrase is what the session shows or covers. A fragment is never given a
 // verb that does not fit it.
 function tk(p0: Pt, w: W, after = false): string {
+  if (EVIDENCE_LIMIT.test(p0.text)) return endSentence(`Limit to retain: ${lowerFirst(withLabel(p0))}`);
+  if (/^for (?:one|a|the|each)\b/i.test(p0.text) && TEACHING_ACTION.test(p0.text)) return endSentence(`${after ? 'The task was' : 'The task to practise is'}: ${lowerFirst(withLabel(p0))}`);
+
   if (missingEvidence(p0.text)) return endSentence(`Evidence still to gather: ${p0.text}`);
-  const shape = /^(?:count|name|record|inspect|audit)\b/i.test(p0.text) && !p0.label ? 'imperative' : shapeOf(p0);
+  const shape = TEACHING_ACTION.test(p0.text) && !p0.label ? 'imperative' : shapeOf(p0);
   const claim = !p0.label && shape !== 'imperative' && shape !== 'example' && p0.role !== 'instruction' && p0.role !== 'problem' && CLAIM_WORD.test(p0.text) && w.takeaways.includes(p0) && w.haveTakeaways;
   const p: Pt = claim ? { ...p0, label: VENDOR } : p0;
   const t = withLabel(p);
@@ -460,7 +476,7 @@ function takeawaysFromSector(v: Vertical | null): Pt[] {
   const o = v.objections[0];
   const settle = settleBare(o.response);
   return [
-    mk(`you can say where you stand on ${proseJoin(v.metrics.slice(0, 3))}`),
+    mk(`you can identify the starting values and sources for these measures: ${proseJoin(v.metrics.slice(0, 3))}`),
     ...(settle ? [mk(`the objection "${o.objection}" can be tested, by learning to ${settle}`)] : [mk(`you will hear the objection "${o.objection}" and how to weigh it`)]),
     mk(`good evidence looks like this: ${lowerFirst(toYou(v.proofShape).replace(/\.$/, ''))}`)
   ];
@@ -480,7 +496,7 @@ function problemSpoken(w: W): string {
 function painPoint(w: W): string {
   const v = w.ctx.v;
   const who = w.role ? `${whoIs(w)}${w.field ? ` ${w.connector} ${w.field}` : ''}` : 'this audience';
-  const measures = v && w.metrics.length ? `For ${who}, the usual yardsticks are ${proseJoin(w.metrics.slice(0, 3))}.` : '';
+  const measures = v && w.metrics.length ? `For ${who}, measures to consider are ${proseJoin(w.metrics.slice(0, 3))}.` : '';
   return [problemSpoken(w), measures].filter(Boolean).join(' ') || `Today's audience: ${w.audience}.`;
 }
 
@@ -513,6 +529,16 @@ function cutPhrase(text: string, max: number): string {
 function labelOf(p: Pt, w: W): string {
   // Run 42B round S: a label is a whole phrase. A takeaway too long to name whole is named by what it is (the results on record, how
   // it works), never by its first words cut off ("the point that less administrative work", "briefs and coaches before").
+  if (EVIDENCE_LIMIT.test(p.text)) return `the stated limit: ${lowerFirst(p.text.replace(/[.\s]+$/,''))}`;
+  if (TEACHING_ACTION.test(p.text)) return /^for (?:one|a|the|each)\b/i.test(p.text)
+    ? `the scoped task: ${lowerFirst(p.text.replace(/[.\s]+$/,''))}`
+    : `how to ${p.text.charAt(0).toLowerCase()+p.text.slice(1).replace(/[.\s]+$/,'')}`;
+  if (!w.haveTakeaways) {
+    const index = w.takeaways.indexOf(p);
+    if (index === 0) return 'the starting measures and their source';
+    if (index === 1) return 'the evidence needed to assess the stated objection';
+    if (index === 2) return 'the scope and limits of a useful comparison';
+  }
   const sh = shapeOf(p);
   const whole = p.text.replace(/^["“]|["”]$/g, '').replace(/\s+/g, ' ').trim().replace(/[.!?:;,]+$/, '');
   // the words before the first comma, when they stand as a phrase of their own (three to ten words, not ending on a joining word)
@@ -559,7 +585,9 @@ function claimPart(text: string): string {
 // "If you do one thing this week": the first instruction in the takeaways as the user wrote it, else a step that fits any takeaway.
 function doOneLine(w: W): string {
   if (!w.takeaways.length) return '';
-  const pick = w.takeaways.find((p) => shapeOf(p) === 'imperative' && !p.figure && p.text.length <= 110);
+  const limit = w.takeaways.find(p=>EVIDENCE_LIMIT.test(p.text));
+  if (limit) return endSentence(`Keep this limit in place: ${lowerFirst(limit.text)}`);
+  const pick = w.takeaways.find((p) => (TEACHING_ACTION.test(p.text) || shapeOf(p) === 'imperative') && !p.figure && p.text.length <= 110);
   return pick ? `If you do one thing this week, ${howTo(pick.text)}.` : 'If you do one thing this week, take one live case from your own work and test it against what we covered today.';
 }
 // The agenda says how the time is used, part by part. It does not read the takeaways again.
@@ -637,7 +665,7 @@ function generateScriptSection(section: { name: string; duration: number; purpos
     case 'Agenda & Learning Objectives':
       return seg(section, 'Agenda slide', [
         t.length ? agendaLine(w) : 'We will cover this topic.',
-        v && w.metrics.length ? `By the end of this session, you should be able to say where you stand on ${w.metrics[0]} and what to change first.` : 'By the end of this session, you should know what to try first on your own work.'
+        v && w.metrics.length ? `By the end of this session, you should be able to identify the starting value and source for ${w.metrics[0]}, then decide what evidence is still needed.` : 'By the end of this session, you should know what to try first on your own work.'
       ]);
     case 'Context Setting':
       return seg(section, 'Context slide', [
@@ -653,7 +681,7 @@ function generateScriptSection(section: { name: string; duration: number; purpos
     case 'Q&A':
       return seg(section, 'Q&A slide', [
         'Now your questions. I will read each one aloud from the chat and answer it.',
-        objection ? `If the chat is quiet, I will start with a concern we hear a lot: ${quotedEnd(objection.objection)} ${settleLine(w, objection.response, 'qa')}` : '',
+        objection ? `If the chat is quiet, I will start with a possible concern: ${quotedEnd(objection.objection)} ${settleLine(w, objection.response, 'qa')}` : '',
         'Questions we do not reach will be answered in the follow-up email.'
       ]);
     case 'Close & CTA':
@@ -710,7 +738,7 @@ function generateScriptSection(section: { name: string; duration: number; purpos
     case 'Rapid Fire Round':
       return seg(section, 'Rapid fire slide', [v ? `Rapid fire, one sentence each: ${toYou(v.discovery[3 % v.discovery.length])}` : 'Rapid fire, one sentence each: of the takeaways so far, which would you put first, and why?']);
     case 'Audience Q&A':
-      return seg(section, 'Q&A slide', [`Questions from the chat now. I will read each one aloud and hand it to ${others(w)}.`, objection ? `If the chat is quiet, I will start with a question we hear a lot: "${objection.objection}".` : '']);
+      return seg(section, 'Q&A slide', [`Questions from the chat now. I will read each one aloud and hand it to ${others(w)}.`, objection ? `If the chat is quiet, I will start with a possible question: "${objection.objection}".` : '']);
     case 'Closing Thoughts':
       return seg(section, 'Closing slide', [`One thing each, ${others(w)}: what should ${w.field ? `${whoIs(w)} ${w.connector} ${w.field}` : lowerFirstIfCommon(w.audience)} do next?`, t.length ? recap(w) : '']);
     case 'Close':
@@ -755,7 +783,7 @@ function generateScriptSection(section: { name: string; duration: number; purpos
     case 'Brief Topic Context':
       return seg(section, 'Topic slide', [topicLine(w), painPoint(w), agendaLine(w)]);
     case 'Q&A Session':
-      return seg(section, 'Q&A slide', [`First question. ${objection ? `If the chat is quiet, I will start with a concern we hear a lot: ${quotedEnd(objection.objection)} ${settleLine(w, objection.response, 'qa')}` : 'If the chat is quiet, I will start with the question I hear most.'}`, t[0] ? `Another place to start: ${tk(t[0], w)}` : '']);
+      return seg(section, 'Q&A slide', [`First question. ${objection ? `If the chat is quiet, I will start with a possible concern: ${quotedEnd(objection.objection)} ${settleLine(w, objection.response, 'qa')}` : 'If the chat is quiet, I will start with a question about the evidence needed for a decision.'}`, t[0] ? `Another place to start: ${tk(t[0], w)}` : '']);
     case 'Rapid Fire':
       return seg(section, 'Rapid fire slide', [v ? `Rapid fire, short answers: ${toYou(v.discovery[2 % v.discovery.length])}` : 'Rapid fire: short questions from the chat, one or two sentences each.', t.slice(1).length ? `Still to cover from the takeaways. ${numbered(t.slice(1, 4), w)}` : '']);
     default:
@@ -771,11 +799,25 @@ function recap(w: W): string {
 
 // One main content block: the takeaways it teaches, the sector measure, the chat question, the objection for later blocks, and the product line.
 function blockScript(section: { name: string; duration: number }, w: W, mine: Pt[], k: number, blocks: number): string {
-  const actionOnly = (p: Pt) => startsImperative(p.text) || /^(?:count|name|record|review|check|inspect|audit|map|list)\b/i.test(p.text);
-  const hasTeachingSource = w.problemPts.some(p => !actionOnly(p)) || w.takeaways.some(p => !actionOnly(p) && (p.role === 'problem' || /\b(?:by|with|because|before|after|daily|weekly|per)\b/i.test(p.text)));
-  if (k === 0 && (w.example || !hasTeachingSource)) {
+  const actionOnly = (p: Pt) => startsImperative(p.text) || TEACHING_ACTION.test(p.text);
+  const hasTeachingSource = w.problemPts.some(p => !actionOnly(p)) || w.haveTakeaways && w.takeaways.some(p => !actionOnly(p) && (p.role === 'problem' || /\b(?:by|with|because|before|after|daily|weekly|per)\b/i.test(p.text)));
+  if ((k === 0 && w.example) || !hasTeachingSource) {
     const work = Math.max(1, section.duration - 2);
-    if (!w.example) return `### ${section.name} (${section.duration} min)\n\n**HOST PREPARATION, NOT SPOKEN:** This exercise needs an anonymised example and its starting records before delivery. Ask the host to supply them; no customer result is assumed.\n\nThe reserved ${section.duration} minutes cover the example, one participant decision record and a debrief on evidence and unknowns. Do not run this section until the example is ready.\n`;
+    if (!w.example && k > 0) {
+      const preparation = k === 1
+        ? 'Confirm the source records and an accountable reviewer before using a real case. The lines below explain the recording method; they do not demonstrate an unseen example.'
+        : 'Prepare a like for like comparison with its period and scope. Keep any claim about a result on hold until the records support it.';
+      const method = k === 1
+        ? ['For each observation, record where it came from, the period it covers and who can confirm it. Leave a missing value unknown instead of replacing it with an estimate.', 'Separate what the records show from what someone thinks caused it. Ask the reviewer which other explanation could fit the same observation.']
+        : ['Before comparing two periods, check that the work, definitions and sample are comparable. Record a change in scope beside the figures so it cannot disappear from the conclusion.', 'A difference on its own does not establish its cause. If the starting record or comparison is missing, the next step is to collect that evidence and keep the outcome claim on hold.'];
+      return seg(section, k === 1 ? 'Evidence recording method' : 'Comparison checks', [
+        mine.length ? numbered(mine, w, w.takeaways.indexOf(mine[0])) : k === 1 ? 'Here is how to keep an evidence record for this topic.' : 'Now consider what would make a comparison usable.',
+        ...method,
+        k === 1 && w.productDescription ? `For context: ${w.productDescription}` : '',
+        k === 1 ? 'Which source or owner would you need to confirm before making a decision?' : 'What evidence would make you keep, change or pause the proposed next step?'
+      ]).replace('**SPEAKER:**', `**HOST PREPARATION, NOT SPOKEN:** ${preparation}\n\n**SPEAKER:**`);
+    }
+    if (!w.example) return `### ${section.name} (${section.duration} min)\n\n**HOST PREPARATION, NOT SPOKEN:** ${mine.length ? `Takeaway to demonstrate: ${mine.map(p=>withLabel(p)).join('; ')}. ` : ''}This exercise needs an anonymised example and its starting records before delivery. Ask the host to supply them; no customer result is assumed.\n\nThe reserved ${section.duration} minutes cover the example, one participant decision record and a debrief on evidence and unknowns. Do not run this section until the example is ready.\n`;
     return seg(section, 'Worked example exercise', [ ...(w.productDescription ? [`For context: ${w.productDescription}`] : []), ...(w.example ? [
       `Here is the supplied example: ${w.example}`,
       `Take ${work} minutes to apply these checks: ${w.takeaways.slice(0,3).map(p=>withLabel(p)).join('; ')}. Record the owner, the starting evidence, your decision and the evidence still needed.`,
@@ -811,8 +853,8 @@ function blockScript(section: { name: string; duration: number }, w: W, mine: Pt
     `${lead} ${teach}`,
     v ? [(rel || measure0) ? `${rel ? ['In your role, this comes down to', 'The measure this part speaks to is', 'The yardstick to keep in view here is'][k % 3] : 'In your role, the number to watch across this part is'} ${toYou(rel || measure0)}.` : '', `Question for the chat: "${question ? toYou(question) : neutralQ}"`].filter(Boolean).join(' ') : '',
     proof || (v && k === 1 && w.takeaways.some((p) => p.figure) ? `A figure on a page is a claim until it is checked on your own work. The proof worth asking for in ${kind0}: ${lowerFirst(endSentence(toYou(v.proofShape)))}` : ''),
-    (rel || measure0) ? [`Try it on one live case from your own work this week, and read it against ${toYou(rel || measure0)}.`, `Take one case from your own work and note where it stands on ${toYou(rel || measure0)} today.`, `Before you change anything, write down where you stand today on ${toYou(rel || measure0)}, so there is a number to beat.`][k % 3] : ['Try it on one live case from your own work this week.', 'Take one case from your own work and note where it stands today.', 'Before you change anything, write down where you stand today, so there is a baseline to beat.'][k % 3],
-    objection ? `${k === 1 ? 'One concern that comes up often' : 'Another concern we hear'}: ${quotedEnd(objection.objection)} ${settleLine(w, objection.response)}` : '',
+    (rel || measure0) ? [`Review one approved, anonymised case from your own work, and compare its records for ${toYou(rel || measure0)}.`, `Take one case from your own work and note where it stands on ${toYou(rel || measure0)} today.`, `Before you change anything, write down where you stand today on ${toYou(rel || measure0)}, so the comparison has a defined starting point.`][k % 3] : ['Review one approved, anonymised case from your own work before proposing a live change.', 'Take one case from your own work and note where it stands today.', 'Before you change anything, write down where you stand today, so the comparison has a defined starting point.'][k % 3],
+    objection ? `${k === 1 ? 'One concern to test' : 'Another concern to test'}: ${quotedEnd(objection.objection)} ${settleLine(w, objection.response)}` : '',
     productLine(w, k, mine),
     `${next ? `${next} ` : ''}Any questions before we move on? Put them in the chat.`
   ];
@@ -852,9 +894,9 @@ Questions? Reply to this email.
   const o = v ? v.objections[3 % v.objections.length] : null;
   const e2 = o ? `### Email 2: Day 3
 
-**Subject:** A concern from the session: ${o.objection}
+**Subject:** A question to consider: ${o.objection}
 
-The concern we hear most is ${quotedEnd(o.objection)} ${settleLine(w, o.response, 'email')}
+One concern to consider is ${quotedEnd(o.objection)} ${settleLine(w, o.response, 'email')}
 
 ---
 ` : t.length ? `### Email 2: Day 3

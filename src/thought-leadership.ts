@@ -146,7 +146,8 @@ export function generateThoughtLeadership(args: {
     const angle = getArticleAngle(i, articleType, topicLabel, stories.length > 0 || evidence.some(p=>p.kind === 'quote' || /\b(?:customer|client|case study)\b/i.test(p.shown)));
     if (suggested) {
       const jobs = ['Define the Evidence Needed','Look for a Counterexample','Agree a Test and Its Limits','Check the Scope of the Test','Decide What Can Be Published'];
-      return {...angle,title:`${titleWords(topicLabel)}: ${jobs[i % jobs.length]}`};
+      const clause = isClause(topicLabel) || /\b(?:needs?|requires?|depends?|deserves?|means?|changes?|fails?|works?)\b/i.test(topicLabel);
+      return {...angle,title:clause ? `${titleWords(topicLabel)}: ${jobs[i % jobs.length]}` : `${jobs[i % jobs.length]}: ${titleWords(topicLabel)}`};
     }
     return interviewNote ? {...angle, title:`${titleWords(topicLabel)}: ${i === 0 && deniedInterviewEffect(interviewNote) ? "Trace the Reported Observation" : INTERVIEW_TITLES[i % INTERVIEW_TITLES.length]}`} : angle;
   });

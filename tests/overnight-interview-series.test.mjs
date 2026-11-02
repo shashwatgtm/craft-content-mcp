@@ -115,3 +115,10 @@ test('missing proof has evidence-gathering headlines and framework checks rather
   if(article_type==='framework')assert.match(s,/Check the possible objection/);
  }
 });
+test('missing-proof seller descriptions remain complete noun phrases in the headline',()=>{
+ const s=generateThoughtLeadership({...args,topic:'billing, payment and interaction platform provider delivering purpose-built service capabilities',article_type:'framework',proof_points:undefined});
+ const heads=[...s.matchAll(/\*\*Headline:\*\* (.+)/g)].map(m=>m[1]);
+ assert.match(heads[0],/^Define the Evidence Needed: Billing, Payment and Interaction Platform Provider$/);
+ assert.match(heads[1],/^Look for a Counterexample:/);
+ assert.doesNotMatch(heads.join('\n'),/Delivering|Purpose-built/);
+});

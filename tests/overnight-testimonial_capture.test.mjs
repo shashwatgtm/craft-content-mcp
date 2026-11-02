@@ -33,3 +33,14 @@ test('testimonial questions leave unmeasured results and poor fit open',()=>{
  assert.match(s,/Did you observe any results/);assert.match(s,/or leave it unmeasured/);assert.match(s,/who would it not suit/);
  assert.doesNotMatch(s,/How long did it take to see first results|once the product took over|How did how often/);
 });
+test('testimonial request modes do not invent prospects or past case studies or expose writer instructions',()=>{
+ const args={customer_name:'Anonymous contact',customer_company:'Anonymous team',customer_role:'Operations head',your_product:'Exception review workflow',success_story:'The team reported mixed experiences. No improvement was measured. Publication permission is absent.'};
+ for(const testimonial_type of ['written_quote','video_interview','case_study_interview','g2_review','reference_call']){
+  const s=generateTestimonialCapture({...args,testimonial_type});
+  assert.match(s,/Use not approved/);
+  assert.doesNotMatch(s,/A prospect who is evaluating|Name the prospect|past case studies we've done|Send them the link|add it before sending|Your story is exactly|moment you knew.*was working|Any unexpected benefits\?|Starters?:/);
+  assert.match(s,/what worked or did not work|what changed or stayed the same/i);
+  if(testimonial_type==='reference_call')assert.match(s,/ask your permission to share your contact details/);
+  if(testimonial_type==='g2_review')assert.match(s,/regardless of whether the review is favourable/);
+ }
+});

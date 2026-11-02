@@ -32,3 +32,11 @@ test('competitive response does not rotate unrelated proof into the comparison',
  assert.doesNotMatch(comparison,/reduced invoice processing/);
  assert.match(comparison,/None of your proof points compares the two/);
 });
+
+test('ROI introduction distinguishes explicitly attributed customer outcomes from a bare pilot',()=>{
+ const attributed=generateSalesEnablement({...salesBase,proof_points:'Not a hypothetical example: the customer measured a 30% cost reduction over six months and approved the result.'});
+ assert.match(attributed,/Let me share what customers have seen:/);
+ const pilot=generateSalesEnablement({...salesBase,proof_points:'One October pilot reduced median recovery time from 80 to 50 minutes across 12 incidents; not controlled.'});
+ assert.doesNotMatch(pilot,/Let me share what customers have seen:/);
+ assert.match(pilot,/supplied result, with its scope and limitations/);
+});

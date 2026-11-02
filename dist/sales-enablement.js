@@ -261,7 +261,7 @@ ${valueRows.map((r) => `| ${r.vp} | ${r.proof || 'none of your proof points bear
 
 **ROI Conversation:**
 
-${customerResults.length ? `"Here is the supplied result, with its scope and limitations:
+${customerResults.length ? `"${customerResults.every(p => /\b(?:customers?|clients?)\b/i.test(p.text)) ? 'Let me share what customers have seen:' : 'Here is the supplied result, with its scope and limitations:'}
 
 ${customerResults.slice(0, 3).map((p) => `- ${clipEcho(p.shown, 300)}`).join('\n')}
 

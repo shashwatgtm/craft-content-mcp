@@ -1,3 +1,4 @@
+import { case_newsletter_builder } from './reader-newsletter-builder.js';
 import { case_case_study_generator } from './reader-case-study-generator.js';
 import { case_webinar_script } from './reader-webinar-script.js';
 import { case_content_repurposer } from './reader-content-repurposer.js';
@@ -91,6 +92,8 @@ export function readingGuide(name, result, args = {}) {
         return renderCase(case_webinar_script(args), held);
     if (name === 'case_study_generator')
         return renderCase(case_case_study_generator(args), held);
+    if (name === 'newsletter_builder')
+        return renderCase(case_newsletter_builder(args), held);
     const status = held ? ' Keep the stated hold in place; this guidance does not override it.' : '';
     let roles = kind === 'publish' ? [
         `Founder: check the central claim against the supplied evidence before endorsing ${decision}.`,

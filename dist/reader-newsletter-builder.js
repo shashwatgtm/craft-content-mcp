@@ -1,6 +1,7 @@
 import { fact } from './reader-case.js';
+import { readerAction } from './reader-action.js';
 export function case_newsletter_builder(args) {
-    const action = fact(args, "cta_goal", "the requested reader action");
+    const action = fact({ ...args, cta_goal: typeof args.cta_goal === 'string' ? readerAction(args.cta_goal) : '' }, "cta_goal", "the requested reader action");
     const points = fact(args, "key_points", "the supplied issue points");
     const topic = fact(args, "topic", "the issue topic");
     const product = fact(args, "your_product", "the offer");

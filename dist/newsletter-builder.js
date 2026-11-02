@@ -7,7 +7,7 @@ import { cleanSectorLine, looksClause, readPoints, groupPhrases, sentenceOf, ren
 // works, the evidence), each is said in a whole sentence, and the sector file adds the measures, the proof to ask for and the questions
 // a reader can put to their own team. No figure, customer, quote or promise is added (B82); what was not given is named once at the end.
 const lower = (s) => lowerFirstSafe(s);
-const VERB_START = /^(?:book|see|register|read|download|request|start|join|reply|share|try|get|talk|schedule|subscribe|sign|watch|explore|learn|contact|call|visit|take|view|ask|send|forward|review|apply|buy|order|claim|speak|meet|discover|compare|check|find|build|create|set|add|use|come|hear|listen|plan)\b/i;
+const VERB_START = /^(?:book|see|register|read|download|request|start|join|reply|share|try|get|talk|schedule|subscribe|sign|watch|explore|learn|contact|call|visit|take|view|ask|send|forward|review|apply|buy|order|claim|speak|meet|discover|compare|check|find|build|create|set|add|use|come|hear|listen|plan|count|record|measure|inspect|audit|name|identify)\b/i;
 const LABEL_CLAUSE = /\b(?:is|are|was|were|run|runs|combine|combines|means|rely|relies|chain|chains|sits|happens|hand|hands|can|will|must|should|have|has|do|does|break|breaks|fragments|drift|drifts)\b/i;
 export function generateNewsletter(args) {
     const topic = fixNumbers(args.topic.trim());
@@ -16,6 +16,7 @@ export function generateNewsletter(args) {
     const tone = args.tone || 'professional';
     const previous = args.previous_topics ? splitList(stripGuardQuotes(args.previous_topics)) : [];
     const ctaGoal = readerAction(args.cta_goal) || 'Confirm the reader action before sending';
+    const countAction = /^count\b/i.test(ctaGoal) && ctaGoal.length <= 180;
     const product = (args.your_product || '').trim();
     const parts = unpackTopic(topic);
     const ctaProduct = /\babout\s+(.+)$/i.exec(ctaGoal)?.[1]?.trim() || '';
@@ -43,7 +44,8 @@ export function generateNewsletter(args) {
     const soft0 = softenClaims(args.key_points || '');
     const soft = soft0.removed.length ? soft0 : { text: args.key_points || '', removed: [] };
     const softP = softenClaims(parts.problem || '');
-    const all = readPoints(soft.text, { problem: soft0.removed.length || softP.removed.length ? softP.text : parts.problem || '' });
+    const readerPoints = soft.text.replace(/\bDo not claim (?:a )?measured improvement yet\.?/gi, 'No measured improvement has been established.');
+    const all = readPoints(readerPoints, { problem: soft0.removed.length || softP.removed.length ? softP.text : parts.problem || '' });
     const orders = all.filter((p) => p.role === 'instruction').map((p) => p.text);
     const pts = all.filter((p) => p.role !== 'instruction');
     const problems = pts.filter((p) => p.role === 'problem');
@@ -162,6 +164,14 @@ export function generateNewsletter(args) {
             body: `Review this supplied check: "${point.replace(/[.]+$/, '')}". For check ${i + 1}, record the observation, source and unresolved question.`
         })));
     }
+    if (countAction) {
+        const body = `${endSentence(cap(ctaGoal))} Keep the time window, eligibility rule and source records with the count. Record both the total eligible items and the number that meet the condition; list exclusions separately. Ask the workflow owner to check a sample against the original records. If there are no eligible items, record that and leave any rate uncalculated. Use the findings to decide which unresolved item needs an owner or investigation. This establishes a baseline, not an improvement caused by the product.`;
+        const checkAt = sections.findIndex(s => s.heading === nm.check);
+        if (checkAt >= 0)
+            sections[checkAt] = { heading: nm.check, body };
+        else
+            sections.push({ heading: nm.check, body });
+    }
     // ---- subject, preview, opening ------------------------------------------------------------------------------------
     const headSource = parts.problem ? parts.problem.split(/;\s+/)[0] : label;
     const headMax = parts.short ? 90 : 72;
@@ -178,7 +188,7 @@ export function generateNewsletter(args) {
     if (opening)
         openLines.push(openingSentences(opening, who));
     else
-        openLines.push(parts.short ? `This issue is about ${clause ? `"${label}"` : lower(label)}.` : `This issue is about ${lower(head)}.`);
+        openLines.push(countAction ? 'Before changing the workflow, establish what the requested count includes and who will review it.' : parts.short ? `This issue is about ${clause ? `"${label}"` : lower(label)}.` : `This issue is about ${lower(head)}.`);
     if (v && !checkIssue)
         openLines.push(`For ${forWhom}, the numbers to watch are ${proseJoin(v.metrics.slice(0, 2))}.`);
     if (previous.length) {
@@ -187,7 +197,7 @@ export function generateNewsletter(args) {
     }
     if (roadmap)
         openLines.push(roadmap);
-    const previewPool = [v ? `For ${forWhom}, the numbers to watch are ${proseJoin(v.metrics.slice(0, 2))}.` : '', firstSentence(openLines[0]), sections.length ? `Inside: ${proseJoin(sections.map((x) => lower(x.heading)))}.` : '', who ? `From ${who}: ${lower(head)}.` : '', `${cap(head)}.`,
+    const previewPool = [countAction ? 'Make the count traceable: record its scope, source and owner before proposing a change.' : '', v ? `For ${forWhom}, the numbers to watch are ${proseJoin(v.metrics.slice(0, 2))}.` : '', firstSentence(openLines[0]), sections.length ? `Inside: ${proseJoin(sections.map((x) => lower(x.heading)))}.` : '', who ? `From ${who}: ${lower(head)}.` : '', `${cap(head)}.`,
         sections.length >= 2 ? `${sections.length} short sections and one next step.` : '', `A ${type.replace(/_/g, ' ')} issue for ${forWhom}.`, sections[0] ? `Starting with ${lower(sections[0].heading)}.` : ''];
     const previewOptions = [];
     for (const c of previewPool) {

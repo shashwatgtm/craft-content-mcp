@@ -4,7 +4,7 @@ import { splitList, unpackTopic, fixNumbers, endSentence, capFirst, proseJoin, r
 import { looksClause, cleanSectorLine, readPoints, groupPhrases, sentenceOf, withLabel, shorten, waysToSettle, settleBare, quotedEnd, instructionNote, sharpenLine, stripGuardQuotes, lowerFirstSafe, audienceShort, shapeOf, startsImperative, companyFrom, toReader as toYou, nk } from "./rw-content.js";
 // Keep a scoped task or evidence limit whole. A leading time/scope phrase is
 // not a separate takeaway, and a limit is not a product capability.
-const TEACHING_ACTION = /^(?:for (?:one|a|the|each) (?:batch|case|team|shift|period)[^,]{0,40},\s*)?(?:count|name|record|review|check|inspect|audit|map|list|identify|compare|measure|keep|do not|don't)\b/i;
+const TEACHING_ACTION = /^(?:how to\b|(?:for (?:one|a|the|each) (?:batch|case|team|shift|period)[^,]{0,40},\s*)?(?:count|name|record|review|check|inspect|audit|map|list|identify|compare|measure|keep|do not|don't)\b)/i;
 const EVIDENCE_LIMIT = /^(?:do not|don't|never)\s+(?:claim|promise|infer|assume)|^keep\b[^.!?]*\b(?:unchanged|on hold|paused)\b/i;
 function readWebinarPoints(raw, known) {
     if (!/\n/.test(raw) && /;\s+[a-z]/.test(raw) && /,\s+[A-Z][a-z]/.test(raw))
@@ -32,10 +32,12 @@ export function generateWebinarScript(args) {
         ? (/[;\n]/.test(speakerRaw) ? speakerRaw.split(/[;\n]/).map((x) => x.trim()).filter(Boolean) : joinNameAndTitle(splitList(speakerRaw), speakerRaw))
         : [];
     const orders = [];
-    const speakers = speakerList.filter((x) => { if (INSTRUCTION_LIKE.test(x)) {
+    const suppliedSpeakers = speakerList.filter((x) => { if (INSTRUCTION_LIKE.test(x)) {
         orders.push(x);
         return false;
     } return true; });
+    const pendingSpeakers = suppliedSpeakers.filter(x => /\b(?:approval pending|pending approval|not (?:yet )?(?:approved|confirmed)|unconfirmed|invited|tentative|to be confirmed|tbc)\b/i.test(x));
+    const speakers = suppliedSpeakers.filter(x => !pendingSpeakers.includes(x));
     const includePolls = args.include_polls ?? true;
     const productLevel = args.product_mention_level || 'subtle';
     const given = (args.your_product || '').trim();
@@ -87,7 +89,8 @@ export function generateWebinarScript(args) {
         const ranked = ctx.v.metrics.map((m) => ({ m, n: (m.toLowerCase().match(/[a-z]{5,}/g) || []).filter((x) => tw.has(stemOf5(x))).length + themeScore(hay, m) + themeScore(topic, m, 2) })).filter((x) => x.n > 0).sort((a, b) => b.n - a.n);
         w.metrics = !haveTakeaways ? ctx.v.metrics.slice(0, 4) : ranked.slice(0, 4).map((x) => x.m);
         // Run 42B round S3: a session about putting AI to work in another sector also reads the measures of AI work (the same words the AI native notes use)
-        if (ctx.v.id !== 'ai-native' && w.metrics.length < 3 && /\b(?:ai|genai|gen ai|generative ai|agentic|llms?|machine learning)\b/i.test(topic))
+        const securityControls = /\b(?:inventory|prompt injection|mcp servers?|agent actions?|access controls?|permissions?|least privilege)\b/i.test(`${topic} ${takeaways.map(p => p.text).join(' ')}`);
+        if (!securityControls && ctx.v.id !== 'ai-native' && w.metrics.length < 3 && /\b(?:ai|genai|gen ai|generative ai|agentic|llms?|machine learning)\b/i.test(topic))
             w.metrics = [...w.metrics, ...AI_TASK_METRICS.filter((m) => !w.metrics.includes(m)).slice(0, 3 - w.metrics.length + 1)];
         const ow = (x) => new Set((x.toLowerCase().match(/[a-z]{5,}/g) || []).map(stemOf5));
         const objRank = ctx.v.objections.map((o) => ({ o: o.objection, n: [...ow(`${o.objection} ${o.response}`)].filter((x) => tw.has(x)).length + themeScore(hay, `${o.objection} ${o.response}`) })).sort((a, b) => b.n - a.n)[0];
@@ -120,6 +123,8 @@ export function generateWebinarScript(args) {
     if (!durationSupplied)
         missing.push({ field: 'duration', change: `the timings, which assume ${minutes} minutes` });
     const notes = [];
+    if (pendingSpeakers.length)
+        notes.push(`Speaker approval still needed: ${pendingSpeakers.join('; ')}. Confirm participation and permission before adding these people to spoken introductions or promotional copy.`);
     if (productNote)
         notes.push(productNote.replace(/^your_product was not given; /, 'No product was given; '));
     if (soft.removed.length)
@@ -161,7 +166,9 @@ ${generateRunOfShow(structure, minutes)}
     const blocks = structure.filter((s) => /^Main Content Block/.test(s.name)).length;
     for (const section of structure) {
         const isBlock = /^Main Content Block/.test(section.name);
-        output += generateScriptSection(section, w, isBlock ? block++ : 0, blocks);
+        output += type === 'customer_story' && pendingSpeakers.length
+            ? `### ${section.name} (${section.duration} min)\n\n**HOST PREPARATION, NOT SPOKEN:** Customer participation awaits approval. Confirm the guest and permission to use the story before preparing this section. Its purpose is: ${section.purpose}.\n\n`
+            : generateScriptSection(section, w, isBlock ? block++ : 0, blocks);
     }
     const spokenWords = [...output.matchAll(/\*\*SPEAKER:\*\*\n"([\s\S]*?)"\n/g)].reduce((n, m) => n + m[1].trim().split(/\s+/).filter(Boolean).length, 0);
     notes.push(`Timing check: ${spokenWords} words are marked as spoken copy, about ${(spokenWords / 140).toFixed(1)} minutes at the planning assumption of 140 words per minute. The ${minutes} minute run of show also reserves time for discussion, exercises and questions; it is not a claim that this text fills that time. Rehearse each section and prepare the remaining activity before delivery.`);
@@ -188,7 +195,7 @@ ${notes.map((n) => `- ${n}`).join('\n')}
 | **Duration** | ${minutes} minutes${durationSupplied ? '' : ' (default)'} |
 | **Type** | ${type.replace(/_/g, ' ')} |
 | **Audience** | ${audienceFull} |
-| **Speakers** | ${w.haveSpeakers ? (speakers.some((x) => x.includes(',')) ? speakers.join('; ') : speakers.join(', ')) : 'not given'} |
+| **Speakers** | ${suppliedSpeakers.length ? (suppliedSpeakers.some((x) => x.includes(',')) ? suppliedSpeakers.join('; ') : suppliedSpeakers.join(', ')) : 'not given'} |
 | **Product Mentions** | ${productLevel}${args.product_mention_level ? '' : ' (default)'} |
 ${missing.length ? `\n${sharpenLine(missing)}\n` : ''}`;
     return (missingEvidence(args.key_takeaways || '') ? '**Evidence still to gather:** The supplied takeaways do not establish a customer outcome. Gather an approved result before presenting one as proof.\n\n' : '') + output.replace(/\n{3,}/g, '\n\n');
@@ -409,6 +416,7 @@ const CLAIM_WORD = /\b(?:patent\w*|partner\w*|certified|licen[cs]ed|award\w*|lar
 const VENDOR = "the vendor's description";
 // "unify X, deliver Y and protect Z": a run of instructions said as what the listener will learn to do.
 function howTo(text) {
+    text = text.replace(/^how to\s+/i, '');
     const parts = text.split(/,\s+(?=[a-z]+\b)/).map((x) => x.trim()).filter(Boolean);
     const verbs = parts.every((x) => startsImperative(x));
     if (!verbs || parts.length < 2)
@@ -528,7 +536,7 @@ function labelOf(p, w) {
     if (TEACHING_ACTION.test(p.text))
         return /^for (?:one|a|the|each)\b/i.test(p.text)
             ? `the scoped task: ${lowerFirst(p.text.replace(/[.\s]+$/, ''))}`
-            : `how to ${p.text.charAt(0).toLowerCase() + p.text.slice(1).replace(/[.\s]+$/, '')}`;
+            : `how to ${howTo(p.text).replace(/[.\s]+$/, '')}`;
     if (!w.haveTakeaways) {
         const index = w.takeaways.indexOf(p);
         if (index === 0)

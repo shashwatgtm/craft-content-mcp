@@ -61,3 +61,24 @@ test('outcome limits survive webinar agenda, recap and follow-up without becomin
  assert.match(s,/Possible buying group, to confirm/);assert.match(s,/Possible objections to check/);
  assert.doesNotMatch(s,/where you stand on on time/);
 });
+
+
+test('how-to guide takeaways need an example and pending guests stay out of spoken copy',async()=>{
+ const args={topic:'What to inventory before AI agents call your APIs',target_audience:'Security leaders and AI platform owners',webinar_type:'educational',your_sector:'cybersecurity',key_takeaways:'How to find every AI agent and MCP server already calling your APIs\nHow to decide which agent actions need a person to approve them\nHow to test an agent for prompt injection before it reaches production',speakers:'Host, Head of Product Marketing; Speaker, Head of Security Research; Guest, a security leader from a customer (approval pending)',product_mention_level:'none'};
+ const r=await call('webinar_script',args);const s=r.content.map(c=>c.text||'').join('\n');
+ const block=s.split('### Main Content Block 1')[1].split('### Main Content Block 2')[0];
+ assert.match(block,/HOST PREPARATION, NOT SPOKEN/);assert.doesNotMatch(block,/\*\*SPEAKER:\*\*/);
+ const spoken=[...s.matchAll(/\*\*SPEAKER:\*\*\n"([\s\S]*?)"\n/g)].map(m=>m[1]).join('\n');
+ assert.doesNotMatch(spoken,/approval pending|a security leader from a customer|how to how to/);
+ assert.match(spoken,/Head of Security Research/);assert.match(s,/Speaker approval still needed/);
+ assert.match(s,/You will learn how to find every AI agent/);
+ assert.doesNotMatch(s,/accuracy on the buyer's own data/);
+ const approved=await call('webinar_script',{...args,speakers:'Guest, a security leader from a customer (approved)'});
+ assert.match(approved.content.map(c=>c.text||'').join('\n'),/With us today: Guest, a security leader from a customer \(approved\)/);
+});
+test('a customer-story guest awaiting approval holds guest-dependent spoken sections',async()=>{
+ const r=await call('webinar_script',{topic:'Reviewing approvals',target_audience:'Operations heads',webinar_type:'customer_story',speakers:'Host, Marketing lead; Guest, Customer operations head (not yet confirmed)',key_takeaways:'Compare the starting records and current records'});
+ const s=r.content.map(c=>c.text||'').join('\n');const script=s.split('## Full Script')[1].split('## Q&A')[0];
+ assert.match(script,/Customer participation awaits approval/);assert.doesNotMatch(script,/\*\*SPEAKER:\*\*/);
+ assert.match(s,/not yet confirmed/);
+});

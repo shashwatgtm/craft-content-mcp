@@ -1,3 +1,4 @@
+import { readSignal, illustrativeProof } from './text-signals.js';
 import { readerAction } from './reader-action.js';
 import { countWords, aOrAn } from './utils.js';
 import { splitItems, pickKeyPoints, readContext, audienceLine, firstSentence, sentencesOf, q, type Vertical } from './sector.ts';
@@ -97,10 +98,19 @@ export function generateContentRepurposer(args: {
   const proof = parseProof(proofParas.map((l) => l.replace(/^[A-Za-z ]+:\s*/, '')).join('\n'));
   const body = paras.filter((l) => !proofParas.includes(l)).join('\n');
   if (!proofParas.length) {
+    const value = '(?:\\d+(?:\\.\\d+)?|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)';
+    const comparison = new RegExp('\\bfrom\\s+'+value+'\\s+(?:[a-z]+\\s+){0,3}to\\s+'+value+'\\b|\\b(?:took|recorded|measured)\\s+'+value+'\\s+(?:[a-z]+\\s+){0,4}instead of\\s+'+value+'\\b', 'i');
     for (const sentence of sentencesOf(body)) {
-      if (!/\b(?:pilot|customer|team|cohort|study)\b/i.test(sentence) || !/\bfrom\s+(?:\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:[a-z]+\s+){0,3}to\s+(?:\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten)\b/i.test(sentence)) continue;
-      if (/\b(?:if|would|could|might|aim|target|expect|forecast|promise|not|never|no)\b/i.test(sentence)) continue;
-      proof.push(...parseProof(sentence).filter(p => p.kind === 'result'));
+      if (!/\b(?:pilot|customer|team|cohort|study)\b/i.test(sentence) || !comparison.test(sentence)) continue;
+      if (readSignal(sentence, comparison).state !== 'affirmed' || illustrativeProof(sentence).state === 'affirmed' || /\b(?:if|would|could|might|aim|target|expect|forecast|promise|not|never|no)\b/i.test(sentence)) continue;
+      const recognized = parseProof(sentence).filter(p => p.kind === 'result');
+      // An ordinary word-number comparison may not match the shared proof parser.
+      // Preserve its complete source sentence and do not infer causation.
+      if (recognized.length) proof.push(...recognized);
+      else {
+        const text = sentence.trim().replace(/[.\s]+$/, '');
+        proof.push({text,shown:text,label:'',kind:'result',figure:true});
+      }
     }
   }
   const titleInfo = extractTitle(body, keyMessage);
@@ -135,7 +145,7 @@ export function generateContentRepurposer(args: {
   if (known.includes('newsletter_section')) places.push(`the "Read the full ${kind}" line of the newsletter section`);
   if (known.includes('twitter_thread')) places.push('the last tweet');
   if (known.includes('video_script')) places.push('the video description');
-  const toDo = [places.length && !sourceUrl ? `confirm the source URL for ${proseJoin(places)} before sending` : '', known.includes('email') && !sender ? 'confirm the sender name before the email can be sent' : ''].filter(Boolean);
+  const toDo = [(known.includes('email') || known.includes('newsletter_section')) && !action ? 'agree the reader action' : '', places.length && !sourceUrl ? `confirm the source URL for ${proseJoin(places)} before sending` : '', known.includes('email') && !sender ? 'confirm the sender name before the email can be sent' : ''].filter(Boolean);
   const claimsLine = claimsRemoved.length ? `**Claims to source before you publish:** your source or key message used ${proseJoin([...new Set(claimsRemoved)].map((c) => `"${c}"`))}. The pieces leave it out; add it back once, in one place, and only if you can prove it with a source a reader can check.` : '';
   const beforeUse = toDo.length ? `Draft only. Before you use it: ${proseJoin(toDo)}. Supply confirmed Reader action, Source URL and Sender as labelled lines in the source notes.` : 'Source link and sender supplied; confirm the wording and publication permission before sending.';
 
@@ -314,7 +324,7 @@ function metricFor(k: Kit, text: string): string {
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 // Host review 28 Oct 2026: a sentence that qualifies the whole source (synthetic, hypothetical, illustrative, not verified) travels with
 // every piece, because each piece can be shared on its own. It is added as typed, once, to a piece that does not already carry it.
-const CAVEAT = /\b(?:uncontrolled|not a promise|not causal|synthetic|hypothetical|illustrative|fictional|fictitious|unverified|not (?:yet )?verified|not real|for review only|example only|made[- ]up|demonstration (?:statements?|data|inputs?|only|scenario)|no (?:customer )?(?:outcome|result|impact)(?: figure)? (?:is )?(?:available|supplied|confirmed)|(?:customer )?(?:outcome|result) (?:figure )?(?:is |has )?not (?:available|supplied|confirmed|been measured))\b/i;
+const CAVEAT = /\b(?:uncontrolled|unmeasured|no numerical improvement|no promise|not a promise|not causal|synthetic|hypothetical|illustrative|fictional|fictitious|unverified|not (?:yet )?verified|not real|for review only|example only|made[- ]up|demonstration (?:statements?|data|inputs?|only|scenario)|no (?:customer )?(?:outcome|result|impact)(?: figure)? (?:is )?(?:available|supplied|confirmed)|(?:customer )?(?:outcome|result) (?:figure )?(?:is |has )?not (?:available|supplied|confirmed|been measured))\b/i;
 const caveatsOf = (k: Kit): string[] => sentencesOf(k.content).map((s) => s.trim()).filter((s) => CAVEAT.test(s)).slice(0, 2);
 
 function generateFormat(format: string, k: Kit): string {
@@ -375,19 +385,20 @@ ${tweets.map((t, i) => `**Tweet ${i + 1}${i === 0 ? ' (Hook)' : ''}:**\n${t}${t.
       });
       const body = [subjectSafe(k.title, 70) === s1 ? '' : endSentence(lead), ...(rest.length ? rest : k.points).slice(0, 3).map((p) => endSentence(p)), msg];
       body.push(proofMissingFrom([s1, ...body]));
+      const missing = [!k.action && 'reader action', !k.sourceUrl && 'source link', !k.sender && 'sender'].filter(Boolean) as string[];
       return `
 ### Email Version
 
+${missing.length ? `**Email held for completion:** ${proseJoin(missing)} not supplied. The body below is for review; confirm these details before sending.\n` : ''}
 ---
 
 Subject: ${s1}
 
 ${vc.greet}
 
-${[...body, ...missingIn([s1, ...body]), k.action ? endSentence(capFirstChar(k.action)) : 'Confirm the reader action before sending.', k.sourceUrl ? `Read the full ${kind}: ${k.sourceUrl}` : 'Source link: unknown; confirm before sending.'].filter(Boolean).join('\n\n')}
+${[...body, ...missingIn([s1, ...body]), k.action ? endSentence(capFirstChar(k.action)) : '', k.sourceUrl ? `Read the full ${kind}: ${k.sourceUrl}` : ''].filter(Boolean).join('\n\n')}
 
-${vc.bye}
-${k.sender || 'Sender: unknown; confirm before sending.'}
+${k.sender ? `${vc.bye}\n${k.sender}` : ''}
 
 ${alts.length ? `Other subject lines to test: ${alts.join('; ')}\n\n` : ''}---
 
@@ -503,6 +514,7 @@ ${cards.length ? cards.map((qt, i) => (qt.stat ? `**Stat Card ${i + 1}:**\n> ${q
     newsletter_section: () => `
 ### Newsletter Section
 
+${!k.action || !k.sourceUrl ? '**Newsletter section held for completion:** confirm the reader action and source link before using this draft.\n' : ''}
 ---
 
 **${k.title}**
@@ -511,7 +523,7 @@ ${endSentence(rest[0] || k.points[0] || k.hook)}
 
 ${(rest.length ? rest : k.points).slice(1, 4).map((p) => `- ${endSentence(p)}`).join('\n')}
 
-${[proof, msg, k.action ? endSentence(capFirstChar(k.action)) : 'Confirm the reader action before sending.', k.sourceUrl ? `Read the full ${kind}: ${k.sourceUrl}` : 'Source link: unknown; confirm before sending.'].filter(Boolean).join('\n\n')}
+${[proof, msg, k.action ? endSentence(capFirstChar(k.action)) : '', k.sourceUrl ? `Read the full ${kind}: ${k.sourceUrl}` : ''].filter(Boolean).join('\n\n')}
 
 ---
 
@@ -555,7 +567,7 @@ function extractQuotes(k: Kit): { text: string; by?: string; stat?: boolean }[] 
   for (const p of short) out.push({ text: p });
   // a result with a figure is a stat card when the source gives fewer than three quotes
   if (out.length < 3) for (const p of k.proof) if (!isPartnerItem(p) && p.kind === 'result' && p.figure && !/^customer (?:quote|words)\b/i.test(p.text) && p.shown.length <= 220) out.push({ text: endSentence(p.shown), stat: true });
-  return out.filter((x, i, a) => a.findIndex((y) => y.text === x.text) === i).slice(0, 5);
+  return out.filter((x, i, a) => a.findIndex((y) => norm(y.text) === norm(x.text)) === i).slice(0, 5);
 }
 
 // Hashtags: the brand named in the key message or in "At X we built" (never a random word of the text), the sector's own terms that the

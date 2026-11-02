@@ -37,3 +37,27 @@ test('alternate email subjects do not repeat the same source clause under two la
  const alts=s.match(/Other subject lines to test: (.+)/)?.[1] || '';
  assert.ok((alts.match(/A regional fleet pilot reduced route adjustment time/g)||[]).length <= 1);
 });
+
+test('equivalent word-number source comparison is evidence without changing its meaning',()=>{
+ const source_content="Across ten reviewed days in October, one customer's handling of dispatch exceptions took three hours instead of four. The pilot was uncontrolled and gives no promise for another team.";
+ const s=generateContentRepurposer({source_content,source_type:'blog_post'});
+ assert.match(s,/Proof Items Found\*\* \| 1/);assert.doesNotMatch(s,/Not given: a proof line/);assert.match(s,/took three hours instead of four/);
+ const cards=s.split('### Quote Cards')[1].split('## Source Notes')[0];assert.equal((cards.match(/took three hours instead of four/g)||[]).length,1);
+ for(const qualifier of ['A hypothetical customer pilot took three hours instead of four.','A customer pilot did not take three hours instead of four.','A customer pilot could take three hours instead of four.']){
+  const t=generateContentRepurposer({source_content:qualifier,source_type:'blog_post'});
+  assert.match(t,/Proof Items Found\*\* \| 0/);
+ }
+});
+test('each standalone card retains unmeasured and no-improvement limitations',()=>{
+ const s=generateContentRepurposer({source_content:'One customer pilot did not reduce dispatch exceptions from four to three hours. The result is unmeasured. No numerical improvement may be claimed.',source_type:'blog_post'});
+ const cards=s.split('### Quote Cards')[1].split('## Source Notes')[0].split(/\*\*(?:Quote|Stat) Card \d+:\*\*/).slice(1);
+ assert.ok(cards.length);for(const card of cards){assert.match(card,/result is unmeasured/);assert.match(card,/No numerical improvement may be claimed/);}
+});
+test('email copy separates missing metadata from the complete draft body',()=>{
+ const s=generateContentRepurposer({source_content:source,source_type:'blog_post',target_formats:'email,newsletter_section'});
+ const email=s.split('### Email Version')[1].split('### Newsletter Section')[0];
+ assert.match(email,/Email held for completion/);assert.match(email,/reader action, source link and sender/);
+ const body=email.split('---')[1];assert.doesNotMatch(body,/Confirm the reader action|Source link: unknown|Sender: unknown|confirm before sending/);
+ const ready=generateContentRepurposer({source_content:source+'\nReader action: Measure one shift before changing the process.\nSource URL: https://example.com/pilot\nSender: Editorial team',source_type:'blog_post',target_formats:'email'});
+ assert.doesNotMatch(ready,/Email held for completion/);assert.match(ready,/Measure one shift before changing the process/);assert.match(ready,/Read the full blog post: https:\/\/example.com\/pilot/);assert.match(ready,/Editorial team/);
+});

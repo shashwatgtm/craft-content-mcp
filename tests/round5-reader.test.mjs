@@ -12,3 +12,10 @@ for(const c of cases)test('Round 5 reader contract: '+c.tool,async()=>{
  for(const role of ['Founder','CEO','CMO','CRO','Demand generation head'])assert.match(text,new RegExp('(?:^|\\n)'+role+':'));
  assert.doesNotMatch(text,/_{3,}|icp firmographics\.(?:industries|company sizes|locations)|\[(?:Your name|Competitor A|YOUR WHITESPACE|target customer)\]/);
 });
+
+import {readingGuide} from '../dist/reader-actions.js';
+test('General scoring explanation is not an actual publication hold',()=>{
+ const explanation='## Overall Score: 7/10 (GOOD)\nAn unproved claim is labelled NOT PROVED YET, never GOOD.';
+ assert.doesNotMatch(readingGuide('craft_content_improver',explanation),/Keep the stated hold/);
+ assert.match(readingGuide('craft_content_improver',explanation.replace('7/10 (GOOD)','4/10 (NOT PROVED YET)')),/Keep the stated hold/);
+});

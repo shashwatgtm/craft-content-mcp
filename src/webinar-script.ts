@@ -15,7 +15,7 @@ interface W {
   example: string;
   usedQ: Set<string>; usedM: Set<string>;
   topic: string; label: string; clause: boolean; problem: string; audience: string; role: string; field: string; connector: string;
-  takeaways: Pt[]; speakers: string[]; product: string; productLevel: string; includePolls: boolean; ctx: Ctx;
+  takeaways: Pt[]; speakers: string[]; guest: string; product: string; productLevel: string; includePolls: boolean; ctx: Ctx;
   metrics: string[]; objectionHeld: string; haveTakeaways: boolean; haveSpeakers: boolean; problemPts: Pt[]; minutes: number; productDescription: string; productName: string; model: BusinessModel | null; type: string; shortTopic: boolean; who: string;
 }
 
@@ -63,6 +63,7 @@ export function generateWebinarScript(args: {
   const suppliedSpeakers = speakerList.filter((x) => { if (INSTRUCTION_LIKE.test(x)) { orders.push(x); return false; } return true; });
   const pendingSpeakers = suppliedSpeakers.filter(x => /\b(?:approval pending|pending approval|not (?:yet )?(?:approved|confirmed)|unconfirmed|invited|tentative|to be confirmed|tbc)\b/i.test(x));
   const speakers = suppliedSpeakers.filter(x => !pendingSpeakers.includes(x));
+  const guest = speakers.find(x=>/\b(?:guest|customer)\b/i.test(x) && !/\b(?:host|moderator)\b/i.test(x)) || speakers.find(x=>!/\b(?:host|moderator)\b/i.test(x)) || '';
   const includePolls = args.include_polls ?? true;
   const productLevel = args.product_mention_level || 'subtle';
   const given = (args.your_product || '').trim();
@@ -98,13 +99,13 @@ export function generateWebinarScript(args: {
   }
   const takeaways: Pt[] = given2.length ? given2 : takeawaysFromSector(ctx.v);
   const productLabel = descriptionOnly ? '' : given ? productParts(given).name : product;
-  const w: W = { example, usedQ: new Set<string>(), usedM: new Set<string>(), topic, label, clause, problem: parts.problem || '', audience, role, field, connector, takeaways, speakers, product, productLevel, includePolls, ctx, haveSpeakers: speakers.length > 0, haveTakeaways, problemPts, metrics: [], objectionHeld: '', minutes: 0, productDescription: '', productName: '', model: ctx.model, type, shortTopic: parts.short, who: productLevel === 'none' ? '' : productLabel };
+  const w: W = { example, usedQ: new Set<string>(), usedM: new Set<string>(), topic, label, clause, problem: parts.problem || '', audience, role, field, connector, takeaways, speakers, guest, product, productLevel, includePolls, ctx, haveSpeakers: speakers.length > 0, haveTakeaways, problemPts, metrics: [], objectionHeld: '', minutes: 0, productDescription: '', productName: '', model: ctx.model, type, shortTopic: parts.short, who: productLevel === 'none' ? '' : productLabel };
   // the sector's measures that fit the kind of product and the topic: they share a word with it or belong to the same theme (security with blocked
   // or fraud measures, price with cost measures); the measures of another kind of product are left out
   if (ctx.v) {
     const hay = `${topic} ${takeaways.map((p) => p.text).join(' ')}`;
     const stemOf5 = (x: string) => x.replace(/(?:ing|ed|es|s)$/, '').slice(0, 6);
-    const tw = new Set((hay.toLowerCase().match(/[a-z]{5,}/g) || []).map(stemOf5));
+    const tw = new Set((hay.toLowerCase().match(/[a-z]{5,}/g) || []).filter(x=>! /^(?:count|counts|measure|measures|record|records|before|after|review|compare|change|changes|starting|value|values)$/.test(x)).map(stemOf5));
     const ranked = ctx.v.metrics.map((m) => ({ m, n: (m.toLowerCase().match(/[a-z]{5,}/g) || []).filter((x) => tw.has(stemOf5(x))).length + themeScore(hay, m) + themeScore(topic, m, 2) })).filter((x) => x.n > 0).sort((a, b) => b.n - a.n);
     w.metrics = !haveTakeaways ? ctx.v.metrics.slice(0, 4) : ranked.slice(0, 4).map((x) => x.m);
     // Run 42B round S3: a session about putting AI to work in another sector also reads the measures of AI work (the same words the AI native notes use)
@@ -138,6 +139,7 @@ export function generateWebinarScript(args: {
   if (!args.business_model && ctx.v && ctx.how !== 'input') missing.push({ field: 'business_model', change: 'the commercial next step; it is conditional until you state how you charge' });
   if (!durationSupplied) missing.push({ field: 'duration', change: `the timings, which assume ${minutes} minutes` });
   const notes: string[] = [];
+  if (type === 'customer_story' && guest) notes.push(`Confirm that ${guest} is the customer guest, and obtain permission for the story before using the guest questions.`);
   if (pendingSpeakers.length) notes.push(`Speaker approval still needed: ${pendingSpeakers.join('; ')}. Confirm participation and permission before adding these people to spoken introductions or promotional copy.`);
   if (productNote) notes.push(productNote.replace(/^your_product was not given; /, 'No product was given; '));
   if (soft.removed.length) notes.push(`Claims to source before you publish: your takeaways use ${proseJoin(soft.removed.map((c) => `"${c}"`))}. The script leaves them out; add one back only with a source a reader can check.`);
@@ -154,7 +156,7 @@ export function generateWebinarScript(args: {
 ---
 
 ## Exercise preparation
-${example ? 'Supplied example is included in the first main block. Confirm its anonymisation and permission before delivery.' : 'Example needed before delivery: supply one anonymised case, its starting records and the decision participants should make. No exercise result is invented. State it as an Example line in the existing takeaway notes.'}
+${['educational','product_demo','workshop'].includes(type) ? example ? `Supplied example is included in the first ${type === 'product_demo' ? 'demonstration' : type === 'workshop' ? 'exercise' : 'main block'}. Confirm its anonymisation and permission before delivery.` : 'Example needed before delivery: supply one anonymised case, its starting records and the decision participants should make. No exercise result is invented. State it as an Example line in the existing takeaway notes.' : `Confirm the speakers, questions and sources before delivery. No customer result is invented.${example ? ` Supplied discussion example: ${example} Treat it as source material, not as an account attributed to a guest without their approval.` : ''}`}
 
 ## Key Takeaways for Audience
 
@@ -176,7 +178,7 @@ ${generateRunOfShow(structure, minutes)}
   const blocks = structure.filter((s) => /^Main Content Block/.test(s.name)).length;
   for (const section of structure) {
     const isBlock = /^Main Content Block/.test(section.name);
-    output += type === 'customer_story' && pendingSpeakers.length
+    output += type === 'customer_story' && (pendingSpeakers.length > 0 || !guest)
       ? `### ${section.name} (${section.duration} min)\n\n**HOST PREPARATION, NOT SPOKEN:** Customer participation awaits approval. Confirm the guest and permission to use the story before preparing this section. Its purpose is: ${section.purpose}.\n\n`
       : generateScriptSection(section, w, isBlock ? block++ : 0, blocks);
   }
@@ -438,7 +440,7 @@ function howTo(text: string): string {
   text = text.replace(/^how to\s+/i, '');
   const parts = text.split(/,\s+(?=[a-z]+\b)/).map((x) => x.trim()).filter(Boolean);
   const verbs = parts.every((x) => startsImperative(x));
-  if (!verbs || parts.length < 2) return lower(text);
+  if (!verbs || parts.length < 2) return text.charAt(0).toLowerCase() + text.slice(1);
   return parts.length === 2 ? `${lower(parts[0])} and ${lower(parts[1])}` : `${parts.slice(0, -1).map(lower).join(', ')} and ${lower(parts[parts.length - 1])}`;
 }
 // One takeaway as a whole sentence to be said aloud. The sentence is built from the shape of the point: a statement stands as it is; a
@@ -641,6 +643,10 @@ const topicLine = (w: W): string => (w.shortTopic ? `Our topic today is ${q(clip
 const nextStep = (w: W): string => `If you would like to take this further, reply to the follow-up email and ask for ${nextStepPhrase(w.model)}${w.productLevel === 'heavy' && w.productName ? ` with ${w.productName}` : ''}.`;
 const settleLine = (w: W, response: string, mode: 'block' | 'qa' | 'email' = 'block'): string => waysToSettle(response) || (mode === 'qa' ? '' : mode === 'email' ? 'Reply to this email and we will answer it.' : 'We will take it in the questions at the end.');
 
+function prep(section: {name:string;duration:number}, instructions:string):string {
+  return `### ${section.name} (${section.duration} min)\n\n**HOST PREPARATION, NOT SPOKEN:** ${instructions}\n\n`;
+}
+
 function seg(section: { name: string; duration: number }, screen: string, lines: string[]): string {
   const blocks: string[] = []; let spoken: string[] = [];
   const flush = () => { if (spoken.length) { blocks.push(`**SPEAKER:**\n"${spoken.join('\n\n').replace(/"/g, "'")}"`); spoken = []; } };
@@ -707,13 +713,25 @@ function generateScriptSection(section: { name: string; duration: number; purpos
       return seg(section, name ? `${name} on one screen` : 'The demo screen', [name ? (productSentence(w) || `Here is ${name} on one screen.`) : 'Here is what we show today, on one screen.', t[0] ? `It is here for one reason today: ${tk(t[0], w)}` : '']);
     case 'Feature Demo 1': case 'Feature Demo 2': case 'Feature Demo 3': {
       const i = Number(section.name.slice(-1)) - 1;
-      const m = v && t[i] ? relatedOne(t[i].text, w.metrics, w.usedM) : '';
-      if (m) w.usedM.add(m);
-      const watch = ['Watch where it happens on the screen and say in the chat if you do this differently today.', 'Tell us in the chat how your team does this today.', 'Same question as before: how does your team handle this today?'][i % 3];
-      return seg(section, t[i] ? `The screen that shows point ${i + 1}` : 'The working screen', [
-        t[i] ? `Demo ${i + 1}: ${tk(t[i], w)} I will show it live. ${watch}` : 'That covers every takeaway. I will use this part for questions from the chat and a second look at any screen you want to see again.',
-        m ? `In your role, the measure this touches is ${toYou(m)}.` : ''
-      ]);
+      const preparation = [
+        'Prepare an approved case, source records and a working environment before promising a live demonstration.',
+        'Rehearse the decision and owner check in the approved environment; record what the host can actually show.',
+        'Check comparison scope and any outcome claim against the source; remove unsupported demonstration promises.'
+      ][i];
+      if (!w.example) return seg(section, 'Demonstration review criteria', [
+        t[i] ? `The proposed task: ${withLabel(t[i])}.` : `Review criterion ${i+1} for a useful demonstration.`,
+        [
+          'To judge a workflow, start with the source record. Identify which observation is known and which value is missing before evaluating a proposed change.',
+          'A decision needs an accountable owner and an acceptance rule. Record who can approve the next step and what evidence they need.',
+          'Compare like work over a stated period. Keep differences in scope visible, and do not treat an observed difference as proof of its cause.'
+        ][i]
+      ]).replace('**SPEAKER:**', `**HOST PREPARATION, NOT SPOKEN:** ${preparation} No case was supplied for step ${i+1}; these lines explain review criteria only.\n\n**SPEAKER:**`);
+      return seg(section, `Demonstration case, step ${i+1}`, [
+        i === 0 ? `Here is the supplied case: ${w.example}` : 'Continue with the same supplied case and its limits.',
+        t[i] ? `The task for this step: ${withLabel(t[i])}.` : 'Choose a remaining question about this case.',
+        ['Start from the source record. Identify which observation is known and which value is missing.', 'Record who owns the decision and what evidence they need to make it.', 'Check the period and scope before comparing results. Retain unknowns and do not infer a measured improvement.'][i],
+        'Which part of this record would you need to verify before acting?'
+      ]).replace('**SPEAKER:**', `**HOST PREPARATION, NOT SPOKEN:** ${preparation}\n\n**SPEAKER:**`);
     }
     case 'Use Case Examples': {
       const figs = t.filter((x) => x.figure);
@@ -753,9 +771,9 @@ function generateScriptSection(section: { name: string; duration: number; purpos
       return seg(section, 'Close slide', [thanks, nextStep(w)]) + '**END WEBINAR**\n\n';
     // customer story
     case 'Welcome':
-      return seg(section, 'Title slide', [w.haveSpeakers ? `Welcome to ${named(w)}. Joining us today: ${speakersSaid(w)}. Our guest is ${w.speakers[0]}.` : `Welcome to ${named(w)}. Our guest today is a customer.`, agendaLine(w)]);
+      return seg(section, 'Title slide', [w.haveSpeakers ? `Welcome to ${named(w)}. Joining us today: ${speakersSaid(w)}. Our guest is ${w.guest}.` : `Welcome to ${named(w)}. Our guest today is a customer.`, agendaLine(w)]);
     case 'Customer Introduction':
-      return seg(section, 'Guest slide', [`${w.haveSpeakers ? w.speakers[0].split(',')[0] : 'Our guest'}, please tell us about your company and your role.`]);
+      return seg(section, 'Guest slide', [`${w.guest ? w.guest.split(',')[0] : 'Our guest'}, please tell us about your company and your role.`]);
     case 'The Challenge':
       return seg(section, 'Challenge slide', [w.problem ? `We have been talking about this problem. ${problemSpoken(w).replace(/^Here is the problem we are here to take on\. /, '')} What did that look like for you before you made a change?` : 'What was happening before you made a change? Tell it in your own words.']);
     case 'Solution Discovery':
@@ -776,13 +794,17 @@ function generateScriptSection(section: { name: string; duration: number; purpos
     case 'Concept Introduction':
       return seg(section, 'Concept slide', [t[0] ? `The idea behind the first exercise: ${tk(t[0], w)}` : 'The idea behind the first exercise is the topic itself.', painPoint(w)]);
     case 'Exercise 1':
-      return seg(section, 'Exercise 1 slide', [`Exercise one: ${t[1] ? tk(t[1], w) : t[0] ? tk(t[0], w) : 'Work on the topic.'} You have ${section.duration} minutes. I am in the chat if you get stuck.`]);
+      if (!w.example) return prep(section, 'Supply an anonymised case and its starting records. Prepare a decision record with the observation, source, period, owner and unknowns. Do not run the exercise until those materials are ready.');
+      return seg(section, 'Exercise 1 slide', [`Here is the supplied case: ${w.example}`, `You have ${section.duration} minutes. Record what is known, where each observation came from, who owns the decision and what remains unknown. Use these checks: ${t.slice(0,2).map(p=>withLabel(p)).join('; ')}.`, 'Your output is one decision record. Do not replace a missing value with an estimate.']);
     case 'Debrief 1':
-      return seg(section, 'Debrief slide', ['Let us hear what you found. Who will share what they made?']);
+      if (!w.example) return prep(section, 'Prepare the debrief after the example and decision-record task are ready. Ask what participants could establish and what stayed unknown.');
+      return seg(section, 'Debrief slide', ['Who will share one observation and its source? Which missing item prevents a decision, and who can confirm it?']);
     case 'Exercise 2':
-      return seg(section, 'Exercise 2 slide', [`Exercise two builds on the first: ${t[2] ? tk(t[2], w) : t[1] ? tk(t[1], w) : 'Go one step further on the topic.'} You have ${section.duration} minutes.`, t[3] ? `One more point to keep in mind: ${tk(t[3], w)}` : '']);
+      if (!w.example) return prep(section, 'Prepare a comparison using the same case, with matching periods and scope. Define the decision it can inform and the evidence that would keep the proposed change on hold.');
+      return seg(section, 'Exercise 2 slide', [`Use the same case for ${section.duration} minutes. Check whether its periods, work and definitions support a comparison. If they do not, record the missing evidence and its owner.`, t[2] ? `Check to apply: ${withLabel(t[2])}.` : '', 'Your output is a comparison decision with its limits, not an invented outcome. State what would make you proceed, revise or pause.']);
     case 'Debrief 2':
-      return seg(section, 'Debrief slide', ['Again: who will share what they made, and what they would change?']);
+      if (!w.example) return prep(section, 'Prepare questions about comparable scope, alternative explanations and the next evidence owner after the exercise is ready.');
+      return seg(section, 'Debrief slide', ['Which comparison was justified, and which was not? What else could explain an observed difference? Name the next evidence owner before recommending a change.']);
     case 'Wrap-up & Resources':
       return seg(section, 'Wrap-up slide', [recap(w), nextStep(w), thanks]);
     // ask me anything

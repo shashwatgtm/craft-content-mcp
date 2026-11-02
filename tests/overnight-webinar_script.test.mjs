@@ -82,3 +82,31 @@ test('a customer-story guest awaiting approval holds guest-dependent spoken sect
  assert.match(script,/Customer participation awaits approval/);assert.doesNotMatch(script,/\*\*SPEAKER:\*\*/);
  assert.match(s,/not yet confirmed/);
 });
+
+test('workshop exercises and debriefs require a supplied case and produce a defined record',async()=>{
+ const args={topic:'Review invoice exceptions',target_audience:'Accounts payable heads',webinar_type:'workshop',key_takeaways:'Count exceptions in one batch; identify the approval owner; compare completion time before and after the change.',your_sector:'fintech'};
+ for(const ready of [false,true]){
+  const r=await call('webinar_script',{...args,key_takeaways:args.key_takeaways+(ready?'\nExample: Six invoices lacked an approval owner in one reviewed batch. No time saving was measured.':'')});
+  const s=r.content.map(c=>c.text||'').join('\n');
+  for(const name of ['Exercise 1','Debrief 1','Exercise 2','Debrief 2']){
+   const section=s.split('### '+name+' (')[1].split('### ')[0];
+   assert.match(section,ready?/\*\*SPEAKER:\*\*/:/HOST PREPARATION, NOT SPOKEN/);
+   if(!ready)assert.doesNotMatch(section,/\*\*SPEAKER:\*\*/);
+  }
+  if(ready){assert.match(s,/Here is the supplied case: Six invoices/);assert.match(s,/Your output is one decision record/);assert.match(s,/comparison decision with its limits/);assert.match(s,/No time saving was measured/);}
+  assert.doesNotMatch(s,/how to Count|week, Count|incident count/);
+ }
+});
+test('product demos hold unprepared screens and preserve a supplied case as a rehearsal draft',async()=>{
+ const args={topic:'Review exceptions',target_audience:'Operations heads',webinar_type:'product_demo',key_takeaways:'Count exceptions; identify the owner; compare the records'};
+ const missing=(await call('webinar_script',args)).content.map(c=>c.text||'').join('\n');
+ for(const i of [1,2,3]){const section=missing.split('### Feature Demo '+i+' (')[1].split('### ')[0];assert.match(section,/HOST PREPARATION, NOT SPOKEN/);assert.match(section,/these lines explain review criteria only/);assert.doesNotMatch(section,/I will show it live|Here is the supplied case/);}
+ assert.doesNotMatch(missing,/I will show it live/);
+ const ready=(await call('webinar_script',{...args,key_takeaways:args.key_takeaways+'\nExample: Six records lack an owner. No improvement was measured.'})).content.map(c=>c.text||'').join('\n');
+ assert.match(ready,/Here is the supplied case: Six records lack an owner/);assert.match(ready,/Rehearse the decision and owner check in the approved environment/);assert.match(ready,/No improvement was measured/);
+});
+test('customer-story introductions select the guest rather than a labelled host',async()=>{
+ const r=await call('webinar_script',{topic:'Approval review',target_audience:'Operations heads',webinar_type:'customer_story',speakers:'Mira, Host; Arun, Customer operations head'});const s=r.content.map(c=>c.text||'').join('\n');
+ assert.match(s,/Our guest is Arun, Customer operations head/);assert.doesNotMatch(s,/Our guest is Mira|Mira, please tell us/);
+ assert.match(s,/Guest questions do not establish a customer result/);assert.match(s,/decision the discussion must inform/);
+});

@@ -1,4 +1,4 @@
-import { signal, evidenceLine } from './text-signals.js';
+import { signal, readSignal, evidenceLine } from './text-signals.js';
 import { cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { readContext, startWords } from "./sector.js";
 import { parseProof, fixNumbers, endSentence, capFirst, isGenericName, KIND_NOTE, missingEvidence } from "./draft.js";
@@ -20,7 +20,12 @@ export function generateTestimonialCapture(args) {
     const permissionText = args.use_case || '';
     const confirmation = (label) => permissionText.split(/[;\n]/).find(line => new RegExp('^Approved ' + label + ':\\s*\\S', 'i').test(line.trim()))?.replace(/^[^:]+:\s*/, '').trim() || '';
     const channel = confirmation('channel'), attribution = confirmation('attribution'), wording = confirmation('wording');
-    const permissionComplete = !!channel && !!attribution && !!wording;
+    const unknownScope = (value) => !value || /^(?:unknown|none|pending|not (?:yet )?(?:approved|supplied|confirmed)|tbd|to be confirmed)\b/i.test(value);
+    const permissionConflict = [storyFull, permissionText, args.relationship_context || ''].some(text => {
+        const state = readSignal(text, /\b(?:permission|approval|consent)\b/i).state;
+        return state === 'negated' || state === 'unclear' || /\b(?:permission|approval|consent)\b[^.!?;]{0,60}\b(?:absent|pending|withdrawn|revoked|declined)\b/i.test(text);
+    });
+    const permissionComplete = !permissionConflict && [channel, attribution, wording].every(value => !unknownScope(value));
     const incentive = args.incentive || '';
     // Run 19 (D80, problems 3, 4 and 8): the product the user named is used everywhere the old kit printed "[Product]"; the sector and the
     // business model are read from every text the user gave.
@@ -35,9 +40,9 @@ export function generateTestimonialCapture(args) {
     // The success story is sorted: only a result, a quote or a story with a figure can be said to belong to this company, and only when
     // the company is named. A result of another customer, a recognition or a company-wide count is never put in this contact's mouth.
     const items = parseProof(storyFull);
-    const evidenceLimit = (p) => missingEvidence(p.text) || /\bno (?:measured|verified)\b|\b(?:permission|approval|consent)\b.{0,60}\b(?:not|unknown|pending)\b/i.test(p.text);
+    const evidenceLimit = (p) => missingEvidence(p.text) || /\bno (?:measured|verified)\b|\b(?:permission|approval|consent)\b.{0,60}\b(?:not|unknown|pending|absent|withdrawn|revoked|declined)\b/i.test(p.text);
     const own = genericCo ? [] : items.filter(i => !evidenceLimit(i) && (i.kind === 'result' || i.kind === 'quote' || (i.kind === 'title' && i.figure)));
-    const evidenceNote = (p) => evidenceLimit(p) ? 'an evidence or permission limit, not a customer result' : !p.figure && /\b(?:said|says|reported|felt)\b/i.test(p.text) ? 'reported experience, not measured proof' : KIND_NOTE[p.kind];
+    const evidenceNote = (p) => evidenceLimit(p) ? 'an evidence or permission limit, not a customer result' : !p.figure && /\b(?:said|says|reported|felt|according to)\b/i.test(p.text) ? 'reported experience, not measured proof' : KIND_NOTE[p.kind];
     const elsewhere = items.filter((i) => !own.includes(i));
     const first = isGenericName(name) ? '' : name.replace(/\s*\(.*\)\s*$/, '').split(/\s+/)[0];
     const greeting = first ? `Hi ${first},` : 'Hello,';
@@ -313,7 +318,7 @@ const ROLE_QUESTIONS = [
         ]],
     [/product|pricing|billing|packaging/i, 'product', [
             'How did the way you launch or change pricing and packaging change, and how long does a change take now?',
-            'What did your finance and engineering teams stop having to do by hand?',
+            'Which tasks did your finance and engineering teams still do by hand, and which changed?',
             'What would you tell another product leader about moving off the old setup?'
         ]],
     [/engineer|developer|\bqa\b|devops|platform/i, 'engineering', [
@@ -327,18 +332,18 @@ const ROLE_QUESTIONS = [
             'What did your security or architecture review need to see?'
         ]],
     [/support|customer (?:service|experience|success)|\bcx\b/i, 'support', [
-            'How did your team\'s day change once the product took over the routine work?',
+            'What changed or stayed the same in your team\'s routine work, and which tasks still needed people?',
             'What did your agents think of it in the first month?',
             'Which kinds of cases do you still keep with people, and why?'
         ]],
     [/sales|marketing|revenue|growth|\bcro\b|distribution|national/i, 'revenue', [
             'What changed in the way your reps or campaigns work?',
-            'Which number moved first, and how soon did you see it?',
+            'Which numbers changed or stayed the same, over what period, and where were they recorded?',
             'How did you get your team to adopt it?'
         ]],
     [/operations|\bops\b|\bcoo\b|logistics|supply|transport|fleet|dispatch|last-mile|warehouse/i, 'operations', [
             'What did a normal day look like for your team before, and what is different now?',
-            'Which part of the daily work got easier first, and which part did not change?',
+            'Which parts of the daily work became easier, harder or stayed the same?',
             'How did your frontline team react in the first weeks?'
         ]],
     [/investment|portfolio|allocat|\bcio\b/i, 'investment', [
@@ -376,23 +381,23 @@ function generateInterviewQuestions(type, P, company, role, v, model, w, own) {
 7. How did you first hear about ${P}?
 8. What made you choose ${P} over alternatives?
 9. What was the ${w.rollout} like?
-10. How long did it take to ${w.reach}?
+10. Did you observe any results? If so, when, and what record supports them?
 
 ### Results
 11. What changed, if anything?
 12. What records show the starting point, current value and period? Keep unmeasured values unknown.
-13. How has this impacted your team's day-to-day?
+13. What changed or stayed the same in your team's daily work?
 14. What stayed the same or became harder with ${P}?
 ${figures.map((f, i) => `${15 + i}. You told us: "${clipEcho(f.text, 160)}". What was the figure before, what is it now, over what period, and who measured it?`).join('\n')}
 
 ### Recommendation
 ${15 + figures.length}. What would you tell someone considering ${P}?
-${16 + figures.length}. Who would you recommend ${P} to?
+${16 + figures.length}. Who, if anyone, would ${P} suit, and who would it not suit?
 
 ${roleBlock(role)}
 ${v ? `### Questions on the Measures ${cap(v.name)} Buyers Look For
 
-${v.metrics.slice(0, 3).map((m, i) => `${i + 1}. How did ${m} change after the ${w.rollout}? What was it before, and over what period?`).join('\n')}
+${v.metrics.slice(0, 3).map((m, i) => `${i + 1}. For ${m}, what did you measure before and after the ${w.rollout}, if anything? Give the period and source, or leave it unmeasured.`).join('\n')}
 
 ### Context Questions in the Language of ${cap(v.name)}
 Ask these in the past tense, about the time before ${P}:
@@ -403,7 +408,7 @@ ${v.discovery.filter((d) => !/\bwill\b/i.test(d)).slice(0, 3).map((d, i) => `${i
 *Terms this sector's buyers use, to listen for in the answers: ${v.vocabulary.slice(0, 6).join(', ')}.*
 ` : `### Questions on Measures
 
-1. Which one measure did the customer's leadership watch before, and what is it now? Ask for the value before, the value after and the period.
+1. Which one measure did the customer's leadership watch before, and what is it now? Ask for the value before, the value after and the period, or leave it unmeasured.
 2. What did the work cost them in time, money or risk before ${P}, and what does it cost now?
 3. Which part of the result would the customer's own manager or committee stand behind in writing?
 `}

@@ -1,3 +1,4 @@
+import { case_testimonial_capture } from './reader-testimonial-capture.js';
 import { case_sales_enablement_content } from './reader-sales-enablement-content.js';
 import { case_newsletter_builder } from './reader-newsletter-builder.js';
 import { case_case_study_generator } from './reader-case-study-generator.js';
@@ -84,7 +85,7 @@ export function readingGuide(name, result, args = {}) {
     if (!g || !result || /^(?:Error|Invalid|Missing required|No contact|Contact declined)/i.test(result))
         return '';
     const [kind, meaning, evidence, decision] = g;
-    const held = /^# .*\bheld\b|^Use not approved|^Publication is not approved|^## Overall Score:[^\n]*\(NOT PROVED YET\)/im.test(result);
+    const held = /^# .*\b(?:held|on hold)\b|^Use not approved|^Publication is not approved|^## Overall Score:[^\n]*\(NOT PROVED YET\)/im.test(result);
     if (name === 'thought_leadership_series')
         return renderCase(case_thought_leadership_series(args), held);
     if (name === 'content_repurposer')
@@ -97,6 +98,8 @@ export function readingGuide(name, result, args = {}) {
         return renderCase(case_newsletter_builder(args), held);
     if (name === 'sales_enablement_content')
         return renderCase(case_sales_enablement_content(args), held);
+    if (name === 'testimonial_capture')
+        return renderCase(case_testimonial_capture(args), held);
     const status = held ? ' Keep the stated hold in place; this guidance does not override it.' : '';
     let roles = kind === 'publish' ? [
         `Founder: check the central claim against the supplied evidence before endorsing ${decision}.`,

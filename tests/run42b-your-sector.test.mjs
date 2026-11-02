@@ -23,7 +23,8 @@ test("your_sector decides the sector over contrary text", () => {
   assert.match(c.line, /from your choice: vertical SaaS/);
   const d = readContext(undefined, { seller: ["Acme platform for freight tracking and shipments"] }, "ites");
   assert.equal(d.v?.id, "ites");
-  assert.equal(d.model, "services");
+  assert.equal(d.model, "saas"); // The product is a platform; the selected sector does not establish charging.
+  assert.match(d.line, /Business model: not stated\. Tell us how you charge and the plan will adjust\./);
   const e = readContext(undefined, { seller: ["Acme payments API for banks"] }, "other");
   assert.equal(e.v, null);
   assert.match(e.line, /neutral B2B/);

@@ -1,3 +1,4 @@
+import { billingLine, detectBilling } from './verticals.ts';
 import { nonRecurringBilling } from './verticals.ts';
 import { clearanceAdvice } from './text-signals.js';
 import { sellerSectorLabel } from './text-signals.js';
@@ -351,6 +352,7 @@ export function readContext(explicitModel: unknown, raw: ReaderInput, yourSector
   const chargeRead = detectModel(explicitModel, scrubbed);
   if (chargeRead.how === 'read') m = chargeRead;
   if (m.how !== 'input' && nonRecurringBilling(nonEmpty(scrubbed.seller).join(' . '))) m = { model: null, how: 'unknown' };
+  if (m.how !== 'input' && !detectBilling(explicitModel, scrubbed).model && /\b(?:IT services|technology services|operations and transformation company|managed services|outsourcing|consulting)\b/i.test(nonEmpty(scrubbed.seller).join(' . '))) m = {model:'services',how:'read'};
   if (m.how === 'sector') m = { model: null, how: 'unknown' };
   const source = v ? (forced ? 'seller' : explainSector(input).source) : null;
   const chosen = gs.given && !!v;
@@ -403,7 +405,7 @@ export function readContext(explicitModel: unknown, raw: ReaderInput, yourSector
   const model = m.model
     ? `${MODEL_NAME[m.model]} (${m.how === 'input' ? 'from your answer' : m.how === 'sector' ? 'the usual model in this sector, assumed; confirm how you charge' : 'read from your inputs; confirm how you charge'})`
     : 'not stated. Tell us how you charge and the plan will adjust';
-  return { v, model: m.model, how: m.how, line: `*Sector: ${sector}. Business model: ${model}.*${!m.model ? "\n\nBilling dependent steps are conditional: trials, seats and recurring renewals require a subscription; a statement of work requires a services contract; site or link commitments require connectivity billing. Confirm the applicable choice before using those steps." : ""}`, source };
+  return { v, model: m.model, how: m.how, line: billingLine(explicitModel, scrubbed, `*Sector: ${sector}. Business model: ${model}.*${!m.model ? "\n\nAny priced offer below requires a written quote and buyer agreement." : ""}`), source };
 }
 
 // Sector notes: the buying committee, what the sector measures and its usual objections (no figures, rule B82).

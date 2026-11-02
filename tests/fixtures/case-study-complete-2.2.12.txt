@@ -2,7 +2,9 @@
 
 ## Late deliveries down 60%
 
-*Sector: read from your inputs as logistics tech. Business model: software subscription (the usual model in this sector, assumed; confirm how you charge).*
+*Sector: read from your inputs as logistics tech. Business model: not stated. Tell us how you charge and the plan will adjust.*
+
+Any priced offer below requires a written quote and buyer agreement.
 
 *Built from: challenge: given; solution: given; results: 3 items (3 outcomes); customer quote: given; industry: given.*
 
@@ -51,7 +53,7 @@ What was put in place: RouteIQ planned routes automatically and sent drivers liv
 
 **To finish this section:**
 - Why FlowOps chose RouteIQ, and which alternative it weighed (a common reaction in logistics tech: "We already have a system for this").
-- How the implementation went, and how long it took to see value. Use only a duration the customer confirms.
+- How the rollout went, and how long it took to see first results. Use only a duration the customer confirms.
 - Words to use as the customer says them: shipment, carrier, consignment, lead time, exception.
 
 ---

@@ -2,7 +2,7 @@ import { frictionReading } from './text-signals.js';
 import { quotedPassages } from './text-signals.js';
 import { SUGGESTION_FOOTER, clipEcho, lowerFirstIfCommon } from './utils.js';
 import { q, readContext, startWords, firstSentence, sentencesOf, fromIndicator } from "./sector.js";
-import { parseProof, shortenClauses, fixNumbers, endSentence, lowerFirstWord, isGenericName, proseJoin, plural } from "./draft.js";
+import { parseProof, shortenClauses, fixNumbers, endSentence, isGenericName, proseJoin, plural } from "./draft.js";
 // Run 42B round S3: freelancers, solo owners and small firms are not judged as teams
 const SOLO_WORDS = /\b(?:freelancers?|solopreneurs?|sole traders?|self[- ]employed|small business(?:es)?|micro[- ]?business(?:es)?)\b/i;
 export function generateCaseStudy(args) {
@@ -379,7 +379,7 @@ ${q(quote)}
     const noOutcome = !hasCustomerOutcome ? `
 **No customer outcome was given.** The supplied items do not establish a customer result to build this story on yet. Ask the customer for ${v ? askMetrics : 'one measure it tracks'}: the value before, the value after and the period. ${v ? `A strong proof point here: ${v.proofShape}` : ''}
 ` : '';
-    const cta = v ? `Close with one action for the reader. Deals in ${sectorName} usually start like this: ${lowerFirstWord(v.salesMotion)} Write the reader's next step to match, for example a pilot request.` : `Suggested closing line for readers: say what the reader does next (a call, a pilot, a visit) and keep it to one action.`;
+    const cta = `Before changing your process, record the starting point for ${product} in one comparable case. Agree the measure and review period with the person who owns the work, then compare the result before extending the change.`;
     const pullable = quotes.filter((x) => /customer quote/i.test(x.label) && /\b(?:we|our|us|my|I)\b/.test(x.text.replace(/^[^:]{0,60}:\s*/, '')));
     const pull = quote
         ? `> "${quote.replace(/^"|"$/g, '')}"\n>\n> ${customerName}`

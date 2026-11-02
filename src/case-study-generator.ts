@@ -424,7 +424,7 @@ ${q(quote)}
 **No customer outcome was given.** The supplied items do not establish a customer result to build this story on yet. Ask the customer for ${v ? askMetrics : 'one measure it tracks'}: the value before, the value after and the period. ${v ? `A strong proof point here: ${v.proofShape}` : ''}
 ` : '';
 
-  const cta = v ? `Close with one action for the reader. Deals in ${sectorName} usually start like this: ${lowerFirstWord(v.salesMotion)} Write the reader's next step to match, for example a pilot request.` : `Suggested closing line for readers: say what the reader does next (a call, a pilot, a visit) and keep it to one action.`;
+  const cta = `Before changing your process, record the starting point for ${product} in one comparable case. Agree the measure and review period with the person who owns the work, then compare the result before extending the change.`;
 
   const pullable = quotes.filter((x) => /customer quote/i.test(x.label) && /\b(?:we|our|us|my|I)\b/.test(x.text.replace(/^[^:]{0,60}:\s*/, '')));
   const pull = quote

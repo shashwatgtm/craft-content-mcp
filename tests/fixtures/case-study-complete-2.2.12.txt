@@ -80,7 +80,7 @@ What was put in place: RouteIQ planned routes automatically and sent drivers liv
 
 ## Where This Goes Next
 
-Close with one action for the reader. Deals in logistics tech usually start like this: enterprise sales with a pilot at one site, lane or region, often timed around peak season planning. Write the reader's next step to match, for example a pilot request.
+Before changing your process, record the starting point for RouteIQ in one comparable case. Agree the measure and review period with the person who owns the work, then compare the result before extending the change.
 
 ---
 
@@ -122,18 +122,18 @@ Quick success story: Late deliveries down 60%. Add the link to the full story wh
 
 ## Reading the answer
 
-For logistics tech case: The story is a draft based on the supplied results. Customer permission and source checks remain separate decisions. The conclusion needs review if new evidence changes the original result records and written permission for the exact story.
+This story supports a draft account of “Late deliveries down 60%, planning time cut from 4 hours to 30 minutes, 12% lower fuel cost”. Source verification and written permission for the exact wording remain separate checks. A single pilot is not proof of general or causal improvement. The conclusion needs review if the original records alter the baseline, measurement period or sample, or the customer declines the proposed wording or use.
 
 ## Decisions by role
 
-Proposed owners. Confirm the named person before acting.
+Proposed owners. Confirm the named person before acting. Supplied statements below are inputs to check, not verified facts.
 
-Founder: For logistics tech case, check the central claim against the supplied evidence before endorsing the customer story.
+Founder: ask the evidence owner to distinguish observation from attribution in “Late deliveries down 60%, planning time cut from 4 hours to 30 minutes, 12% lower fuel cost”; endorse only the supported scope.
 
-CEO: For logistics tech case, confirm who can approve the customer story before committing the company to its claims.
+CEO: ask the publication owner for written customer approval of “Late deliveries down 60%, planning time cut from 4 hours to 30 minutes, 12% lower fuel cost” and the intended channels; keep distribution on hold until it is recorded.
 
-CMO: For logistics tech case, check the original result records and written permission for the exact story before approving the final copy.
+CMO: compare “Dispatchers spent four hours a day planning routes by hand and late deliveries hit 18 percent” and “Late deliveries down 60%, planning time cut from 4 hours to 30 minutes, 12% lower fuel cost” with the original records; retain sample and period in the final story before requesting approval.
 
-CRO: For logistics tech case, ask the relevant buyer whether the customer story answers their next decision before sales use.
+CRO: ask the account owner whether “RouteIQ planned routes automatically and sent drivers live updates” explains the buyer's next decision; do not promise another account the same outcome.
 
-Demand generation head: For logistics tech case, test the stated reader action and destination before distributing the customer story.
+Demand generation head: test a reader action to measure the starting point for “RouteIQ”; check the destination and permission before distributing the story.

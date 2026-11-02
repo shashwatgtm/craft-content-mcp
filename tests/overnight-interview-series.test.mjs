@@ -79,3 +79,15 @@ test('a hypothetical comparison never establishes that the argument held in a re
  assert.doesNotMatch(s,/Here is a result:|A result on record|Supplied result, not independently verified/);
  assert.doesNotMatch(s,/It shows that the idea has held up|It is a sign that the point holds somewhere|One result on record:/);
 });
+
+
+test('a report statistic stays distinct from customer outcome evidence and keeps its source title',()=>{
+ const s=generateThoughtLeadership({...args,num_articles:4,proof_points:'State of Digital Lending 2026 report page: 91 to 360 day card overdue balances rose 44% year on year.'});
+ assert.match(s,/Supplied statistic, not independently verified: State of Digital Lending/);
+ assert.match(s,/reported statistic, not a customer outcome/);
+ assert.match(s,/earlier supplied statistic, which still needs independent verification: State of Digital Lending/);
+ assert.doesNotMatch(s,/independent verification: state of Digital Lending|Supplied result, not independently verified|shows that the idea has held up/);
+ assert.match(s,/Supplied statistic, source to verify: State of Digital Lending/);
+ assert.equal((s.match(/^### A reported statistic to verify/gm)||[]).length,1);
+ assert.match(s,/### Check the scope of the reported statistic/);
+});

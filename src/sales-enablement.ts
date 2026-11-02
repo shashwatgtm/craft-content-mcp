@@ -352,7 +352,7 @@ Thank you for the conversation about ${product}.
 
 Before proposing an evaluation, could you confirm the workflow you want to improve, what happens today and who owns the decision?
 
-${valueProps[0] ? `One capability to evaluate is ${midSentence(valueProps[0])}. What would you need to observe to decide whether it fits your workflow?` : 'What would you need to observe to decide whether this is worth evaluating?'}
+${valueProps[0] ? `One supplied capability to evaluate: ${asSentence(valueProps[0])} What would you need to observe to decide whether it fits your workflow?` : 'What would you need to observe to decide whether this is worth evaluating?'}
 
 Please also flag any access, approval or operating constraints. We can then agree one bounded test, its success measure and a stop condition.
 

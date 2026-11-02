@@ -14,6 +14,7 @@ const ECHO = 400; // a long pasted value is shortened to a whole clause at this 
 const INTERVIEW_TITLES = ['Trace the Reported Problem', 'Look for a Counterexample', 'Agree a Test and Its Limits', 'Check Whether the Result Travels', 'Decide What Can Be Published'];
 const deniedInterviewEffect = (s: string) => /\b(?:did not|didn't|never)\s+(?:cause|delay|slow|affect|change)\b/i.test(s);
 const illustrative = (p: ProofItem) => /\b(?:hypothetical|illustrative|fictional|example only|not a measured result)\b/i.test(`${p.text} ${p.label}`);
+const reportedStatistic = (p: ProofItem) => isStatistic(p.text) && /\b(?:report page|survey|market study|industry report|research report|industry data|market data)\b|^State of\b/i.test(p.shown);
 const INTERVIEW_QUESTIONS = [
   'Can you reconstruct the reported case from its source records?',
   'Which comparable case would make you narrow or reject this position?',
@@ -201,7 +202,7 @@ ${missing.length ? `\n${sharpenLine(missing)}\n` : ''}`;
 
 // A statement from a partner (a label such as "partner quote") is not a customer's word and is never used as customer proof.
 const isPartner = (p: ProofItem) => /partner/i.test(p.label);
-const noteOf = (p: ProofItem) => (illustrative(p) ? 'illustration, not measured evidence' : isPartner(p) ? 'a partner statement, not a customer\'s words' : KIND_NOTE[p.kind]);
+const noteOf = (p: ProofItem) => (illustrative(p) ? 'illustration, not measured evidence' : isPartner(p) ? 'a partner statement, not a customer\'s words' : reportedStatistic(p) ? 'reported statistic, not a customer outcome' : KIND_NOTE[p.kind]);
 
 const OPENS: Record<string, string> = {
   contrarian: 'This article makes the case for it.',
@@ -542,14 +543,15 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
         const seen = a.count(item);
         a.mark(item, a.index + 1);
         const hh = (HEADINGS[a.type] || HEADINGS.contrarian)[item.kind === 'quote' ? 'quote' : item.kind === 'title' ? 'story' : 'evidence'];
-        heading = item.kind === 'result' ? illustrative(item) ? 'An illustration to check' : [hh, 'A supplied result to verify', 'More evidence'][a.index % 3] : hh;
+        heading = item.kind === 'result' ? illustrative(item) ? 'An illustration to check' : reportedStatistic(item) ? ['A reported statistic to verify','Check the scope of the reported statistic','The limits of the reported statistic'][a.index % 3] : [hh, 'A supplied result to verify', 'More evidence'][a.index % 3] : hh;
         if (item.kind === 'quote') body.push(quoteLine(item, seen));
         else if (item.kind === 'title') { const nS = [...a.askedQuestions].filter((x) => x.startsWith('story:')).length; a.askedQuestions.add(`story:${item.text}`); const t0 = clipEcho(item.shown, ECHO).replace(/[.]$/, ''); body.push(seen >= 2 ? `The same customer story once more, from the angle of this piece: ${t0}.` : seen === 1 ? `Back to the customer story: ${t0}. Its headline gives no result of its own.` : nS === 0 ? `A supplied customer story title: ${t0}. Its headline carries no result, so none is claimed for it here.` : `Another supplied customer story title: ${t0}, again a headline with no result of its own.`); }
         else {
           const flag = a.conflicts.includes(item) ? ' (two different figures are given for this case)' : '';
           const shownT = clipEcho(seen > 0 ? item.shown.replace(/([.!?])\s+(?=[A-Z])/g, '; ') : item.shown, ECHO);
-          const source = illustrative(item) ? 'Illustration, not measured evidence' : 'Supplied result, not independently verified';
-          const frames = [`${source}: ${endSentence(capFirst(shownT + flag))}`, `Return to the earlier ${illustrative(item) ? 'illustration, which is not measured evidence' : 'supplied result, which still needs independent verification'}: ${endSentence(lowerFirst(shownT + flag))} Check its scope and source before applying it to this part of the argument.`, `Use the earlier ${illustrative(item) ? 'illustration only to frame a question' : 'unverified result only as a source to investigate'}: ${endSentence(lowerFirst(shownT + flag))}`];
+          const source = illustrative(item) ? 'Illustration, not measured evidence' : reportedStatistic(item) ? 'Supplied statistic, not independently verified' : 'Supplied result, not independently verified';
+          const evidenceType = reportedStatistic(item) ? 'statistic' : 'result';
+          const frames = [`${source}: ${endSentence(capFirst(shownT + flag))}`, `Return to the earlier ${illustrative(item) ? 'illustration, which is not measured evidence' : `supplied ${evidenceType}, which still needs independent verification`}: ${endSentence(shownT + flag)} Check its scope and source before applying it to this part of the argument.`, `Use the earlier ${illustrative(item) ? 'illustration only to frame a question' : `unverified ${evidenceType} only as a source to investigate`}: ${endSentence(shownT + flag)}`];
           body.push(frames[seen % frames.length]);
         }
         if (v && !a.askedQuestions.has('proofShape')) { a.askedQuestions.add('proofShape'); body.push(`Evidence of this kind is strongest when it looks like this: ${lowerFirst(toYou(v.proofShape)).replace(/\.$/, '')}.`); }
@@ -621,7 +623,7 @@ ${body}`);
   const usedHere = [...picked].filter((p) => p.kind !== 'title');
   if (usedHere.length) {
     const p = usedHere[0];
-    const what = illustrative(p) ? 'an illustration, not an observed outcome' : p.kind === 'quote' ? 'a supplied account in the speaker\'s own words' : 'a supplied result that still needs source verification';
+    const what = illustrative(p) ? 'an illustration, not an observed outcome' : p.kind === 'quote' ? 'a supplied account in the speaker\'s own words' : reportedStatistic(p) ? 'a reported statistic, not a customer outcome or proof of the proposed approach' : 'a supplied result that still needs source verification';
     const at = sections.findIndex((s) => s.includes(quoteParts(p).words.slice(0, 30)) || s.includes(p.text.slice(0, 30)));
     const evH = ['What the evidence shows, and what it does not', 'Reading the evidence', 'How far the evidence goes'][a.index % 3];
     const evB = [
@@ -750,7 +752,7 @@ function generatePromotionalPosts(parts: string[], leads: (ProofItem | undefined
   for (let i = 0; i < titles.length; i++) {
     const proof = leads[i] && !usedProof.has(leads[i] as ProofItem) ? leads[i] : undefined;
     if (proof) usedProof.add(proof);
-    const proofLine = proof ? (proof.kind === 'quote' ? quotePost(proof) : `On record: ${endSentence(capFirst(clipEcho(proof.shown, 300).replace(/([.!?])\s+(?=[A-Z])/g, '; ')))}`) : '';
+    const proofLine = proof ? (proof.kind === 'quote' ? quotePost(proof) : `${reportedStatistic(proof) ? 'Supplied statistic, source to verify' : 'On record'}: ${endSentence(capFirst(clipEcho(proof.shown, 300).replace(/([.!?])\s+(?=[A-Z])/g, '; ')))}`) : '';
     const part = i < parts.length ? parts[i] : '';
     const question = reviewQuestions[i] ? `A question for ${readerNoun}: "${reviewQuestions[i]}"` : qs.length ? `A question for ${readerNoun}: "${bestQuestion(`${part} ${takeText}`, qs, asked)}"` : '';
     const blocks = [`New article: "${titles[i]}".`, part ? `The short version: ${clipEcho(part, 300).replace(/[.]$/, '')}.` : '', proofLine, question].filter(Boolean);

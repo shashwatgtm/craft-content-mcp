@@ -89,3 +89,10 @@ test('a vendor capability without a customer result stays out of the social proo
  const social=s.split('**Social Proof (3 min):**')[1].split('**Questions')[0];
  assert.match(social,/No supported success evidence/);assert.doesNotMatch(social,/includes approval routing/);
 });
+
+
+test('a finite-verb capability has a grammatical discovery follow-up',async()=>{
+ const s=generateSalesEnablement({product:'CloudSEK, predictive threat intelligence',target_persona:'Security operations head',value_props:'Ties each finding to an asset and a named owner',sales_stage:'discovery',your_sector:'cybersecurity'});
+ assert.match(s,/One supplied capability to evaluate: Ties each finding to an asset and a named owner\./);
+ assert.doesNotMatch(s,/capability to evaluate is ties/i);
+});

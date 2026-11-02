@@ -351,6 +351,7 @@ export function readContext(explicitModel: unknown, raw: ReaderInput, yourSector
   const chargeRead = detectModel(explicitModel, scrubbed);
   if (chargeRead.how === 'read') m = chargeRead;
   if (m.how !== 'input' && nonRecurringBilling(nonEmpty(scrubbed.seller).join(' . '))) m = { model: null, how: 'unknown' };
+  if (m.how === 'sector') m = { model: null, how: 'unknown' };
   const source = v ? (forced ? 'seller' : explainSector(input).source) : null;
   const chosen = gs.given && !!v;
   // A seller that manages money gets the investment notes (profileFor), and an AI native seller of support automation the support notes.
@@ -401,8 +402,8 @@ export function readContext(explicitModel: unknown, raw: ReaderInput, yourSector
   const sector = investorOnly ? `the buyers are investors, so the investment notes are shown (your own description names no sector; ${v ? v.name : 'investment management'})` : v ? `${chosen ? `from your choice: ${v.name}` : `read from your inputs as ${v.name}${from}${lensNote}`}` : gs.given ? 'not set: your selected sector is other, so the wording is neutral B2B' : 'not clear from your inputs (name the industry for sector notes, or choose your sector)';
   const model = m.model
     ? `${MODEL_NAME[m.model]} (${m.how === 'input' ? 'from your answer' : m.how === 'sector' ? 'the usual model in this sector, assumed; confirm how you charge' : 'read from your inputs; confirm how you charge'})`
-    : 'not clear from your inputs; describe how you charge for advice that fits it';
-  return { v, model: m.model, how: m.how, line: `*Sector: ${sector}. Business model: ${model}.*`, source };
+    : 'not stated. Tell us how you charge and the plan will adjust';
+  return { v, model: m.model, how: m.how, line: `*Sector: ${sector}. Business model: ${model}.*${!m.model ? "\n\nBilling dependent steps are conditional: trials, seats and recurring renewals require a subscription; a statement of work requires a services contract; site or link commitments require connectivity billing. Confirm the applicable choice before using those steps." : ""}`, source };
 }
 
 // Sector notes: the buying committee, what the sector measures and its usual objections (no figures, rule B82).

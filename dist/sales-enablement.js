@@ -238,7 +238,7 @@ ${objectionHandlers.length ? objectionHandlers.map((handler, i) => `
 **Proof Point:**
 > ${handler.proof}
 ${handler.facts ? `
-**From your product description, statements to verify:**
+**From your product description, the facts that bear on this (supplied statements to verify):**
 > ${handler.facts}
 ` : ''}
 **Your answer pattern (advice for you, not a line to read out):**

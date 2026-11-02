@@ -173,7 +173,7 @@ ${outcomeHeld ? 'Publication held. The wording edits above do not substantiate t
 ---
 
 ${improved.text}`
-        : `No automatic wording change is proposed. Review the findings above: any evidence gap still needs a source or removal of the claim, and style suggestions need your judgement. This is not publication approval.`}
+        : `No automatic edits were found. Review the findings above: any evidence gap still needs a source or removal of the claim, and style suggestions need your judgement. This is not publication approval.`}
 
 ---
 ${shorter ? `
@@ -210,8 +210,8 @@ ${ctx.line}
 - **Terms this audience uses:** ${ctx.v.vocabulary.join(', ')}.
 - **A proof point that lands:** ${ctx.v.proofShape}
 - ${measuresNamed(content, ctx.v.metrics)}
-- **Possible objections to check with this reader:** ${ctx.v.objections.map((o) => `"${o.objection}"`).join('; ')}. Confirm which apply, then address the relevant ones with evidence.
-- **Possible reviewers to confirm:** ${ctx.v.committee} Confirm the actual people and their approval rights.
+- **Questions this reader asks before they reply:** Possible objections from sector guidance, to check with the reader: ${ctx.v.objections.map((o) => `"${o.objection}"`).join('; ')}. Confirm which apply, then address the relevant ones with evidence.
+- **Who else reads it:** Possible reviewers from sector guidance, to confirm: ${ctx.v.committee} Confirm the actual people and their approval rights.
 
 ---
 ` : ''}

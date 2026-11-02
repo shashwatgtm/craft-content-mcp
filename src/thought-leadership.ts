@@ -549,7 +549,7 @@ function buildArticle(a: Art, authorBackground: string, targetReader: string, cr
           const flag = a.conflicts.includes(item) ? ' (two different figures are given for this case)' : '';
           const shownT = clipEcho(seen > 0 ? item.shown.replace(/([.!?])\s+(?=[A-Z])/g, '; ') : item.shown, ECHO);
           const source = illustrative(item) ? 'Illustration, not measured evidence' : 'Supplied result, not independently verified';
-          const frames = [`${source}: ${endSentence(capFirst(shownT + flag))}`, `${source}: ${endSentence(capFirst(shownT + flag))}`, `${source}: ${endSentence(capFirst(shownT + flag))}`];
+          const frames = [`${source}: ${endSentence(capFirst(shownT + flag))}`, `Return to the earlier ${illustrative(item) ? 'illustration, which is not measured evidence' : 'supplied result, which still needs independent verification'}: ${endSentence(lowerFirst(shownT + flag))} Check its scope and source before applying it to this part of the argument.`, `Use the earlier ${illustrative(item) ? 'illustration only to frame a question' : 'unverified result only as a source to investigate'}: ${endSentence(lowerFirst(shownT + flag))}`];
           body.push(frames[seen % frames.length]);
         }
         if (v && !a.askedQuestions.has('proofShape')) { a.askedQuestions.add('proofShape'); body.push(`Evidence of this kind is strongest when it looks like this: ${lowerFirst(toYou(v.proofShape)).replace(/\.$/, '')}.`); }

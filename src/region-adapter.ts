@@ -12,6 +12,9 @@ export function regionalInputs(args: unknown, industryRole: 'seller' | 'buyer' =
     if (typeof input[key] !== 'string') continue;
     for (const sentence of (input[key] as string).split(/(?<=[.!?])\s+|\n+/)) {
       if (/^\s*(?:we\s+(?:(?:do\s+not|never|currently|now|only|also|stopped|ceased|used\s+to)\s+)*(?:sell(?:ing)?|sold|serve|target|operate|offer|provide|are\s+(?:selling|not\s+selling))\b|our\s+(?:company|business|product|service|market)\s+(?:sells|serves|targets|operates|is|offers|provides)\b)/i.test(sentence)) seller.push(sentence);
+      if (/^\s*we\s+are\s+(?:a|an|the)\s+[^.!?\n]{1,70}\b(?:vendor|seller|provider)\s+selling\b/i.test(sentence) && !/[\"“”]/.test(sentence)) seller.push(sentence);
+      // An account receipt clause can precede the same seller's active sale.
+      if (/^\s*we\s+receiv(?:e|ing)\s+(?:our\s+)?payments?\s+into\s+[^.;!?\n"“”]*?\bbank\s+account\s+(?:and|but)\s+(?:we\s+)?(?:sell(?:ing)?|serve|offer|provide)\b/i.test(sentence) && !/["“”]/.test(sentence)) seller.push(sentence);
       const purchase = sentence.match(/\b(?:(?:is|are)\s+(?:buying|purchasing)|buys|purchases)\s+our\s+(?:(?!(?:competitor|rival|customer|partner|supplier|vendor)\b)[\p{L}\p{N}'-]+\s+){0,4}(?:software|product|platform|services?|solution)\b/iu);
       if (purchase && !/\b(?:not|never|no longer|may|might|could|would|whether|considering|unconfirmed|hypothetical)\b|\?/i.test(sentence)) seller.push(sentence);
     }

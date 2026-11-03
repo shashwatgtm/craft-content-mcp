@@ -1,5 +1,7 @@
+import {pathToFileURL as dynamicTestURL} from 'node:url';
+const importPortableTest=specifier=>import(typeof specifier==='string'&&/^[A-Za-z]:[\\/]/.test(specifier)?dynamicTestURL(specifier).href:specifier);
 import test from 'node:test';import assert from 'node:assert/strict';import {pathToFileURL} from 'node:url';
-const home=process.env.WAVE4_TEST_HOME||process.cwd();const {parseProof}=await import(pathToFileURL(home+'/dist/draft.js'));const {generateTestimonialCapture:kit}=await import(pathToFileURL(home+'/dist/testimonial-capture.js'));
+const home=process.env.WAVE4_TEST_HOME||process.cwd();const {parseProof}=await importPortableTest(pathToFileURL(home+'/dist/draft.js'));const {generateTestimonialCapture:kit}=await importPortableTest(pathToFileURL(home+'/dist/testimonial-capture.js'));
 for(const vertical of ['Logistics tech','Fintech','SaaS','Vertical SaaS','AI native','ITeS','Telecom','Software','Cybersecurity']){
  test('R2 '+vertical+': recognition floor, paraphrase and denial',()=>{for(const text of ['Named a Leader in the Gartner Magic Quadrant','Industry analysts consider the vendor a front-runner'])assert.equal(parseProof(text+' for '+vertical)[0].kind,'recognition');const denied=parseProof('We have never won an award for '+vertical)[0];assert.ok(!['recognition','result'].includes(denied.kind));});
  test('N3 '+vertical+': cancellation holds quote request',()=>{for(const text of ['Customer cancelled the contract','The customer ended the contract and requested a refund']){const out=kit({customer_name:'Customer contact',customer_company:vertical+' customer record',success_story:text,testimonial_type:'written_quote',your_product:vertical+' vendor'});assert.match(out,/Do not ask for a quote/);assert.doesNotMatch(out,/## Request Email/);}});

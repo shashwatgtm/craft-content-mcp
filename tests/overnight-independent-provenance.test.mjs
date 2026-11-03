@@ -19,3 +19,11 @@ test('M088 required email metadata retains the completion hold',()=>{
  assert.match(out,/confirm the source URL/);assert.match(out,/confirm the sender name/);
  assert.match(out,/Email held for completion/);assert.doesNotMatch(out,/Source link and sender supplied/);
 });
+test('M088 an explicit missing-sender label does not become a sender name',()=>{
+ for(const sender of ['Unknown','Not supplied','Pending confirmation','TBD','[Your name]','not yet assigned']){
+  const out=generateContentRepurposer({...base,target_formats:'email',source_content:base.source_content+'\nReader action: Review the checklist.\nSource URL: https://example.org/review\nSender: '+sender});
+  assert.doesNotMatch(out,/Source link and sender supplied/);assert.match(out,/Email held for completion/);
+ }
+ const out=generateContentRepurposer({...base,target_formats:'email',source_content:base.source_content+'\nReader action: Review the checklist.\nSource URL: https://example.org/review\nSender: Editorial team'});
+ assert.match(out,/Source link and sender supplied/);assert.doesNotMatch(out,/Email held for completion/);
+});

@@ -76,7 +76,8 @@ export function generateContentRepurposer(args) {
     const sourceLines = args.source_content.split('\n');
     const meta = (label) => sourceLines.find(l => new RegExp('^' + label + ':', 'i').test(l.trim()))?.replace(/^[^:]+:\s*/, '').trim() || '';
     const sourceUrl = /^https?:\/\/[^\s]+$/i.test(meta('Source URL')) ? meta('Source URL') : '';
-    const sender = meta('Sender');
+    const senderValue = meta('Sender');
+    const sender = /^(?:unknown|none|n\/a|tbd|not (?:yet )?(?:supplied|provided|known|confirmed|assigned)|pending(?: confirmation| approval)?|to be (?:confirmed|assigned|provided)|\[(?:your |add |insert )?(?:sender|name)[^\]]*\])[.!\s]*$/i.test(senderValue) ? '' : senderValue;
     const content = fixNumbers(sourceLines.filter(l => !/^(?:Reader action|Source URL|Sender):/i.test(l.trim())).join('\n')).split('\n').map(clean).join('\n');
     const action = readerAction(meta('Reader action') || sentencesOf(content).find(s => /^(?:Review|Check|Record|Inspect|Compare|Confirm|Resolve|Assign|Measure|Count|Ask readers to|Invite readers to|Encourage readers to)\b/i.test(s.trim())) || '');
     const sourceType = args.source_type;

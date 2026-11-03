@@ -76,6 +76,8 @@ export function generateContentImprover(args) {
 ${args.goal ? `You supplied: "${goal}". Confirm this is the intended reader task.` : 'No purpose was supplied. Confirm the reader task before treating the content type default as a requirement.'}
 ${operational ? 'Review mode: operational instruction. Judge clarity, the action to complete and the completion record. Questions, promotional engagement and outcome figures are optional, not defects.' : 'Review mode: purpose awaiting confirmation. Style suggestions are optional; factual and publication checks still apply.'}
 
+Semantic goal alignment remains unverified. Point to the exact passage that explains each requested action, process or result; if it is absent, add that content before using the draft. Matching words and a lack of detected defects do not establish that the reader can complete the task.
+
 ## Evidence and suggestions
 ${analysis.findings.length ? analysis.findings.map(f => {
         const spans = [...f.text.matchAll(/"([^"\n]+)"/g)].map(m => m[1]).filter(t => content.includes(t));
@@ -94,7 +96,7 @@ ${analysis.findings.length ? analysis.findings.map(f => {
 
 ## Overall Score: ${analysis.overall.score}/10 (${analysis.overall.rating})
 
-Optional scoring reference; review the evidence and proposed changes above first.
+Optional heuristic scoring reference; review the evidence and proposed changes above first. A high score does not verify task completion or semantic goal alignment.
 
 *How this is scored: each score starts at 10 and loses points only for the findings listed below, each quoted from your text. The overall score is the average of the four scores and the lowest one, so one weak area cannot hide behind three strong ones. An unproved claim or an unsupported claim about the reader is labelled NOT PROVED YET, never GOOD or EXCELLENT. Other publication defects prevent an EXCELLENT rating. These checks do not judge whether your claims are true.*
 
@@ -103,7 +105,7 @@ Optional scoring reference; review the evidence and proposed changes above first
 | Clarity | ${analysis.clarity.score}/10 | ${analysis.clarity.score >= 7 && readability.score >= 40 ? 'Yes' : analysis.clarity.score >= 5 ? 'Note' : 'No'} |
 | Structure | ${analysis.structure.score}/10 | ${analysis.structure.score >= 7 ? 'Yes' : analysis.structure.score >= 5 ? 'Note' : 'No'} |
 | Engagement | ${analysis.engagement.score}/10 | ${analysis.engagement.score >= 7 ? 'Yes' : analysis.engagement.score >= 5 ? 'Note' : 'No'} |
-| Goal Alignment | ${analysis.goalAlignment.score}/10 | ${analysis.goalAlignment.score >= 7 ? 'Yes' : analysis.goalAlignment.score >= 5 ? 'Note' : 'No'} |
+| Goal Alignment | ${analysis.goalAlignment.score}/10 (rule checks only) | Unverified; manual task check required |
 
 ---
 
@@ -135,7 +137,7 @@ ${analysis.engagement.issues.length > 0
 ### Goal Alignment Issues Found
 ${analysis.goalAlignment.issues.length > 0
         ? analysis.goalAlignment.issues.map(i => `- ${i}`).join('\n')
-        : '- No goal alignment issues found by these checks'}
+        : '- No goal-related rule deductions. Whether the text explains or completes the requested task is unverified.'}
 ${slipRead.slips.length ? `
 ### Grammar and Paste Slips (not scored; fixed in the versions below where a safe fix exists)
 ${slipRead.slips.map((x) => `- "${x.before}": ${x.note}.${x.after ? ` Fixed: "${x.after}"` : ''}`).join('\n')}
@@ -501,7 +503,7 @@ function generateChecklist(contentType, goal, analysis, buzzFound, hardFound, fl
     checks.push((analysis.clarity.score >= 7 && !buzzFound && flesch >= 40 ? 'Yes:' : '[ ]') + ` Clear, jargon-free language${flesch < 40 ? ` (Flesch ${flesch}: hard to read)` : ''}`);
     checks.push((analysis.structure.score >= 7 ? 'Yes:' : '[ ]') + ' Logical structure');
     checks.push((analysis.engagement.score >= 7 ? 'Yes:' : '[ ]') + ' Engaging opening hook');
-    checks.push((analysis.goalAlignment.score >= 7 ? 'Yes:' : '[ ]') + ' Aligns with stated goal');
+    checks.push('[ ] Confirm alignment with the stated goal by identifying the passage for each required action, process or result');
     checks.push((hardFound ? '[ ]' : 'Yes:') + ' No unproven claims, fragments or unfilled merge fields');
     // Content-type specific: these are read from the text
     if (contentType === 'email' || contentType === 'sales_email') {

@@ -39,3 +39,12 @@ test('M090 a named product stays in the scope question without a capability clai
  assert.match(out,/does not establish how Acme handles that/);
  assert.doesNotMatch(out,/I can show how Acme/);
 });
+for(const product of [
+ 'RecordBoard exports dispatch exception records to the customer archive.',
+ 'Export of dispatch exception records to the customer archive is supported by RecordBoard.',
+ 'RecordBoard is workflow software.'
+])test('M090 description sentences do not become product names: '+product,()=>{
+ const out=handlers(generateSalesEnablement({...base,product,common_objections:'Can it export dispatch exception records?'}));
+ assert.match(out,/how the product handles that/);
+ assert.doesNotMatch(out,/how RecordBoard exports|how Export of|software\. handles|archive\.\./);
+});

@@ -1,4 +1,4 @@
-import { readSignal, illustrativeProof } from './text-signals.js';
+import { readSignal, illustrativeProof, clauses } from './text-signals.js';
 import { readerAction } from './reader-action.js';
 import { countWords, aOrAn } from './utils.js';
 import { splitItems, pickKeyPoints, readContext, audienceLine, firstSentence, sentencesOf, q, type Vertical } from './sector.ts';
@@ -83,9 +83,13 @@ export function generateContentRepurposer(args: {
   const clean = (t: string) => { const r = cleanClaims(t); claimsRemoved.push(...r.removed); return r.text; };
   const sourceLines = args.source_content.split('\n');
   const meta = (label: string) => sourceLines.find(l=>new RegExp('^'+label+':','i').test(l.trim()))?.replace(/^[^:]+:\s*/, '').trim() || '';
-  const sourceUrl = /^https?:\/\/[^\s]+$/i.test(meta('Source URL')) ? meta('Source URL') : '';
+  // A labelled value can be retracted in the surrounding source notes.
+  // Scope the correction to the metadata it names, not an unrelated product denial.
+  const metadataWithdrawn = (kind: RegExp) => clauses(args.source_content).some(clause =>
+    kind.test(clause) && readSignal(clause, /\b(?:incorrect|invalid|withdrawn|retracted|unapproved|unauthori[sz]ed|not approved|do not use|do not link)\b/i).state === 'affirmed');
+  const sourceUrl = /^https?:\/\/[^\s]+$/i.test(meta('Source URL')) && !metadataWithdrawn(/\b(?:url|source link)\b/i) ? meta('Source URL') : '';
   const senderValue = meta('Sender');
-  const sender = /^(?:unknown|none|n\/a|tbd|not (?:yet )?(?:supplied|provided|known|confirmed|assigned)|pending(?: confirmation| approval)?|to be (?:confirmed|assigned|provided)|\[(?:your |add |insert )?(?:sender|name)[^\]]*\])[.!\s]*$/i.test(senderValue) ? '' : senderValue;
+  const sender = /^(?:unknown|none|n\/a|tbd|not (?:yet )?(?:supplied|provided|known|confirmed|assigned)|pending(?: confirmation| approval)?|to be (?:confirmed|assigned|provided)|\[(?:your |add |insert )?(?:sender|name)[^\]]*\])[.!\s]*$/i.test(senderValue) || metadataWithdrawn(/\b(?:sender|attribution)\b/i) ? '' : senderValue;
   const content = fixNumbers(sourceLines.filter(l=>! /^(?:Reader action|Source URL|Sender):/i.test(l.trim())).join('\n')).split('\n').map(clean).join('\n');
   const action = readerAction(meta('Reader action') || sentencesOf(content).find(s=>/^(?:Review|Check|Record|Inspect|Compare|Confirm|Resolve|Assign|Measure|Count|Ask readers to|Invite readers to|Encourage readers to)\b/i.test(s.trim())) || '');
   const sourceType = args.source_type;

@@ -34,3 +34,8 @@ test('M090 a no-dependency statement is not called a denied capability',()=>{
  const out=handlers(generateSalesEnablement({...base,product:'RuleBoard, lending software. It does not require integration to run risk models.',common_objections:'Can it run risk models?'}));
  assert.doesNotMatch(out,/a capability limitation in the supplied description/);
 });
+test('M090 a named product stays in the scope question without a capability claim',()=>{
+ const out=handlers(generateSalesEnablement({...base,product:'Acme, property management software',common_objections:'Owners want reports in their own format'}));
+ assert.match(out,/does not establish how Acme handles that/);
+ assert.doesNotMatch(out,/I can show how Acme/);
+});

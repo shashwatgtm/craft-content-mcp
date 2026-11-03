@@ -501,9 +501,10 @@ function generateObjectionHandler(objection, valueProps, proofTexts, facts, pric
     // Sector advice proposes a line of enquiry; it cannot establish the seller's capability.
     const sectorResp = v ? (v.objections.find((o) => o.response === pattern)?.response || '') : '';
     const capabilityEvidence = factText.length > 0 || Boolean(valueMatch) || Boolean(proof);
+    const subject = productName && !/^(?:we|our|the|an?)\b/i.test(productName) ? productName : 'the product';
     const k = sectorResp || kind === 'other' ? { ...k0, close: capabilityEvidence
-            ? 'Would it help to verify the supplied capability against this requirement, then agree a demonstration only for the parts the product supports?'
-            : 'I do not have a supplied capability or result that answers this yet. Let us confirm the requirement and check the supported scope before offering a demonstration.' } : k0;
+            ? `Would it help to verify how ${subject} handles that against the supplied capability, then agree a demonstration only for the parts the product supports?`
+            : `The supplied description does not establish how ${subject} handles that. I do not have a supplied capability or result that answers this yet. Let us confirm the requirement and check the supported scope before offering a demonstration.` } : k0;
     const factSentence = factText.length ? `From what we offer: ${factText.join('; ')}.` : '';
     const valueSentence = valueMatch && valueMatch !== proof ? `Our answer: ${asSentence(valueMatch.charAt(0).toUpperCase() + valueMatch.slice(1))}` : '';
     const fullScript = `I hear you: ${qs(objection)}. ${k.ack} ${k.reframe} ${factSentence} ${valueSentence} ${proofSentence} ${k.close}`.replace(/\s+/g, ' ').trim();

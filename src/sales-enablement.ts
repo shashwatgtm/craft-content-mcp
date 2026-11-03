@@ -1,7 +1,6 @@
-import { readSignal, illustrativeProof } from './text-signals.js';
+import { readSignal, illustrativeProof, clauses } from './text-signals.js';
 import { lowerFirstIfCommon, cap, SUGGESTION_FOOTER, clipEcho } from './utils.js';
 import { q, qs, clipWords, readContext, answerFor, objectionKind, proofFor, sectorNotes, startWords, type ObjectionKind, type Vertical } from './sector.ts';
-import { startsImperative } from './rw-content.ts';
 import { splitList, splitObjections, parseProof, productParts, fixNumbers, endSentence, capFirst, proseJoin, roleOf, shortenClauses, KIND_NOTE, RECOGNITION, missingEvidence, type ProofItem } from './draft.ts';
 
 // Text only (run 8): an input phrase used as a whole sentence inside a script ends with a full stop.
@@ -159,7 +158,7 @@ export function generateSalesEnablement(args: {
   // Run 42B round S3: the strongest proof is named once, under the first objection that no proof answers, not repeated under every one
   let strongestNamed = false;
   const objectionHandlers = objections.map((obj) => {
-    const h = generateObjectionHandler(obj, valueProps, usableTexts, pp.facts, priceContext, v, usedProof, usedValue, descriptionOnly ? '' : pp.name, roleShown, strongestNamed ? '' : strongestText);
+    const h = generateObjectionHandler(obj, valueProps, usableTexts, pp.facts, priceContext, v, usedProof, usedValue, descriptionOnly ? '' : pp.name, roleShown, strongestNamed ? '' : strongestText, [productFull, args.value_props || ''].join('\n'));
     if (strongestText && h.proof.includes(strongestText)) strongestNamed = true;
     return h;
   });
@@ -425,7 +424,8 @@ function generateObjectionHandler(
   usedValue: Set<string>,
   productName = '',
   persona = '',
-  strongestText = ''
+  strongestText = '',
+  capabilitySource = ''
 ): { label: string; acknowledge: string; reframe: string; proof: string; facts: string; pattern: string; bridge: string; fullScript: string } {
   // A compound objection must not hide a stated production risk behind its incumbent-tool clause.
   const continuityConstraint = /\b(?:cannot|can't|can not|must not|mustn't|will not|won't)\s+(?:interrupt|disrupt|stop|pause)\b[^.!?]{0,70}\b(?:live|production|operations|work|service)\b|\b(?:no|zero)\s+(?:downtime|interruption)|\b(?:live|production)\b[^.!?]{0,50}\b(?:must stay|must remain)\s+(?:available|running|uninterrupted)\b/i.test(objection);
@@ -439,6 +439,21 @@ function generateObjectionHandler(
       proof: 'No supplied result establishes safe changes in this buyer\'s environment. Request evidence of approval controls, simulation results and rollback before proposing a live test.',
       facts: '', pattern: 'Keep the incumbent workflow in place. Agree an offline or read-only scope, an operating owner and acceptance criteria before evaluating changes.', bridge: '',
       fullScript: `I hear you: ${qs(objection)}. ${acknowledge} ${reframe} ${close}`};
+  }
+  // A sector response is a question to validate, not permission to contradict a supplied limit.
+  // Keep the complete limiting clause; productParts may split coordinated capabilities.
+  const limits = relevant(objection, clauses(capabilitySource)).filter(c =>
+    /\b(?:cannot|can't|can not|does not|doesn't|do not|don't|will not|won't|unable to|not able to)\s+(?!(?:require|need)\b)(?:\w+\s+){0,2}(?:run|explain|support|handle|perform|process|provide|offer|deliver|execute|integrate|connect|encrypt|export|import|track|route|approve|host|store|retain|deploy|automate)\b|\b(?:unsupported|not supported|not available|unavailable|lacks?)\b/i.test(c));
+  if (limits.length) {
+    const limitation = limits.join('; ');
+    return {label:'a capability limitation in the supplied description',
+      acknowledge:'The supplied product description limits what we can offer here.',
+      reframe:'Is that capability essential, and is there an acceptable alternative within the supported scope?',
+      proof:'No sector template or unrelated proof overrides this supplied capability limitation.',
+      facts:limitation,
+      pattern:'State the limitation directly. Confirm supported scope with the product owner before proposing any demonstration; do not promise the denied capability.',
+      bridge:'',
+      fullScript:`I hear you: ${qs(objection)}. Our supplied description says: ${qs(limitation)}. I cannot offer that capability on this basis. Is it essential, or should we check a supported alternative before deciding whether to continue?`};
   }
   const kind = objectionKind(objection);
   const isQuestion = /\?\s*$/.test(objection.trim()) || /^(?:how|what|does|do|is|are|can|will|why|which|who|when)\b/i.test(objection.trim());
@@ -506,16 +521,16 @@ function generateObjectionHandler(
       ack: isQuestion ? 'Good question.' : 'Thank you for saying so directly.',
       // Run 42 round 2: the question and the next step use the objection's own words, the persona and the product the user gave
       reframe: isQuestion ? `On ${qs(clipWords(objection, 90))}: let me answer it first, and then ask what is behind it for you.` : `Which part of that matters most${/^(?:an?|the)?\s*[A-Za-z][A-Za-z ,-]{2,60}$/.test(persona) && !/\b(?:and|or|not given|unknown)\b|s$/i.test(persona) ? ` to ${/^(?:an?|the)\b/i.test(persona) ? '' : 'a '}${persona}` : ' to you'}, and what would you need to see on ${qs(clipWords(objection, 90))} to be comfortable?`,
-      close: isQuestion ? 'Does that answer it, or is there a part that matters more to you?' : `Would it help if I showed how ${productName || 'we'} ${productName ? 'handles' : 'handle'} that, starting from your own example?`
+      close: isQuestion ? 'Does that answer it, or is there a part that matters more to you?' : 'Which capability would we need to verify before agreeing a demonstration on your example?'
     }
   };
   const k0 = kinds[kind];
-  // Run 42B round S: an objection the sector file knows ends on that sector's own way to settle it, offered to the buyer, so each
-  // script answers its own objection (never one reframe repeated for every objection)
+  // Sector advice proposes a line of enquiry; it cannot establish the seller's capability.
   const sectorResp = v ? (v.objections.find((o) => o.response === pattern)?.response || '') : '';
-  const settleOffer = sectorResp && startsImperative(sectorResp) && sectorResp.length <= 220 && !/[.;:]\s+\S/.test(sectorResp.replace(/\.$/, ''))
-    ? `Would it help to ${sectorResp.charAt(0).toLowerCase()}${sectorResp.slice(1).replace(/[.\s]+$/, '')}?` : '';
-  const k = settleOffer ? { ...k0, close: kind === 'other' && productName ? `${settleOffer} I can show how ${productName} handles that, starting from your own example.` : settleOffer } : k0;
+  const capabilityEvidence = factText.length > 0 || Boolean(valueMatch) || Boolean(proof);
+  const k = sectorResp || kind === 'other' ? { ...k0, close: capabilityEvidence
+    ? 'Would it help to verify the supplied capability against this requirement, then agree a demonstration only for the parts the product supports?'
+    : 'I do not have a supplied capability or result that answers this yet. Let us confirm the requirement and check the supported scope before offering a demonstration.' } : k0;
   const factSentence = factText.length ? `From what we offer: ${factText.join('; ')}.` : '';
   const valueSentence = valueMatch && valueMatch !== proof ? `Our answer: ${asSentence(valueMatch.charAt(0).toUpperCase() + valueMatch.slice(1))}` : '';
   const fullScript = `I hear you: ${qs(objection)}. ${k.ack} ${k.reframe} ${factSentence} ${valueSentence} ${proofSentence} ${k.close}`.replace(/\s+/g, ' ').trim();
@@ -525,7 +540,7 @@ function generateObjectionHandler(
     reframe: k.reframe,
     proof: proof || (valueMatch ? `None of your proof points answers this objection; your value proposition does: "${valueMatch}". Lead with it.` : `None of your proof points answers this objection. The proof that would: ${PROOF_THAT_WOULD[kind]}.${strongestText ? ` The strongest proof you gave is: ${strongestText}` : ''}`),
     facts: factText.join('; '),
-    pattern,
+    pattern: sectorResp ? `Sector guidance to validate, not evidence of this product's capabilities: ${pattern}` : pattern,
     bridge: valueMatch && valueMatch !== proof ? valueMatch : '',
     fullScript
   };

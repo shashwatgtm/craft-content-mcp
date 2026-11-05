@@ -1,5 +1,5 @@
 import { withReadingGuide } from './reader-actions.js';
-import { asksForSoftware, SOFTWARE_REFERRAL } from './software-policy.js';
+import { softwareAdvice } from './software-policy.js';
 import { BUILD_PROFILE } from './build-profile.js';
 import { reserveTools, isReserveTool, callReserveTool } from './reserve-tools.js';
 import { attachWidgets } from './widget-layer.js';
@@ -185,8 +185,9 @@ export function createServer() {
         if (problem) {
             return { content: [{ type: "text", text: problem }], isError: true };
         }
-        if (asksForSoftware(args))
-            return { content: [{ type: 'text', text: SOFTWARE_REFERRAL }] };
+        const advice = softwareAdvice(args);
+        if (advice)
+            return { content: [{ type: 'text', text: advice }] };
         try {
             const limit = decisionLimit(name, (args || {}));
             if (limit.stop)

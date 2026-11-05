@@ -599,7 +599,11 @@ function buildArticle(a, authorBackground, targetReader, credibility) {
                     const shownT = clipEcho(seen > 0 ? item.shown.replace(/([.!?])\s+(?=[A-Z])/g, '; ') : item.shown, ECHO);
                     const source = illustrative(item) ? 'Illustration, not measured evidence' : reportedStatistic(item) ? 'Supplied statistic, not independently verified' : 'Supplied result, not independently verified';
                     const evidenceType = reportedStatistic(item) ? 'statistic' : 'result';
-                    const frames = [`${source}: ${endSentence(capFirst(shownT + flag))}`, `Return to the earlier ${illustrative(item) ? 'illustration, which is not measured evidence' : `supplied ${evidenceType}, which still needs independent verification`}: ${endSentence(shownT + flag)} Check its scope and source before applying it to this part of the argument.`, `Use the earlier ${illustrative(item) ? 'illustration only to frame a question' : `unverified ${evidenceType} only as a source to investigate`}: ${endSentence(shownT + flag)}`];
+                    const scopeReviewKey = `scope-review-${a.index}`;
+                    const scopeReview = a.askedQuestions.has(scopeReviewKey) ? '' : ` Check the ${evidenceType} scope and source before applying it to article ${a.index + 1}.`;
+                    if (seen % 3 === 1)
+                        a.askedQuestions.add(scopeReviewKey);
+                    const frames = [`${source}: ${endSentence(capFirst(shownT + flag))}`, `Return to the earlier ${illustrative(item) ? 'illustration, which is not measured evidence' : `supplied ${evidenceType}, which still needs independent verification`}: ${endSentence(shownT + flag)}${scopeReview}`, `Use the earlier ${illustrative(item) ? 'illustration only to frame a question' : `unverified ${evidenceType} only as a source to investigate`}: ${endSentence(shownT + flag)}`];
                     body.push(frames[seen % frames.length]);
                 }
                 if (v && !a.askedQuestions.has('proofShape')) {

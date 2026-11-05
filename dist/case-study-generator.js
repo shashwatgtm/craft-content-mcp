@@ -485,7 +485,7 @@ ${v ? `- Interview question in the sector's language: "${v.discovery[0]}"` : '- 
 What was put in place: ${solutionText ? solutionText : 'not found. Ask what was set up, by whom and in what order.'}
 
 **Before publication, the account owner should verify:**
-- Why ${customerName} chose ${product}${v ? `, and which alternative it weighed (a common reaction in ${sectorName}: "${v.objections[0].objection}")` : ''}.
+- Why ${customerName} chose ${product}${v?.objections[0] ? `, and which alternative it weighed (a common reaction in ${sectorName}: "${v.objections[0].objection}")` : ''}.
 - How the ${w.rollout} went, and how long it took to ${w.reach}. Use only a duration the customer confirms.
 ${v ? `- Words to use as the customer says them: ${v.vocabulary.slice(0, 5).join(', ')}.` : ''}
 

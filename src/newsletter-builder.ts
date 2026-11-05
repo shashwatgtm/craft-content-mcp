@@ -131,7 +131,7 @@ export function generateNewsletter(args: {
   }
   const pushWho = readers ? cap(readers) : kind ? `Teams in ${kind}` : 'Readers';
   // where readers push back: the sector objection that shares most words with the points, and a way to test it
-  if (v && given && fits) {
+  if (v && v.objections.length && given && fits) {
     const text = ` ${label} ${pts.map((p) => p.text).join(' ')} `.toLowerCase();
     let best = v.objections[0]; let bestN = -1;
     for (const o of v.objections) { const n = (o.objection.toLowerCase().match(/[a-z]{5,}/g) || []).filter((w) => text.includes(w.slice(0, 5))).length; if (n > bestN) { best = o; bestN = n; } }
@@ -139,7 +139,7 @@ export function generateNewsletter(args: {
     if (settle) sections.splice(Math.max(0, sections.length - 1), 0, { heading: 'Where readers push back', body: `${pushWho} often say: ${quotedEnd(best.objection)} ${settle}` });
   }
   // no key points: the sector's own objection, in the reader's voice, is the first section
-  if (!given && v) {
+  if (!given && v?.objections.length) {
     const o = v.objections[0];
     const settle = waysToSettle(o.response);
     sections.unshift({ heading: 'The question you will hear', body: `${readers ? cap(readers) : `Teams in ${kind}`} often say: ${quotedEnd(o.objection)} ${settle}`.trim() });

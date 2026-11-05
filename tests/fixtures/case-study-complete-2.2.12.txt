@@ -137,3 +137,6 @@ CMO: compare “Dispatchers spent four hours a day planning routes by hand and l
 CRO: ask the account owner whether “RouteIQ planned routes automatically and sent drivers live updates” explains the buyer's next decision; do not promise another account the same outcome.
 
 Demand generation head: test a reader action to measure the starting point for “RouteIQ”; check the destination and permission before distributing the story.
+
+
+Region context: Which region applies: India, Southeast Asia, Middle East, UK, Western Europe or North America? Add it to your description and rerun.

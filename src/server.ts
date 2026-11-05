@@ -1,6 +1,9 @@
 import { guardInputs, holdBuyerCopy } from './input-evidence.js';
 import { withReadingGuide } from './reader-actions.js';
 import { softwareAdvice, SOFTWARE_REFERRAL } from './software-policy.js';
+import { regionNotes } from './region-reader.js';
+import { regionalInputs } from './region-adapter.js';
+import { cleanDeep } from './escape-inputs.js';
 import { BUILD_PROFILE } from './build-profile.js';
 import {reserveTools,isReserveTool,callReserveTool} from './reserve-tools.js';
 import { attachWidgets } from './widget-layer.js';
@@ -242,7 +245,7 @@ export function createServer(): Server {
         content: [
           {
             type: "text",
-            text: (noticeLast ? '' : inputEvidence.notice + (inputEvidence.notice ? '\n\n' : '')) + withReadingGuide(name, holdBuyerCopy(name, args, closeDanglingBrackets(result)), args as Record<string,unknown>),
+            text: (noticeLast ? '' : inputEvidence.notice + (inputEvidence.notice ? '\n\n' : '')) + withReadingGuide(name, holdBuyerCopy(name, args, closeDanglingBrackets(result)), args as Record<string,unknown>) + regionNotes(regionalInputs(cleanDeep(request.params.arguments))),
           },
         ],
       };

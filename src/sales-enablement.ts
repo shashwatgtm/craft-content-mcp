@@ -588,7 +588,7 @@ function generateStagePitch(
     prospecting: `
 **Cold Outreach Framework:**
 
-"Hi, I'm reaching out about ${product}. ${v ? `Is this a concern for your team: ${v.objections[0].objection.replace(/[.?!]+$/, '')}?` : 'Is improving this workflow a priority for your team?'}
+"Hi, I'm reaching out about ${product}. ${v?.objections[0] ? `Is this a concern for your team: ${v.objections[0].objection.replace(/[.?!]+$/, '')}?` : 'Is improving this workflow a priority for your team?'}
 
 ${lead ? `${lead}${proofTexts[0] && valueProps[0] ? `: ${proofTexts[0]}` : ''}` : 'I would like to understand whether there is a fit before proposing a solution.'}
 

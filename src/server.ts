@@ -7,6 +7,8 @@ import { cleanDeep } from './escape-inputs.js';
 import { BUILD_PROFILE } from './build-profile.js';
 import {reserveTools,isReserveTool,callReserveTool} from './reserve-tools.js';
 import { attachWidgets } from './widget-layer.js';
+import { attachHelixResults } from './helix-results.js';
+import { WIDGET_ORIGIN } from './widget-origin.js';
 import { waveTools, isWaveTool, callWaveTool } from './wave2-checkers.js';
 import { decisionInputs, decisionHelp, decisionLimit } from './decision-limits.ts';
 import { readerLabel, readerIssue, claimRisk, outcomeReading } from './text-signals.ts';
@@ -263,6 +265,9 @@ export function createServer(): Server {
     }
   });
 
+  // Result widget for the Content Repurposer: last, after every safety, reader and widget wrapper (adds _meta only).
+  // The widget domain follows the same build switch as the existing widget layer.
+  attachHelixResults(server, BUILD_PROFILE.domainEnabled && WIDGET_ORIGIN ? WIDGET_ORIGIN : undefined);
   return server;
 }
 

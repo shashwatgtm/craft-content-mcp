@@ -113,7 +113,7 @@ export function generateWebinarScript(args: {
     if (!securityControls && ctx.v.id !== 'ai-native' && w.metrics.length < 3 && /\b(?:ai|genai|gen ai|generative ai|agentic|llms?|machine learning)\b/i.test(topic)) w.metrics = [...w.metrics, ...AI_TASK_METRICS.filter((m) => !w.metrics.includes(m)).slice(0, 3 - w.metrics.length + 1)];
     const ow = (x: string) => new Set((x.toLowerCase().match(/[a-z]{5,}/g) || []).map(stemOf5));
     const objRank = ctx.v.objections.map((o) => ({ o: o.objection, n: [...ow(`${o.objection} ${o.response}`)].filter((x) => tw.has(x)).length + themeScore(hay, `${o.objection} ${o.response}`) })).sort((a, b) => b.n - a.n)[0];
-    w.objectionHeld = !haveTakeaways ? ctx.v.objections[0].objection : objRank && objRank.n > 0 ? objRank.o : '';
+    w.objectionHeld = !haveTakeaways ? (ctx.v.objections[0]?.objection || '') : objRank && objRank.n > 0 ? objRank.o : '';
   }
 
   const durationMap: Record<string, number> = { '30_min': 30, '45_min': 45, '60_min': 60, '90_min': 90 };
@@ -484,10 +484,10 @@ function takeawaysFromSector(v: Vertical | null): Pt[] {
   if (!v) return [];
   const mk = (text: string): Pt => ({ text, label: '', role: 'capability', clause: true, figure: false });
   const o = v.objections[0];
-  const settle = settleBare(o.response);
+  const settle = o ? settleBare(o.response) : '';
   return [
     mk(`you can identify the starting values and sources for these measures: ${proseJoin(v.metrics.slice(0, 3))}`),
-    ...(settle ? [mk(`the objection "${o.objection}" can be tested, by learning to ${settle}`)] : [mk(`you will hear the objection "${o.objection}" and how to weigh it`)]),
+    ...(o ? (settle ? [mk(`the objection "${o.objection}" can be tested, by learning to ${settle}`)] : [mk(`you will hear the objection "${o.objection}" and how to weigh it`)]) : []),
     mk(`good evidence looks like this: ${lowerFirst(toYou(v.proofShape).replace(/\.$/, ''))}`)
   ];
 }

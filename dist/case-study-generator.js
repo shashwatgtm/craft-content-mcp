@@ -1,3 +1,4 @@
+import { isPlaceholder } from './input-evidence.js';
 import { frictionReading, readSignal, illustrativeProof } from './text-signals.js';
 import { quotedPassages } from './text-signals.js';
 import { SUGGESTION_FOOTER, clipEcho, lowerFirstIfCommon } from './utils.js';
@@ -30,6 +31,8 @@ function caseResultItems(raw) {
     return [{ text, shown: text, label: '', kind: worsening ? 'adverse' : 'result', figure: true }];
 }
 export function generateCaseStudy(args) {
+    if (isPlaceholder(args.customer_quote))
+        return 'Missing input: customer quote. Supply the customer approved quote before using it in the case study.';
     const customerName = args.customer_name;
     // Run 12 (R12-20, B5): an industry the user did not give is printed as "[not supplied]", never guessed.
     const industry = args.customer_industry || '';

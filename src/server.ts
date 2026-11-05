@@ -1,3 +1,4 @@
+import { guardInputs, holdBuyerCopy } from './input-evidence.js';
 import { withReadingGuide } from './reader-actions.js';
 import { softwareAdvice, SOFTWARE_REFERRAL } from './software-policy.js';
 import { BUILD_PROFILE } from './build-profile.js';
@@ -184,19 +185,22 @@ export function createServer(): Server {
     // Run 20 (D086): the one place where a tools/call reaches a tool, on both the hosted path (netlify/functions/mcp.mjs and
     // api.mjs) and the stdio path (src/index.ts), because all use this server. Markup in what the user typed is made inert once,
     // here; the words stay (src/echo-safe.ts).
-    const args = reshapeLists(neutraliseDeep(request.params.arguments));
+    let args = reshapeLists(neutraliseDeep(request.params.arguments));
 
+    const inputEvidence = guardInputs(args, listedTools.find(t => t.name === name)?.inputSchema);
+    args = inputEvidence.args as typeof args;
     const problem = checkRequiredInputs(name, args as Record<string, unknown> | undefined);
-    if (problem) {
-      return { content: [{ type: "text", text: problem }], isError: true };
+    if (problem || inputEvidence.stop) {
+      return { content: [{ type: "text", text: (problem || 'Missing required input. Supply the missing evidence before continuing.') + (inputEvidence.notice ? '\n\n' + inputEvidence.notice : '') }], isError: true };
     }
 
     const advice = softwareAdvice(args);
     if (advice) return { content: [{ type: 'text', text: advice }] };
 
+
     try {
       const limit=decisionLimit(name,(args||{}) as Record<string,unknown>);
-      if(limit.stop)return {content:[{type:'text',text:limit.text}]};
+      if(limit.stop)return {content:[{type:'text',text:holdBuyerCopy(name,args,limit.text)}]};
       let result: string;
 
       switch (name) {
@@ -234,7 +238,7 @@ export function createServer(): Server {
         content: [
           {
             type: "text",
-            text: withReadingGuide(name, closeDanglingBrackets(result), args as Record<string,unknown>),
+            text: inputEvidence.notice + (inputEvidence.notice ? '\n\n' : '') + withReadingGuide(name, holdBuyerCopy(name, args, closeDanglingBrackets(result)), args as Record<string,unknown>),
           },
         ],
       };

@@ -1,3 +1,4 @@
+import {pathToFileURL} from "node:url";
 // Run 22 (content rewrite): shared helpers for the three rewrite test files. Not a test file itself.
 // Companies in the tests are invented. The pool scenarios (private, real pages) are loaded from the owner's work folder only when it exists,
 // so the public repo never holds a real name.
@@ -78,8 +79,8 @@ export function coverage(t, text) {
 export const WORK = process.env.HELIX_WORK || "/home/user/directory-submission-work/work";
 export const poolAvailable = existsSync(`${WORK}/run20/eval/builders20.mjs`) && existsSync(`${WORK}/run22/eval/pool2.mjs`);
 export async function poolInputs(tool, ids) {
-  const { BUILD20 } = await import(`${WORK}/run20/eval/builders20.mjs`);
-  const { loadSet } = await import(`${WORK}/run21/eval/common21.mjs`);
+  const { BUILD20 } = await import(pathToFileURL(`${WORK}/run20/eval/builders20.mjs`).href);
+  const { loadSet } = await import(pathToFileURL(`${WORK}/run21/eval/common21.mjs`).href);
   const schema = await schemaOf(tool);
   const out = [];
   for (const set of ["T", "H", "P", "Q"]) for (const sc of await loadSet(set)) if (ids.includes(sc.id)) out.push({ id: sc.id, args: await BUILD20["craft-content"][tool](sc, 0, schema) });

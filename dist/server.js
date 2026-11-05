@@ -4,7 +4,8 @@ import { softwareAdvice } from './software-policy.js';
 import { BUILD_PROFILE } from './build-profile.js';
 import { reserveTools, isReserveTool, callReserveTool } from './reserve-tools.js';
 import { attachWidgets } from './widget-layer.js';
-import { attachLaneFResults } from './lane-f-results.js';
+import { attachHelixResults } from './helix-results.js';
+import { WIDGET_ORIGIN } from './widget-origin.js';
 import { waveTools, isWaveTool, callWaveTool } from './wave2-checkers.js';
 import { decisionInputs, decisionHelp, decisionLimit } from "./decision-limits.js";
 import { readerLabel, readerIssue } from "./text-signals.js";
@@ -254,7 +255,8 @@ export function createServer() {
         }
     });
     // Result widget for the Content Repurposer: last, after every safety, reader and widget wrapper (adds _meta only).
-    attachLaneFResults(server);
+    // The widget domain follows the same build switch as the existing widget layer.
+    attachHelixResults(server, BUILD_PROFILE.domainEnabled && WIDGET_ORIGIN ? WIDGET_ORIGIN : undefined);
     return server;
 }
 /** Run 21c round 4: a heading or subject line cut inside a bracket note ends before the bracket (no unclosed bracket in a headline). */

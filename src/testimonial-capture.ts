@@ -321,7 +321,7 @@ Would you consider a reference call if we identify a relevant prospective buyer?
 
 A call would involve:
 
-- **Time:** 15-20 minutes at your convenience
+- **Time:** 15 to 20 minutes at your convenience
 - **Topics:** Your experience with ${P} and results you've seen
 - **When:** We'll coordinate with your availability
 ${incentive ? `- **Thank you:** ${incentive}` : ''}
@@ -566,7 +566,7 @@ If they ask what to write:
 
 ### Call Logistics
 - Three-way intro or direct connection
-- 15-20 minutes typical (Example figure: replace with your own)
+- 15 to 20 minutes typical (Example figure: replace with your own)
 - Let them drive the conversation
 - Available for follow-up questions
 

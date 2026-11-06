@@ -17,7 +17,7 @@ const YOUR_PRODUCT_FIELD = { type: "string", description: "Optional: your produc
 export const tools: Tool[] = [
   {
     name: "case_study_generator",
-    description: "Builds a customer case study from the customer name, your product and the challenge, solution and results you give (mode full), or an interview kit for collecting them (mode discovery). Optional customer industry, quote, interview notes and business model fit the wording to the customer. Returns a headline, the story with each result you list, a customer quote, social and email copy and sector notes when the sector can be read from your text. A bracket marks anything you did not give.",
+    description: "Helps you turn a customer result into a case study, built from the customer name, your product and the challenge, solution and results you give (mode full), or an interview kit to collect them (mode discovery). Optional customer industry, quote, interview notes and business model fit the wording to the customer. Returns a headline, the story with each result you list, a customer quote, social and email copy, and sector notes when the sector can be read from your text. A bracket marks anything you did not give.",
     inputSchema: {
       type: "object",
       properties: {
@@ -45,7 +45,7 @@ export const tools: Tool[] = [
   },
   {
     name: "newsletter_builder",
-    description: "Writes a first draft of a newsletter issue from your topic and the action you want readers to take. Optional key points, audience segment, newsletter type, tone, earlier topics and your product fit it to the reader. Returns a subject line and preview, an opening, a short section for each key point, your own call to action as the button, A/B subject lines, alternative opening hooks and sector notes. Without key points it suggests some from the topic and sector. The draft uses only what you gave: it adds no statistic or customer story, and says what it did not get.",
+    description: "Helps you decide what goes in a newsletter issue and which subject line to test, from your topic and the action you want readers to take. Optional key points, audience segment, newsletter type, tone, earlier topics and your product fit it to the reader. Returns a first draft with subject line and preview, an opening, a short section for each key point, your call to action as the button, A/B subject lines, other opening hooks and sector notes. It adds no statistic or customer story and says what it did not get.",
     inputSchema: {
       type: "object",
       properties: {
@@ -79,7 +79,7 @@ export const tools: Tool[] = [
   },
   {
     name: "webinar_script",
-    description: "Writes a webinar run of show and a full spoken script from your topic, target audience and webinar type. Optional duration, key takeaways, speakers, polls, product mention level, your product and business model shape it. Returns the run of show, the script with the speaker lines and on-screen cues for each segment built from your takeaways and speakers, polls with answer options, anticipated questions with answers, a follow-up email sequence and sector notes. Without key takeaways it suggests them from the topic and type. The script uses only what you gave and says what it did not get.",
+    description: "Helps you plan a webinar that leads to meetings, from your topic, target audience and webinar type. Optional duration, key takeaways, speakers, polls, product mention level, your product and business model shape it. Returns a run of show, a full spoken script with speaker lines and on screen cues, polls with answer options, likely questions with answers, a follow up email sequence and sector notes. It uses only what you gave and says what it did not get.",
     inputSchema: {
       type: "object",
       properties: {
@@ -112,7 +112,7 @@ export const tools: Tool[] = [
   },
   {
     name: "content_repurposer",
-    description: "Turns a source text into finished versions for other channels: a LinkedIn post, an X thread, an email, a blog summary and quote cards. Needs the source text and its type. Optional target formats, brand voice and a key message steer the result. Each version is written from whole sentences of your source, with key points chosen by a stated rule and kept in the source order; claims it cannot support are listed to source, and any requested format it does not know is named. Returns the versions, notes on the key points and proof used, and sector notes.",
+    description: "Helps you get more from a single piece of content: it needs the source text and its type. Optional target formats, brand voice and a key message steer the result. Returns versions for other channels (a LinkedIn post, an X thread, an email, a blog summary and quote cards), each written from whole sentences of your source with key points kept in source order. Claims it cannot support are listed to source, and any format it does not know is named.",
     inputSchema: {
       type: "object",
       properties: {
@@ -139,7 +139,7 @@ export const tools: Tool[] = [
   },
   {
     name: "thought_leadership_series",
-    description: "Writes a first draft of each article in a thought leadership series from your topic, your take and the reader you write for. Optional proof points, author background, number of articles and article style shape them. Returns, for each article, a headline, a short draft with the objection it answers, your proof and a way to test the idea, a promotional post for each article, a publishing order and sector notes. Your take and proof points are quoted as you wrote them and no result, customer or figure is invented. Without proof points it names the evidence to gather.",
+    description: "Helps you decide what to publish to make your point of view known, from your topic, your take and the reader you write for. Optional proof points, author background, number of articles and article style shape it. Returns, for each article, a headline and a short first draft with the objection it answers, your proof and a way to test the idea, a promotional post for each, a publishing order and sector notes. Your words are quoted as written and no result, customer or figure is invented.",
     inputSchema: {
       type: "object",
       properties: {
@@ -166,7 +166,7 @@ export const tools: Tool[] = [
   },
   {
     name: "testimonial_capture",
-    description: "Prepares a testimonial request from the customer's name, company, success story and the type of testimonial you want. Optional role, relationship, intended use, incentive, your product and business model fit it to the customer. Returns a request email, interview questions for the customer's role and sector, quote drafts for the customer to edit and a sign-off checklist. It uses your product name when you give it and says so when you do not.",
+    description: "Helps you ask a happy customer for a testimonial, from the customer's name, company, success story and the type of testimonial you want. Optional role, relationship, intended use, incentive, your product and business model fit it to the customer. Returns a request email, interview questions for the customer's role and sector, quote drafts for the customer to edit and a sign off checklist. It uses your product name when you give it and says so when you do not.",
     inputSchema: {
       type: "object",
       properties: {
@@ -192,7 +192,7 @@ export const tools: Tool[] = [
   },
   {
     name: "sales_enablement_content",
-    description: "Builds a sales kit from your product, the persona you sell to and your proof points. Optional objections, value propositions, competitor objections, price context, sales stage and business model shape it. Returns a pitch order, a script for each objection answered with the sector's pattern and the proof point that fits it, competitor responses, discovery questions and follow-up templates. Without objections it suggests the ones your sector raises.",
+    description: "Helps you decide what sellers should say at each stage of a deal, from your product, the persona you sell to and your proof points. Optional objections, value propositions, competitor objections, price context, sales stage and business model shape it. Returns a pitch order, an answer to each objection with the proof point that fits it, competitor responses, discovery questions and follow up templates. Without objections it suggests the ones your sector raises.",
     inputSchema: {
       type: "object",
       properties: {
@@ -216,7 +216,7 @@ export const tools: Tool[] = [
   },
   {
     name: "craft_content_improver",
-    description: "Reviews pasted copy and its content type against listed rules: buzzwords, claims that need proof, fragments, unfilled merge fields, claims about the reader and a missing figure or ask. Optional goal, audience and tone preference refine the review. Returns a score for each area with each deduction quoted from your text, and the edits it made. If it finds no edit to make, it says so and prints no improved version.",
+    description: "Helps you decide whether a draft is ready to publish and what to fix first, from the pasted copy and its content type. Optional goal, audience and tone preference refine the review. Returns a score for each area (buzzwords, claims that need proof, fragments, unfilled merge fields, claims about the reader, a missing figure or ask) with each deduction quoted from your text, and the edits it made. If it finds nothing to edit, it says so and prints no improved version.",
     inputSchema: {
       type: "object",
       properties: {

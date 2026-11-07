@@ -113,7 +113,7 @@ const KNOWN_NAMES = new Set((
   'Marketo Pardot Gong Intercom Freshworks Oracle SAP Workday ServiceNow Snowflake Tableau Asana Trello Dropbox ' +
   'Apple Amazon AWS Azure Facebook Instagram WhatsApp YouTube Sam ' +
   // Run 11: the company and competitor names in the test inputs and the page examples. Run 19: the dummy names are gone.
-  'Bengaluru Clari Northwind Metricly'
+  'Bengaluru Clari Northwind Metricly Shiprocket Razorpay Chargebee Infosys Airtel SmartBear Postman Mindbody Genpact Seclore Happay Zenoti Locus FarEye Zoho'
 ).split(/\s+/).filter(Boolean));
 function bareWord(word: string): string {
   return word.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, '');
@@ -192,7 +192,7 @@ export function aOrAn(phrase: string): string {
   const w = (phrase.trim().split(/\s+/)[0] || '').replace(/^[^A-Za-z0-9]+/, '');
   if (/^[A-Z0-9]{2,}$/.test(bareWord(w))) return /^[AEFHILMNORSX8]/.test(w) ? 'an' : 'a';
   if (/^(hour|honest|heir)/i.test(w)) return 'an';
-  return /^[aeiou]/i.test(w) && !/^(uni|use|usu|uti|eu|one|once)/i.test(w) ? 'an' : 'a';
+  return /^[aeiou]/i.test(w) && !/^(uni|use|usa|usu|uti|eu|one|once)/i.test(w) ? 'an' : 'a';
 }
 export function cap(phrase: string): string {
   const t = fixNames(phrase.trim());
@@ -394,7 +394,7 @@ export function analyzeContent(content: string, contentType: string, goal: strin
   }
   const passiveMatches = content.match(/\b(was|were|been|being|is|are|am)\s+\w+ed\b/gi) || [];
   if (passiveMatches.length > sentences * 0.3) {
-    note('clarity', 'passive', 2, `High passive voice usage (${passiveMatches.length} instances)`, 'Convert to active voice: "X did Y" instead of "Y was done by X"');
+    note('clarity', 'passive', 2, `High passive voice usage (${passiveMatches.length} ${passiveMatches.length === 1 ? 'instance' : 'instances'})`, 'Convert to active voice: "X did Y" instead of "Y was done by X"');
   }
   const buzz = confirmedMatches(content, BUZZ).filter((b) => !(/^optimi[sz]/i.test(b) && DOMAIN_OPT.test(sentenceWith(content, b))));
   if (buzz.length > 0) {
@@ -512,7 +512,7 @@ export function analyzeContent(content: string, contentType: string, goal: strin
   }
   if (opts.audience && opts.audience.trim()) {
     const terms = [...new Set((opts.audience.toLowerCase().match(/[a-z][a-z-]{4,}/g) || []).filter((w) => !AUDIENCE_STOP.has(w)))];
-    if (terms.length > 0 && !terms.some((t) => new RegExp('\\b' + t.replace(/[-]/g, '[- ]'), 'i').test(content))) {
+    if (terms.length > 0 && !terms.some((t) => new RegExp('\\b' + t.replace(/[-]/g, '[- ]').replace(/s$/, '') + 's?\\b', 'i').test(content))) {
       note('goalAlignment', 'audience', 1, `The text never mentions your audience (${opts.audience.trim()}): none of ${terms.slice(0, 4).join(', ')} appears`, 'Name who this is for, or use their own words for the problem.');
     }
   }
@@ -554,7 +554,7 @@ export function toneCheck(content: string, tone: string | undefined): { notes: s
   if (!tone || tone === 'keep_same') return { notes: [], used: false };
   if (tone === 'more_formal') {
     const c = distinct(content, /\b\w+n't\b|\b(?:we|you|they|I|who|that|there|here|it|let|what)'(?:re|ve|ll|d|m|s)\b/gi);
-    return { used: true, notes: [c.length ? `Contractions found, which read as informal: ${c.slice(0, 6).join(', ')}. Write them out in full for a more formal tone.` : 'No contractions found: nothing to change for a more formal tone.'] };
+    return { used: true, notes: [c.length ? `${c.length === 1 ? 'Contraction' : 'Contractions'} found, which ${c.length === 1 ? 'reads' : 'read'} as informal: ${c.slice(0, 6).join(', ')}. Write ${c.length === 1 ? 'it' : 'them'} out in full for a more formal tone.` : 'No contractions found: nothing to change for a more formal tone.'] };
   }
   if (tone === 'more_casual') {
     const f = distinct(content, /\b(?:furthermore|moreover|hereby|therefore|consequently|pursuant|kindly|thus)\b/gi);

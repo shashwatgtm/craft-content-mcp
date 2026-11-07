@@ -90,13 +90,14 @@ function joinSpeakerParts(pieces: string[]): string[] {
     }
     out.push(cur);
   }
-  return out;
+  const kept = out.filter((s) => !/\b(?:is|are|was|were)\s+not\s+(?:an?\s+|the\s+)?(?:issue|problem|concern|objection|blocker|barrier|worry)\b|\b(?:no|zero|without\s+any)\s+(?:price|cost|budget|security|adoption|integration|timing)\s+(?:issue|problem|concern|objection|pushback|worry)\b/i.test(s));
+  return kept.length ? kept : out;
 }
 const countOfWords = (s: string): number => s.trim().split(/\s+/).filter(Boolean).length;
 function splitListRaw(raw: unknown): string[] {
   if (typeof raw !== 'string') return [];
   const text = fixNumbers(raw);
-  const lines = text.split(/\n/).map((x) => x.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
+  const lines = text.split(/\n/).map((x) => x.trim().replace(/^(?:[-*•]|\d+[.)])\s*/, '')).filter(Boolean);
   const hasBreaks = lines.length > 1 || /;/.test(text);
   let parts: string[] = [];
   // Run 42: items separated by ", Capital" with semicolons INSIDE the items ("a; the team pays the price; so b, C; d and e") keep each sentence whole:
@@ -226,7 +227,8 @@ function rejoinAttributed(list: string[]): string[] {
     if (prev !== undefined && /^[a-z]/.test(cur) && isAttributed(prev) && /\b(?:says?|said)\b/i.test(prev) && !/[.!?]["'”’]?$/.test(prev)) { out[out.length - 1] += ', ' + cur; continue; }
     out.push(cur);
   }
-  return out;
+  const kept = out.filter((s) => !/\b(?:is|are|was|were)\s+not\s+(?:an?\s+|the\s+)?(?:issue|problem|concern|objection|blocker|barrier|worry)\b|\b(?:no|zero|without\s+any)\s+(?:price|cost|budget|security|adoption|integration|timing)\s+(?:issue|problem|concern|objection|pushback|worry)\b/i.test(s));
+  return kept.length ? kept : out;
 }
 
 // Splits a list of proof points or results. A bracketed source label at the end of an item ("(page claim)") marks where it ends,
@@ -330,7 +332,7 @@ export function parseProof(raw: unknown): ProofItem[] {
     let kind: ProofKind;
     if (missingEvidence(item)) kind = 'missing';
     else if (illustrativeProof(item).state === 'affirmed') kind = 'unclear';
-    else if (signal(text, 'adverse_result').state === 'affirmed' || signal(text, 'cancelled').state === 'affirmed') kind = 'adverse';
+    else if (signal(text.replace(/\b(?:(?:zero|0|no|fewer|reduced?|cut|lower(?:ed)?|drop(?:ped)?)\s+)?(?:cancelled|canceled)\s+(?:orders?|shipments?|deliveries|trips?|parcels?|bookings?|appointments?|flights?|pickups?)\b/gi, 'completed deliveries').replace(/\b(?:zero|0|no)\s+(?:security\s+)?(?:breach\w*|incidents?|outages?|downtime|errors?|failures?|defects?|losses|penalties|fines|complaints?|refunds?)\b/gi, 'clean record'), 'adverse_result').state === 'affirmed' || signal(text.replace(/\b(?:(?:zero|0|no|fewer|reduced?|cut|lower(?:ed)?|drop(?:ped)?)\s+)?(?:cancelled|canceled)\s+(?:orders?|shipments?|deliveries|trips?|parcels?|bookings?|appointments?|flights?|pickups?)\b/gi, 'completed deliveries').replace(/\b(?:zero|0|no)\s+(?:security\s+)?(?:breach\w*|incidents?|outages?|downtime|errors?|failures?|defects?|losses|penalties|fines|complaints?|refunds?)\b/gi, 'clean record'), 'cancelled').state === 'affirmed') kind = 'adverse';
     else if (signal(text, 'positive_result').state === 'negated' || readSignal(text, RECOGNITION, SIGNALS.recognition).state === 'negated') kind = 'unclear';
     else if (/^(?:case study|customer story|success story|story)\s+(?:headlines?|titles?)\b/i.test(text) && !/quote/.test(l)) kind = 'title';
     // a customer's own words with their speaker ("Name, Title, Company: the number one thing we can do ...") are a quote even when the words say "number one"
@@ -491,7 +493,8 @@ export function claimsToSource(texts: string[]): string[] {
     const m = r.state === 'affirmed' ? r.matched : null;
     if (m && !out.includes(m[0].toLowerCase())) out.push(m[0].toLowerCase());
   }
-  return out;
+  const kept = out.filter((s) => !/\b(?:is|are|was|were)\s+not\s+(?:an?\s+|the\s+)?(?:issue|problem|concern|objection|blocker|barrier|worry)\b|\b(?:no|zero|without\s+any)\s+(?:price|cost|budget|security|adoption|integration|timing)\s+(?:issue|problem|concern|objection|pushback|worry)\b/i.test(s));
+  return kept.length ? kept : out;
 }
 
 // A short label for a long topic or headline subject: up to 90 characters as it is; otherwise cut before a trailing description
@@ -520,7 +523,8 @@ export function splitObjections(raw: unknown): string[] {
   for (const line of text.split(/\n|;/).map((x) => x.trim().replace(/^[-*•]\s*/, '')).filter(Boolean)) {
     out.push(...splitOutsideParens(line, /(?<=[A-Za-z0-9?)"'])\s*,\s+(?=[A-Z])/));
   }
-  return out;
+  const kept = out.filter((s) => !/\b(?:is|are|was|were)\s+not\s+(?:an?\s+|the\s+)?(?:issue|problem|concern|objection|blocker|barrier|worry)\b|\b(?:no|zero|without\s+any)\s+(?:price|cost|budget|security|adoption|integration|timing)\s+(?:issue|problem|concern|objection|pushback|worry)\b/i.test(s));
+  return kept.length ? kept : out;
 }
 
 // The name of a product typed as "Name, a description: feature, feature (detail)", and the features it lists. A first segment of up to

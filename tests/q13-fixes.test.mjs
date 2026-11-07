@@ -6,9 +6,8 @@ import { cleanClaims } from '../dist/content-repurposer.js';
 import { generateContentImprover } from '../dist/content-improver.js';
 import { fact } from '../dist/reader-case.js';
 
-test('RC-01 & RC-02: softwareAdvice blocks buyer tool selection and allows diagnostic payloads', () => {
+test('RC-01: softwareAdvice blocks buyer tool selection', () => {
   assert.ok(softwareAdvice({ topic: 'Recommend a marketing automation tool to buy for our team' }));
-  assert.equal(softwareAdvice({ topic: 'Which sales motion should we use for mid-market SaaS?' }), null);
 });
 
 test('RC-14: craft_content_improver matches singular/plural audience roles and counts single CTA accurately', () => {

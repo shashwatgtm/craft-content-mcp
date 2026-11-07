@@ -37,7 +37,7 @@ export function cleanClaims(text) {
         // only a plain word or the acronyms that start with a vowel letter and a consonant sound ("a US", "a UK") are changed; other acronyms stay as typed
         if (/^[A-Z]{2,}$/.test(word) && !/^(?:US|UK|UN|UI|UX|EU)$/.test(word))
             return m;
-        const vowel = /^[aeiou]/i.test(word) && !/^(?:uni|use|usu|uti|eu|one|once|ubiq|ura|US$|UK$|UN$|UI$|UX$)/i.test(word) || /^(?:hour|honest|heir)/i.test(word);
+        const vowel = /^[aeiou]/i.test(word) && !/^(?:uni|use|usa|usu|uti|eu|one|once|ubiq|ura|US$|UK$|UN$|UI$|UX$)/i.test(word) || /^(?:hour|honest|heir)/i.test(word);
         const want = vowel ? 'an' : 'a';
         return want === art.toLowerCase() ? m : `${art[0] === 'A' ? want.charAt(0).toUpperCase() + want.slice(1) : want}${sp}${word}`;
     });

@@ -18,7 +18,7 @@ export function fact(args, key, fallback, match, max = 240) {
             return fallback;
         return `the supplied excerpt “${quote(first)}” (read with the complete source and its limits)`;
     }
-    return `“${quote(/^[a-z0-9_]+$/.test(selected) ? selected.replace(/_/g, ' ') : selected)}”`;
+    return `“${quote(/^[a-z0-9_,\s]+$/.test(selected) ? selected.replace(/_/g, ' ') : selected)}”`;
 }
 export function renderCase(c, held) {
     return `\n\n## Reading the answer\n\n${c.meaning}${held ? ' Keep the stated hold in place; this guidance does not override it.' : ''} The conclusion needs review if ${c.change}.\n\n## Decisions by role\n\nProposed owners. Confirm the named person before acting. Supplied statements below are inputs to check, not established findings.\n\n${c.roles.join('\n\n')}\n`;

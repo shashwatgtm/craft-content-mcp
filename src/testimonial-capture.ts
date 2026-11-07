@@ -17,9 +17,8 @@ export function generateTestimonialCapture(args: {
   your_product?: string;
   business_model?: string;
 }): string {
-  const cleanCancel = (s: string) => s.replace(/\b(?:(?:zero|0|no|fewer|reduced?|cut|lower(?:ed)?|drop(?:ped)?)\s+)?(?:cancelled|canceled)\s+(?:orders?|shipments?|deliveries|trips?|parcels?|bookings?|appointments?|flights?|pickups?)\b/gi, 'completed deliveries').replace(/\b(?:zero|0|no)\s+(?:security\s+)?(?:breach\w*|incidents?|outages?|downtime|errors?|failures?|defects?|losses|penalties|fines|complaints?|refunds?)\b/gi, 'clean record');
-  const cancellation = signal(cleanCancel([args.success_story,args.relationship_context].filter(Boolean).join('; ')), 'cancelled');
-  const adverse = signal(cleanCancel(args.success_story), 'adverse_result');
+  const cancellation = signal([args.success_story,args.relationship_context].filter(Boolean).join('; '), 'cancelled');
+  const adverse = signal(args.success_story, 'adverse_result');
   const cancelled = args.customer_status ? args.customer_status === 'cancelled' : cancellation.state === 'affirmed';
   if (cancelled || adverse.state === 'affirmed') return `# Testimonial request on hold\n\nDo not ask for a quote from this customer now. The supplied account has a cancellation, refund request or adverse result. Resolve the complaint and confirm the customer's current position before considering a request.\n\n${cancelled && args.customer_status ? 'Basis: confirmed customer status is cancelled.' : evidenceLine('Account evidence', cancelled ? cancellation : adverse)}`;
   const name = args.customer_name.trim();

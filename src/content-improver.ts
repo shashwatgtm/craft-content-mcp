@@ -500,7 +500,7 @@ function generateChecklist(contentType: string, goal: string, analysis: ContentA
     const subject = content.split('\n').map((l) => l.trim()).find((l) => /^subject:/i.test(l));
     const sw = subject ? countWords(subject.replace(/^subject:\s*/i, '')) : 0;
     checks.push(!subject ? '[ ] Subject line: none found in the text' : sw <= 12 ? `Yes: Subject line short (${sw} words)` : `[ ] Subject line optimized: it is ${sw} words`);
-    const asks = sentencesOf(bodyOf(content)).filter((s) => ASK.test(s) && (/\?|\b(?:sign up|sign-up|register|download|learn more|get started|contact (?:us|me)|subscribe|book (?:a|an|your|\d+)|schedule (?:a|an|your|\d+)|click|reply|call (?:us|me)|talk to|speak (?:to|with)|get in touch|start (?:your|a)|would you (?:like|be open|be willing|be interested)|are you open|open to|could we|can we|shall we|let's|do you have (?:\d+ |a few )?minutes|worth a)\b/i.test(s))).length;
+    const asks = sentencesOf(bodyOf(content)).filter((s) => ASK.test(s)).length;
     checks.push(asks === 0 ? '[ ] Single clear CTA: no ask was found' : asks === 1 ? 'Yes: Single clear CTA (1 ask found)' : `[ ] Single clear CTA: ${asks} asks found, keep one`);
     const longPara = content.split(/\n\n+/).some((p) => countWords(p) > 100);
     checks.push(!longPara && avgWordsPerSentence(content) <= 25 ? 'Yes: Mobile-friendly format (short paragraphs and sentences)' : '[ ] Mobile-friendly format: long paragraphs or sentences');

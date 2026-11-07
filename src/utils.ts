@@ -113,7 +113,7 @@ const KNOWN_NAMES = new Set((
   'Marketo Pardot Gong Intercom Freshworks Oracle SAP Workday ServiceNow Snowflake Tableau Asana Trello Dropbox ' +
   'Apple Amazon AWS Azure Facebook Instagram WhatsApp YouTube Sam ' +
   // Run 11: the company and competitor names in the test inputs and the page examples. Run 19: the dummy names are gone.
-  'Bengaluru Clari Northwind Metricly Shiprocket Razorpay Chargebee Infosys Airtel SmartBear Postman Mindbody Genpact Seclore Happay Zenoti Locus FarEye Zoho'
+  'Bengaluru Clari Northwind Metricly'
 ).split(/\s+/).filter(Boolean));
 function bareWord(word: string): string {
   return word.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, '');
@@ -512,7 +512,7 @@ export function analyzeContent(content: string, contentType: string, goal: strin
   }
   if (opts.audience && opts.audience.trim()) {
     const terms = [...new Set((opts.audience.toLowerCase().match(/[a-z][a-z-]{4,}/g) || []).filter((w) => !AUDIENCE_STOP.has(w)))];
-    if (terms.length > 0 && !terms.some((t) => new RegExp('\\b' + t.replace(/[-]/g, '[- ]').replace(/s$/, '') + 's?\\b', 'i').test(content))) {
+    if (terms.length > 0 && !terms.some((t) => new RegExp('\\b' + t.replace(/[-]/g, '[- ]').replace(/s$/, ''), 'i').test(content))) {
       note('goalAlignment', 'audience', 1, `The text never mentions your audience (${opts.audience.trim()}): none of ${terms.slice(0, 4).join(', ')} appears`, 'Name who this is for, or use their own words for the problem.');
     }
   }

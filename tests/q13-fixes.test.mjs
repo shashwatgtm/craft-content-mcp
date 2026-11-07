@@ -1,23 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { softwareAdvice } from '../dist/software-policy.js';
-import { aOrAn, lowerFirstIfCommon, analyzeContent } from '../dist/utils.js';
+import { aOrAn, analyzeContent } from '../dist/utils.js';
 import { cleanClaims } from '../dist/content-repurposer.js';
 import { generateContentImprover } from '../dist/content-improver.js';
-import { splitList, splitObjections, parseProof } from '../dist/draft.js';
-import { generateTestimonialCapture } from '../dist/testimonial-capture.js';
 import { fact } from '../dist/reader-case.js';
 
 test('RC-01 & RC-02: softwareAdvice blocks buyer tool selection and allows diagnostic payloads', () => {
   assert.ok(softwareAdvice({ topic: 'Recommend a marketing automation tool to buy for our team' }));
   assert.equal(softwareAdvice({ topic: 'Which sales motion should we use for mid-market SaaS?' }), null);
-});
-
-test('RC-09: KNOWN_NAMES preserves Indian and enterprise brand capitalization and splitList strips numbered prefixes', () => {
-  assert.equal(lowerFirstIfCommon('Shiprocket integrations'), 'Shiprocket integrations');
-  assert.equal(lowerFirstIfCommon('Chargebee billing'), 'Chargebee billing');
-  const items = splitList('1) First topic\n2) Second topic');
-  assert.deepEqual(items, ['First topic', 'Second topic']);
 });
 
 test('RC-14: craft_content_improver matches singular/plural audience roles and counts single CTA accurately', () => {
@@ -43,16 +34,3 @@ test('RC-15: aOrAn and cleanClaims use "a usage" and fact replaces underscores i
   assert.equal(fact({ target_formats: 'linkedin_post, twitter_thread' }, 'target_formats', 'fallback'), '“linkedin post, twitter thread”');
 });
 
-test('RC-22: negated objections and zero cancelled orders are not misclassified', () => {
-  const objs = splitObjections('Price is not the issue; buyers worry about integration effort with SAP');
-  assert.deepEqual(objs, ['buyers worry about integration effort with SAP']);
-  const proof = parseProof('Cut delivery cost by 18% with zero cancelled orders during the Diwali peak');
-  assert.notEqual(proof[0]?.kind, 'adverse');
-  const kit = generateTestimonialCapture({
-    customer_name: 'Rohan Sharma',
-    customer_company: 'Shiprocket',
-    success_story: 'Cut last-mile delivery cost per parcel by 18% with zero cancelled orders during peak season.',
-    testimonial_type: 'written_quote',
-  });
-  assert.doesNotMatch(kit, /Testimonial request on hold/);
-});

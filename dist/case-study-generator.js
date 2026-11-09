@@ -9,7 +9,17 @@ const SOLO_WORDS = /\b(?:freelancers?|solopreneurs?|sole traders?|self[- ]employ
 // Preserve a single observed comparison paragraph, including its period and limits.
 // Comma-separated list parsing must not detach "Across ten days in October".
 function caseResultItems(raw) {
-    const items = parseProof(raw);
+    const items = parseProof(raw).map(item => {
+        // Zero cancelled orders is an observed count, not a cancelled customer relationship.
+        // Mask only this metric while checking for any separate adverse event in the same item.
+        const zeroOrders = /\b(?:zero|0|no)\s+cancelled? orders\b|\b(?:zero|0|no)\s+canceled orders\b/gi;
+        if (item.kind !== 'adverse' || !zeroOrders.test(item.text))
+            return item;
+        const remaining = item.text.replace(zeroOrders, 'orders without cancellations');
+        if (parseProof(remaining).some(p => p.kind === 'adverse'))
+            return item;
+        return { ...item, kind: 'result', figure: true };
+    });
     if (/[;\n]/.test(raw) || !/\b(?:pilot|customer|client|team)\b/i.test(raw))
         return items;
     const count = '(?:\\d+(?:\\.\\d+)?|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)';

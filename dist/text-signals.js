@@ -201,7 +201,15 @@ export function sectorChoiceNotice(tool, args, infer) {
             return `**Sector conflict:** You selected ${SECTOR_LABELS[chosen]}, but the description explicitly excludes that sector. The selected ${SECTOR_LABELS[chosen]} is used. Sentence read: "${text}".\n\n`;
     for (const text of texts) {
         const label = sellerSectorLabel(text), r = infer(text);
-        const id = label.id || (label.state !== 'negated' && r.source === 'seller' ? r.id : null);
+        const head = text.split(/\b(?:for|serving|serves|sold to|selling to|whose customers|our customers)\b/i)[0];
+        const trade = SECTOR_PATTERNS.find(([id]) => id === r.id)?.[1];
+        const explicit = !!trade && readSignal(head, trade).state === 'affirmed';
+        const strong = r.strong || [];
+        // Feature labels and broad workflow words do not establish a conflicting seller trade.
+        const category = strong.some(word => word.trim().split(/\s+/).length > 1)
+            || strong.length > 1
+            || strong.length === 1 && /\b(?:developer tools?|billing (?:software|platform)|AI (?:agents?|platform)|managed services)\b/i.test(head);
+        const id = label.id || (label.state !== 'negated' && r.source === 'seller' && (explicit || category) ? r.id : null);
         if (id && id !== chosen)
             return `**Sector conflict:** You selected ${SECTOR_LABELS[chosen]}, but the description reads as ${SECTOR_LABELS[id] || r.name || id}. The selected ${SECTOR_LABELS[chosen]} is used. Sentence read: "${text}".\n\n`;
     }

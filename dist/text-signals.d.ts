@@ -36,6 +36,7 @@ export declare function sectorChoiceNotice(tool: string, args: Record<string, un
     id?: string;
     name?: string;
     source?: string | null;
+    strong?: string[];
 }): string;
 /** Benchmarks and sector notes are different choices; explain both without silently changing either. */
 export declare function pmfBenchmarkNotice(args: Record<string, unknown>, infer: (text: string) => {

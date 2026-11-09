@@ -177,13 +177,22 @@ export function sellerSectorLabel(text:string):{id:string|null,evidence:string,s
  const specific=named.filter(x=>!['software','saas'].includes(x.id));const candidates=specific.length?specific:named;
  return candidates.length===1?{id:candidates[0].id,evidence:head,state:'affirmed'}:{id:null,evidence:head,state:hits.length&&hits.every(x=>x.r.state==='negated')?'negated':hits.some(x=>x.r.state!=='absent')?'unclear':'absent'};
 }
-export function sectorChoiceNotice(tool:string,args:Record<string,unknown>,infer:(text:string)=>{id?:string;name?:string;source?:string|null}):string {
+export function sectorChoiceNotice(tool:string,args:Record<string,unknown>,infer:(text:string)=>{id?:string;name?:string;source?:string|null;strong?:string[]}):string {
  const fields:Record<string,string[]>=SECTOR_TOOL_FIELDS;
  const chosen=typeof args.your_sector==='string'?args.your_sector.replace(/_/g,'-'):GTM_INDUSTRY_TOOLS.includes(tool)&&typeof args.industry==='string'?args.industry.replace(/_/g,'-'):null;
  if(!chosen||!SECTOR_LABELS[chosen])return '';
  const texts=(fields[tool]||[]).map(f=>args[f]).filter((v):v is string=>typeof v==='string'&&!!v.trim());
  for(const text of texts)if(excludesSellerSector(text,chosen))return `**Sector conflict:** You selected ${SECTOR_LABELS[chosen]}, but the description explicitly excludes that sector. The selected ${SECTOR_LABELS[chosen]} is used. Sentence read: "${text}".\n\n`;
- for(const text of texts){const label=sellerSectorLabel(text),r=infer(text);const id=label.id||(label.state!=='negated'&&r.source==='seller'?r.id:null);if(id&&id!==chosen)return `**Sector conflict:** You selected ${SECTOR_LABELS[chosen]}, but the description reads as ${SECTOR_LABELS[id]||r.name||id}. The selected ${SECTOR_LABELS[chosen]} is used. Sentence read: "${text}".\n\n`;}
+ for(const text of texts){const label=sellerSectorLabel(text),r=infer(text);
+  const head=text.split(/\b(?:for|serving|serves|sold to|selling to|whose customers|our customers)\b/i)[0];
+  const trade=SECTOR_PATTERNS.find(([id])=>id===r.id)?.[1];
+  const explicit=!!trade&&readSignal(head,trade).state==='affirmed';
+  const strong=r.strong||[];
+  // Feature labels and broad workflow words do not establish a conflicting seller trade.
+  const category=strong.some(word=>word.trim().split(/\s+/).length>1)
+    || strong.length>1
+    || strong.length===1&&/\b(?:developer tools?|billing (?:software|platform)|AI (?:agents?|platform)|managed services)\b/i.test(head);
+  const id=label.id||(label.state!=='negated'&&r.source==='seller'&&(explicit||category)?r.id:null);if(id&&id!==chosen)return `**Sector conflict:** You selected ${SECTOR_LABELS[chosen]}, but the description reads as ${SECTOR_LABELS[id]||r.name||id}. The selected ${SECTOR_LABELS[chosen]} is used. Sentence read: "${text}".\n\n`;}
  return '';
 }
 

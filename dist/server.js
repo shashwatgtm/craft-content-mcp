@@ -229,7 +229,7 @@ export function createServer() {
                 default:
                     throw new Error(`Unknown tool: ${name}`);
             }
-            result = limit.text + sectorChoiceNotice(name, (args || {}), text => { const r = explainSector({ seller: [text] }); return { id: r.vertical?.id, name: r.vertical?.name, source: r.source }; }) + result;
+            result = limit.text + sectorChoiceNotice(name, (args || {}), text => { const r = explainSector({ seller: [text] }); return { id: r.vertical?.id, name: r.vertical?.name, source: r.source, strong: r.strong }; }) + result;
             const noticeLast = name === 'case_study_generator' && result.startsWith('Full mode needs');
             const noticeFields = inputEvidence.notice.match(/^Missing input: ([^.]+)\./)?.[1].split(', ');
             const alreadyAsked = noticeLast && !inputEvidence.notice.includes('Unconfirmed input:') && noticeFields?.every(field => ['challenge', 'solution', 'results'].includes(field));

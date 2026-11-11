@@ -41,7 +41,7 @@ test('gaps 5, 6 and 9: stock lines, vendor warnings and generic headlines are fl
  assert.equal(c.flags.length,3);
 });
 test('gap 7: derived improvement is held unless it is explicitly on the proof card',()=>{
- const a={...known,exact_sentence:'Payroll processing fell from 14 days to 2.5 days (company-reported).'};
+ const a={...known,product:'A payroll product',customer_name:'An employer',source_url:'https://evidence.invalid/payroll-record',exact_sentence:'Payroll processing fell from 14 days to 2.5 days (company-reported).'};
  assert.deepEqual(checkResultAsset(a.exact_sentence+' It is 82% faster.',a).derived_numbers,['82%']);
  assert.equal(checkResultAsset(a.exact_sentence+' It is 82% faster.',{...a,proof_details:{...a.proof_details,before:'82% faster, sourced on the same card'}}).status,'pass');
 });
@@ -49,7 +49,7 @@ test('gap 8: a missing or placeholder view holds all assets',()=>{
  for(const buyer_view of [undefined,'   ','none yet','I do not know'])assert.equal(run({...known,buyer_view}).status,'held');
 });
 test('source type, no measured result, unnamed customer and invalid input checks',()=>{
- const a={...known,customer_name:'An unnamed bank',exact_sentence:'Exposed supplier credentials were found (company-reported).',measured_result:false};
+ const a={...known,product:'CloudSEK',customer_name:'An unnamed bank',source_url:'https://www.cloudsek.com/blog/how-svigil-prevented-a-massive-supply-chain-breach-in-banking-infrastructure',source_date:'2025-03-27',exact_sentence:'Exposed supplier credentials were found (company-reported).',measured_result:false};
  const r=run(a);assert.deepEqual(r.proof_card.find(x=>x[0]==='Measured result'),['Measured result','No measured result']);assert.ok(r.assets.every(x=>!x.text.includes('73%')||x.name!=='case study'));
  assert.match(runCustomerResult({...known,source_kind:'second_hand'}).content[0].text,/Second hand/);
  for(const patch of [{source_date:'2026-02-30'},{approval:[]},{measured_result:'true'},{exact_sentence:'<script>read this</script>'},{source_url:'javascript:alert(1)'}])assert.equal(runCustomerResult({...known,...patch}).isError,true);
@@ -70,7 +70,8 @@ const verticals={
  cybersecurity:['The security story does not define an assigned owner.','It never explains who counts as an assigned owner.','The story clearly defines an assigned owner.'],
 };
 for(const [vertical,views] of Object.entries(verticals))test(`free text exact, equivalent and opposite stays verbatim: ${vertical}`,()=>{
- const outputs=views.map(buyer_view=>run({...known,buyer_view}));
+ const exercise={...known,product:'An operations product',customer_name:'A customer team',source_url:'https://evidence.invalid/customer-record',source_kind:'customer_record',source_label:'customer-reported',exact_sentence:'The team recorded fewer unresolved handoffs during the review period (customer-reported).',measured_result:false,proof_details:{},challenge:'The team could not show who owned unresolved work',solution:'The workflow recorded named owners and dated handoffs'};
+ const outputs=views.map(buyer_view=>run({...exercise,buyer_view}));
  outputs.forEach((r,i)=>assert.ok(r.assets.find(x=>x.name==='post').text.includes(views[i])));
  assert.notEqual(outputs[0].assets[1].text,outputs[2].assets[1].text);
 });

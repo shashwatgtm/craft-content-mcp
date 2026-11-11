@@ -1,4 +1,5 @@
 import { readerLabel, readerIssue } from "../../dist/text-signals.js";
+const toolReaderLabel = name => name === 'customer_result_to_content' ? 'Turn this customer result into content' : readerLabel(name);
 // Hosted MCP endpoint: Streamable HTTP, stateless, JSON responses.
 // Follows Netlify's guide "How to build and deploy an MCP server on Netlify" (2026-09-12):
 // one function, a fresh server and transport per request, POST only, rate limited.
@@ -23,6 +24,7 @@ const MAX_LONG_TEXT = 100000;
 const MAX_NAME = 100;
 // Tool name to the fields that take a pasted document, article, transcript, notes or content.
 const LONG_TEXT = {
+  "customer_result_to_content": ["published_story"],
   "case_study_generator": [
     "interview_notes"
   ],
@@ -177,18 +179,18 @@ export default async (req, context) => {
       const schemas = await toolSchemas();
       const name = params.name;
       if (typeof name !== "string" || name.length > MAX_NAME) {
-        return toolError(body.id, "Unknown tool. Available tools: " + [...schemas.keys()].map(readerLabel).join(", ") + ".");
+        return toolError(body.id, "Unknown tool. Available tools: " + [...schemas.keys()].map(toolReaderLabel).join(", ") + ".");
       }
       const args = params.arguments;
       if (schemas.has(name) && args !== undefined && args !== null) {
         const wrong = wrongType(schemas.get(name), args, "", [], false).map((p) => (p.startsWith(" must") ? "arguments" + p : p));
         if (wrong.length > 0) {
-          return toolError(body.id, "Invalid input for " + readerLabel(name) + ": " + wrong.map(readerIssue).join(" "));
+          return toolError(body.id, "Invalid input for " + toolReaderLabel(name) + ": " + wrong.map(readerIssue).join(" "));
         }
       }
       const long = argumentsTooLong(name, args);
       if (long.length > 0) {
-        return toolError(body.id, "Invalid input for " + readerLabel(schemas.has(name) ? name : "requested tool") + ": " + long.map(readerIssue).join(" "));
+        return toolError(body.id, "Invalid input for " + toolReaderLabel(schemas.has(name) ? name : "requested tool") + ": " + long.map(readerIssue).join(" "));
       }      if (schemas.has(name)) countUse("craft-content", name, req, "mcp", context);
     }
     const server = createServer();

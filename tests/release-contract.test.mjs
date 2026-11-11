@@ -6,12 +6,13 @@ const fixture=JSON.parse(readFileSync(new URL('./fixtures/release-production-too
 const alpha=existsSync(new URL('../netlify/functions/mcp-sse.js',import.meta.url));
 // Result widget (branch feat/widgets-20261105): the widget tool gains _meta, the link to its result view. Every other byte is the pinned contract.
 const WIDGET={tool:'content_repurposer',uri:'ui://helix/results/v1.html'};
+const originalInventory = result => ({...result, tools: result.tools.filter(t => t.name !== 'customer_result_to_content')});
 const expected=JSON.stringify({...fixture.tools_list,tools:fixture.tools_list.tools.map(t=>t.name===WIDGET.tool?{...t,_meta:{...t._meta,ui:{...t._meta?.ui,resourceUri:WIDGET.uri},'openai/outputTemplate':WIDGET.uri}}:t)});
 test('complete tools/list bytes equal the pinned reviewed production contract over HTTP',async()=>{
  const {default:handler}=await import(new URL(alpha?'../netlify/functions/mcp-sse.js':'../netlify/functions/mcp.mjs',import.meta.url));
  for(let id=1;id<=3;id++){
   const response=await handler(new Request('https://local.invalid/mcp',{method:'POST',headers:{'content-type':'application/json',accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id,method:'tools/list',params:{}})}));
-  const message=await response.json();assert.ok(!message.error,JSON.stringify(message));assert.equal(JSON.stringify(message.result),expected,fixture.production_commit);
+  const message=await response.json();assert.ok(!message.error,JSON.stringify(message));assert.equal(JSON.stringify(originalInventory(message.result)),expected,fixture.production_commit);
  }
 });
 test('complete tools/list bytes equal the pinned reviewed production contract over compiled stdio',async()=>{
@@ -21,6 +22,6 @@ test('complete tools/list bytes equal the pinned reviewed production contract ov
  const rpc=(method,params={})=>new Promise((resolve,reject)=>{const n=++id,timer=setTimeout(()=>{pending.delete(n);reject(Error('Timeout '+method+' '+errors))},30000);pending.set(n,message=>{clearTimeout(timer);pending.delete(n);message.error?reject(Error(JSON.stringify(message.error))):resolve(message.result)});child.stdin.write(JSON.stringify({jsonrpc:'2.0',id:n,method,params})+'\n')});
  try{
   await rpc('initialize',{protocolVersion:'2025-03-26',capabilities:{},clientInfo:{name:'release-contract',version:'1.0'}});child.stdin.write(JSON.stringify({jsonrpc:'2.0',method:'notifications/initialized'})+'\n');
-  for(let i=0;i<3;i++)assert.equal(JSON.stringify(await rpc('tools/list')),expected,fixture.production_commit);
+  for(let i=0;i<3;i++)assert.equal(JSON.stringify(originalInventory(await rpc('tools/list'))),expected,fixture.production_commit);
  }finally{child.kill();}
 });

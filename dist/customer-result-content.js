@@ -21,7 +21,8 @@ export const customerResultDefinition = {
         properties: {
             exact_sentence: t('Copy the result exactly, keeping its qualifier and source label inside this sentence.'),
             source_url: t('Public source or approved evidence link, using https.'),
-            source_date: t('Publication or evidence date as year, month and day, not an assumed measurement date.'),
+            source_date: t('Publication or evidence date as year, month and day, or not stated. Keep it separate from the measurement period.'),
+            source_checked_date: t('The date you reopened the source, as year, month and day. This is not the publication date.'),
             source_kind: { type: 'string', enum: ['company_reported', 'second_hand', 'customer_record'], description: 'Who stands behind the result. A company report is not independent evidence.' },
             source_label: t('The source label already inside the exact sentence, for example company-reported.'),
             measured_result: { type: 'boolean', description: 'False for a story with no measured outcome. Never infer an improvement from exposure or scale counts.' },
@@ -83,7 +84,7 @@ const cell = (s) => s.replace(/\|/g, '\\|').replace(/\n/g, ' ');
 function proofCard(a) {
     const d = a.proof_details ?? {}, gaps = [];
     const fields = [
-        ['Exact sentence', a.exact_sentence], ['Source', a.source_url], ['Source date', a.source_date],
+        ['Exact sentence', a.exact_sentence], ['Source', a.source_url], ['Source date', a.source_date], ['Source checked', a.source_checked_date || 'not stated'],
         ['Source kind', a.source_kind === 'second_hand' ? 'Second hand report, not independent verification' : a.source_kind === 'company_reported' ? 'Company reported, not independent verification' : 'Customer record, not independently verified'],
         ['Measured result', a.measured_result ? 'Reported result, check its definition and scope' : 'No measured result'],
         ...Object.entries(details).map(([key, schema]) => {
@@ -96,6 +97,8 @@ function proofCard(a) {
         ['Approved by', a.approval.approver || 'not stated'], ['Approval date', a.approval.date || 'not stated'],
         ['Review rule', 'The result comes off if no answer by this date.'],
     ];
+    if (a.source_date === 'not stated')
+        gaps.push('Ask when this source was published. The retrieval date is not its publication date.');
     return { fields, gaps };
 }
 function formatPiece(kit, heading) {
@@ -119,27 +122,31 @@ export function runCustomerResult(input) {
     if (errors.length)
         return { content: [{ type: 'text', text: errors.join('\n') }], isError: true };
     const a = input;
-    if (![a.source_date, a.as_of_date].every(isoDate) || !httpsUrl(a.source_url))
-        return { content: [{ type: 'text', text: 'Supply valid dates as year, month and day and an HTTPS source link.' }], isError: true };
+    if (!(isoDate(a.source_date) || a.source_date === 'not stated') || !isoDate(a.as_of_date) || (a.source_checked_date && !isoDate(a.source_checked_date)) || !httpsUrl(a.source_url))
+        return { content: [{ type: 'text', text: 'Supply valid dates as year, month and day and an https source link. Use not stated for an unknown publication date.' }], isError: true };
     if (softwareAdvice(a))
         return { content: [{ type: 'text', text: SOFTWARE_REFERRAL }] };
     const { fields, gaps } = proofCard(a);
     const hold = [];
-    if (!a.buyer_view?.trim() || /^(?:none|unknown|none yet|i (?:do not|don.t) know|not (?:given|supplied|stated))\.?$/i.test(a.buyer_view.trim()))
+    if (!a.buyer_view?.trim() || /^(?:none|unknown|none yet|no view|i (?:do not|don.t) know|not (?:given|supplied|stated))\.?$/i.test(a.buyer_view.trim()))
         hold.push('Write your own view in whole sentences before drafting. The tool cannot supply it.');
     if (!a.exact_sentence.includes(a.source_label))
         hold.push('Keep the source label inside the exact sentence.');
     const qualifier = a.proof_details?.qualifier;
     if (qualifier && !/^(?:none|not stated|none stated)$/i.test(qualifier) && !a.exact_sentence.includes(qualifier))
         hold.push('Keep the qualifier inside the exact sentence.');
-    if (a.source_date > a.as_of_date)
+    if (isoDate(a.source_date) && a.source_date > a.as_of_date)
         hold.push('Check the source date. It is after the run date.');
+    if (a.source_checked_date && a.source_checked_date > a.as_of_date)
+        hold.push('Check the source retrieval date. It is after the run date.');
+    if (/\bindependent(?:ly)?\b/i.test(a.source_label))
+        hold.push('A company report, customer record or second hand report cannot be labelled independent verification.');
     const own = a.relationship === 'own_customer' || a.buyer_role === 'vendor';
     const requiredUses = ASSETS.filter(use => !(a.story_published && use === 'case study'));
     if (own || a.approval.status === 'written') {
         if (a.approval.status !== 'written')
             hold.push('Written approval is required for your own customer. A public story does not approve new uses.');
-        if (!a.approval.approver || !a.approval.date || !isoDate(a.approval.date) || a.approval.date > a.as_of_date)
+        if (!a.approval.approver || /^(?:unknown|not stated|none|tbd|n\/?a|no approval|not approved)$/i.test(a.approval.approver.trim()) || !a.approval.date || !isoDate(a.approval.date) || a.approval.date > a.as_of_date)
             hold.push('Record who approved the uses and the valid written approval date.');
         for (const use of requiredUses)
             if (!a.approval.uses?.includes(use))

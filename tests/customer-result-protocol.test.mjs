@@ -23,3 +23,14 @@ test('display only view has matching CSP hashes and no network, HTML interpolati
 test('nested approval fields reject malformed data and markup without changing the locked sentence',async()=>{
  for(const args of [{...known,approval:{status:'written',uses:'post'}},{...known,proof_details:{reporter:'<img src=x>'}},{...known,buyer_view:'<script>steal</script>'}]){const a=await rpc('tools/call',{name:'customer_result_to_content',arguments:args});assert.equal(a.isError,true);assert.doesNotMatch(a.content[0].text,/<script>|<img/);}
 });
+test('a published story above the short text transport limit reaches the chain, while its own cap still holds',async()=>{
+ const published_story=known.exact_sentence+' '+('The public story keeps its scope clear. '.repeat(120));
+ assert.ok(published_story.length>4000&&published_story.length<16000);
+ const good=await rpc('tools/call',{name:'customer_result_to_content',arguments:{...known,story_published:true,published_story}});assert.ok(!good.isError,good.content[0].text);assert.equal(good.structuredContent.assets.length,3);
+ const bad=await rpc('tools/call',{name:'customer_result_to_content',arguments:{...known,story_published:true,published_story:'A'.repeat(16001)}});assert.equal(bad.isError,true);
+});
+test('compiled stdio exposes nine tools and returns the same new chain answer as hosted HTTP',async()=>{
+ const {Client}=await import('@modelcontextprotocol/sdk/client/index.js');const {StdioClientTransport}=await import('@modelcontextprotocol/sdk/client/stdio.js');
+ const transport=new StdioClientTransport({command:process.execPath,args:['dist/index.js'],cwd:new URL('..',import.meta.url).pathname,stderr:'pipe'});const client=new Client({name:'chain-stdio-test',version:'1.0'});
+ try{await client.connect(transport);assert.equal((await client.listTools()).tools.length,9);const result=await client.callTool({name:'customer_result_to_content',arguments:known});assert.deepEqual(result,await rpc('tools/call',{name:'customer_result_to_content',arguments:known}));}finally{await client.close();}
+});

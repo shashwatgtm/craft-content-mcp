@@ -13,6 +13,7 @@ export declare const customerResultDefinition: {
             exact_sentence: Node;
             source_url: Node;
             source_date: Node;
+            source_checked_date: Node;
             source_kind: Node;
             source_label: Node;
             measured_result: Node;
@@ -55,6 +56,7 @@ export type CustomerResultInput = {
     exact_sentence: string;
     source_url: string;
     source_date: string;
+    source_checked_date?: string;
     source_kind: string;
     source_label: string;
     measured_result: boolean;

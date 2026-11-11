@@ -1,4 +1,4 @@
-export const textField = (description, maxLength = 6000) => ({ type: 'string', minLength: 1, maxLength, description });
+export const textField = (description, maxLength = 4000) => ({ type: 'string', minLength: 1, maxLength, description });
 export function validateChain(value, schema, path = 'Brief') {
     if (schema.type === 'object') {
         if (!value || typeof value !== 'object' || Array.isArray(value))
@@ -34,7 +34,7 @@ export function validateChain(value, schema, path = 'Brief') {
         if (value.trim().length < (schema.minLength ?? 0) || value.length > (schema.maxLength ?? 12000))
             return [`${path}: supply complete text within the stated length.`];
         // Refuse markup rather than changing an immutable proof sentence during escaping.
-        if (/[<>\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/.test(value) || /```|~~~/.test(value))
+        if (/[<>\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/.test(value) || /```|~~~|!?\[[^\]]*\]\s*\(|^\s*#{1,6}\s/m.test(value))
             return [`${path}: use plain text without markup or hidden controls.`];
     }
     return [];

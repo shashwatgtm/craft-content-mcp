@@ -74,3 +74,25 @@ for(const [vertical,views] of Object.entries(verticals))test(`free text exact, e
  outputs.forEach((r,i)=>assert.ok(r.assets.find(x=>x.name==='post').text.includes(views[i])));
  assert.notEqual(outputs[0].assets[1].text,outputs[2].assets[1].text);
 });
+
+test('reopened approved guide sources: all known result words stay locked; missing publication dates are not guessed',()=>{
+ const samples=[
+  {product:'Darwinbox',customer_name:'PDAX',source_url:'https://www.casestudies.com/company/darwinbox/case-study/pdax-cuts-onboarding-time-by-80-with-darwinbox',source_date:'not stated',source_checked_date:'2026-11-11',source_kind:'second_hand',line:'PDAX cuts onboarding time by 80% with Darwinbox (company-reported).',measured_result:true},
+  {product:'Shipsy',customer_name:'An unnamed UK retailer',source_url:'https://shipsy.io/casestudies/leading-uk-retailer-deploys-ai-powered-tms-to-shrink-last-mile/',source_date:'not stated',source_checked_date:'2026-11-11',source_kind:'company_reported',line:'Reduce delivery costs by 15% (company-reported).',measured_result:true},
+  {product:'HappyRobot',customer_name:'CMA CGM',source_url:'https://ecosistemastartup.com/cma-cgm-escala-agentes-de-voz-de-happyrobot-a-20-paises/',source_date:'2026-10-16',source_kind:'second_hand',line:'Más del 46% de las consultas de liberación de carga de CMA CGM ya se resuelven sin intervención humana (company-reported).',measured_result:true},
+  {product:'CloudSEK',customer_name:'An unnamed bank',source_url:'https://www.cloudsek.com/blog/how-svigil-prevented-a-massive-supply-chain-breach-in-banking-infrastructure',source_date:'2025-03-27',source_kind:'company_reported',line:'SVigil’s timely discovery enabled proactive risk mitigation (company-reported).',measured_result:false},
+ ];
+ for(const sample of samples){
+  // The first two pages do not expose a publication date. Record the
+  // retrieval date separately, with the publication date explicitly unknown.
+  const a={...known,...sample,exact_sentence:sample.line,proof_details:{},buyer_view:'I would ask for the measurement definition before using this result.',story_published:true,published_story:sample.line};delete a.line;
+  const r=run(a);assert.ok(r.assets.length===3);for(const asset of r.assets)assert.ok(asset.text.includes(a.exact_sentence),sample.product+': '+asset.name);
+  if(sample.source_kind==='second_hand')assert.match(r.proof_card.find(x=>x[0]==='Source kind')[1],/Second hand/);
+  if(!sample.measured_result)assert.equal(r.proof_card.find(x=>x[0]==='Measured result')[1],'No measured result');
+ }
+});
+test('the more than qualifier in the reopened company announcement cannot be cut',()=>{
+ const exact_sentence='More than 46% of these enquiries are currently resolved directly by the AI agents (company-reported).';
+ const a={...known,exact_sentence,proof_details:{qualifier:'More than'}};
+ assert.equal(checkResultAsset(exact_sentence,a).status,'pass');assert.equal(checkResultAsset(exact_sentence.replace('More than ',''),a).status,'fail');
+});

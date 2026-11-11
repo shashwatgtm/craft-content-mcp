@@ -24,6 +24,7 @@ const MAX_LONG_TEXT = 100000;
 const MAX_NAME = 100;
 // Tool name to the fields that take a pasted document, article, transcript, notes or content.
 const LONG_TEXT = {
+  "customer_result_to_content": ["published_story"],
   "case_study_generator": [
     "interview_notes"
   ],

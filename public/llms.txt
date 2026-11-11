@@ -88,3 +88,5 @@ Email shashwat@gtmhelix.com or open an issue at https://github.com/shashwatgtm/c
 Connectors work in Claude, ChatGPT, Cursor, VS Code and Windsurf. The Helix GTM Suite skills package supports Claude Code, ChatGPT, Gemini CLI, Antigravity, Cursor and VS Code, and is available through skills.sh.
 Setup: https://github.com/shashwatgtm/helix-gtm-suite
 Individual plugin install instructions remain specific to the plugin.
+
+- [Turn this customer result into content](https://craft-content.gtmhelix.com/tools/customer-result-to-content/) (`customer_result_to_content`): One proof card, an approval gate, four first drafts and an exact sentence check. Use in chat; there is no form.

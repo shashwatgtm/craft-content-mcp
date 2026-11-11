@@ -1,0 +1,26 @@
+{
+  "exact_sentence": "Initial results have been positive: 73% of mobile and home troubleshooting cases were resolved without requiring a Customer Care officer (Sierra customer story on Singtel, 4 March 2026, company-reported).",
+  "source_url": "https://sierra.ai/customers/singtel",
+  "source_date": "2026-03-04",
+  "source_kind": "company_reported",
+  "source_label": "company-reported",
+  "measured_result": true,
+  "buyer_role": "outside_writer",
+  "relationship": "public_example",
+  "approval": {
+    "status": "public_page"
+  },
+  "as_of_date": "2026-11-11",
+  "story_published": false,
+  "customer_name": "Singtel",
+  "product": "Sierra",
+  "challenge": "Enable customers to independently resolve simple requests",
+  "solution": "The agent verifies customer details and provides relevant product and service information.",
+  "buyer_view": "I read the whole story to find what resolved means here, and it does not say. It gives no case count, no period for the 73% and no before figure. A customer who gives up also never reaches an officer, so that case needs a rule too. Before you compare vendors on a number like this, ask what counts as resolved, out of which cases, and over what period.",
+  "call_to_action": "Reply with the definition you use",
+  "proof_details": {
+    "qualifier": "Initial results",
+    "counted": "mobile and home troubleshooting cases",
+    "reporter": "Singtel Group on Sierra's site"
+  }
+}

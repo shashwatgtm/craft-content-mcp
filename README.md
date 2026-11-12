@@ -214,3 +214,13 @@ Full policy: <https://craft-content.gtmhelix.com/privacy/> (also in [PRIVACY.md]
 - **Third-party sharing:** none by us. Netlify hosts the server and processes requests under its own policy (https://www.netlify.com/privacy/). Fonts are served from this site, so loading a page contacts no one else.
 - **Retention:** we keep no tool inputs or outputs. Netlify keeps its own platform logs under its policy.
 - **Contact:** shashwat@gtmhelix.com
+
+### Turn this customer result into content
+
+The new `customer_result_to_content` tool lives in chat. The assistant collects an exact result sentence with its qualifier and source label, a source and date, the writer's role, approval for each use, the writer's own view and a reader action. The server builds a proof card, chains the existing case study, repurposer and newsletter functions, and checks each final first draft. It makes no network requests and stores no brief.
+
+For the vendor or their own customer, written approval must name the approver, date and each use, with a future review date. A public page does not grant new uses. Missing approval or the writer's view returns the card and questions without drafts. An already published story is used as source and is not rebuilt. Unknown proof fields stay marked as not stated. A sentence check does not establish meaning or independent verification.
+
+The derived results view is at `ui://helix/results/chains/v1.html`. It reuses the shared results view's host bridge and copy control, adds display parts for the proof card, checks, handoffs and first drafts, and sends next actions back to chat. The original byte-pinned results resource is unchanged. Text-only hosts receive the full same answer. The tool page is `/tools/customer-result-to-content/` and has no form.
+
+If a public source has no visible publication date, set `source_date` to `not stated` and keep the retrieval date in `source_checked_date`. The card keeps that gap visible. A retrieval date must not stand in for a publication or measurement date. To regenerate the additive offline results view, run `python scripts/build-chain-view.py`, then build. Font licences are included beside the bundled fonts.

@@ -1,4 +1,6 @@
 import { guardInputs, holdBuyerCopy } from './input-evidence.js';
+import { attachCustomerResult } from './customer-result-registration.js';
+import { attachChainResults } from './chain-results.js';
 import { withReadingGuide } from './reader-actions.js';
 import { softwareAdvice } from './software-policy.js';
 import { regionNotes } from './region-reader.js';
@@ -260,6 +262,8 @@ export function createServer() {
     // Result widget for the Content Repurposer: last, after every safety, reader and widget wrapper (adds _meta only).
     // The widget domain follows the same build switch as the existing widget layer.
     attachHelixResults(server, BUILD_PROFILE.domainEnabled && WIDGET_ORIGIN ? WIDGET_ORIGIN : undefined);
+    attachCustomerResult(server);
+    attachChainResults(server, 'customer_result_to_content', 'Turn this customer result into content');
     return server;
 }
 /** Run 21c round 4: a heading or subject line cut inside a bracket note ends before the bracket (no unclosed bracket in a headline). */

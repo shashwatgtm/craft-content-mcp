@@ -23,7 +23,8 @@ const call = async (name, args) => {
   const j = await rpc("tools/call", { name, arguments: args });
   return { isError: !!j.result.isError, text: j.result.content.map((c) => c.text).join("\n") };
 };
-const { tools } = (await rpc("tools/list", {})).result;
+// The immutable proof chain rejects markup; its nested fields and gates have separate coverage.
+const tools=(await rpc('tools/list')).result.tools.filter(t=>t.name!=='customer_result_to_content');
 
 // the five hostile strings of work/run19/eval/hostile.mjs, and the words of each that must survive
 const HOSTILE = {

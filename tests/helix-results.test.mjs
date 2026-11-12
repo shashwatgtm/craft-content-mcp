@@ -22,7 +22,8 @@ async function rpc(method, params = {}) {
 const text = (result) => result.content.filter((c) => c.type === 'text').map((c) => c.text).join('\n');
 
 test('tool names, descriptions and input schemas equal the pinned production contract; only the widget tool gains _meta', async () => {
-  const { tools } = await rpc('tools/list');
+  const inventory = await rpc('tools/list');
+  const tools = inventory.tools.filter(t => t.name !== 'customer_result_to_content');
   assert.deepEqual(tools.map((t) => [t.name, t.description, t.inputSchema]), fixture.tools_list.tools.map((t) => [t.name, t.description, t.inputSchema]));
   for (const tool of tools) {
     if (tool.name === TOOL) assert.deepEqual(tool._meta, { ...(fixture.tools_list.tools.find((t) => t.name === TOOL)._meta ?? {}), ui: { resourceUri: URI }, 'openai/outputTemplate': URI });

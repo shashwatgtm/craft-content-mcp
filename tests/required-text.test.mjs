@@ -24,7 +24,7 @@ const present = (p) => (Array.isArray(p.enum) ? p.enum[0] : p.type === "string" 
 const withText = tools.filter((t) => (t.inputSchema.required || []).some((k) => isText(t.inputSchema.properties[k])));
 
 test("the tools with a required text field are counted for the built profile", () => {
-  assert.equal(withText.length, builtProfile === "wave" ? 9 : 8, withText.map((t) => t.name).join(", "));
+  assert.equal(withText.length, builtProfile === "wave" ? 10 : 9, withText.map((t) => t.name).join(", "));
 });
 
 for (const t of withText) {

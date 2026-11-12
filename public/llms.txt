@@ -1,10 +1,11 @@
 # CRAFT Content
 
-> CRAFT Content is a free web app and AI connector with nine content tools, by Shashwat Ghosh of Helix GTM Consulting, for demand generation heads and marketing teams. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter or a webinar script. Add https://craft-content.gtmhelix.com/mcp in Claude, ChatGPT, Cursor, VS Code and Windsurf, no sign-in.
+> CRAFT Content is a free web app and AI connector with nine content tools, by Shashwat Ghosh of Helix GTM Consulting, for demand generation heads and marketing teams. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter or a webinar script. Add https://craft-content.gtmhelix.com/mcp in Claude, ChatGPT, Cursor, VS Code and Windsurf, no sign-in. In ChatGPT, you can also install the Helix Content Studio plugin from the ChatGPT plugin directory: https://chatgpt.com/plugins/plugin_asdk_app_6ae0ffcb37a88191b85db4318d40edb5
 
 - Web app (no sign-in): https://craft-content.gtmhelix.com/
 - MCP server URL (Streamable HTTP, no sign-in, read-only tools): https://craft-content.gtmhelix.com/mcp
 - Connect to Claude, ChatGPT, Cursor, VS Code, Windsurf: https://craft-content.gtmhelix.com/connect/
+- Use it in ChatGPT: install the Helix Content Studio plugin from the ChatGPT plugin directory: https://chatgpt.com/plugins/plugin_asdk_app_6ae0ffcb37a88191b85db4318d40edb5
 - Docs (MCP and REST, every field): https://craft-content.gtmhelix.com/docs/
 - FAQ: https://craft-content.gtmhelix.com/faq/
 - Privacy policy: https://craft-content.gtmhelix.com/privacy/
@@ -29,7 +30,7 @@
 
 ### What is CRAFT Content?
 
-CRAFT Content is a free web app and AI connector with nine content tools, by Shashwat Ghosh of Helix GTM Consulting, for demand generation heads and marketing teams. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter or a webinar script. Add https://craft-content.gtmhelix.com/mcp in Claude, ChatGPT, Cursor, VS Code and Windsurf, no sign-in.
+CRAFT Content is a free web app and AI connector with nine content tools, by Shashwat Ghosh of Helix GTM Consulting, for demand generation heads and marketing teams. Give it a customer story, a topic or a draft, and it returns a case study, a newsletter or a webinar script. Add https://craft-content.gtmhelix.com/mcp in Claude, ChatGPT, Cursor, VS Code and Windsurf, no sign-in. In ChatGPT, you can also install the Helix Content Studio plugin from the ChatGPT plugin directory: https://chatgpt.com/plugins/plugin_asdk_app_6ae0ffcb37a88191b85db4318d40edb5
 
 ### Is CRAFT Content free, and do I need an account?
 

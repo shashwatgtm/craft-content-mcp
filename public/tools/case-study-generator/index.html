@@ -31,7 +31,7 @@
 <link rel="stylesheet" href="/assets/helix.css?v=5a5090e11c">
 <link rel="stylesheet" href="/assets/jtbd.css?v=c58d595f2b">
 <link rel="stylesheet" href="/assets/helix-report.css?v=f78ed582b4">
-<link rel="stylesheet" href="/assets/helix-look.css?v=a433d954b5">
+<link rel="stylesheet" href="/assets/helix-look.css?v=9b219b40a1">
 <script type="application/ld+json">{
  "@context": "https://schema.org",
  "@graph": [
@@ -262,7 +262,7 @@
      "@type": "HowToStep",
      "position": 1,
      "name": "Fill in the form",
-     "text": "Enter the required fields: Customer name, Your product."
+     "text": "Enter the required fields: Customer name, Yan AI support agent for help desks, sold as an annual subscription."
     },
     {
      "@type": "HowToStep",
@@ -289,7 +289,7 @@
  ]
 }</script>
 <script src="/assets/analytics.js?v=2eb2d1413a" data-privacy="/privacy/" defer></script>
-<script src="/assets/look.js?v=c79f7e788f" defer></script>
+<script src="/assets/look.js?v=27a748b492" defer></script>
 <script src="https://gtmhelix.com/journey/history.js" defer></script>
 </head>
 <body>
@@ -316,23 +316,23 @@
   <p class="hx-sample-note">This sample is a made up example, built from the inputs behind <em>Fill in an example</em>. It shows part of one section of the answer.</p>
   <div class="hxr-body hx-result-body hx-sample-body"><h3 class="hxr-h3">The Story (draft)</h3>
 <p><strong>The situation.</strong> A food delivery company is in the Food delivery segment. (General note for AI native, not from your inputs: teams are usually judged on automated resolution rate and accuracy on an evaluation set.)</p>
-<p><strong>The challenge.</strong> Before our product, the team was dealing with this, in your words: a ticket backlog growing faster than the support team could hire.</p>
-<p><strong>The approach.</strong> The team put our product in place: AI agents that resolve refund and order-status tickets inside the help desk, with human approval for refunds.</p>
+<p><strong>The challenge.</strong> Before an AI support agent for help desks, sold as an annual subscription, the team was dealing with this, in your words: a ticket backlog growing faster than the support team could hire.</p>
+<p><strong>The approach.</strong> The team put an AI support agent for help desks, sold as an annual subscription in place: AI agents that resolve refund and order-status tickets inside the help desk, with human approval for refunds.</p>
 <p><strong>The result.</strong> 45% of tickets resolved without a human in 60 days. First response time down from 6 hours to 2 minutes.</p></div>
   <p class="hx-sample-more"><a href="#ex-h">See the full example answer</a> or <a href="#run">run it with your own details</a>.</p>
 </section>
 
 <section class="hx-section hx-run-sec" id="run" aria-label="Run Case Study Generator">
-  <div class="win hx-form-win"><div class="win-bar"><span class="t">Run Case Study Generator</span><span class="wb" aria-hidden="true"><i></i><i></i></span></div><form class="hx-form" method="post" action="/api/tools/case_study_generator" data-tool="case_study_generator" data-title="Case Study Generator"><p class="hx-help">You need: Customer name, Your product. You can add: Customer industry, Mode, Interview notes, Challenge, Solution, Results, Customer quote, Your sector.</p>
+  <div class="win hx-form-win"><div class="win-bar"><span class="t">Run Case Study Generator</span><span class="wb" aria-hidden="true"><i></i><i></i></span></div><form class="hx-form" method="post" action="/api/tools/case_study_generator" data-tool="case_study_generator" data-title="Case Study Generator"><p class="hx-help">You need: Customer name, Yan AI support agent for help desks, sold as an annual subscription. You can add: Customer industry, Mode, Interview notes, Challenge, Solution, Results, Customer quote, Your sector.</p>
 <div class="hx-field"><label for="f-customer_name">Customer name <span class="hx-req" aria-hidden="true">*</span></label><input id="f-customer_name" name="customer_name" type="text" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-customer_name-help"><p class="hx-help" id="f-customer_name-help">Customer/company name</p></div>
 <div class="hx-field"><label for="f-customer_industry">Customer industry <span class="hx-opt">(optional)</span></label><input id="f-customer_industry" name="customer_industry" type="text" maxlength="6000" data-kind="string" aria-describedby="f-customer_industry-help"><p class="hx-help" id="f-customer_industry-help">Customer&#x27;s industry for context</p></div>
 <div class="hx-field"><label for="f-mode">Mode <span class="hx-opt">(optional)</span></label><select id="f-mode" name="mode" data-kind="string" aria-describedby="f-mode-help"><option value="">Not specified</option><option value="full">Full</option><option value="discovery">Discovery</option></select><p class="hx-help" id="f-mode-help">full = generate case study (requires challenge/solution/results), discovery = generate interview questions to gather story</p></div>
 <div class="hx-field"><label for="f-interview_notes">Interview notes <span class="hx-opt">(optional)</span></label><textarea id="f-interview_notes" name="interview_notes" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-interview_notes-help f-interview_notes-limit"></textarea><p class="hx-help" id="f-interview_notes-help">Optional: Raw interview notes or transcript. Parsed into a case study when mode is &#x27;full&#x27;</p><p class="hx-help" id="f-interview_notes-limit">Up to 6,000 characters in this form. For a longer document, use CRAFT Content in Claude, which takes up to 100,000.</p></div>
 <div class="hx-field"><label for="f-challenge">Challenge <span class="hx-opt">(optional)</span></label><textarea id="f-challenge" name="challenge" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-challenge-help"></textarea><p class="hx-help" id="f-challenge-help">The customer&#x27;s challenge/problem (required for full mode)</p></div>
-<div class="hx-field"><label for="f-solution">Solution <span class="hx-opt">(optional)</span></label><textarea id="f-solution" name="solution" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-solution-help"></textarea><p class="hx-help" id="f-solution-help">How your product solved it (required for full mode)</p></div>
+<div class="hx-field"><label for="f-solution">Solution <span class="hx-opt">(optional)</span></label><textarea id="f-solution" name="solution" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-solution-help"></textarea><p class="hx-help" id="f-solution-help">How yan AI support agent for help desks, sold as an annual subscription solved it (required for full mode)</p></div>
 <div class="hx-field"><label for="f-results">Results <span class="hx-opt">(optional)</span></label><textarea id="f-results" name="results" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-results-help"></textarea><p class="hx-help" id="f-results-help">Quantifiable outcomes (required for full mode)</p></div>
 <div class="hx-field"><label for="f-customer_quote">Customer quote <span class="hx-opt">(optional)</span></label><textarea id="f-customer_quote" name="customer_quote" rows="3" maxlength="6000" data-kind="string" aria-describedby="f-customer_quote-help"></textarea><p class="hx-help" id="f-customer_quote-help">Optional: Direct quote from customer</p></div>
-<div class="hx-field"><label for="f-your_product">Your product <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-your_product" name="your_product" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-your_product-help"></textarea><p class="hx-help" id="f-your_product-help">Your product/service name</p></div>
+<div class="hx-field"><label for="f-your_product">Yan AI support agent for help desks, sold as an annual subscription <span class="hx-req" aria-hidden="true">*</span></label><textarea id="f-your_product" name="your_product" rows="3" maxlength="6000" data-kind="string" required aria-required="true" aria-describedby="f-your_product-help"></textarea><p class="hx-help" id="f-your_product-help">Yan AI support agent for help desks, sold as an annual subscription/service name</p></div>
 <div class="hx-field"><label for="f-your_sector">Your sector <span class="hx-opt">(optional)</span></label><select id="f-your_sector" name="your_sector" data-kind="string" aria-describedby="f-your_sector-help"><option value="">Not specified</option><option value="logistics_tech">Logistics tech</option><option value="fintech">Fintech</option><option value="saas">SaaS</option><option value="vertical_saas">Vertical SaaS</option><option value="ai_native">AI native</option><option value="ites">ITeS</option><option value="telecom">Telecom</option><option value="software">Software</option><option value="cybersecurity">Cybersecurity</option><option value="other">Other</option></select><p class="hx-help" id="f-your_sector-help">Optional: your company&#x27;s own industry (not your customers&#x27;). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear.</p></div>
     <div class="hx-hp" aria-hidden="true"><label for="hp-case_study_generator">Leave this empty</label><input id="hp-case_study_generator" name="leave_this_empty" type="text" tabindex="-1" autocomplete="off"></div>
     <div class="hx-actions">
@@ -342,7 +342,7 @@
     </div>
     
   </form>
-  <script type="application/json" data-example>{"customer_name": "a food delivery company", "your_product": "our product", "customer_industry": "Food delivery", "mode": "full", "challenge": "A ticket backlog growing faster than the support team could hire", "solution": "AI agents that resolve refund and order-status tickets inside the help desk, with human approval for refunds", "results": "45% of tickets resolved without a human in 60 days; first response time down from 6 hours to 2 minutes"}</script></div>
+  <script type="application/json" data-example>{"customer_name": "a food delivery company", "your_product": "an AI support agent for help desks, sold as an annual subscription", "customer_industry": "Food delivery", "mode": "full", "challenge": "A ticket backlog growing faster than the support team could hire", "solution": "AI agents that resolve refund and order-status tickets inside the help desk, with human approval for refunds", "results": "45% of tickets resolved without a human in 60 days; first response time down from 6 hours to 2 minutes", "your_sector": "ai_native"}</script></div>
 </section>
 
 <section class="hx-section hx-wash" id="result" aria-live="polite" aria-labelledby="result-h" hidden>
@@ -364,7 +364,7 @@
 
 <section class="hx-section" aria-labelledby="ex-h">
   <h2 id="ex-h">Example answer</h2>
-  <p class="hx-prose">Generated on 2 November 2026 from this branch, with the inputs behind <em>Fill in an example</em>. Your own inputs give a different result.</p>
+  <p class="hx-prose">Generated on 12 November 2026 from this branch, with the inputs behind <em>Fill in an example</em>. Your own inputs give a different result.</p>
   <article class="hxr hxr-example" aria-labelledby="ex-t">
     <header class="hxr-head">
       <p class="hxr-tag">CRAFT Content report</p>
@@ -374,24 +374,23 @@
     <div class="hxr-actions"><button type="button" class="hx-btn hx-btn-ghost" data-print>Print or save as PDF</button></div>
     <details class="hx-run"><summary>Show the full result</summary><div class="hxr-body hx-result-body hx-output"><h4 class="hxr-h2">Case Study: a food delivery company</h4>
 <h5 class="hxr-h3">45% of tickets resolved without a human in 60 days</h5>
-<p><em>Sector: read from your inputs as AI native. Business model: not stated. Tell us how you charge and the plan will adjust.</em></p>
-<p>Billing dependent steps are conditional: trials, seats and recurring renewals require a subscription; a statement of work requires a services contract; site or link commitments require connectivity billing. Confirm the applicable choice before using those steps.</p>
+<p><em>Sector: from your choice: AI native. Business model: software subscription (read from your inputs; confirm how you charge).</em></p>
 <p><em>Built from: challenge: given; solution: given; results: 2 items (2 outcomes); customer quote: not given; industry: given.</em></p>
 <hr>
 <h5 class="hxr-h3">The Story (draft)</h5>
 <p><strong>The situation.</strong> A food delivery company is in the Food delivery segment. (General note for AI native, not from your inputs: teams are usually judged on automated resolution rate and accuracy on an evaluation set.)</p>
-<p><strong>The challenge.</strong> Before our product, the team was dealing with this, in your words: a ticket backlog growing faster than the support team could hire.</p>
-<p><strong>The approach.</strong> The team put our product in place: AI agents that resolve refund and order-status tickets inside the help desk, with human approval for refunds.</p>
+<p><strong>The challenge.</strong> Before an AI support agent for help desks, sold as an annual subscription, the team was dealing with this, in your words: a ticket backlog growing faster than the support team could hire.</p>
+<p><strong>The approach.</strong> The team put an AI support agent for help desks, sold as an annual subscription in place: AI agents that resolve refund and order-status tickets inside the help desk, with human approval for refunds.</p>
 <p><strong>The result.</strong> 45% of tickets resolved without a human in 60 days. First response time down from 6 hours to 2 minutes.</p>
 <p><strong>To add before this is published:</strong> (1) one line a food delivery company would say aloud about what changed, approved in writing.</p>
 <p><em>The sections below hold the detail behind each part of the story and the questions that finish it.</em></p>
 <hr>
 <h6 class="hxr-h4">About a food delivery company</h6>
-<div class="hx-table"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td><strong>Customer</strong></td><td>a food delivery company</td></tr><tr><td><strong>Industry</strong></td><td>Food delivery</td></tr><tr><td><strong>Product</strong></td><td>our product</td></tr><tr><td><strong>Lead result</strong></td><td>45% of tickets resolved without a human in 60 days.</td></tr></tbody></table></div>
+<div class="hx-table"><table><thead><tr><th>Detail</th><th>Supplied information</th></tr></thead><tbody><tr><td><strong>Customer</strong></td><td>a food delivery company</td></tr><tr><td><strong>Industry</strong></td><td>Food delivery</td></tr><tr><td><strong>Product</strong></td><td>an AI support agent for help desks, sold as an annual subscription</td></tr><tr><td><strong>Lead result</strong></td><td>45% of tickets resolved without a human in 60 days.</td></tr></tbody></table></div>
 <hr>
 <h5 class="hxr-h3">The Challenge</h5>
 <p>What the team was dealing with: A ticket backlog growing faster than the support team could hire</p>
-<p><strong>To finish this section</strong> (ask the customer, and use their words):</p>
+<p><strong>Before publication, the account owner should confirm with the customer:</strong></p>
 <ul>
 <li>What the problem cost them, with the starting value of one of: automated resolution rate, accuracy on an evaluation set and escalation rate.</li>
 <li>Interview question in the sector&#39;s language: &quot;Which cases or decisions would you trust an AI to handle first, and which never?&quot;</li>
@@ -399,10 +398,10 @@
 <hr>
 <h5 class="hxr-h3">The Solution</h5>
 <p>What was put in place: AI agents that resolve refund and order-status tickets inside the help desk, with human approval for refunds</p>
-<p><strong>To finish this section:</strong></p>
+<p><strong>Before publication, the account owner should verify:</strong></p>
 <ul>
-<li>Why a food delivery company chose our product, and which alternative it weighed (a common reaction in AI native: &quot;AI gets answers wrong&quot;).</li>
-<li>How the rollout went, and how long it took to see first results. Use only a duration the customer confirms.</li>
+<li>Why a food delivery company chose an AI support agent for help desks, sold as an annual subscription, and which alternative it weighed (a common reaction in AI native: &quot;AI gets answers wrong&quot;).</li>
+<li>How the implementation went, and how long it took to see value. Use only a duration the customer confirms.</li>
 <li>Words to use as the customer says them: resolution rate, evaluation set, human in the loop, guardrails, accuracy.</li>
 </ul>
 <hr>
@@ -412,13 +411,13 @@
 <li>45% of tickets resolved without a human in 60 days.</li>
 <li>First response time down from 6 hours to 2 minutes.</li>
 </ul>
-<p><strong>To finish this section:</strong> for each figure, give the value before, the value after and the period it was measured over. A strong proof point here: Results on an evaluation set built from the buyer&#39;s own history, then live results with human review switched on.</p>
+<p><strong>Before publication, the evidence owner should check each figure:</strong> record the value before, the value after and the measurement period. A strong proof point here: Results on an evaluation set built from the buyer&#39;s own history, then live results with human review switched on.</p>
 <hr>
 <h5 class="hxr-h3">In Their Words</h5>
 <p>No customer quote was given. Ask for one line the customer would say aloud about what changed in automated resolution rate, and get written approval before you print it.</p>
 <hr>
 <h5 class="hxr-h3">Where This Goes Next</h5>
-<p>Close with one action for the reader. Deals in AI native usually start like this: a proof of concept on the buyer&#39;s own data, then a production pilot with guardrails and human review. Write the reader&#39;s next step to match, for example a pilot request.</p>
+<p>Before changing your process, record the starting point for an AI support agent for help desks, sold as an annual subscription in one comparable case. Agree the measure and review period with the person who owns the work, then compare the result before extending the change.</p>
 <hr>
 <h5 class="hxr-h3">Sector Notes: AI native</h5>
 <ul>
@@ -430,10 +429,10 @@
 <hr>
 <h5 class="hxr-h3">Distribution Formats</h5>
 <h6 class="hxr-h4">One-line version (testimonial pages)</h6>
-<p>45% of tickets resolved without a human in 60 days (our product).</p>
+<p>45% of tickets resolved without a human in 60 days (an AI support agent for help desks, sold as an annual subscription).</p>
 <h6 class="hxr-h4">Social media version</h6>
 <p>45% of tickets resolved without a human in 60 days.</p>
-<p>Product: our product.</p>
+<p>Product: an AI support agent for help desks, sold as an annual subscription.</p>
 <p>Read the full story: add the link when the case study is published.</p>
 <h6 class="hxr-h4">Email snippet</h6>
 <p>Quick success story: 45% of tickets resolved without a human in 60 days. Add the link to the full story when it is published.</p>
@@ -443,7 +442,17 @@
 <li>The customer has approved the story, every figure and the quote in writing.</li>
 <li>Every figure comes from the customer or a page you can cite; page claims stay labelled as the vendor&#39;s own claims.</li>
 <li>Nothing in the recognition or company-wide claims is shown as this customer&#39;s result.</li>
-</ul></div></details>
+</ul>
+<h5 class="hxr-h3">Reading the answer</h5>
+<p>This story supports a draft account of “45% of tickets resolved without a human in 60 days; first response time down from 6 hours to 2 minutes”. Source verification and written permission for the exact wording remain separate checks. A single pilot is not proof of general or causal improvement. The conclusion needs review if the original records alter the baseline, measurement period or sample, or the customer declines the proposed wording or use.</p>
+<h5 class="hxr-h3">Decisions by role</h5>
+<p>Proposed owners. Confirm the named person before acting. Supplied statements below are inputs to check, not established findings.</p>
+<p>Founder: ask the evidence owner to distinguish observation from attribution in “45% of tickets resolved without a human in 60 days; first response time down from 6 hours to 2 minutes”; endorse only the supported scope.</p>
+<p>CEO: ask the publication owner for written customer approval of “45% of tickets resolved without a human in 60 days; first response time down from 6 hours to 2 minutes” and the intended channels; keep distribution on hold until it is recorded.</p>
+<p>CMO: compare “A ticket backlog growing faster than the support team could hire” and “45% of tickets resolved without a human in 60 days; first response time down from 6 hours to 2 minutes” with the original records; retain sample and period in the final story before requesting approval.</p>
+<p>CRO: ask the account owner whether “AI agents that resolve refund and order-status tickets inside the help desk, with human approval for refunds” explains the buyer&#39;s next decision; do not promise another account the same outcome.</p>
+<p>Demand generation head: test a reader action to measure the starting point for “an AI support agent for help desks, sold as an annual subscription”; check the destination and permission before distributing the story.</p>
+<p>Region context: Which region applies: India, Southeast Asia, Middle East, UK, Western Europe or North America? Add it to your description and rerun.</p></div></details>
     <footer class="hxr-foot"><span>Built by Shashwat Ghosh</span><span>https://craft-content.gtmhelix.com/tools/case-study-generator/</span></footer>
   </article>
   
@@ -476,7 +485,7 @@
 <section class="hx-section" aria-labelledby="ai-h">
   <h2 id="ai-h">How do I use the Case Study Generator tool with an AI assistant?</h2>
   <p class="hx-prose">Add CRAFT Content once (see <a href="/connect/">Use it in Claude, ChatGPT or Gemini</a>), then ask in plain words. Here is a prompt built from the tested example:</p>
-  <blockquote class="hx-quote">My role is not stated. Ask me for my role first. Use CRAFT Content&#x27;s Case Study Generator tool. customer name: a food delivery company; your product: our product; customer industry: Food delivery; mode: Full; challenge: A ticket backlog growing faster than the support team could hire; solution: AI agents that resolve refund and order-status tickets inside the help desk, with human approval for refunds; results: 45% of tickets resolved without a human in 60 days; first response time down from 6 hours to 2 minutes. If this tool is unavailable, ask me to open its web page; do not invent its output. In Gemini CLI or Antigravity, use the Helix GTM Suite skills package for related guidance, without claiming to run this connector.</blockquote>
+  <blockquote class="hx-quote">My role is not stated. Ask me for my role first. Use CRAFT Content&#x27;s Case Study Generator tool. customer name: a food delivery company; yan AI support agent for help desks, sold as an annual subscription: an AI support agent for help desks, sold as an annual subscription; customer industry: Food delivery; mode: Full; challenge: A ticket backlog growing faster than the support team could hire; solution: AI agents that resolve refund and order-status tickets inside the help desk, with human approval for refunds; results: 45% of tickets resolved without a human in 60 days; first response time down from 6 hours to 2 minutes. If this tool is unavailable, ask me to open its web page; do not invent its output. In Gemini CLI or Antigravity, use the Helix GTM Suite skills package for related guidance, without claiming to run this connector.</blockquote>
 </section>
 
 <section class="hx-section hx-wash" aria-labelledby="works-h">
@@ -497,7 +506,7 @@
   <pre class="hx-code-block">{
   &quot;input&quot;: {
     &quot;customer_name&quot;: &quot;a food delivery company&quot;,
-    &quot;your_product&quot;: &quot;our product&quot;,
+    &quot;your_product&quot;: &quot;an AI support agent for help desks, sold as an annual subscription&quot;,
     &quot;customer_industry&quot;: &quot;Food delivery&quot;,
     &quot;mode&quot;: &quot;full&quot;,
     &quot;challenge&quot;: &quot;A ticket backlog growing faster than the support team could hire&quot;,

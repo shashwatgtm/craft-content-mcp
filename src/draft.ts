@@ -310,6 +310,18 @@ const OUTCOME_VERB = /\b(?:reduc\w+|cut|cuts|saved?|saves|improv\w+|increas\w+|g
 
 // Run 42B round S: a before and after figure with its unit ("from 1.25 Gbps to 5 Gbps") says what changed
 const FROM_TO_FIGURE = /\bfrom [\d.,]+\s*[A-Za-z%]*\s+to [\d.,]+/;
+// Red team, 14 Nov 2026: "<metric> down/up/cut/fell/rose <N>%" ("Ticket backlog down 40% in six weeks") is the most common way to write
+// a result, so it is a customer outcome. A rise in a cost-type measure or a fall in a revenue-type measure is an adverse result instead.
+const METRIC_CHANGE = /\b(down|up|cut|fell|rose|dropped|climbed|lower|higher)\s+(?:by\s+)?(?:about\s+|around\s+|nearly\s+|almost\s+|over\s+|more than\s+)?\d[\d.,]*\s*(?:%|percent\b|per cent\b|percentage points?\b|points?\b|x\b)/i;
+const COST_MEASURE = /\b(?:backlogs?|churn|errors?|escalations?|delays?|failures?|costs?|spend|downtime|incidents?|complaints?|cancell?ations?|refunds?|defects?|tickets?|times?|DSO|CAC|attrition|turnover|no[- ]shows?|write[- ]offs?|fraud|chargebacks?|bounce rates?|detention|charges|fees|losses)\b/i;
+const VALUE_MEASURE = /\b(?:revenue|sales|bookings|pipeline|conversions?|win rates?|retention|NRR|ARR|MRR|margins?|profits?|adoption|usage|NPS|CSAT|engagement|leads|meetings|renewals?|collections|sign[- ]?ups?|deals|orders|traffic|uptime|productivity|throughput)\b/i;
+function metricChange(text: string): ProofKind | undefined {
+  const m = METRIC_CHANGE.exec(text);
+  if (!m) return undefined;
+  const metric = text.slice(0, m.index);
+  const fall = /^(?:down|cut|fell|dropped|lower)$/i.test(m[1]);
+  return (fall ? VALUE_MEASURE.test(metric) && !COST_MEASURE.test(metric) : COST_MEASURE.test(metric) && !VALUE_MEASURE.test(metric)) ? 'adverse' : 'result';
+}
 const PROMO_OFFER =/\b(?:financ(?:e|es|ing)|loans?|credit lines?|working capital|[a-z]+ capital to fund|pay later|buy now|apply now|get funded|0% (?:apr|interest)|special offer|limited[- ]time)\b/i;
 const CERTIFIED = /\b(?:certified|certifications?|accredited|compliant with|soc ?2\+?|iso ?27001|pci[- ]?dss)\b/i;
 // Run 42B round S3: "Quote from Jo Smith, VP of Transport: words" and "Hillside School, The Czech Republic: words" are customer quotes
@@ -347,6 +359,7 @@ export function parseProof(raw: unknown): ProofItem[] {
     else if (SCALE.test(text) && !OUTCOME_VERB.test(text)) kind = 'scale';
     else if (/page claim/.test(l) && !OUTCOME_VERB.test(text) && !(figure && FROM_TO_FIGURE.test(text))) kind = 'claim';
     else if (/\b(?:live in|approves? every|approval for)\b/i.test(text)) kind = 'claim';
+    else if (metricChange(text)) kind = metricChange(text) as ProofKind;
     else kind = OUTCOME_VERB.test(text) || FROM_TO_FIGURE.test(text) || signal(text, 'positive_result').state === 'affirmed' || /\b(?:fell|rose|went from|became|resolved|completed|achieved)\b/i.test(text) ? 'result' : 'unclear';
     // "Quote from Jo Smith, Head of X, Acme: words" is shown as the speaker and the words, without the typed prefix
     const shownText = kind === 'quote' ? text.replace(/^(?:quotes?|words|testimonial) (?:from|by) (?=[A-Z][^:;]{1,120}:\s+\S)/i, '') : text;

@@ -56,6 +56,7 @@ export declare const ASK: RegExp;
 export declare function bodyOf(content: string): string;
 export declare function operationalPurpose(goal: string): boolean;
 export declare function outcomePromises(content: string): string[];
+export declare function unsourcedClaims(content: string): string[];
 export declare function analyzeContent(content: string, contentType: string, goal: string, opts?: {
     audience?: string;
 }): ContentAnalysis;

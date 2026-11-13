@@ -339,6 +339,12 @@ function missingMeasures(v: Vertical, results: string): string[] {
   return v.metrics.filter((m) => !m.toLowerCase().split(/\s+/).filter((w) => w.length >= 6).some((w) => lower.includes(w)));
 }
 
+function anonymisedCustomer(name: string): boolean {
+  const n = name.trim();
+  if (/\b(?:customers|clients|companies|teams|accounts|brands|users)\b/i.test(n)) return false;
+  return /^(?:customer|client|company|account|partner)\s+(?:[A-Z]|\d{1,3})(?![\w])/i.test(n) || /^\[[^\]\n]{1,40}\]$/.test(n) || /\bname (?:pending|withheld|to follow|redacted)\b|\bpending (?:customer )?approval\b|\banonymi[sz]ed\b/i.test(n);
+}
+
 function bullets(items: ProofItem[]): string {
   return items.map((p) => `- ${endSentence(capFirst(p.shown))}`).join('\n');
 }
@@ -356,7 +362,9 @@ function generateFullCaseStudy(
 ): string {
   const v = ctx.v;
   const w = startWords(ctx.model);
-  const generic = isGenericName(customerName);
+  // 13 Nov 2026 red team (critical): one anonymised customer ("Customer A (a 3PL, name pending approval)", "Client X", "[Customer]")
+  // is one named customer for the story: its results are its own, and the anonymised label is kept as given.
+  const generic = isGenericName(customerName) && !anonymisedCustomer(customerName);
   const items = results.trim() && results !== 'not supplied' ? caseResultItems(results) : [];
   const grp = (k: ProofKind[]) => items.filter((i) => k.includes(i.kind));
   const adverse=grp(['adverse']);

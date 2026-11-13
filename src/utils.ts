@@ -360,6 +360,26 @@ export function outcomePromises(content: string): string[] {
     && /\d+(?:\.\d+)?\s*%|\b(?:half|double|twice|reduc\w*|faster|slower|sav\w*|increas\w*|improv\w*|every (?:customer|client)|all (?:customers|clients))\b/i.test(sentence));
 }
 
+// 13 Nov 2026: numeric or outcome claims (a percentage, a multiple, a money figure with a result, a figure with what changed) and
+// whether a source appears with each one (in the same sentence, the next sentence, or a "Source:" line). Questions and "if" sentences
+// are not claims. Years are not figures.
+const CLAIM_PCT = /(?<![\w.])\d+(?:\.\d+)?\s?(?:%|percent\b|per cent\b)(?!\s*(?:off|discount)\b)/i;
+const CLAIM_MULT = /(?<![\w.])\d+(?:\.\d+)?\s?x\b(?!\s*\d)|\b(?:twice|double|triple|three times|four times|five times|ten times)\s+(?:as\s+)?(?:fast|faster|quick|quicker|more|many|much|higher|better|likely)\b|\b(?:doubl|tripl|halv|quadrupl)(?:e|es|ed|ing)\b(?!-)(?!\s+(?:check|click|down)\b)/i;
+const CLAIM_FIGURE = /[$₹€£]\s?\d|\b(?:USD|INR|EUR|GBP|Rs\.?)\s?\d|(?<![\w.])\d[\d.,]*\s?(?:k\b|m\b|mn\b|bn\b|million|billion|lakhs?|crores?|days?|hours?|hrs?\b|weeks?|months?|minutes?|mins?\b|seconds?|points?|tickets|leads|deals|customers|users|accounts)|(?<![\w.])\d{2,}(?![\w.])/i;
+const CLAIM_OUTCOME = /\b(?:resolv\w*|reduc\w*|cut|cuts|sav(?:e|es|ed|ing)|improv\w*|increas\w*|grew|grow(?:s|n)?|boost\w*|lift\w*|rais\w*|doubl\w*|halv\w*|tripl\w*|fell|fall(?:s|en)?|dropp?\w*|rose|jump\w*|lower\w*|higher|faster|quicker|shorter|fewer|generat\w*|achiev\w*|won|win rate|roi|payback|pipeline|revenue|arr|churn|conversion)\b|\bfrom [$₹€£]?\d[\d.,]*\s*\S*\s+to [$₹€£]?\d/i;
+const CLAIM_SOURCE = /https?:\/\/|\bwww\.|\b[a-z0-9-]+\.(?:com|org|io|ai|net|co|in|gov|edu)\/\S|\baccording to\b|\bsources?\s*:|\b(?:source|cited|reported|published|as reported)\s+(?:in|by)\b|\bdata from\b|\b(?:report|study|survey|audit|benchmark|analysis|research|index|white ?paper|filing)\b[^.!?\n]{0,50}\b(?:19|20)\d{2}\b|\b(?:19|20)\d{2}\b[^.!?\n]{0,50}\b(?:report|study|survey|audit|benchmark|analysis|research|index|white ?paper|filing)\b|\[\d+\]|[¹²³⁴⁵]|\([A-Z][^()]{1,60},\s*(?:19|20)\d{2}\)|\b(?:Gartner|Forrester|IDC|McKinsey|Deloitte|BCG|Bain|PwC|KPMG|Accenture|Nasscom|Statista|Pew Research|Everest Group|HFS)\b/i;
+export function unsourcedClaims(content: string): string[] {
+  const list = sentencesOf(content);
+  const sourceLine = /^\s*(?:sources?|references?)\s*:/im.test(content);
+  if (sourceLine) return [];
+  return list.filter((s, i) => {
+    if (/\?\s*$/.test(s) || /^\s*(?:if|imagine|suppose|what if)\b/i.test(s)) return false;
+    const t = s.replace(/\b(?:19|20)\d{2}\b/g, ' ');
+    const claim = CLAIM_PCT.test(t) || CLAIM_MULT.test(t) || (CLAIM_FIGURE.test(t) && CLAIM_OUTCOME.test(t));
+    return claim && !CLAIM_SOURCE.test(s) && !CLAIM_SOURCE.test(list[i + 1] || '');
+  });
+}
+
 export function analyzeContent(content: string, contentType: string, goal: string, opts: { audience?: string } = {}): ContentAnalysis {
   const analysis: ContentAnalysis = {
     clarity: { score: 0, issues: [], suggestions: [] },
@@ -370,7 +390,7 @@ export function analyzeContent(content: string, contentType: string, goal: strin
     findings: []
   };
   const note = (dimension: Finding['dimension'], rule: string, penalty: number, text: string, suggestion: string, hard = false) => {
-    if (operationalPurpose(goal) && ['question','you-language','no-figure','hook','educate-length','audience'].includes(rule)) return;
+    if (operationalPurpose(goal) && ['question','you-language','no-figure','hook','educate-length','audience','unsourced-claim'].includes(rule)) return;
     analysis.findings.push({ dimension, rule, penalty, text, suggestion, hard });
     analysis[dimension].issues.push(text);
     if (suggestion && !analysis[dimension].suggestions.includes(suggestion)) analysis[dimension].suggestions.push(suggestion);
@@ -478,6 +498,12 @@ export function analyzeContent(content: string, contentType: string, goal: strin
     const evidence = [...promises, ...unsupported];
     note('engagement', 'unproved-claim', 3, `Evidence missing: ${evidence.slice(0, 3).map(s => `"${clipEcho(s, 160)}"`).join('; ')}`, 'Do not publish the promised outcome as fact. Remove the promise or supply measured evidence with its source, scope and date; a limited result does not justify a guarantee for every customer.', true);
   }
+  // 13 Nov 2026 red team (critical): a number or a result stated as fact with no source ("our AI agent now resolves 60% of tickets",
+  // "cut first response time from 9 hours to 4 minutes", "3x faster", "saved $2M") is NOT PROVED YET unless a source appears with it.
+  const unsourced = unsourcedClaims(content).filter((s) => !promises.includes(s));
+  if (unsourced.length) {
+    note('engagement', 'unsourced-claim', 3, `NOT PROVED YET: add the source or soften the claim: ${unsourced.slice(0, 3).map(s => `"${clipEcho(s, 160)}"`).join('; ')}${unsourced.length > 3 ? ` and ${unsourced.length - 3} more` : ''}`, 'Put the source with the claim (a link, the report and its year, or "according to ..."), or soften it to what you can show.', true);
+  }
   if (emailLike) {
     const claim = confirmedMatches(content, READER_CLAIM);
     if (claim.length) {
@@ -525,7 +551,7 @@ export function analyzeContent(content: string, contentType: string, goal: strin
   else if (analysis.overall.score >= 6) analysis.overall.rating = 'GOOD';
   else if (analysis.overall.score >= 4) analysis.overall.rating = 'NEEDS WORK';
   else analysis.overall.rating = 'MAJOR REVISION NEEDED';
-  if (analysis.findings.some(f => ['superlative', 'unproved-claim', 'reader-claim'].includes(f.rule))) analysis.overall.rating = 'NOT PROVED YET';
+  if (analysis.findings.some(f => ['superlative', 'unproved-claim', 'unsourced-claim', 'reader-claim'].includes(f.rule))) analysis.overall.rating = 'NOT PROVED YET';
   else if (analysis.overall.rating === 'EXCELLENT' && analysis.findings.some((f) => f.hard)) analysis.overall.rating = 'GOOD';
   return analysis;
 }

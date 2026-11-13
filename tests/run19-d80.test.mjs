@@ -343,7 +343,8 @@ test("craft_content_improver: a weak email is not rated EXCELLENT and says what 
 });
 
 test("craft_content_improver: a clean text scores high and says plainly that it found nothing to edit", async () => {
-  const clean = "Cloudmoat ranks cloud misconfigurations by real exposure, so your security team fixes the few that matter first. At one fintech customer, open critical exposures fell from 48 to 9 in six weeks. Would you like to see the ranking for your own AWS account? You can reply to this message or book 20 minutes with us.";
+  // 13 Nov 2026: a customer result is clean only with its source (an unsourced one is NOT PROVED YET, see critical-20261113.test.mjs)
+  const clean = "Cloudmoat ranks cloud misconfigurations by real exposure, so your security team fixes the few that matter first. At one fintech customer, open critical exposures fell from 48 to 9 in six weeks, according to its own 2026 audit. Would you like to see the ranking for your own AWS account? You can reply to this message or book 20 minutes with us.";
   const r = await call("craft_content_improver", { content: clean, content_type: "sales_email", goal: "book a first meeting", audience: "CISOs at mid-size fintech companies" });
   assert.ok(score(r.text) >= 9, "score " + score(r.text));
   assert.match(r.text, /No automatic edits were found/);

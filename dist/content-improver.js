@@ -65,7 +65,7 @@ export function generateContentImprover(args) {
     // Create specific recommendations based on analysis: the findings that cost the most points first
     const priorityFixes = [...analysis.findings].sort((a, b) => b.penalty - a.penalty).slice(0, 6).map((f) => {
         const dim = f.dimension === 'goalAlignment' ? 'Goal Alignment' : f.dimension.charAt(0).toUpperCase() + f.dimension.slice(1);
-        return `**${['merge-field', 'fragment'].includes(f.rule) ? 'Defect' : f.hard ? 'Evidence check' : 'Suggestion'}: ${dim}**: ${f.text}${f.suggestion ? `. Fix: ${f.suggestion}` : ''}`;
+        return `**${['merge-field', 'fragment', 'unsourced-claim'].includes(f.rule) ? 'Defect' : f.hard ? 'Evidence check' : 'Suggestion'}: ${dim}**: ${f.text}${f.suggestion ? `. Fix: ${f.suggestion}` : ''}`;
     });
     const buzzFound = analysis.findings.some((f) => f.rule === 'buzzwords');
     const hardFound = analysis.findings.some((f) => f.hard);
@@ -81,7 +81,7 @@ Semantic goal alignment remains unverified. Point to the exact passage that expl
 ## Evidence and suggestions
 ${analysis.findings.length ? analysis.findings.map(f => {
         const spans = [...f.text.matchAll(/"([^"\n]+)"/g)].map(m => m[1]).filter(t => content.includes(t));
-        const kind = ['merge-field', 'fragment'].includes(f.rule) ? 'Defect' : f.hard ? 'Evidence check' : 'Suggestion';
+        const kind = ['merge-field', 'fragment', 'unsourced-claim'].includes(f.rule) ? 'Defect' : f.hard ? 'Evidence check' : 'Suggestion';
         return `- **${kind} (${f.rule})**: ${f.text}. ${spans.length ? `Exact span: ${spans.map(t => `"${t}"`).join('; ')}.` : 'Scope: whole draft; no single triggering span.'} ${f.suggestion}`;
     }).join('\n') : 'No defects found by these checks. Confirm the reader can complete the stated task and record what remains unclear.'}
 

@@ -1,7 +1,7 @@
 import { generateCaseStudy } from './case-study-generator.js';
 import { generateContentRepurposer } from './content-repurposer.js';
 import { generateNewsletter } from './newsletter-builder.js';
-import { softwareAdvice, SOFTWARE_REFERRAL } from './software-policy.js';
+import { softwareAdvice } from './software-policy.js';
 import { type Node, textField as t, validateChain, isoDate, httpsUrl, paragraphs } from './chain-inputs.js';
 
 export const CUSTOMER_RESULT_TOOL = 'customer_result_to_content';
@@ -124,7 +124,9 @@ export function runCustomerResult(input: unknown) {
   if (errors.length) return { content: [{ type: 'text', text: errors.join('\n') }], isError: true };
   const a = input as CustomerResultInput;
   if (!(isoDate(a.source_date) || a.source_date === 'not stated') || !isoDate(a.as_of_date) || (a.source_checked_date && !isoDate(a.source_checked_date)) || !httpsUrl(a.source_url)) return { content: [{ type: 'text', text: 'Supply valid dates as year, month and day and an https source link. Use not stated for an unknown publication date.' }], isError: true };
-  if (softwareAdvice(a)) return { content: [{ type: 'text', text: SOFTWARE_REFERRAL }] };
+  // GTM stack software goes to the booking; other technology gets the plain decline, as on every other tool (13 Nov 2026).
+  const advice = softwareAdvice(a);
+  if (advice) return { content: [{ type: 'text', text: advice }] };
   const { fields, gaps } = proofCard(a);
   const hold: string[] = [];
   if (!a.buyer_view?.trim() || /^(?:none|unknown|none yet|no view|i (?:do not|don.t) know|not (?:given|supplied|stated))\.?$/i.test(a.buyer_view.trim())) hold.push('Write your own view in whole sentences before drafting. The tool cannot supply it.');

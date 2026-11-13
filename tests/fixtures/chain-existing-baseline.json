@@ -44,7 +44,7 @@
         "solution": "Give each depot a shared exception queue",
         "results": "October pilot: route adjustment time fell from four to three hours across ten dispatch days. Customer publication permission has not been granted."
       },
-      "sha": "daa7f487fcd7ec5ae52f84802abddc1eb1a71f5b9f85f2d1ba88e9a43632c17a"
+      "sha": "9c94ce804a92ce27bdf0aec93d10ff5a34d974148ea07c7c9ec04f5c5fd7443d"
     },
     {
       "name": "newsletter_builder",
@@ -54,7 +54,7 @@
         "key_points": "Name one owner per urgent alert. Separate false positives from delayed responses. Do not claim a measured improvement yet.",
         "your_product": "Alert triage software"
       },
-      "sha": "54b143daac9e0efdef3aefc9bf35878d0a9bb85bb8771c6a8da0ea98a3b79554"
+      "sha": "b3d950e1b36f63a2040dc0a2d0999b982ad35cd0178673688024487641cb62fb"
     },
     {
       "name": "webinar_script",
@@ -65,7 +65,7 @@
         "key_takeaways": "Count exceptions; name an approval owner; compare cycle time before and after one batch.",
         "your_product": "Invoice processing service"
       },
-      "sha": "bc37844f005e74eb6591b9ec20ec24cc03eec4b2eb0694ba4fa7d9d718662343"
+      "sha": "95580f57386d04e99bd0e016c6e18a0ed86ba269cd97d4abef07a1b777740795"
     },
     {
       "name": "content_repurposer",
@@ -74,7 +74,7 @@
         "source_type": "blog_post",
         "your_sector": "logistics_tech"
       },
-      "sha": "26094d2d7ac43aea39d4590506ea0641578d0ed4422fd274eee27f9653df2b3e"
+      "sha": "cf6d56e2927562df85b95f7d983bd43fda71173c60be6cb545bb7bc5d56fb64d"
     },
     {
       "name": "thought_leadership_series",
@@ -84,7 +84,7 @@
         "target_reader": "Legal operations leaders at SaaS companies",
         "proof_points": "In two interviews, reviewers said missing source references slowed review. No time saving study has been run."
       },
-      "sha": "80d0034c1cb7926a08241b66406498e62529479fa73f7c711d3b61bdad309fb7"
+      "sha": "71815f7019bdb810b042ae85628c92cb77519b6379034815b7c4ba480ba6b2d0"
     },
     {
       "name": "testimonial_capture",
@@ -96,7 +96,7 @@
         "your_product": "Invoice processing service",
         "customer_role": "Accounts payable head"
       },
-      "sha": "319daeb197c7d4174e66d50c143147a692077446d360b253ff312acd08c45f10"
+      "sha": "953403cefeadb5b6a0b5f76edbcb263c4e09e2da1d10f98e58e8da69c4ff0c0b"
     },
     {
       "name": "sales_enablement_content",
@@ -116,7 +116,7 @@
         "goal": "Publish a defensible service page",
         "audience": "Claims operations heads at regional insurers"
       },
-      "sha": "ba6377d12805e2df996a704a77bd04fa496f62e52806009419598de8586a097a"
+      "sha": "e8411b1c934a885a53f71e636dd76dc5e819b9b7d6ccbc36f3927bcfcd960d4e"
     }
   ]
 }

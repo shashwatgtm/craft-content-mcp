@@ -4,6 +4,7 @@ import { attachChainResults } from './chain-results.js';
 import { withReadingGuide } from './reader-actions.js';
 import { softwareAdvice, SOFTWARE_REFERRAL } from './software-policy.js';
 import { regionNotes } from './region-reader.js';
+import { pricingLines } from './pricing-lines.js';
 import { regionalInputs } from './region-adapter.js';
 import { cleanDeep } from './escape-inputs.js';
 import { BUILD_PROFILE } from './build-profile.js';
@@ -239,6 +240,7 @@ export function createServer(): Server {
           throw new Error(`Unknown tool: ${name}`);
       }
 
+      result = pricingLines(name, result);
       result = limit.text + sectorChoiceNotice(name, (args || {}) as Record<string,unknown>, text=>{const r=explainSector({seller:[text]});return {id:r.vertical?.id,name:r.vertical?.name,source:r.source,strong:r.strong}}) + result;
       const noticeLast = name === 'case_study_generator' && result.startsWith('Full mode needs');
       const noticeFields = inputEvidence.notice.match(/^Missing input: ([^.]+)\./)?.[1].split(', ');

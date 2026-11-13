@@ -6,13 +6,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { pricingLines } from "../dist/pricing-lines.js";
 
 const { default: mcp } = await import(new URL("../netlify/functions/mcp.mjs", import.meta.url));
 const { default: api } = await import(new URL("../netlify/functions/api.mjs", import.meta.url));
 
 const ACCEPT = "application/json, text/event-stream";
 const FIXTURE_ARGS = JSON.parse(fs.readFileSync(new URL("./fixtures/case-study-complete-2.2.12.json", import.meta.url), "utf8"));
-const FIXTURE_TEXT = fs.readFileSync(new URL("./fixtures/case-study-complete-2.2.12.txt", import.meta.url), "utf8");
+// 13 Nov 2026 (owner): the saved case study is unchanged; the answer now drops the business model and quote lines (src/pricing-lines.ts).
+const FIXTURE_TEXT = pricingLines("case_study_generator", fs.readFileSync(new URL("./fixtures/case-study-complete-2.2.12.txt", import.meta.url), "utf8"));
 
 let nextId = 1;
 async function viaMcp(args) {

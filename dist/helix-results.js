@@ -1,5 +1,5 @@
 import { McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js";
-import { HELIX_RESULTS_HTML } from "./helix-results-html.js";
+import { EDITABLE_RESULTS_HTML } from "./content-repurposer-editor-html.js";
 export const names = { account_prioritization: 'Account Prioritization', pmf_scorecard: 'Product Market Fit Scorecard', content_repurposer: 'Content Repurposer' };
 export const URI = 'ui://helix/results/v1.html';
 export const RESOURCE_NAME = 'helix-results';
@@ -62,7 +62,7 @@ export function attachHelixResults(server, domain) {
     });
     handlers.set("resources/read", async (request, extra) => {
         if (request?.params?.uri === URI)
-            return { contents: [{ uri: URI, mimeType: MIME, text: HELIX_RESULTS_HTML, _meta: resourceMetadata(domain) }] };
+            return { contents: [{ uri: URI, mimeType: MIME, text: EDITABLE_RESULTS_HTML, _meta: resourceMetadata(domain) }] };
         if (readResource)
             return readResource(request, extra);
         throw new McpError(ErrorCode.InvalidParams, "Unknown result resource");

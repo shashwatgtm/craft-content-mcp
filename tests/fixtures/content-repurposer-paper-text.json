@@ -1,0 +1,304 @@
+{
+  "baseline": "29051e8df09575998ea541dc9a99f140631f2bc1",
+  "originalPr": "52e6300c54111b37c25d139a52cb715c77721ef5",
+  "cases": [
+    {
+      "label": "defaults",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use."
+      },
+      "textSha256": "fb6d2c7d6cdf2b8da18bb660761ce2481dc097432eccecba7aadc72edeb26a44",
+      "isError": false
+    },
+    {
+      "label": "linkedin_post",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "target_formats": "linkedin_post"
+      },
+      "textSha256": "55cb51d4a5ca234aed12f02529fb0881ed8d2650089dd939c7f82392f8894bef",
+      "isError": false
+    },
+    {
+      "label": "twitter_thread",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "target_formats": "twitter_thread"
+      },
+      "textSha256": "d57577ee00334ea89fd2115eb12f19385707aaf95ad1640b6e1fa8cf9f0106f0",
+      "isError": false
+    },
+    {
+      "label": "email",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "target_formats": "email"
+      },
+      "textSha256": "89f7c9cdbe30f5a81b465593e978cb09bfcb0c8092493d0bcdd35e163220d5d0",
+      "isError": false
+    },
+    {
+      "label": "blog_summary",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "target_formats": "blog_summary"
+      },
+      "textSha256": "c4f8a72c50c2d0111ecd387e2d2dc6815f81203b3b627aecc23e40b5fab18833",
+      "isError": false
+    },
+    {
+      "label": "quote_cards",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "target_formats": "quote_cards"
+      },
+      "textSha256": "cd0f9d1211e0c57a241ad49897ed680755719155c066fdb973177e711b00527d",
+      "isError": false
+    },
+    {
+      "label": "infographic_outline",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "target_formats": "infographic_outline"
+      },
+      "textSha256": "2c37efd7a280025c4606460a50662ccbb81a08f81402a629c3702585b143895e",
+      "isError": false
+    },
+    {
+      "label": "video_script",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "target_formats": "video_script"
+      },
+      "textSha256": "6874310c1c3ceb1ebb050ed543bfe6962c5d3d0711716a026cae0f7b0e6951ba",
+      "isError": false
+    },
+    {
+      "label": "podcast_talking_points",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "target_formats": "podcast_talking_points"
+      },
+      "textSha256": "c75a39038ce39d33448680df4e3ae611e8e407b52b8be84c95477bdb3ff89284",
+      "isError": false
+    },
+    {
+      "label": "slide_deck_outline",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "target_formats": "slide_deck_outline"
+      },
+      "textSha256": "33a1dc5032502f47df11df707973c82e8cf744f7df3f14e1489de529f073b3b8",
+      "isError": false
+    },
+    {
+      "label": "newsletter_section",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "target_formats": "newsletter_section"
+      },
+      "textSha256": "b21d5ccdf2292294d670528bc59981856249670665f39bd040da077923e5c667",
+      "isError": false
+    },
+    {
+      "label": "unknown only",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "target_formats": "carrier_pigeon"
+      },
+      "textSha256": "8969b90ee4ce19f14c67f9faec05bc2484c83472cd61d98a4f8e6e5a65228b47",
+      "isError": false
+    },
+    {
+      "label": "unknown mixed",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "target_formats": "email, other_format, blog_summary"
+      },
+      "textSha256": "744ad2bc75907686312c848213389b575e22c3a3cb518a76377ac7772f9cbb57",
+      "isError": false
+    },
+    {
+      "label": "duplicate formats",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "target_formats": "email,email,blog_summary"
+      },
+      "textSha256": "9d893cd98eea59f5320b87edcccb23939fa7183f551e3f03728be64972b98bbf",
+      "isError": false
+    },
+    {
+      "label": "no proof",
+      "args": {
+        "source_content": "Teams write down the decision and check the evidence before using a claim.",
+        "source_type": "presentation"
+      },
+      "textSha256": "3842d3dbcbcc50feb3e178df2c070434f8890563fa1e3aa34436d22f0d3aa488",
+      "isError": false
+    },
+    {
+      "label": "no points",
+      "args": {
+        "source_content": "Short.",
+        "source_type": "presentation",
+        "target_formats": "blog_summary"
+      },
+      "textSha256": "abc65cdbcc1b8ccc521c2362aa21b261abb8feb22d49cbaf447877daf4389d0e",
+      "isError": false
+    },
+    {
+      "label": "partner statement",
+      "args": {
+        "source_content": "Teams need a clear review process before sharing a result.\nProof: We have worked together for years (partner quote)",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use."
+      },
+      "textSha256": "6ef689192313d44f3cf47c7e8990c39fe79608f15f14b82af995e5c5bc5ad286",
+      "isError": false
+    },
+    {
+      "label": "unrecognized partner wording",
+      "args": {
+        "source_content": "Teams need a clear review process before sharing a result.\nProof: We have worked together for years (partner words).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use."
+      },
+      "textSha256": "1ca45e67bd39cb589853a8a46c5af4130e343d34eb9e13a347c49eaecaeba111",
+      "isError": false
+    },
+    {
+      "label": "quoted customer and result",
+      "args": {
+        "source_content": "Teams review source material before publishing a draft.\nSynthetic demonstration statements only.\nProof: Customer quote: \"We reduced review work and kept our source notes\" (customer quote); Review time fell by 20% (customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use."
+      },
+      "textSha256": "8a18bf8741ee8691a2a25f6a9149fd7c6ed37c72f1308873a5c9786e9ec7765b",
+      "isError": false
+    },
+    {
+      "label": "removed superlative",
+      "args": {
+        "source_content": "The world's first review process helps teams check every claim before use.\nThis is hypothetical and not verified.",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use."
+      },
+      "textSha256": "03ec0a40ab18cbac96c16634c7418aba7259fb22cecf420ec8e0b7fa12c81ef3",
+      "isError": false
+    },
+    {
+      "label": "long thread",
+      "args": {
+        "source_content": "A review process helps teams check evidence before use. Reviewers keep source notes and explanations alongside a decision, Reviewers keep source notes and explanations alongside a decision, Reviewers keep source notes and explanations alongside a decision, Reviewers keep source notes and explanations alongside a decision, Reviewers keep source notes and explanations alongside a decision, Reviewers keep source notes and explanations alongside a decision, Reviewers keep source notes and explanations alongside a decision, Reviewers keep source notes and explanations alongside a decision, Reviewers keep source notes and explanations alongside a decision, Reviewers keep source notes and explanations alongside a decision, Reviewers keep source notes and explanations alongside a decision, Reviewers keep source notes and explanations alongside a decision, Reviewers keep source notes and explanations alongside a decision, Reviewers keep source notes and explanations alongside a decision, Reviewers keep source notes and explanations alongside a decision, Reviewers keep source notes and explanations alongside a decision, Reviewers keep source notes and explanations alongside a decision, Reviewers keep source notes and explanations alongside a decision, every time.\nSynthetic data only.",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "target_formats": "twitter_thread"
+      },
+      "textSha256": "5d3ed240d8cc12a5090ccad41c4abe61bd3b37fbe69e582090123da9c5722193",
+      "isError": false
+    },
+    {
+      "label": "duplicate sentences",
+      "args": {
+        "source_content": "Teams review source evidence before using a claim. Teams review source evidence before using a claim.\nHypothetical, not verified.",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use."
+      },
+      "textSha256": "f6eb5c82971b422d57110e2f765aa9b1560a0da11e17e3e193cc6935ada0b51f",
+      "isError": false
+    },
+    {
+      "label": "source order",
+      "args": {
+        "source_content": "First the team records the original source. Next the team reads every qualification carefully. Finally the team asks the author about missing evidence.",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use."
+      },
+      "textSha256": "af901ed72e85ee19531d53a378e0c46df7e5ee7e96e66ea48de2dc82f010bab2",
+      "isError": false
+    },
+    {
+      "label": "casual",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "brand_voice": "casual"
+      },
+      "textSha256": "8747c6900f1c9ed4848051a9313ccf168961cedc03f4ac2338c5e8e05c464d34",
+      "isError": false
+    },
+    {
+      "label": "authoritative",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "brand_voice": "authoritative"
+      },
+      "textSha256": "3a9cf56c8dd66086847e68efe6d4091da585aca85c253e879ad69b7f1d2baaa0",
+      "isError": false
+    },
+    {
+      "label": "friendly",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "brand_voice": "friendly"
+      },
+      "textSha256": "4c19aeb41e603eb60587455adefa70e6effc61b7db647b4d639fc28b81ba93d3",
+      "isError": false
+    },
+    {
+      "label": "bold",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "brand_voice": "bold"
+      },
+      "textSha256": "c052e7651c4384f7601008a6e7f45db896033582799b76ee1daed8373f3f5254",
+      "isError": false
+    },
+    {
+      "label": "sector override",
+      "args": {
+        "source_content": "A clearer review process\nTeams review changes in one shared queue. Owners check the source before approving a claim. A small weekly review helps the team identify unanswered questions.\nThese statements are synthetic and unverified, for review only.\nProof: Review time fell by 20% (synthetic customer result).",
+        "source_type": "blog_post",
+        "key_message": "Review claims against their source before use.",
+        "your_sector": "professional_services"
+      },
+      "textSha256": "3cdd80763e0a4df1091b75a4d6feef62f30ab206c08c70372370dba31567d1e6",
+      "isError": true
+    }
+  ]
+}

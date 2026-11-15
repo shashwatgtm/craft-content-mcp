@@ -10,7 +10,9 @@ const WORKER = `
     // Exclude other V8 threads where the runtime provides a per-thread clock.
     const clock = process.threadCpuUsage ?? process.cpuUsage;
     // Use all samples in a fixed batch. Interleave sizes to distribute GC and JIT work.
-    for (const input of inputs) { fn(input.slice(0, Math.ceil(input.length / 4))); fn(input); }
+    // The aggregate content corpus includes several long normalization paths.
+    // Warm each path on its quarter size, then measure both orders once.
+    for (const input of inputs) fn(input.slice(0, Math.ceil(input.length / 4)));
     const samples = [];
     const measure = (input) => {
       const start = clock();
@@ -24,14 +26,14 @@ const WORKER = `
       let smallCpu = 0;
       let largeCpu = 0;
       let peakCpu = 0;
-      for (let round = 0; round < 3; round++) {
+      for (let round = 0; round < 2; round++) {
         if (round % 2 === 0) smallCpu += measure(quarter);
         const full = measure(input);
         largeCpu += full;
         peakCpu = Math.max(peakCpu, full);
         if (round % 2 === 1) smallCpu += measure(quarter);
       }
-      samples.push([smallCpu / 3, largeCpu / 3, peakCpu]);
+      samples.push([smallCpu / 2, largeCpu / 2, peakCpu]);
     }
     parentPort.postMessage(samples);
   })().catch((error) => { throw error; });

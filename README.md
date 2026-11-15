@@ -3,7 +3,7 @@
 
 ## Use it hosted (no install)
 
-Add `https://craft-content.gtmhelix.com/mcp` as a Streamable HTTP connector. It needs no sign in. On 15 November 2026 the hosted server reported version 2.2.24 and 9 tools. [Connection instructions](https://craft-content.gtmhelix.com/connect/). You can also open the [web app](https://craft-content.gtmhelix.com/).
+Add `https://craft-content.gtmhelix.com/mcp` as a Streamable HTTP connector. It needs no sign in. The hosted endpoint always runs the newest version (2.2.24) available on this site. It listed 9 tools on 15 November 2026. [Connection instructions](https://craft-content.gtmhelix.com/connect/). You can also open the [web app](https://craft-content.gtmhelix.com/).
 
 For a local stdio connection, run `npx -y @shashwatgtmalpha/craft-content-mcp`. On 15 November 2026 the latest published npm version was 2.2.22. Check the available version with `npm view @shashwatgtmalpha/craft-content-mcp version`.
 
@@ -136,7 +136,7 @@ The 9 tools below come from `tools/list` in the 2.2.24 source build, checked on 
 | `target_reader` | Yes | string | Who should read this, named specifically (for example 'Heads of IT at companies with many branches' rather than 'managers') |
 | `proof_points` | No | string | Optional: evidence supporting your take: personal stories, client examples, data or stats, one per line, per semicolon or comma-separated. If not provided, proof points to gather are suggested |
 | `author_background` | No | string | Optional: your role and why you are credible (for example 'a long career in enterprise sales') |
-| `num_articles` | No | integer (minimum 1, maximum 5) | How many articles to outline, a whole number from 1 to 5. If left out, the series has three articles |
+| `num_articles` | No | integer (1 to 5) | How many articles to outline, a whole number from 1 to 5. If left out, the series has three articles |
 | `article_type` | No | one of `contrarian`, `how_to`, `lessons_learned`, `prediction`, `framework` | The style of the articles |
 | `your_sector` | No | one of `logistics_tech`, `fintech`, `saas`, `vertical_saas`, `ai_native`, `ites`, `telecom`, `software`, `cybersecurity`, `other` | Optional: your company's own industry (not your customers'). When given, it decides the sector notes; when left out, the tool reads it from your words and stays neutral if they are unclear. |
 | `publication_approval` | No | one of `approved`, `not_approved`, `unknown` | Optional confirmed written approval for this exact customer name, figures, quote and intended use. Ask before publication. A draft cannot grant customer permission. |

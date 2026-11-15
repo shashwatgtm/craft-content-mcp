@@ -1,0 +1,64 @@
+{
+  "tool": "content_repurposer",
+  "fields": {
+    "source_content": {
+      "label": "Source content",
+      "long": true
+    },
+    "source_type": {
+      "label": "Source format",
+      "choices": [
+        "blog_post",
+        "webinar_transcript",
+        "podcast_transcript",
+        "whitepaper",
+        "case_study",
+        "research_report",
+        "presentation"
+      ]
+    },
+    "target_formats": {
+      "label": "Target formats"
+    },
+    "brand_voice": {
+      "label": "Brand voice",
+      "choices": [
+        "professional",
+        "casual",
+        "authoritative",
+        "friendly",
+        "bold"
+      ]
+    },
+    "key_message": {
+      "label": "Key message"
+    },
+    "your_sector": {
+      "label": "Sector",
+      "choices": [
+        "logistics_tech",
+        "fintech",
+        "saas",
+        "vertical_saas",
+        "ai_native",
+        "ites",
+        "telecom",
+        "software",
+        "cybersecurity",
+        "other"
+      ]
+    },
+    "publication_approval": {
+      "label": "Publication permission",
+      "choices": [
+        "approved",
+        "not_approved",
+        "unknown"
+      ]
+    }
+  },
+  "required": [
+    "source_content",
+    "source_type"
+  ]
+}

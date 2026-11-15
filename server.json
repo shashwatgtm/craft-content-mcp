@@ -1,0 +1,37 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.shashwatgtm/craft-content-mcp",
+  "title": "CRAFT Content Studio by Helix",
+  "description": "Turn B2B source material into case studies, newsletters, webinars and sales content.",
+  "websiteUrl": "https://craft-content.gtmhelix.com/",
+  "repository": {
+    "url": "https://github.com/shashwatgtm/craft-content-mcp",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://craft-content.gtmhelix.com/apple-touch-icon.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "180x180"
+      ]
+    }
+  ],
+  "version": "2.2.24",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@shashwatgtmalpha/craft-content-mcp",
+      "version": "2.2.24",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://craft-content.gtmhelix.com/mcp"
+    }
+  ]
+}

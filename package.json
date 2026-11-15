@@ -2,7 +2,7 @@
   "name": "@shashwatgtmalpha/craft-content-mcp",
   "version": "2.2.24",
   "mcpName": "io.github.shashwatgtm/craft-content-mcp",
-  "description": "CRAFT Content Framework MCP server: case studies, newsletters, webinar scripts, repurposing, thought leadership, testimonials, sales enablement and content review. Runs locally over stdio (npm) or hosted over Streamable HTTP.",
+  "description": "Nine CRAFT tools for B2B content, including case studies, newsletters, webinars, repurposing and approved customer results. Available over stdio or hosted Streamable HTTP.",
   "main": "dist/index.js",
   "bin": {
     "craft-content-mcp": "./dist/index.js"
@@ -25,13 +25,17 @@
     "thought-leadership",
     "claude",
     "anthropic",
-    "ai-tools"
+    "ai-tools",
+    "model-context-protocol",
+    "b2b",
+    "content-repurposing",
+    "sales-enablement"
   ],
   "author": "Shashwat Ghosh <shashwat@gtmhelix.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/shashwatgtm/craft-content-mcp"
+    "url": "git+https://github.com/shashwatgtm/craft-content-mcp.git"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
@@ -49,5 +53,6 @@
     "dist/**/*",
     "README.md",
     "ESCAPING-UTILITY-LICENSE.txt"
-  ]
+  ],
+  "homepage": "https://craft-content.gtmhelix.com/"
 }

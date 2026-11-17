@@ -30,6 +30,7 @@ export declare const customerResultDefinition: {
             solution: Node;
             buyer_view: {
                 minLength: number;
+                description: string;
                 type: string;
                 properties?: Record<string, Node>;
                 required?: string[];
@@ -39,7 +40,6 @@ export declare const customerResultDefinition: {
                 maxItems?: number;
                 maxLength?: number;
                 additionalProperties?: boolean;
-                description?: string;
             };
             call_to_action: Node;
             headline: Node;

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.shashwatgtm/craft-content-mcp",
+  "description": "B2B content drafts, case studies, testimonials, repurposing and content review.",
+  "repository": {
+    "url": "https://github.com/shashwatgtm/craft-content-mcp",
+    "source": "github"
+  },
+  "version": "2.2.25",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@shashwatgtmalpha/craft-content-mcp",
+      "version": "2.2.25",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

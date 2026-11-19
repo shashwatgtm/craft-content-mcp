@@ -1,4 +1,7 @@
 # @shashwatgtmalpha/craft-content-mcp v2.2.25
+
+By Helix GTM Consulting (https://gtmhelix.com), built by Shashwat Ghosh, Co-Founder and Fractional CMO.
+
 **CRAFT Content Framework MCP Server**: a complete redesign with user-centric inputs, actual content analysis, and a structured draft with placeholders for each output.
 
 ## Use it hosted (no install)

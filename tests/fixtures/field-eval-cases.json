@@ -1,0 +1,74 @@
+[
+  {
+    "sector": "SaaS",
+    "process": "subscription onboarding",
+    "teams": "customer success teams",
+    "exact": "In one pilot, time spent on subscription onboarding fell from 8 hours to 5 hours (team record).",
+    "paraphrase": "The team record shows 5 hours for subscription onboarding in one pilot, down from 8 hours.",
+    "opposite": "In one pilot, time spent on subscription onboarding rose from 5 hours to 8 hours (team record)."
+  },
+  {
+    "sector": "ITeS",
+    "process": "service desk handovers",
+    "teams": "service desk teams",
+    "exact": "In one pilot, time spent on service desk handovers fell from 8 hours to 5 hours (team record).",
+    "paraphrase": "The team record shows 5 hours for service desk handovers in one pilot, down from 8 hours.",
+    "opposite": "In one pilot, time spent on service desk handovers rose from 5 hours to 8 hours (team record)."
+  },
+  {
+    "sector": "fintech",
+    "process": "settlement reconciliation",
+    "teams": "payments operations teams",
+    "exact": "In one pilot, time spent on settlement reconciliation fell from 8 hours to 5 hours (team record).",
+    "paraphrase": "The team record shows 5 hours for settlement reconciliation in one pilot, down from 8 hours.",
+    "opposite": "In one pilot, time spent on settlement reconciliation rose from 5 hours to 8 hours (team record)."
+  },
+  {
+    "sector": "HR tech",
+    "process": "candidate screening",
+    "teams": "recruiting teams",
+    "exact": "In one pilot, time spent on candidate screening fell from 8 hours to 5 hours (team record).",
+    "paraphrase": "The team record shows 5 hours for candidate screening in one pilot, down from 8 hours.",
+    "opposite": "In one pilot, time spent on candidate screening rose from 5 hours to 8 hours (team record)."
+  },
+  {
+    "sector": "logistics",
+    "process": "parcel dispatch",
+    "teams": "dispatch teams",
+    "exact": "In one pilot, time spent on parcel dispatch fell from 8 hours to 5 hours (team record).",
+    "paraphrase": "The team record shows 5 hours for parcel dispatch in one pilot, down from 8 hours.",
+    "opposite": "In one pilot, time spent on parcel dispatch rose from 5 hours to 8 hours (team record)."
+  },
+  {
+    "sector": "healthcare IT",
+    "process": "clinic scheduling",
+    "teams": "clinic scheduling teams",
+    "exact": "In one pilot, time spent on clinic scheduling fell from 8 hours to 5 hours (team record).",
+    "paraphrase": "The team record shows 5 hours for clinic scheduling in one pilot, down from 8 hours.",
+    "opposite": "In one pilot, time spent on clinic scheduling rose from 5 hours to 8 hours (team record)."
+  },
+  {
+    "sector": "manufacturing software",
+    "process": "production inspection",
+    "teams": "plant quality teams",
+    "exact": "In one pilot, time spent on production inspection fell from 8 hours to 5 hours (team record).",
+    "paraphrase": "The team record shows 5 hours for production inspection in one pilot, down from 8 hours.",
+    "opposite": "In one pilot, time spent on production inspection rose from 5 hours to 8 hours (team record)."
+  },
+  {
+    "sector": "edtech",
+    "process": "classroom scheduling",
+    "teams": "teaching teams",
+    "exact": "In one pilot, time spent on classroom scheduling fell from 8 hours to 5 hours (team record).",
+    "paraphrase": "The team record shows 5 hours for classroom scheduling in one pilot, down from 8 hours.",
+    "opposite": "In one pilot, time spent on classroom scheduling rose from 5 hours to 8 hours (team record)."
+  },
+  {
+    "sector": "martech",
+    "process": "campaign approval",
+    "teams": "campaign operations teams",
+    "exact": "In one pilot, time spent on campaign approval fell from 8 hours to 5 hours (team record).",
+    "paraphrase": "The team record shows 5 hours for campaign approval in one pilot, down from 8 hours.",
+    "opposite": "In one pilot, time spent on campaign approval rose from 5 hours to 8 hours (team record)."
+  }
+]

@@ -59,7 +59,7 @@ export const customerResultDefinition = {
         },
         required: ['exact_sentence', 'source_url', 'source_date', 'source_kind', 'source_label', 'measured_result', 'buyer_role', 'relationship', 'approval', 'as_of_date', 'story_published', 'customer_name', 'product', 'call_to_action'],
     },
-    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+    annotations: { title: 'Turn this customer result into content', readOnlyHint: true, destructiveHint: false, openWorldHint: false },
 };
 const metricTokens = (s) => s.match(/(?:[$£₹€]\s*)?\d[\d,]*(?:\.\d+)?\s*(?:%|percent|days?|weeks?|months?|years?|hours?|minutes?|seconds?|times|x\b)|[$£₹€]\s*\d[\d,]*(?:\.\d+)?/gi) ?? [];
 const normalMetric = (s) => s.toLowerCase().replace(/\s+/g, '');

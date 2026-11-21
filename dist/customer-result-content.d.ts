@@ -47,6 +47,7 @@ export declare const customerResultDefinition: {
         required: string[];
     };
     annotations: {
+        title: string;
         readOnlyHint: boolean;
         destructiveHint: boolean;
         openWorldHint: boolean;

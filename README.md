@@ -2,13 +2,16 @@
 
 By Helix GTM Consulting (https://gtmhelix.com), built by Shashwat Ghosh, Co-Founder and Fractional CMO.
 
+[![craft-content-mcp MCP server](https://glama.ai/mcp/servers/shashwatgtm/craft-content-mcp/badges/score.svg)](https://glama.ai/mcp/servers/shashwatgtm/craft-content-mcp)
+[![CRAFT Content MCP connector](https://glama.ai/mcp/connectors/io.github.shashwatgtm/craft-content-mcp/badges/score.svg)](https://glama.ai/mcp/connectors/io.github.shashwatgtm/craft-content-mcp)
+
 **CRAFT Content Framework MCP Server**: a complete redesign with user-centric inputs, actual content analysis, and a structured draft with placeholders for each output.
 
 ## Use it hosted (no install)
 
 Add `https://craft-content.gtmhelix.com/mcp` to Claude or ChatGPT as a custom connector, or to Codex or Gemini CLI as an MCP server. It needs no sign-in and always runs the newest version (2.2.25). The same tools run as a free web app with a form per tool at https://craft-content.gtmhelix.com/, and the setup steps are at https://craft-content.gtmhelix.com/connect/.
 
-The npm package below is an older version (2.0.1 on npm on 27 September 2026) until the next npm release. Use it only if you need a local stdio server.
+The npm package below can lag behind the hosted server between releases; compare its version with the one the hosted server reports. Use it only if you need a local stdio server.
 
 
 ## Design Philosophy

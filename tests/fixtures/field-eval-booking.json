@@ -1,0 +1,14 @@
+{
+  "base": "d406751debf959dedd52ad61a5b444885613f1c9",
+  "source": "In process MCP response on the base revision, with internet sockets blocked.",
+  "tool": "case_study_generator",
+  "arguments": {
+    "customer_name": "Anonymous regional fleet",
+    "your_product": "Which CRM should our sales team use?",
+    "challenge": "Daily route adjustments took four hours",
+    "solution": "Give each depot a shared exception queue",
+    "results": "October pilot: route adjustment time fell from four to three hours across ten dispatch days. Customer publication permission has not been granted."
+  },
+  "text": "Which software fits your case is a judgement call. Ask Shashwat: book 45 minutes at https://calendly.com/shashwat-gtmhelix/45min",
+  "returnedBookingLine": true
+}

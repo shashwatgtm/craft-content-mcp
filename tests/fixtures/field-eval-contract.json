@@ -1,0 +1,14 @@
+{
+  "base": "d406751debf959dedd52ad61a5b444885613f1c9",
+  "tools": {
+    "case_study_generator": "a84f1586c8db17b20665f7abef77a7f8eb3c18939c8bbad97f995fdee6b270df",
+    "newsletter_builder": "5b2f4bfb0aa2cdbf61db074ebd613d4e81b85f71a87bfb39090cff4dbf77cfd0",
+    "webinar_script": "ca7e169dbd51680a6276dcd5f1af29e55dcca42d7d9be14852cac01a73091048",
+    "content_repurposer": "55fad625fb1580b1c1b80dc5600a01bdab5e5baf8b1e451ccfbe4eca3913cec4",
+    "thought_leadership_series": "e5e467751c800e74f5cd36c444080ef73f18157421684a21af753d3db72e694a",
+    "testimonial_capture": "5f577b13759b01fbe0783a0dd8ac23539db58796bb6d10665307f044d505fedf",
+    "sales_enablement_content": "e91bba14fbe229ca174d101b3b9b0dbf8bd58fc8a910ae114c415092f27f8f2a",
+    "craft_content_improver": "729b6b9c7c51282e4e08086c6c758d0a6b3cdcd7d62cc885c0be2de500924a4c",
+    "customer_result_to_content": "ed332dd62060d6617f3a8358060d2b4ab823c547322a2c496425f915309c2d45"
+  }
+}

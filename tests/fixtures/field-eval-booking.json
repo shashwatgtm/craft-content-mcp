@@ -1,5 +1,5 @@
 {
-  "base": "29051e8df09575998ea541dc9a99f140631f2bc1",
+  "base": "d406751debf959dedd52ad61a5b444885613f1c9",
   "source": "In process MCP response on the base revision, with internet sockets blocked.",
   "tool": "case_study_generator",
   "arguments": {
